@@ -1,7 +1,7 @@
 # 服务器通道调用审查
 
 > 权威审查规则。新增或修改任何直接、间接的服务器请求、订阅、推送、同步、轮询或重试时适用，
-> 包括 Desktop Renderer／Main、Mobile、共享 package 和插件宿主调用方，不只检查网络实现目录。
+> 包括 Desktop Renderer／Main、共享 package 和插件宿主调用方，不只检查网络实现目录。
 
 重点判断**现有通道是否被安全、可靠、合理地使用**。接口用途正确、单次请求合法，
 不代表调用方式正确；一次小改动也可能通过重复触发、扇出或重试挤占共享连接。
@@ -18,7 +18,7 @@
 
 | 通道／用途 | 共享压力与约束从哪里查 |
 | --- | --- |
-| Device Link：远程任务、伙伴、插件、模型、自动化等业务 | [调用优先级](../../packages/device-link/src/invokePolicy.ts)、[逐目标调度](../../packages/device-link/src/invokeScheduler.ts)、[传输条数／字节／窗口上限](../../packages/device-link/src/transport.ts)、[共享 socket 与发送行为](../../packages/device-link/src/client.ts)、[被控端准入及回包](../../apps/desktop/src/main/device-link/dispatch.ts)。不同业务 channel 不等于独立物理连接；[积压诊断](../../packages/device-link/src/transportBacklog.ts)按通道及共享连接上的其它 peer 汇总。恢复边界见[远程与手机适配](remote-and-mobile-adaptation.md)。 |
+| Device Link：远程任务、伙伴、插件、模型、自动化等业务 | [调用优先级](../../packages/device-link/src/invokePolicy.ts)、[逐目标调度](../../packages/device-link/src/invokeScheduler.ts)、[传输条数／字节／窗口上限](../../packages/device-link/src/transport.ts)、[共享 socket 与发送行为](../../packages/device-link/src/client.ts)、[被控端准入及回包](../../apps/desktop/src/main/device-link/dispatch.ts)。不同业务 channel 不等于独立物理连接；[积压诊断](../../packages/device-link/src/transportBacklog.ts)按通道及共享连接上的其它 peer 汇总。恢复边界见[远程适配](remote-adaptation.md)。 |
 | Chat Server：聊天 HTTP、实时事件、伙伴资料同步 | [Desktop 请求与 WebSocket](../../apps/desktop/src/main/maker-ipc/chatServer.ts)、[工作轮询与退避](../../apps/desktop/src/main/maker-ipc/chatWorkPolling.ts)、[伙伴同步](../../apps/desktop/src/main/companion-cloud/runtime.ts)。HTTP 与 WebSocket 不是同一队列，但通知可触发 HTTP 重读并竞争同一服务；不能假定工作轮询的退避自动覆盖全部调用。 |
 | 文件与媒体：直连、远程取图、OSS 上传下载 | [文件传输策略](../../packages/device-link/src/fileTransferPolicy.ts)、[远程媒体](../../apps/desktop/src/main/device-link/remoteMediaProtocol.ts)、[聊天媒体](../../apps/desktop/src/main/maker-ipc/chatServerMedia.ts)。区分控制请求与文件字节实际走的路径，再核对并发、带宽与回退压力。 |
 | 其它云服务与外部 API：认证、心跳、目录、IM、模型等 | 从[端点清单](../../config/endpoint.global.json)和实际调用方定位客户端、SDK 与服务端契约；[心跳入口](../../apps/desktop/src/main/heartbeatService.ts)是必要周期请求的例子。不能把不同服务视为一个限流桶，也不能把相同服务的不同接口视为互不影响。 |

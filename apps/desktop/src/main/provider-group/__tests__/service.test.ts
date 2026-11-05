@@ -1225,7 +1225,7 @@ describe('beforeSend', () => {
   // - Production entry: createProviderGroupService().beforeSend → localSource.shouldMoveAway →
   //   the checkFresh live probe → switchAgentLocation (a real move of a running task).
   // - Rule: provider-groups.md「短暂失联时的目录与已有任务」——有界快照供展示与新任务分配，
-  //   缓存的可用/忙闲不能单独把正在运行的任务换电脑；remote-and-mobile-adaptation.md——确认必须实时触达。
+  //   缓存的可用/忙闲不能单独把正在运行的任务换电脑；remote-adaptation.md——确认必须实时触达。
   // - Gap: the remote-group branch already skipped a stale view (`source.shouldMoveAway`), but the
   //   local-group branch decided「那台用不了」straight from resolveMembers and moved with no live read.
   // - Minimal failing input: MINI reports {state:'unavailable'} from a bounded snapshot; a live probe says ok.

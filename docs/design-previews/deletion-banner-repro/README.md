@@ -2,6 +2,8 @@
 
 > **本 demo 是「修复前证据」**:复现 `feat/login-deletion-bubble` 修复的 P1 bug——账号注销状态横幅被登录面板 100% 覆盖不可见(desk + mobile)。与它配对的修复后验收 demo 在 `../login-deletion-bubble/`。
 
+> **历史证据说明**:移动端 App 已从本仓移除。本 demo 的 phone 列与 `extract.mjs` 中的移动端源码路径保留不动——它们经 `git show` 读取钉住的 base commit,不读工作区,删除后仍可复现;作为修复前证据不随后续代码删改。配对的 `../login-deletion-bubble/` 已改为仅桌面端。
+
 ## truth 钉在 base commit(不随分支漂移)
 
 - 提取基线 = **本 PR 的 base commit `75baac1ee`**(origin/main 分叉点;该 commit 的 main 源码即修复前状态)。

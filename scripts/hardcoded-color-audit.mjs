@@ -17,13 +17,12 @@ export function git(root, args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 }
 
-/** Existing Mobile discipline continues independently; new diff blocking starts
- * with Desktop renderer consumers. Other sources stay visible as report/allowed. */
+/** New diff blocking covers Desktop renderer consumers. Other sources stay
+ * visible as report/allowed. */
 export function colorScope(file) {
   if (/\/(?:__tests__|__mocks__|fixtures)\/|\.(?:test|spec)\./.test(file)) return 'test';
   if (file === 'apps/desktop/src/renderer/themes/colors.ts'
-    || /^apps\/desktop\/src\/renderer\/themes\/builtin\/[^/]+\.ts$/.test(file)
-    || file === 'apps/mobile/src/theme/tokens.ts') return 'source';
+    || /^apps\/desktop\/src\/renderer\/themes\/builtin\/[^/]+\.ts$/.test(file)) return 'source';
   if (file.startsWith('apps/desktop/src/renderer/')
     && !/\/(?:assets|vendor)\//.test(file) && /\.(?:[cm]?[jt]sx?|css|html)$/.test(file)) return 'block';
   return 'report';

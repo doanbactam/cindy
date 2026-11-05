@@ -10,9 +10,9 @@
 | [product-rules/README.md](./product-rules/README.md) | 产品规则索引 | authoritative | Cindy 产品行为、体验与边界 | — |
 | [core-product-principles.md](./product-rules/core-product-principles.md) | 产品原则 | authoritative | Cindy Core、Agent、Skill、插件与多端产品边界 | — |
 | [im-message-presentation.md](./product-rules/im-message-presentation.md) | 产品契约 | authoritative | IM 入站上下文、快照计数与 App 完成提醒 | — |
-| [goal-mode.md](./product-rules/goal-mode.md) | 产品契约 | authoritative | 目标运行中的补充消息、停止与手机 `/goal` | — |
+| [goal-mode.md](./product-rules/goal-mode.md) | 产品契约 | authoritative | 目标运行中的补充消息与停止 | — |
 | [design-rules/README.md](./design-rules/README.md) | 设计规则索引 | authoritative | Cindy UI 视觉、交互与内容设计 | — |
-| [design-rules/DESIGN.md](design-rules/DESIGN.md) | 设计规范 | authoritative | Desktop 与 Mobile 的视觉语言、Token、组件和交互约定 | — |
+| [design-rules/DESIGN.md](design-rules/DESIGN.md) | 设计规范 | authoritative | Desktop 的视觉语言、Token、组件和交互约定 | — |
 | [dev-rules/README.md](./dev-rules/README.md) | 开发规则索引 | authoritative | Cindy 客户端工程规则 | — |
 | [environment-setup.md](./dev-rules/environment-setup.md) | 开发环境 | authoritative | 公共依赖、submodule 与首次安装 | — |
 | [model-catalog-maintenance.md](./dev-rules/model-catalog-maintenance.md) | 模型配置与下发入口 | authoritative | 架构、配置层级、修改位置、代码导航与发布验收 | — |
@@ -27,7 +27,6 @@
 | [credentials-and-local-storage.md](./dev-rules/credentials-and-local-storage.md) | 本地数据安全规则 | authoritative | 凭证、用户持久数据、临时文件与测试目录 | — |
 | [media-storage-and-protocols.md](./dev-rules/media-storage-and-protocols.md) | 媒体存储规则 | authoritative | Desktop 媒体入库、协议、引用与回收 | — |
 | [database-and-migrations.md](./dev-rules/database-and-migrations.md) | 数据库规则 | authoritative | Desktop SQLite schema、migration、companion 与运行期访问 | — |
-| [mobile-development.md](./dev-rules/mobile-development.md) | Mobile 开发规则 | authoritative | Mobile 模拟器、验证与专项入口 | — |
 | [orca-team-architecture.md](./dev-rules/orca-team-architecture.md) | 契约/规范 | authoritative | `apps/desktop` 的 `maker-ipc/orca*` 服务 + `mcp-integrations` codex MCP、`packages/lizi-mcps` 的 `orca`、`packages/orca-workflow`、`packages/maker-core` 的 codex MCP context | — |
 | [maker-core-and-agent-behavior.md](./dev-rules/maker-core-and-agent-behavior.md) | maker-core 规则 | authoritative | `packages/maker-core` 的 Agent 编排、prompt 组装、translator、model 映射、缓存率/性能/准确性指标与 system prompt 门禁 | — |
 | [plugin-security-and-authoring.md](./dev-rules/plugin-security-and-authoring.md) | 插件安全规则 | authoritative | 插件（`.cindy`）运行时沙箱、直接能力声明、网络/凭证/资源交接、存量插件向下兼容与无感升级、作者契约与编写手册同步 | — |
@@ -37,7 +36,7 @@
 | [protocol-compatibility.md](./dev-rules/protocol-compatibility.md) | 跨端协议规则 | authoritative | 两仓本地协议包、device-link relay 层与 wire protocol 兼容 | — |
 | [architecture-invariants.md](./dev-rules/architecture-invariants.md) | 架构原则与不变量 | authoritative | 能力与界面解耦、多端事实、用户偏好、main 静态依赖与布局树 | — |
 | [configuration-and-overrides.md](./dev-rules/configuration-and-overrides.md) | 配置契约 | authoritative | 配置可见性分层、默认值+override 分离、迁移与恢复默认语义 | — |
-| [remote-and-mobile-adaptation.md](./dev-rules/remote-and-mobile-adaptation.md) | 远程/手机版门禁 | authoritative | SSH 远程工作区、device-link allowlist、`apps/mobile` 入口与功能类 PR 三选一门禁 | — |
+| [remote-adaptation.md](./dev-rules/remote-adaptation.md) | 远程适配门禁 | authoritative | SSH 远程工作区、device-link allowlist 与功能类 PR 三选一门禁 | — |
 | [development-workflow.md](./dev-rules/development-workflow.md) | 开发工作流 | authoritative | worktree dogfooding 契约、提 PR/直推 main 门禁、Review P0/P1/P2 口径、项目知识归属 | — |
 | [plugin-setup-runtime.md](./plugin-setup-runtime.md) | 技术设计 | 参考 | `ghost_list` / `ghost_info` / `ghost_call` 插件配置前置检查、Ask-shell Setup 卡片、配置变更回调与原调用恢复 | — |
 | [remote-plugin-oauth.md](./remote-plugin-oauth.md) | 客户端契约 | 参考 | 远程设备插件 OAuth 事务、Desktop 回调桥、任务授权指引及兼容边界 | — |
@@ -46,4 +45,4 @@
 | [client-log-upload-requirements.md](./client-log-upload-requirements.md) | 需求文档 | 参考 | Desktop 客户端日志上报（手动 + 崩溃自动）的目标、数据边界、同意闸与可靠性要求 | — |
 | [client-log-upload-implementation-plan.md](./client-log-upload-implementation-plan.md) | 实现方案 | 参考 | 上述需求的落地方案：模块布局、四层收窄管道、定位读取与锚点裁剪、标记代次、分期 | — |
 | [legal/README.md](./legal/README.md) | 法律/合规索引 | authoritative | 法律合规资料归档边界与固定路径例外 | — |
-| [legal/notices/README.md](./legal/notices/README.md) | 第三方许可/SBOM | generated | `pnpm licenses:generate`、Desktop/Mobile 随包声明 | — |
+| [legal/notices/README.md](./legal/notices/README.md) | 第三方许可/SBOM | generated | `pnpm licenses:generate`、Desktop 随包声明 | — |

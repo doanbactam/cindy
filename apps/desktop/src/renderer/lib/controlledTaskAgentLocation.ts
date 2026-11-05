@@ -1,7 +1,7 @@
 /**
  * 远程控制另一台电脑(被控电脑)上的任务时,任务的 Agent 也可以在同账号的第三台电脑上运行
- * (远程 Agent,协议见 docs/dev-rules/protocol-compatibility.md「远程 Agent」)。与手机同一套口径
- * (apps/mobile/src/session/remoteAgentCatalogs.ts):模型列表在被控电脑自己的供应商之后,另列同账号
+ * (远程 Agent,协议见 docs/dev-rules/protocol-compatibility.md「远程 Agent」)。
+ * 模型列表在被控电脑自己的供应商之后,另列同账号
  * 其他电脑开放了远程调用的供应商;选另一台电脑的模型 = 把 Agent 挪过去,下一条消息生效。
  *
  * 远程控制下新建任务(建到被控电脑上)同样可以选第三台电脑的模型:任务建出来就带 agentDeviceId。

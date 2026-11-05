@@ -96,7 +96,7 @@ export interface RemoteSchedule {
   id: string;
   name: string;
   prompt?: string;
-  // 仅运行脚本任务(桌面端高级功能,见 docs/dev-rules/remote-and-mobile-adaptation.md)在移动端只读:mobile 侧
+  // 仅运行脚本任务(桌面端高级功能,见 docs/dev-rules/remote-adaptation.md)在移动端只读:mobile 侧
   // 没有编辑 scriptConfig 的 UI,这里只需要知道"这是脚本任务"以豁免 prompt 必填
   // 校验——不在 RemoteScheduleWriteInput 里暴露,避免 mobile 误写这个字段。
   executionMode?: RemoteScheduleExecutionMode;

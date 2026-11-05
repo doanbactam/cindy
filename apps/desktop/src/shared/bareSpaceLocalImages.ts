@@ -5,9 +5,8 @@
  * routinely write `![alt](/Users/me/Library/Application Support/x.png)`. Parsers
  * then leave the whole construct as plain text: the desktop chat does not show
  * the image and IM delivery sends the raw path without an attachment or notice.
- * Mobile already renders this form (`apps/mobile/src/session/messageMarkdown.ts`
- * `parseLocalMarkdownDestination`); this is the desktop counterpart, shared by
- * the main-process delivery parser and the renderer.
+ * This module recovers that form, shared by the main-process delivery parser
+ * and the renderer.
  *
  * Callers pass the ORIGINAL source span of one Markdown `text` node (not its
  * decoded `value`), so code spans, code blocks and HTML are never scanned, offsets

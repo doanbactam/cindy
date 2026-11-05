@@ -485,7 +485,7 @@ export function validateStructure(layers: BuiltLayers): StructureIssue[] {
   ];
 }
 
-const RUNTIME_PACKAGE_DIRS = ['apps/desktop', 'apps/mobile', 'packages'];
+const RUNTIME_PACKAGE_DIRS = ['apps/desktop', 'packages'];
 
 export const DESIGN_TOKENS_MODULE_ID = '@cindy/design-tokens';
 

@@ -102,58 +102,6 @@ const desktopE2eInclude = [
   'src/main/remote-agent/__tests__/groupRelayClaudeFork.e2e.test.ts',
   'src/main/remote-agent/__tests__/startupProbe.e2e.test.ts',
 ];
-const mobileGuardInclude = [
-  // Swift/delegate authorization, recording lifecycle, and native clipping are cross-runtime contracts.
-  'src/__tests__/mobileNativeBoundaryContracts.test.ts',
-  'src/__tests__/messageNativeLifecycleContracts.test.ts',
-  'src/__tests__/nativeE2eContracts.test.ts',
-  // Credential ownership, retry protocol, and cross-file design contracts:
-  // these read production sources to cover call-site boundaries, not runtime behavior.
-  'src/__tests__/authWeakNetworkBootstrap.test.ts',
-  'src/__tests__/mobileAuthServerLogin.test.ts',
-  'src/__tests__/messageSelectionHighlight.test.ts',
-  'src/__tests__/precreatedWorktreeRecoveryBridge.test.ts',
-  'src/__tests__/remoteListIncludePinned.test.ts',
-  'src/__tests__/revokedAccessTipDismissal.test.ts',
-  'src/__tests__/sendEnqueueRetry.test.ts',
-  'src/__tests__/sessionScreenshotShare.test.ts',
-  'src/auth/__tests__/xdOrgBetaWiring.test.ts',
-  // CSP must be applied at the WebView and download call sites, not only in its helper.
-  'src/__tests__/htmlPreviewCsp.test.ts',
-  // Whole-repo static scan of text colours (five neutral tiers, placeholders); reads production sources.
-  'src/__tests__/textColorDiscipline.test.ts',
-  'src/auth/__tests__/loginHandoffState.test.ts',
-  // DESIGN.md §16.2 copy budget: catalog strings against the login layout constants.
-  'src/auth/__tests__/loginConsentCopyBudget.test.ts',
-  'src/__tests__/accountDeletion.test.ts',
-  'src/__tests__/androidSessionInteractionParity.test.tsx',
-  'src/__tests__/chatQuoteCrossDevice.test.ts',
-  'src/__tests__/edgeBlurMask.test.ts',
-  'src/__tests__/filePreviewPagerWiring.test.ts',
-  'src/__tests__/forcedUpdateGate.test.ts',
-  'src/__tests__/historyWindowBackfillWiring.test.ts',
-  'src/__tests__/homeChromeMenusAndroid.test.ts',
-  'src/__tests__/homeDesktopFirst.test.ts',
-  'src/__tests__/inactiveSessionListSubscriptions.test.ts',
-  'src/__tests__/managedVoiceRefineBudget.test.ts',
-  'src/__tests__/mobileGoalCommands.test.ts',
-  'src/__tests__/mobilePiRosterSessionBinding.test.ts',
-  'src/__tests__/mobilePresentationRefresh.test.ts',
-  'src/__tests__/mobileProviderLogo.test.ts',
-  'src/__tests__/optimisticSessionComposer.test.ts',
-  'src/__tests__/orcaCollabScreenWiring.test.ts',
-  'src/__tests__/orphanSessionActions.test.ts',
-  'src/__tests__/pastedImageAttachment.test.ts',
-  'src/__tests__/sessionSwipe.test.ts',
-  'src/__tests__/sendingQueueBadge.test.ts',
-  'src/__tests__/sessionAgentSwitchWiring.test.ts',
-  'src/__tests__/sessionListRemoteAgentMark.test.ts',
-  'src/__tests__/sessionMessageMemoryWiring.test.ts',
-  'src/__tests__/sessionSendHiddenModelSheet.test.ts',
-  'src/__tests__/sessionTitleProjection.test.ts',
-  'src/__tests__/startupSplashOverlay.test.ts',
-  'src/__tests__/statusBarVcMigration.test.ts',
-];
 // Static source-contract checks (security, permission, and design rules) run
 // in the explicit guard tier. Keeping an exact allowlist makes it impossible
 // for a new source scan to silently become part of the ordinary unit gate.
@@ -454,33 +402,12 @@ export default {
         },
       },
     },
-    // Mobile has enough test files to become the critical path at one worker.
-    // Give it the full worker budget, but never overlap it with other workspaces.
-    {
-      name: 'mobile',
-      cwd: 'apps/mobile',
-      status: 'required',
-      tiers: {
-        unit: {
-          status: 'required',
-          execution: 'exclusive',
-          command: unitVitestCommand(4),
-          exclude: mobileGuardInclude,
-        },
-        guard: {
-          status: 'required',
-          coverage: 'allowlist',
-          command: vitestBin('run'),
-          include: mobileGuardInclude,
-        },
-      },
-    },
     // Stays on forks: palette-scanner's tests stub HOME and the scanner resolves
     // it through os.homedir(), which a worker thread cannot see (see
     // UNIT_POOL_DEFAULT above).
     // At one worker it was the last workspace still running in every CI shard;
     // it scales linearly (2026-10-16: 248s / 125s / 65s at 1 / 2 / 4 workers),
-    // so it runs exclusively with the full worker budget, like mobile.
+    // so it runs exclusively with the full worker budget.
     {
       name: '@cindy/maker-core',
       cwd: 'packages/maker-core',

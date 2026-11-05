@@ -490,9 +490,9 @@ describe('DS-3 · 零接线守卫', () => {
     const { join: joinPath } = await import('node:path');
     const tmpRoot = mkdtempSync(joinPath(tmpdir(), 'dt-zero-wiring-'));
     try {
-      // 扫描器固定访问 apps/desktop、apps/mobile、packages 三个根——空目录
+      // 扫描器固定访问 apps/desktop、packages 两个根——空目录
       // 也要建齐，readdirSync 不容忍缺失。
-      for (const root of ['apps/desktop', 'apps/mobile', 'packages/foo/src']) {
+      for (const root of ['apps/desktop', 'packages/foo/src']) {
         mkdirSync(joinPath(tmpRoot, root), { recursive: true });
       }
       const pkgDir = joinPath(tmpRoot, 'packages', 'foo', 'src');

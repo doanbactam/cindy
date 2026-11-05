@@ -19,7 +19,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  mobileRouteCoverage,
   INVENTORY_REL_PATH,
   MAIN_ENTRY_REL_PATH,
   RENDERER_INDEX_REL_PATH,
@@ -69,14 +68,9 @@ function buildGenerated() {
   );
   const routerCoverage = productionRouterCoverage(routerSource, catalog);
   const redirects = listRedirectExclusions(routerSource);
-  const mobileCoverage = mobileRouteCoverage(repoRoot, catalog);
-  if (mobileCoverage.missing.length || mobileCoverage.stale.length) {
-    throw new Error('Mobile route inventory mismatch: ' + JSON.stringify(mobileCoverage));
-  }
   const generated = renderGeneratedBlock(surfaces, {
     routerCoverage,
     redirects,
-    mobileCoverage,
   });
   return { surfaces, routerCoverage, generated, missingStyleRoots, danglingExtraStyleRoots };
 }

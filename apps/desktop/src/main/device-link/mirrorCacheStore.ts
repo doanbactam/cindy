@@ -6,8 +6,7 @@ import { getSessionListActivityAt } from '@cindy/maker-shared/session-activity';
  *   - 打开远程会话必须等隧道往返(RemoteSessionLoading spinner),
  *   - 被控端离线时干脆看不到任何历史,
  *   - 侧边栏的远程项目要等 bootstrap 拉回列表才出现。
- * 手机端早已有等价冷缓存(apps/mobile/src/session/mobileSessionMessageCache.ts 与
- * mobileHomeListCache.ts,后端 AsyncStorage)。本模块是桌面端等价物。
+ * 本模块为桌面控制端提供这份冷缓存。
  *
  * 边界(与 remoteProjectsStore 的「控制端零权威状态」不冲突):
  *  - 缓存是**可重建的首屏镜像**,不是真相。被控端仍是唯一真相源;fresh 数据一到即整体接管。

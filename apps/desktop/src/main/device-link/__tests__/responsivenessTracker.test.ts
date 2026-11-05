@@ -444,7 +444,7 @@ describe('responsivenessTracker', () => {
   });
 
   it('多 peer 隔离:peer A 静默(熔断 open)期间,peer B 的在途请求、新请求与建链零感知', async () => {
-    // 故障半径回归(remote-and-mobile-adaptation「故障半径三问」):控制端的多个
+    // 故障半径回归(remote-adaptation「故障半径三问」):控制端的多个
     // 目标设备共享本机唯一 relay 连接,单 peer 静默的全部恢复动作(熔断快速拒绝、
     // 探测退避)必须收在该 deviceId 内——A 的 open 若泄漏到 B,就是把一台设备的
     // 故障放大成所有设备不可用(#1187 判例的控制端对偶形态)。

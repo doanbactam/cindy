@@ -8316,7 +8316,7 @@ describe('DeviceLinkClient relay 拥塞断连(close 1013)', () => {
   });
 
   it('多 peer 拓扑:冷却是连接级的,两个控制端对称受影响、pending 均保留并在重连后各自重放', async () => {
-    // 故障半径三问 §3(remote-and-mobile-adaptation):被控端与 relay 只有一条
+    // 故障半径三问 §3(remote-adaptation):被控端与 relay 只有一条
     // 连接、服务多个控制端。1013 是连接级故障,冷却也只推迟连接级重连——必须
     // 断言它不偏袒/不惩罚任何单个 peer:两边的 link 与 pending 处理完全对称,
     // 且冷却期间不丢在途帧,重连后各自按原 seq 重放(#1187→#1405 的放大判例
@@ -10668,7 +10668,7 @@ describe('定时重发的单趟预算(TRANSPORT_RETRY_PASS_BUDGET)', () => {
   }, 10_000);
 
   it('多 peer 拓扑:一个 peer 停止 ACK 被限流,另一个 peer 的投递零感知', async () => {
-    // 故障半径第 3 问(docs/dev-rules/remote-and-mobile-adaptation.md):预算是 per-peer 的,
+    // 故障半径第 3 问(docs/dev-rules/remote-adaptation.md):预算是 per-peer 的,
     // 一台休眠手机的积压不得拖慢另一台在线设备。
     const h = makeHarness({
       timing: {

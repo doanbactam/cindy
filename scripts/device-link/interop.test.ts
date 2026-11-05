@@ -5,7 +5,7 @@ import { PLUGIN_SYNC_CHANNEL } from "../../packages/device-link/src/pluginSyncPr
 import {
   createClient,
   createHost,
-  createMobileRecovery,
+  createControllerRecovery,
 } from "./clientHarness";
 
 interface FrameAuthSpec {
@@ -18,7 +18,7 @@ interface FrameAuthSpec {
 
 /**
  * 自建中转的设备签名(可选,由 run-interop 提供测试密钥):主机与控制端都核对全部对端帧,
- * 与 Desktop / Mobile 一致。任何绕过签名的发送路径都会让接收端丢帧、恢复流程超时。
+ * 与 Desktop 一致。任何绕过签名的发送路径都会让接收端丢帧、恢复流程超时。
  */
 function frameAuthFor(spec: FrameAuthSpec, role: "host" | "controller", rejected: string[]) {
   const auth = new RelayFrameAuthenticator({
@@ -95,7 +95,7 @@ it("interoperates with an explicitly provisioned isolated relay and automaticall
     frameAuth: frameAuthSpec ? frameAuthFor(frameAuthSpec, "controller", rejected) : undefined,
   });
   const data = createHost(host.client);
-  let recovery: ReturnType<typeof createMobileRecovery> | undefined;
+  let recovery: ReturnType<typeof createControllerRecovery> | undefined;
   try {
     host.client.start();
     await vi.waitFor(() => expect(host.client.getStatus()).toBe("online"), {
@@ -106,7 +106,7 @@ it("interoperates with an explicitly provisioned isolated relay and automaticall
     controller.client.start();
     await vi.waitFor(() => expect(controller.client.getStatus()).toBe("online"), { timeout: 10_000 });
     if (frameAuthSpec) {
-      // 首次认证以关闭远控的手机为目标；不能借用会被 relay 拦截的 link-open。
+      // 首次认证以关闭远控的控制端为目标；不能借用会被 relay 拦截的 link-open。
       const received: unknown[] = [];
       const off = controller.client.onFrame(frame => {
         if (frame.kind === "push") received.push(frame.payload);
@@ -121,8 +121,8 @@ it("interoperates with an explicitly provisioned isolated relay and automaticall
         expect(data.received.some(frame => frame.kind === "link-open")).toBe(false);
       } finally { off(); }
     }
-    recovery = createMobileRecovery(controller.client, hostId);
-    recovery.foreground();
+    recovery = createControllerRecovery(controller.client, hostId);
+    recovery.replay();
     await vi.waitFor(
       () => expect(recovery!.state.completed).toBeGreaterThan(0),
       { timeout: 10_000 },

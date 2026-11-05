@@ -67,7 +67,7 @@ Cindy 是 Agent 的上游 GUI，价值是连接、呈现和降低操作成本，
 
 用户能操作的自己的资源，Agent 也有可发现的工具，含跨电脑操作，且在索引第一步即可发现。
 执行边界由权限档与自动审核承担，共享访客和群成员沿用各自身份。约定见[能力同权](agent-user-parity.md)、
-[多端适配](../dev-rules/remote-and-mobile-adaptation.md)
+[多端适配](../dev-rules/remote-adaptation.md)
 与[消息来源](message-source.md)。
 
 自动任务与目标任务共享一条生命线：归档只是收起任务，不暂停自动任务；自动任务失败也不

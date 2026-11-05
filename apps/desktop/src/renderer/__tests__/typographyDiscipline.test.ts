@@ -98,9 +98,7 @@ import { describe, expect, it } from 'vitest';
  *    CSS 字符串字面量内的块注释起始序列(content 属性存 "/*" 类)可造成漏报;
  *    jsdoc 中「* {@link …}」形态的行会被当作选择器行扫描(可能误报,现库零实例);
  *  - src/renderer/vendor/(第三方 vendored 产物)与构建产物;
- *  - 原生层(macOS agent-island Swift helper 等,见 DESIGN.md §3 non-goals);
- *  - 手机端(apps/mobile 有自己的 typographyTokenDiscipline 守卫,其 WebView
- *    HTML 生成器盲区在彼处登记)。
+ *  - 原生层(macOS agent-island Swift helper 等,见 DESIGN.md §3 non-goals)。
  */
 
 const ROOT = join(__dirname, '..', '..', '..');

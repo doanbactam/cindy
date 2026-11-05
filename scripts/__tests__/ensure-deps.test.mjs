@@ -6,7 +6,6 @@ import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 
 import {
-  checkWorkspaceDependencies,
   electronBinaryCheckSkipReason,
   resolvePnpmInstallInvocation,
 } from '../ensure-deps.mjs';
@@ -79,44 +78,6 @@ test('does not derive platform from environment variables', () => {
     }),
     { command: 'pnpm', args: ['install'], shell: false, displayCommand: 'pnpm install' },
   );
-});
-
-
-test('simulator dependency diagnosis preserves incomplete module directories', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cindy-sim-deps-'));
-  try {
-    const moduleDir = path.join(root, 'node_modules/expo');
-    fs.mkdirSync(moduleDir, { recursive: true });
-    fs.writeFileSync(path.join(moduleDir, 'keep.txt'), 'existing installation');
-    assert.ok(checkWorkspaceDependencies(root).includes('expo'));
-    assert.equal(fs.readFileSync(path.join(moduleDir, 'keep.txt'), 'utf8'), 'existing installation');
-    assert.deepEqual(fs.readdirSync(moduleDir), ['keep.txt']);
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true });
-  }
-});
-
-
-test('workspace-only CLI fails without installing or deleting incomplete dependencies', () => {
-  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'cindy-sim-deps-cli-')));
-  try {
-    fs.mkdirSync(path.join(root, 'scripts/shared'), { recursive: true });
-    for (const file of ['ensure-deps.mjs', 'shared/pnpm-invocation.mjs']) {
-      fs.copyFileSync(new URL(`../${file}`, import.meta.url), path.join(root, 'scripts', file));
-    }
-    const sentinel = path.join(root, 'node_modules/expo/keep.txt');
-    fs.mkdirSync(path.dirname(sentinel), { recursive: true });
-    fs.writeFileSync(sentinel, 'preserved');
-    const fakePnpm = path.join(root, 'pnpm.cjs');
-    fs.writeFileSync(fakePnpm, `require('node:fs').writeFileSync(${JSON.stringify(path.join(root, 'installed'))}, 'unexpected');`);
-    const result = spawnSync(process.execPath, [path.join(root, 'scripts/ensure-deps.mjs'), '--workspace-only'], {
-      encoding: 'utf8', env: { ...process.env, npm_execpath: fakePnpm },
-    });
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /pnpm install --frozen-lockfile/);
-    assert.equal(fs.readFileSync(sentinel, 'utf8'), 'preserved');
-    assert.equal(fs.existsSync(path.join(root, 'installed')), false);
-  } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
 

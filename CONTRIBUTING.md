@@ -5,7 +5,7 @@
 # 贡献指南
 
 感谢你为 Cindy 贡献代码、文档和反馈。本仓库是 Cindy 的开源客户端仓，负责
-desktop、mobile 及共享 packages；服务端位于独立仓库，不在本仓库的贡献范围内。
+desktop 及共享 packages；服务端位于独立仓库，不在本仓库的贡献范围内。
 
 ## 开始之前
 
@@ -31,15 +31,10 @@ Git LFS 和依赖安装。该文档是安装命令的唯一权威说明；本指
 启动方式、区域选择、安全重启和验证命令见
 [Desktop 开发、启动与验证](docs/dev-rules/desktop-development.md)。
 
-### 手机端
-
-模拟器、原生重建和验证命令见
-[Mobile 开发、模拟器与验证](docs/dev-rules/mobile-development.md)。
-
 ### 验证
 
-根据改动范围按 [AGENTS.md](AGENTS.md) 的风险分层原则选择检查；Desktop 和 Mobile 的
-命令分别以对应开发规则为准。涉及数据库、协议、端点、移动端 scope 或其他专项规则时，
+根据改动范围按 [AGENTS.md](AGENTS.md) 的风险分层原则选择检查；Desktop 的
+命令以对应开发规则为准。涉及数据库、协议、端点或其他专项规则时，
 继续读取对应专题并运行其检查。PR 中必须写明实际执行的命令和结果；未执行的高相关
 验证必须说明原因。
 

@@ -27,13 +27,11 @@ import type { TurnUsageDetails } from './turnUsageDetails.js';
  * 的条件分支里。此前反复踩的就是这一条:把 userTurnMoney 放在 `turnMoney > 0` 之内,
  * 于是收尾轮的操作栏用 token 顶掉了整轮已经花掉的钱。
  *
- * 对称路径共 5 条(改动其中任意一条时,请逐条核对另外四条):
- *   1. Desktop 实时  — renderer/lib/makerChatStore.ts handleUsageMessageTurnCostRaw
- *   2. Desktop 历史  — renderer/lib/makerChatStore.ts buildChatMessages
- *   3. Mobile 实时   — apps/mobile/src/session/remoteSessionStore.ts usage:message-turn-cost
- *   4. Mobile 历史   — apps/mobile/src/session/messageNormalize.ts readTurnCost
- *   5. 展示取值      — MessageActionBar(desktop) / MessageRenderer(mobile):
- *                      金额 = userTurnMoney ?? turnMoney,两者皆无才回退 token
+ * 对称路径共 3 条(改动其中任意一条时,请逐条核对另外两条):
+ *   1. 实时      — renderer/lib/makerChatStore.ts handleUsageMessageTurnCostRaw
+ *   2. 历史      — renderer/lib/makerChatStore.ts buildChatMessages
+ *   3. 展示取值  — MessageActionBar:
+ *                  金额 = userTurnMoney ?? turnMoney,两者皆无才回退 token
  * ─────────────────────────────────────────────────────────────────────────
  */
 export interface MessageTurnCostPayload {

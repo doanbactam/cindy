@@ -23,16 +23,16 @@
   <a href=".github/assets/star-history/trending-2026-10-26.png">★ GitHub Trending #1 · 2026.10.26</a>
 </p>
 
-Cindy 是一个**开源、开箱即用的 AI Agent**。连接你的多台电脑与手机，把熟悉的
+Cindy 是一个**开源、开箱即用的 AI Agent**。连接你的多台电脑，把熟悉的
 Agent、模型和已有订阅放在一起，培养一个懂你工作方式的伙伴。
 
 ## 所有设备，同一个 Cindy。
 
-办公室的电脑、家里的主机、随身笔记本和手机，连在一起用。
+办公室的电脑、家里的主机和随身笔记本，连在一起用。
 
 - **换屏幕，不换任务。** 在另一台设备打开同一个任务，继续对话、访问文件，不用重新搬运资料。
 - **不只共享画面，也共享模型。** 其他电脑上配置好的订阅、API 供应商和本地模型，开启远程访问后也能调用。
-- **手机，也是电脑的遥控器。** 内置远程桌面，需要时直接打开应用、输入和操作自己的电脑。
+- **随时操作整台电脑。** 内置远程桌面，需要时直接打开应用、输入和操作自己的电脑。
 
 **你的电脑，变身免费的服务器，全球畅联。** 不用另租服务器，也不必自己搭服务。
 
@@ -87,7 +87,7 @@ Agent、模型和已有订阅放在一起，培养一个懂你工作方式的伙
 或者使用本地模型；也可以选择 Cindy 官方模型服务。已有订阅仍按供应商的限额和
 规则使用，软件免费不等于模型调用无限量。
 
-**macOS · Windows · Linux · iOS · Android**
+**macOS · Windows · Linux**
 
 [下载中国大陆版](https://cindy.cn/download) · [下载国际版](https://cindy.app/download)
 · [中国大陆定价](https://cindy.cn/pricing) · [国际版定价](https://cindy.app/pricing)
@@ -113,14 +113,13 @@ Linux 用户可参考 [Ubuntu、Arch Linux 与 Omarchy 安装指南](docs/linux.
 
 ## 给开发者
 
-本仓库包含 Cindy 的开源**桌面端、手机端及其共享 packages**，以 pnpm monorepo 组织。
+本仓库包含 Cindy 的开源**桌面端及其共享 packages**，以 pnpm monorepo 组织。
 
 ### 本仓包含什么
 
 | 路径 | 说明 |
 | --- | --- |
 | `apps/desktop` | Electron 桌面客户端 |
-| `apps/mobile` | Expo / React Native 手机客户端 |
 | `packages/*` | 客户端共享能力（鉴权、device-link、agent 编排、模型供应商等） |
 | `apps/*-bin` | 桌面端附带的工具二进制，均不入库；claude-code / codex / ripgrep 由 `pnpm install` 按平台自动下载，Android platform-tools 在 Windows 打包前按 pin 版本下载并校验 sha256 |
 
@@ -163,7 +162,7 @@ pnpm restart:desktop:remote --region=global
 
 Remote 开发会使用你自己的 Cindy 云端账号和现有登录态，因此可以继续已有的会话与工作。
 中国大陆账号必须使用 `cn`，国际版账号必须使用 `global`，不要依赖内部默认值。完整的
-桌面端、手机端、数据隔离和验证流程见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+桌面端、数据隔离和验证流程见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 登录页的「跳过登录」不是连接本地服务端，而是无需登录 Cindy 账号即可使用本机
 agent；进入后应用内的账号状态显示为「未登录」。依赖服务端的能力在该状态下不可用。
@@ -204,26 +203,15 @@ agent；进入后应用内的账号状态显示为「未登录」。依赖服务
 关联账号 ID，因此不应理解为完全匿名。TapDB **不采集**聊天内容、文件内容或
 工作目录数据。
 
-**无需修改代码即可关闭使用统计**：桌面端在「设置 → 关于 → 使用统计」，移动端在
-设置页的「使用统计」关闭。SDK 检查本地记录的隐私同意状态和统计开关，统计开关
+**无需修改代码即可关闭使用统计**：在桌面端「设置 → 关于 → 使用统计」
+关闭。SDK 检查本地记录的隐私同意状态和统计开关，统计开关
 默认开启。同意《隐私政策》会记录同意状态；符合条件的存量已登录用户也会通过一次性
 迁移记录为已同意。
 
-**移动端已知例外**：企业 SSO 跳过协议勾选。如果本机尚无统计同意记录，并在重启应用后
-恢复该登录态，当前迁移逻辑可能把新装用户也标记为已同意。在已配置 TapDB 且统计开启时，
-即使用户未明确接受隐私政策，也可能开始上报。实现见
-[移动端登录恢复](apps/mobile/src/auth/AuthContext.tsx)与
-[同意状态迁移](apps/mobile/src/analytics/analyticsConsentStore.ts)。
-关闭「使用统计」可避免该迁移放行统计上报。
-
 - 桌面端关闭后立即停止后续统计上报；「跳过登录」的本地模式不上报 TapDB。
-- 移动端关闭后立即解绑账号并停止 Cindy 主动触发的上报；已初始化的原生 SDK
-  不支持反初始化，需彻底退出并重新启动应用，才会保持 SDK 未初始化。
 
 实现依据：[桌面端同意与开关](apps/desktop/src/main/analyticsSettingsService.ts)、
-[桌面端 SDK](apps/desktop/src/renderer/analytics/tapdbClient.ts)、
-[移动端同意状态](apps/mobile/src/analytics/analyticsConsentStore.ts)、
-[移动端 SDK](apps/mobile/src/analytics/mobileTapdb.ts)。
+[桌面端 SDK](apps/desktop/src/renderer/analytics/tapdbClient.ts)。
 
 在线心跳与诊断日志是独立机制，不受「使用统计」开关控制。桌面端仅在已验证的云端
 登录态下向 Cindy 服务发送在线心跳（账号 ID、平台与版本号），本地模式不发送。
@@ -235,10 +223,7 @@ agent；进入后应用内的账号状态显示为「未登录」。依赖服务
 **从源码自行构建**时不必保留统计：
 
 - 桌面端开发构建默认不初始化 TapDB；仅显式设置 `XDT_TAPDB_DEV=1` 才放开构建闸，
-  仍须满足同意与开关条件。自行打包的桌面版与官方包使用相同统计门槛，可在设置中关闭；
-- 移动端未注入 TapDB 配置（`clientId` / `clientToken`）时不会初始化 SDK。
-  这不等于所有源码构建都默认关闭：自建正式发布流程要求配置非空，本地开发允许留空，
-  见[移动端构建说明](apps/mobile/docs/simulator-debugging.md)。
+  仍须满足同意与开关条件。自行打包的桌面版与官方包使用相同统计门槛，可在设置中关闭。
 
 ## 许可证 / License
 

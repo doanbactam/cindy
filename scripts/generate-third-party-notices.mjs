@@ -29,7 +29,6 @@ import parseSpdxExpression from "spdx-expression-parse";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
 const DESKTOP_DIR = path.join(REPO_ROOT, "apps", "desktop");
-const MOBILE_DIR = path.join(REPO_ROOT, "apps", "mobile");
 const NOTICES_DIR = path.join(REPO_ROOT, "docs", "legal", "notices");
 const SBOM_DIR = path.join(NOTICES_DIR, "sbom");
 const CARGO_MANIFESTS = [
@@ -165,7 +164,7 @@ function readJson(p) {
 /**
  * 建立仓库内 package name -> 源码目录映射。
  *
- * 除 pnpm workspace 包外,apps/mobile/modules 下还有通过 file: 引用的本地包。
+ * 除 pnpm workspace 包外,也收录 apps/ 与 packages/ 下可能通过 file: 引用的本地包。
  * pnpm 在部分平台会把 file: 包复制到 node_modules 而非创建指向源码的 symlink,
  * 因此不能只靠真实路径是否位于 node_modules 来判断它是不是内部包。
  */
@@ -299,7 +298,7 @@ function matchesTarget(pkgJson, target) {
     matchesPackageConstraint(pkgJson.os, target.os) &&
     matchesPackageConstraint(pkgJson.cpu, target.cpu) &&
     // libc 只对 linux 有意义，非 linux 目标可以省略这一轴（desktop-win / desktop-macos
-    // 与移动端的 target 就没带），省略时由 matchesPackageConstraint() 按「未声明约束一律
+    // 的 target 就没带），省略时由 matchesPackageConstraint() 按「未声明约束一律
     // 放行」处理；SUPPORTED_TARGETS 叉乘出来的 target 则各轴齐全，os 不是 linux 时也带
     // libc，那种情况下这一轴只会挡掉声明了 libc 约束的包，而声明该约束的包都把 os 限定
     // 在 linux，早已被上面的 os 轴挡掉。
@@ -987,7 +986,7 @@ function buildDesktopCommonEntries(apacheText, sharpPackageNames) {
     }),
   );
 
-  // ProviderLogoMark / MobileProviderMark 共享的上游 SVG path，桌面与移动端均随包分发。
+  // ProviderLogoMark 使用的上游 SVG path，随桌面端分发。
   entries.push(...buildProviderBrandingEntries());
 
   return entries;
@@ -1040,60 +1039,6 @@ function buildWindowsEntries() {
       ),
     }),
   ];
-}
-
-function buildMobileEntries(apacheText, platform) {
-  const entries = [
-    ...buildSpeakerModelEntries(apacheText),
-    onnxRuntimeEntry("1.30.0"),
-    ...buildProviderBrandingEntries(),
-    bundledComponent({
-      name: "JetBrains Mono fonts",
-      version: "bundled",
-      license: "OFL-1.1",
-      url: "https://github.com/JetBrains/JetBrainsMono",
-      licenseText: readBundledLicense(
-        "apps/mobile/assets/fonts/JetBrainsMono-OFL.txt",
-      ),
-    }),
-  ];
-  if (platform === "ios") {
-    entries.push(
-      remoteCredentialSwiftEntry(),
-      bundledComponent({
-        name: "TapTapSDK/Core",
-        version: "4.10.5",
-        license: "MIT",
-        url: "https://github.com/taptap/tapsdk-frameworks/tree/4.10.5",
-        licenseText: MIT_TEXT("Copyright (c) TapTap"),
-      }),
-    );
-  } else {
-    entries.push(
-      bundledComponent({
-        name: "com.nimbusds:nimbus-jose-jwt",
-        version: "10.9.1",
-        license: "Apache-2.0",
-        url: "https://bitbucket.org/connect2id/nimbus-jose-jwt",
-        licenseText: apacheText,
-      }),
-      bundledComponent({
-        name: "androidx.biometric:biometric",
-        version: "1.1.0",
-        license: "Apache-2.0",
-        url: "https://developer.android.com/jetpack/androidx/releases/biometric",
-        licenseText: apacheText,
-      }),
-      bundledComponent({
-        name: "com.taptap.sdk:tap-core and declared TapTap modules",
-        version: "4.10.5",
-        license: "Apache-2.0",
-        url: "https://github.com/taptap/TapSDK-Android",
-        licenseText: apacheText,
-      }),
-    );
-  }
-  return entries;
 }
 
 // ---------------------------------------------------------------------------
@@ -1442,72 +1387,6 @@ function auditArtifact(label, closure, manualEntries) {
   );
 }
 
-function assertNativeDeclarations() {
-  const iosWechat = fs.readFileSync(
-    path.join(
-      MOBILE_DIR,
-      "modules",
-      "xdt-wechat-login",
-      "ios",
-      "XdtWechatLogin.podspec",
-    ),
-    "utf8",
-  );
-  const androidWechat = fs.readFileSync(
-    path.join(
-      MOBILE_DIR,
-      "modules",
-      "xdt-wechat-login",
-      "android",
-      "build.gradle",
-    ),
-    "utf8",
-  );
-  const iosTap = fs.readFileSync(
-    path.join(MOBILE_DIR, "modules", "xdt-tapdb", "ios", "XdtTapdb.podspec"),
-    "utf8",
-  );
-  const androidTap = fs.readFileSync(
-    path.join(MOBILE_DIR, "modules", "xdt-tapdb", "android", "build.gradle"),
-    "utf8",
-  );
-  if (!/WechatOpenSDK', '2\.0\.5'/.test(iosWechat))
-    throw new Error("WechatOpenSDK iOS version changed; update notice policy");
-  if (!/com\.tencent\.mm\.opensdk:wechat-sdk-android:6\.8\.38/.test(androidWechat))
-    throw new Error("WeChat OpenSDK Android version changed; update notice policy");
-  if (!/TapTapSDK\/Core', '4\.10\.5'/.test(iosTap))
-    throw new Error("TapTapSDK iOS version changed; update notice policy");
-  if (!/com\.taptap\.sdk:tap-core:4\.10\.5/.test(androidTap))
-    throw new Error("TapTapSDK Android version changed; update notice policy");
-}
-
-/**
- * Project-owned Expo modules are part of the Apache-2.0 source tree. Keep
- * their CocoaPods metadata aligned with the repository license so native
- * tooling cannot silently publish them as UNLICENSED/private pods.
- */
-function assertProjectPodspecLicenses() {
-  const podspecs = [
-    "xdt-wechat-login/ios/XdtWechatLogin.podspec",
-    "xdt-tapdb/ios/XdtTapdb.podspec",
-    "xdt-mobile-realtime-audio/ios/XdtMobileRealtimeAudio.podspec",
-    "xdt-ios-app-distribution/ios/XdtIosAppDistribution.podspec",
-  ];
-  for (const relativePath of podspecs) {
-    const file = path.join(MOBILE_DIR, "modules", relativePath);
-    const text = fs.readFileSync(file, "utf8");
-    if (!/s\.license\s*=\s*\{[^}]*:type\s*=>\s*['\"]Apache-2\.0['\"]/s.test(text)) {
-      throw new Error(`project podspec must declare Apache-2.0: ${relativePath}`);
-    }
-    if (/UNLICENSED/i.test(text)) {
-      throw new Error(`project podspec must not declare UNLICENSED: ${relativePath}`);
-    }
-    if (!/https:\/\/github\.com\/makecindy\/cindy\.git/.test(text)) {
-      throw new Error(`project podspec must point to the public source repository: ${relativePath}`);
-    }
-  }
-}
-
 function assertTrackedBinariesRegistered() {
   const binaryExtensions = new Set([
     ".exe",
@@ -1527,7 +1406,6 @@ function assertTrackedBinariesRegistered() {
   const registeredPrefixes = [
     "apps/android-platform-tools-bin/",
     "apps/desktop/native/sqlite-vec/",
-    "apps/mobile/assets/fonts/JetBrainsMono-",
     "apps/desktop/native/menubar/BarlowCondensed-",
   ];
   // Windows updater 内置 VC++ Runtime 按精确文件登记(披露条目见
@@ -1560,8 +1438,6 @@ function assertTrackedBinariesRegistered() {
 // main
 // ---------------------------------------------------------------------------
 
-assertNativeDeclarations();
-assertProjectPodspecLicenses();
 assertTrackedBinariesRegistered();
 for (const manifest of CARGO_MANIFESTS) {
   if (!fs.existsSync(path.join(path.dirname(manifest), "Cargo.lock"))) {
@@ -1589,16 +1465,6 @@ const desktopLinuxNpm = mergeClosures(
   collectClosure([DESKTOP_DIR], { os: "linux", cpu: "x64", libc: "glibc" }),
   collectClosure([DESKTOP_DIR], { os: "linux", cpu: "arm64", libc: "glibc" }),
 );
-// 移动端产物的 target 是「app 实际分发到的设备」，不是仓库支持的构建架构：
-// 移动端 JS 依赖里的平台可选包（lightningcss / @parcel/watcher / @rollup 等预编译
-// 二进制）属于开发机上的构建期工具链，不进 iOS bundle 或 APK/AAB。npm 生态里纯 JS
-// 包不声明 os/cpu，matchesPackageConstraint() 对未声明的约束一律放行，所以按设备
-// target 过滤只会摘掉这些原生变体，包自身（含其许可义务）仍然照常声明。
-const mobileIosNpm = collectClosure([MOBILE_DIR], { os: "ios", cpu: "arm64" });
-const mobileAndroidNpm = collectClosure([MOBILE_DIR], {
-  os: "android",
-  cpu: "arm64",
-});
 const cargoClosure = mergeClosures(
   ...CARGO_MANIFESTS.map((manifest) => collectCargoClosure(manifest)),
 );
@@ -1653,26 +1519,6 @@ const artifactDefinitions = {
       "合并 x64 与 arm64 原生可选包;不包含运行时按需下载的 Android Platform-Tools。",
     ],
   },
-  "mobile-ios": {
-    closure: mobileIosNpm,
-    manual: buildMobileEntries(apacheText, "ios"),
-    productName: "Cindy mobile application — iOS",
-    description: ["iOS JS 生产依赖及仓库显式声明的原生 SDK/字体组件。"],
-    notes: [
-      "Expo managed 工程的完整 Pod 闭包在构建时生成;本文件不声称替代具体构建产物的 Podfile.lock 审计。",
-      "不含只在开发机构建期使用、不随 app 分发的平台可选原生包(其 JS 包自身仍已声明)。",
-    ],
-  },
-  "mobile-android": {
-    closure: mobileAndroidNpm,
-    manual: buildMobileEntries(apacheText, "android"),
-    productName: "Cindy mobile application — Android",
-    description: ["Android JS 生产依赖及仓库显式声明的原生 SDK/字体组件。"],
-    notes: [
-      "Expo managed 工程的完整 Gradle 闭包在构建时生成;本文件不声称替代具体 APK/AAB 的依赖报告。",
-      "不含只在开发机构建期使用、不随 app 分发的平台可选原生包(其 JS 包自身仍已声明)。",
-    ],
-  },
 };
 
 for (const [name, artifact] of Object.entries(artifactDefinitions)) {
@@ -1708,26 +1554,6 @@ const restrictedManualEntries = [
     category: "proprietary",
     url: "https://www.anthropic.com/legal/commercial-terms",
     artifacts: ["desktop-win", "desktop-macos", "desktop-linux"],
-  },
-  {
-    ecosystem: "bundled",
-    name: "WeChat OpenSDK for iOS",
-    version: "2.0.5",
-    license: "NOASSERTION",
-    category: "restricted-review-required",
-    url: "https://developers.weixin.qq.com/doc/oplatform/Mobile_App/Access_Guide/iOS.html",
-    note: "上游 CocoaPod 声明为 Copyright 且未提供标准开源许可证；按 docs/legal/wechat-open-sdk-compliance.md 完成条款、隐私披露和用户同意复核。官方合规指南：https://developers.weixin.qq.com/doc/oplatform/Mobile_App/agreement/sdk.html",
-    artifacts: ["mobile-ios"],
-  },
-  {
-    ecosystem: "bundled",
-    name: "WeChat OpenSDK for Android",
-    version: "6.8.38",
-    license: "NOASSERTION",
-    category: "restricted-review-required",
-    url: "https://developers.weixin.qq.com/doc/oplatform/Mobile_App/Access_Guide/Android.html",
-    note: "上游 Maven SDK 未提供标准开源许可证；按 docs/legal/wechat-open-sdk-compliance.md 完成条款、隐私披露和用户同意复核。官方合规指南：https://developers.weixin.qq.com/doc/oplatform/Mobile_App/agreement/sdk.html",
-    artifacts: ["mobile-android"],
   },
 ];
 

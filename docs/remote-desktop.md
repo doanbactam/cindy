@@ -212,25 +212,14 @@ This harness does not establish physical Desktop-to-Desktop, cross-NAT, macOS
 keyboard/permission or packaged-build support. Those retain the platform and
 network verification requirements below.
 
-## Mobile viewer
-
-The device detail page opens the real desktop of the selected computer. On the
-computer, enable **Settings → Remote control → Allow remote desktop**, as well
-as device control. Screen recording and accessibility permissions are granted
-in the operating system. The phone takes control on connection when the host
-supports input, using the existing permission and ownership checks; a host that
-advertises `autoControl` grants it with the lease, with no separate request.
-**Controls → View only** is a local switch: the phone stops sending input while
-the computer keeps control, and the choice is preserved when reconnecting within
-this page. The computer always has a **Disconnect**
-button while being viewed or controlled.
+## Viewer lease
 
 The host allows one active remote-desktop viewer at a time. Starting a new
 viewer checks and reserves that lease atomically; if another viewer is still
 connected, the controller shows a takeover confirmation. Confirming takeover
 ends the previous viewer's lease before creating the new one. The host status
 banner also expires abandoned viewers after the lease heartbeat timeout, so a
-phone that has already gone away does not keep the computer marked as viewed
+viewer that has already gone away does not keep the computer marked as viewed
 indefinitely.
 
 ## Interaction
@@ -352,17 +341,9 @@ LAN, IPv6 and overlay-network candidates; being on Tailscale does not itself
 prove that the media path is direct.
 
 Deterministic tests exercise candidate replay, stale generations, bounded retry,
-lease takeover isolation and old-version signaling. The loopback smoke harness
-uses real Chromium WebRTC and synthetic video, delays candidate delivery, loses
-an exchange response, verifies input and recovers after closing the host peer:
-
-```sh
-node --import tsx apps/mobile/scripts/remote-desktop-network-smoke.mjs [chromium-executable]
-```
-
-This harness does not validate WKWebView, Android WebView, carrier NAT, regional
-STUN availability, TURN relay performance or Windows native capture. Those need
-device/network verification before claiming a measured connection-success gain.
+lease takeover isolation and old-version signaling. They do not validate carrier
+NAT, regional STUN availability, TURN relay performance or Windows native capture.
+Those need device/network verification before claiming a measured connection-success gain.
 
 ## Input failure releases control (2026-09-11)
 
@@ -421,10 +402,7 @@ that do mean the lease is gone (`DESKTOP_LEASE_EXPIRED`, `DESKTOP_STOPPED`,
 revocation, an unsupported channel) still follow the existing session failure
 policy; an explicit stop or permission refusal never triggers automatic control
 reacquisition. Recovery never replays old clicks or keys, replaces the lease or
-resets shared device-link connections. Fullscreen restore, transient refusal,
-overflow release ordering and late replies are covered through the real mobile
-screen in
-[`screen.test.tsx`](../apps/mobile/src/remote-desktop/__tests__/screen.test.tsx).
+resets shared device-link connections.
 
 Desktop viewers require control. They request it on every connection and do not
 offer a view-only action. If the host refuses control, revokes it later, rejects
@@ -845,7 +823,6 @@ of physical phone end-to-end parity.
 | Automatic unlock                     | Native credential channel and system integration                                      | Hyprlock only; current Omarchy Quickshell remains unsupported, as documented in `remote-desktop-credentials.md`                                                                               |
 | Physical privacy screen              | Excluded masks on every display, physical-input interception, local exit confirmation | Hyprland 0.56.2 native output masking after the capture copy, physical/virtual input separation, local confirmation and owner watchdog                                                        |
 | Desktop navigation                   | Mission Control / system shortcuts                                                    | Capability-gated left/right workspace buttons on the captured monitor and an Omarchy menu button when installed; legacy viewers retain the window picker and temporary empty-workspace toggle |
-| PiP, rotation, gestures              | Mobile viewer functionality                                                           | Same viewer functionality, subject to phone/runtime support                                                                                                                                   |
 
 The Omarchy toolbar uses desktop-and-arrow icons and the official Omarchy mark
 (https://omarchy.org/brand/omarchy-logo.svg), tinted with the toolbar foreground
@@ -1393,29 +1370,6 @@ before native decoding. The pixel limit bounds encoding work; Electron still
 allocates the PNG buffer before its byte length can be checked.
 Linux uses the same Desktop limits. Transport framing remains unchanged; older
 Desktop and Mobile peers keep their own smaller limits and may decline an image.
-
-### Opt-in Mobile clipboard synchronization
-
-On supported peers, the security options can enable clipboard synchronization
-while the phone is foregrounded and owns the controlling lease. Every 1.5 seconds
-the phone checks local and remote version tokens, reading portable content only
-when a version changes. Android uses change notifications and description timestamps
-without reading the clipboard body during unchanged polls. Image provider reads,
-conversion and file preparation run off the Android main thread; clipboard access
-and the final foreground/version check and write run on the main thread.
-
-Synchronization compares content digests to avoid echoing its own writes and
-checks the destination version again before writing so it cannot overwrite a
-newer local copy. Disabling sync, leaving the foreground, losing control or
-disconnecting invalidates pending work. It does not poll in the background,
-maintain history or log clipboard contents. Private formats and arbitrary files
-remain unsupported; only portable representations are synchronized.
-
-Mobile clears stale skipped/conflict notices when the current sync loop accepts
-an empty or unchanged-content snapshot, or completes a transfer in either
-direction. Idle polls and callbacks from paused loops do not clear these notices;
-clipboard recovery never hides a privacy-screen or host-mute failure. Regression
-coverage lives in `apps/mobile/src/remote-desktop/useRemoteDesktopSafety.test.tsx`.
 
 Only one viewer lease is active. A second viewer sees a busy state and can
 explicitly take over when the host advertises `connectionTakeover`. Ordinary

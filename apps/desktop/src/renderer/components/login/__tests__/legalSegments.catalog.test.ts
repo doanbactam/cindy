@@ -9,8 +9,6 @@ import { CONSENT_DIALOG } from '../loginDesignTokens';
  * 协议文案 catalog 严校验(codex 审查 P2):parseLegalSegments 对坏标记 fail-open
  * (嵌套/未闭合时原样显示尖括号)——法律文案不许依赖这种降级。本测试把全部 5 语
  * catalog 的 consent 文案过 parser 严校验,翻译误改标记时在 CI 就地拦截。
- * 手机端镜像:apps/mobile/src/auth/__tests__/loginConsent.test.ts「catalog 过 parser
- * 严校验」用例(双端 parser 同源语义,修改任一侧必须同步另一侧)。
  */
 
 const LOCALES = ['zh-CN', 'zh-TW', 'en', 'ja', 'ko'] as const;

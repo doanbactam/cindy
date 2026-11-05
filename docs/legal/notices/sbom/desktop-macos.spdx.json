@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "cindy-desktop-macos",
-  "documentNamespace": "https://cindy.app/spdx/desktop-macos/0232eb5cb93ac8b9fd43bd4c910825ad7912699ee00e06f82aeb31d4ccc50855",
+  "documentNamespace": "https://cindy.app/spdx/desktop-macos/29e81aa5a6649f823170f830ecd42b52aaee7564dfae68f8780203c86ec1b374",
   "creationInfo": {
-    "created": "2026-10-22T12:27:42Z",
+    "created": "2026-11-04T13:49:19Z",
     "creators": [
       "Tool: scripts/generate-third-party-notices.mjs"
     ]
@@ -183,8 +183,8 @@
     },
     {
       "name": "pi coding agent (runtime-downloaded binary)",
-      "SPDXID": "SPDXRef-Package-9a414e8a6f3ff55d",
-      "versionInfo": "1.0.2",
+      "SPDXID": "SPDXRef-Package-23c9ac3c9c1b077c",
+      "versionInfo": "1.4.0",
       "downloadLocation": "https://github.com/earendil-works/pi",
       "filesAnalyzed": false,
       "licenseConcluded": "MIT",
@@ -8439,6 +8439,23 @@
       ]
     },
     {
+      "name": "gifenc",
+      "SPDXID": "SPDXRef-Package-489972220a87f19b",
+      "versionInfo": "1.0.3",
+      "downloadLocation": "https://github.com/mattdesl/gifenc",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/gifenc@1.0.3"
+        }
+      ]
+    },
+    {
       "name": "github-from-package",
       "SPDXID": "SPDXRef-Package-986647e01a0c4195",
       "versionInfo": "0.0.0",
@@ -16076,7 +16093,7 @@
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
       "relationshipType": "DESCRIBES",
-      "relatedSpdxElement": "SPDXRef-Package-9a414e8a6f3ff55d"
+      "relatedSpdxElement": "SPDXRef-Package-23c9ac3c9c1b077c"
     },
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
@@ -18517,6 +18534,11 @@
       "spdxElementId": "SPDXRef-DOCUMENT",
       "relationshipType": "DESCRIBES",
       "relatedSpdxElement": "SPDXRef-Package-aa8f1bd1b4a702d6"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-489972220a87f19b"
     },
     {
       "spdxElementId": "SPDXRef-DOCUMENT",

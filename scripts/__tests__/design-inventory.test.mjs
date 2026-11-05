@@ -1104,7 +1104,6 @@ test('defaultHumanSeed: 全量 legacy + unassigned,protected 与迁移状态正�
   assert.equal(seed.includes('unassigned'), true);
   assert.equal(seed.includes('| legacy |'), true);
   assert.equal(seed.includes('| pilot |'), false);
-  assert.equal(seed.includes('Mobile 已纳入同一台账的静态入口发现'), true);
   assert.equal(seed.includes('cindy-updater/ui'), true);
   assert.equal(seed.includes('DESIGN.md §16 登录链路'), true);
   assert.equal(seed.includes('DESIGN.md §15 CINDY 皮肤族'), true);
@@ -1250,73 +1249,10 @@ test('os.tmpdir 仅作隔离证明:测试不得把绝对路径写进 GENERATED',
   assert.equal(generated.includes(ROOT), false);
 });
 
-// Mobile routes use POSIX repository-relative paths on every host OS.
-test('Mobile actual route families and shared visible consumers are discoverable without claiming migration', async () => {
-  const { mobileRouteCoverage, mobileCatalogSurfaces } = await import('../shared/design-inventory.mjs');
-  const coverage = mobileRouteCoverage(ROOT);
-  assert.deepEqual(coverage.missing, []);
-  assert.deepEqual(coverage.stale, []);
-  assert.equal(coverage.mapped.find(r=>r.path.endsWith('devices/desktop/[deviceId].tsx')).component, 'RemoteDesktopRoute');
-  const { surfaces } = buildGeneratedSurfaces(ROOT);
-  for (const [id, ends] of [
-    ['mobile.chat.session', ['MessageRenderer.tsx', 'CompanionMessageCard.tsx', 'AuthorizationMessageCard.tsx', 'FailedScheduleNotice.tsx']],
-    ['mobile.remote-desktop', ['RemoteDesktopScreen.tsx', 'viewerHtml.ts']],
-    ['mobile.settings', ['settings.tsx']],
-    ['mobile.plugins', ['PluginsScreen.tsx', 'PluginPage.tsx', 'PluginDetailView.ios.tsx', 'PluginToolChips.tsx', 'PluginNativeIntent.tsx']],
-    ['mobile.overlay.connection-startup', ['ConnectionNoticeOverlay.tsx', 'ConnectionBanner.tsx']],
-  ]) {
-    const surface = surfaces.find(s=>s.id===id);
-    assert.ok(surface, id);
-    for (const end of ends) assert.ok(surface.styleSources.some(f=>f.endsWith(end)), `${id}: ${end}`);
-  }
-  for (const surface of mobileCatalogSurfaces()) assert.equal(defaultHumanAnnotation(surface.id).status, 'legacy');
-  assert.ok(!surfaces.some(s=>/preview|listperf/.test(s.id) && s.platform==='mobile'));
-  assert.equal(coverage.mapped.find(r=>r.path==='apps/mobile/app/index.tsx').surfaceId,'mobile.home');
-});
-
-test('Mobile new, removed, renamed routes and missing dev gates cannot silently pass', async (t) => {
-  const { mobileRouteCoverage } = await import('../shared/design-inventory.mjs');
-  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cindy-mobile-inventory-'));
-  t.after(()=>fs.rmSync(temp,{recursive:true,force:true}));
-  const app = path.join(temp,'apps/mobile/app');fs.mkdirSync(app,{recursive:true});
-  const catalog=[{id:'mobile.resource',mobileRoutes:['resources/[id].tsx']}];
-  fs.mkdirSync(path.join(app,'resources'));fs.writeFileSync(path.join(app,'resources/[id].tsx'),'export default function Resource() { return <View />; }');
-  assert.deepEqual(mobileRouteCoverage(temp,catalog).missing,[]);
-  fs.writeFileSync(path.join(app,'new.tsx'),'export default function NewScreen() { return <View />; }');
-  assert.deepEqual(mobileRouteCoverage(temp,catalog).missing,['apps/mobile/app/new.tsx']);
-  fs.renameSync(path.join(app,'resources/[id].tsx'),path.join(app,'resources/[resourceId].tsx'));
-  assert.deepEqual(mobileRouteCoverage(temp,catalog).stale,['resources/[id].tsx']);
-  fs.writeFileSync(path.join(app,'listperf.tsx'),'export default function LiveScreen() { return <View />; }');
-  assert.ok(mobileRouteCoverage(temp,catalog).missing.includes('apps/mobile/app/listperf.tsx'));
-  const pluginPreview = path.join(app, 'plugin-management-preview.tsx');
-  fs.writeFileSync(pluginPreview, 'export default function Preview() { return <View />; }');
-  assert.ok(mobileRouteCoverage(temp,catalog).missing.includes('apps/mobile/app/plugin-management-preview.tsx'));
-  fs.writeFileSync(pluginPreview, 'const demosEnabled = __DEV__ && process.env.EXPO_PUBLIC_CINDY_PLUGIN_DEMOS === "1"; export default function Preview() { if (!MOBILE_VISUAL_MOCK_ENABLED && !demosEnabled) return <Redirect href="/" />; return <View />; }');
-  assert.equal(mobileRouteCoverage(temp,catalog).missing.includes('apps/mobile/app/plugin-management-preview.tsx'), false);
-});
-
-test('Mobile reexports, embedded viewer HTML, platform variants and codepoint ordering survive closure', async (t) => {
-  const { mobileStyleClosure } = await import('../shared/design-inventory.mjs');
-  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'cindy-mobile-closure-'));
-  t.after(()=>fs.rmSync(temp,{recursive:true,force:true}));
-  const files={
-    'apps/mobile/app/sample.tsx': "export { default } from '@/screen';",
-    'apps/mobile/src/screen.ts': "export { default } from './Screen';",
-    'apps/mobile/src/Screen.tsx': "import View from './View'; import { html } from './viewerHtml'; export default View;",
-    'apps/mobile/src/View.ios.tsx':'export default function IOS() { return null; }',
-    'apps/mobile/src/View.android.tsx':'export default function Android() { return null; }',
-    'apps/mobile/src/viewerHtml.ts':'export const html = `<body></body>`;',
-  };
-  for(const [f,s] of Object.entries(files)){ const target=path.join(temp,...f.split('/'));fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,s); }
-  const closure=mobileStyleClosure(temp,['apps/mobile/app/sample.tsx']);
-  assert.deepEqual(closure,[...Object.keys(files)].filter(f=>f!=='apps/mobile/src/screen.ts').sort());
-});
-
-test('Mobile additions preserve every existing human decision byte and default only new rows', async () => {
-  const { mobileCatalogSurfaces } = await import('../shared/design-inventory.mjs');
+test('Surface additions preserve every existing human decision byte and default only new rows', () => {
   const generated=renderGeneratedBlock([tinySurface()]);
   const human='\n| ID | owner | 迁移状态 | protected | 目标道路 | 下一动作 |\n| --- | --- | --- | --- | --- | --- |\n| `desktop.test.surface` | human | pilot | protected | approved route | keep exactly |\n';
-  const doc=ensureHumanRows(`# Inventory\n${generated}${human}`,mobileCatalogSurfaces());
+  const doc=ensureHumanRows(`# Inventory\n${generated}${human}`,[{ id: 'desktop.test.surface' }, { id: 'desktop.test.zz-new' }]);
   assert.ok(doc.includes(human.trim()));
-  assert.ok(doc.includes('| `mobile.chat.session` | unassigned | legacy |'));
+  assert.ok(doc.includes('| `desktop.test.zz-new` | unassigned | legacy |'));
 });

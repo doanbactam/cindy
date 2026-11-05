@@ -5,11 +5,6 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 
 export default defineConfig({
   root,
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("../../apps/mobile/src", import.meta.url)),
-    },
-  },
   test: {
     environment: "node",
     include: [

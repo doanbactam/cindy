@@ -18,15 +18,13 @@ const artifactNames = [
   "desktop-win",
   "desktop-macos",
   "desktop-linux",
-  "mobile-ios",
-  "mobile-android",
 ];
 
 function read(relativePath) {
   return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
 }
 
-test("speaker models and native inference libraries are disclosed on both clients", () => {
+test("speaker models and native inference libraries are disclosed on every desktop platform", () => {
   for (const artifact of artifactNames) {
     const notices = read(`docs/legal/notices/${artifact}.txt`);
     assert.ok(notices.includes("Silero VAD (runtime-downloaded model)"));
@@ -54,10 +52,6 @@ test("generated artifact notices are platform-scoped and disclose restricted com
   const linuxRestricted = read(
     "docs/legal/notices/desktop-linux-restricted.txt",
   );
-  const iosRestricted = read("docs/legal/notices/mobile-ios-restricted.txt");
-  const androidRestricted = read(
-    "docs/legal/notices/mobile-android-restricted.txt",
-  );
 
   assert.match(windows, /@img\/sharp-win32-x64@/);
   assert.doesNotMatch(windows, /@img\/sharp-darwin-/);
@@ -77,14 +71,6 @@ test("generated artifact notices are platform-scoped and disclose restricted com
   assert.match(windowsRestricted, /Microsoft Visual C\+\+ Runtime/);
   assert.doesNotMatch(macosRestricted, /Microsoft Visual C\+\+ Runtime/);
   assert.doesNotMatch(linuxRestricted, /Microsoft Visual C\+\+ Runtime/);
-  assert.match(iosRestricted, /WeChat OpenSDK for iOS@2\.0\.5/);
-  assert.match(iosRestricted, /docs\/legal\/wechat-open-sdk-compliance\.md/);
-  assert.match(iosRestricted, /Mobile_App\/agreement\/sdk\.html/);
-  assert.doesNotMatch(iosRestricted, /WeChat OpenSDK for Android@6\.8\.38/);
-  assert.match(androidRestricted, /WeChat OpenSDK for Android@6\.8\.38/);
-  assert.match(androidRestricted, /docs\/legal\/wechat-open-sdk-compliance\.md/);
-  assert.match(androidRestricted, /Mobile_App\/agreement\/sdk\.html/);
-  assert.doesNotMatch(androidRestricted, /Claude Code CLI@/);
   assert.doesNotMatch(windows, /@codesandbox\/nodebox@0\.1\.8 —/);
 });
 
@@ -114,20 +100,6 @@ test("multi-arch desktop notices describe every architecture they ship with", ()
   );
   assert.match(linux, /for use with sharp on Linux \(glibc\) x64\./);
   assert.match(linux, /for use with sharp on Linux \(glibc\) 64-bit ARM\./);
-});
-
-// 移动端安装包不分发构建期工具链的预编译二进制，但这些包的许可义务由其 JS 主包
-// 承载，主包必须留在声明里。
-test("mobile notices exclude build-time platform binaries but keep their JS packages", () => {
-  for (const artifact of ["mobile-ios", "mobile-android"]) {
-    const notices = read(`docs/legal/notices/${artifact}.txt`);
-    // 覆盖 name-darwin-arm64 与 @scope/darwin-arm64 两种命名形式。
-    assert.doesNotMatch(
-      notices,
-      /^- \S*(?:darwin|linux|win32|musl|freebsd)\S*@/im,
-    );
-    assert.match(notices, /^- lightningcss@/m);
-  }
 });
 
 // 闭包必须按显式目标平台收集：collectClosure() 判断可选依赖是否存在只看 node_modules
@@ -167,22 +139,6 @@ test("commercial distributions do not resolve forbidden Sustainable Use dependen
   const lockfile = read("pnpm-lock.yaml");
   assert.doesNotMatch(lockfile, /@codesandbox\/nodebox/);
   assert.doesNotMatch(lockfile, /@codesandbox\/sandpack-(?:client|react)/);
-});
-
-test("project-owned iOS podspecs declare the repository Apache-2.0 license", () => {
-  const podspecs = [
-    "xdt-wechat-login/ios/XdtWechatLogin.podspec",
-    "xdt-tapdb/ios/XdtTapdb.podspec",
-    "xdt-mobile-realtime-audio/ios/XdtMobileRealtimeAudio.podspec",
-    "xdt-ios-app-distribution/ios/XdtIosAppDistribution.podspec",
-  ];
-  for (const relativePath of podspecs) {
-    const podspec = read(path.join("apps/mobile/modules", relativePath));
-    assert.match(podspec, /:type\s*=>\s*['\"]Apache-2\.0['\"]/);
-    assert.match(podspec, /:file\s*=>\s*['\"]\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/LICENSE['\"]/);
-    assert.doesNotMatch(podspec, /UNLICENSED/i);
-    assert.match(podspec, /https:\/\/github\.com\/makecindy\/cindy\.git/);
-  }
 });
 
 test("every SPDX document is structurally consistent and has valid license expressions", () => {
@@ -260,20 +216,6 @@ test("desktop resources include both open-source and restricted disclosures", ()
   assertProviderBrandingOrder(
     "docs/legal/notices/THIRD-PARTY-NOTICES.txt",
   );
-  for (const platform of ["ios", "android"]) {
-    const mobileNotice = read(
-      `docs/legal/notices/mobile-${platform}.txt`,
-    );
-    assert.match(
-      mobileNotice,
-      /LiteLLM mascot SVG path \(adapted\).*Copyright \(c\) 2026 Berri AI/s,
-    );
-    assert.doesNotMatch(
-      mobileNotice,
-      /LiteLLM mascot SVG path \(adapted\) adapted/,
-    );
-    assertProviderBrandingOrder(`docs/legal/notices/mobile-${platform}.txt`);
-  }
   assert.ok(
     fs.existsSync(
       path.join(repoRoot, "apps/desktop/cindy-updater/src-tauri/Cargo.lock"),

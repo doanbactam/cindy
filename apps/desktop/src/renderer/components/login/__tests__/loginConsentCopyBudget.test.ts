@@ -9,7 +9,6 @@ import { CONSENT_DIALOG, CONSENT_ROW } from '../loginDesignTokens';
 // Guard tier (engineering-conventions §3.2): a static cross-file design contract between
 // the locale catalogs and the login layout tokens, not a render of the login page.
 // If it stops running, an overlong consent row or dialog title ships clipped again.
-// 手机端镜像:apps/mobile/src/auth/__tests__/loginConsentCopyBudget.test.ts(估宽公式同源)。
 
 function loadLogin(locale: string): Record<string, unknown> {
   const raw = readFileSync(

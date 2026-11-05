@@ -4,13 +4,12 @@
 > 其余步骤未开始。§13 第 1、2 条按建议执行：方式 A 正式开放前先做设备签名防冒充；服务器上的 Node 由 Cindy 本机校验后上传。
 > v1 以 Tailscale 为主路径，已废弃：Tailscale 的 iOS App 不在中国大陆 App Store
 > （[tailscale/tailscale#19625](https://github.com/tailscale/tailscale/issues/19625)），注册还需要海外账号。
-> 范围：本仓（Desktop、Mobile、共享 packages）。**不改 cindy-server，官方中转的行为不变。**
+> 范围：本仓（Desktop、共享 packages；原计划含已移除的 Mobile）。**不改 cindy-server，官方中转的行为不变。**
 > 代码位置基于本仓 `main`（2026-10-28）调研，实施前以当时代码为准。
 > 动手前按 `AGENTS.md` 读以下文档：
 > - `docs/dev-rules/protocol-compatibility.md`
-> - `docs/dev-rules/remote-and-mobile-adaptation.md`
+> - `docs/dev-rules/remote-adaptation.md`
 > - `docs/dev-rules/credentials-and-local-storage.md`
-> - `docs/dev-rules/mobile-development.md`（冷更边界）
 > - `docs/dev-rules/architecture-invariants.md`
 > - `docs/dev-rules/verified-downloads.md`
 > - `docs/product-rules/input-handoff.md`（sudo 密码）
@@ -193,14 +192,6 @@ Cindy 不安装、不配置这些工具。
 3. 发出加入申请。主人电脑弹出确认框，显示设备名、平台和 4 位核对码。
 4. 主人同意后，设备拿到凭证，自动切换到该中转。
 
-**手机：**
-
-1. 用系统相机扫二维码，打开 Cindy 的加入页，复用 `apps/mobile/app/+native-intent.ts` 的深链。
-   链接里的加入码不进路由状态，也不进诊断信息，处理方式与共享任务邀请相同。
-2. 后续步骤和电脑一样。
-
-App 内不加扫码组件：加一个会改变原生指纹，需要冷更。
-
 **核对码**：与供应商分享的 `Pairing Code` 是同一类东西，只用来核对，不参与鉴权。可以沿用这个术语，需要扩充术语表的说明。
 
 ### 5.2 身份与凭证
@@ -343,7 +334,7 @@ App 内不加扫码组件：加一个会改变原生指纹，需要冷更。
 
 ## 9. 故障半径
 
-按 `remote-and-mobile-adaptation.md` 的故障半径三问：
+按 `remote-adaptation.md` 的故障半径三问：
 
 - **中转不可达**（服务器宕机、电脑休眠、网络断开）：
   - 所有设备按现有退避重连同一个中转；不自动切回官方，界面提示并提供手动切回。
@@ -362,7 +353,7 @@ App 内不加扫码组件：加一个会改变原生指纹，需要冷更。
 - **Desktop**：内核的 bundle 要随 Desktop 打包，供方式 B 使用；方式 A 上传的也是这个文件，两边版本天然一致。
 - **需要更新的规则文档**：
   - `protocol-compatibility.md`
-  - `remote-and-mobile-adaptation.md`
+  - `remote-adaptation.md`
   - `credentials-and-local-storage.md` 路径表
   - 新增产品规则 `docs/product-rules/self-hosted-relay.md`，并在 `AGENTS.md` 加读取入口
   - `i18n/glossary.json`：登记新术语，状态为 proposed

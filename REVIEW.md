@@ -41,7 +41,6 @@ P1／P2。按下表转换，**不要**把仓库口径的 P2 改写成评论里�
   （`desktop db:validate`）。
 - scheduler 反向依赖、cron 三方库、scheduler renderer 色值白名单
   （`ci:scheduler-guard`）。
-- mobile 的 Issue Confirm 范围守门（`mobile test:scope`）。
 - typecheck、单测、DCO 签名、PR 正文「引用的设计规范」字段（`pr-design-basis`，
   仅在变更命中 UI 路径时校验该字段）。
 
@@ -58,7 +57,7 @@ P1／P2。按下表转换，**不要**把仓库口径的 P2 改写成评论里�
 按 PR 模板的风险分类，优先看这些：
 
 - **服务器通道调用方式与压力**：凡改动直接或间接的请求、订阅、推送、同步、轮询或重试，
-  包括 Renderer／Mobile／业务层调用方，重点读
+  包括 Renderer／业务层调用方，重点读
   [服务器通道调用审查](docs/dev-rules/server-channel-review.md)。沿调用链核实通道用途、
   共享范围、上限和已有负载，判断次数、频率、体积、并发及失败恢复是否安全可靠。
   按实际影响报告有证据的问题，并按第 2 节映射评论标签；P2 缺陷也要报告。
@@ -71,11 +70,6 @@ P1／P2。按下表转换，**不要**把仓库口径的 P2 改写成评论里�
 - **数据库**：新 migration 的正确性与可回滚性、companion 脚本必须是 CommonJS
   （生产 Electron 用 `require()` 加载，ESM 语法只在用户端炸）。见
   `docs/dev-rules/database-and-migrations.md`。
-- **mobile 冷更边界**：改动是否触碰 `app.json`／`app.config.js`／`eas.json`／
-  `apps/mobile/package.json`／`plugins/`／`modules/` 等进入 runtime fingerprint 的输入。
-  命中就在评论里点名——这类 PR 合并前需要把关人对冷更单独确认；可保持 Ready 并正常
-  审查，不因冷更要求新建讨论 issue 或转为 draft。见
-  `docs/dev-rules/mobile-development.md`。
 - **协议兼容**：本地协议 package、device-link／relay／隧道 payload、IPC allowlist
   等跨端 wire protocol 的向后兼容性。见 `docs/dev-rules/protocol-compatibility.md`。
 - **device-link 恢复动作的故障半径**：重试／超时／断链／重连路径的改动，恢复动作的
@@ -83,7 +77,7 @@ P1／P2。按下表转换，**不要**把仓库口径的 P2 改写成评论里�
   故障不得强拆整条共享连接；扩大半径必须在 PR 描述里给出明确理由，并有多控制端拓扑
   用例证明其它 peer 零感知。wire 向后兼容 + 单测全绿拦不住这类问题（单测只验证实现
   忠实于设计，设计选错半径时不会报警）。见
-  `docs/dev-rules/remote-and-mobile-adaptation.md` 的「恢复动作先回答故障半径」。
+  `docs/dev-rules/remote-adaptation.md` 的「恢复动作先回答故障半径」。
 - **system prompt 与 Agent 行为**：进入模型 system 段的提示词、tool／MCP 暴露、
   usage 计量。见 `docs/dev-rules/maker-core-and-agent-behavior.md`。
 - **插件沙箱**：`.cindy` 运行时的权限、能力 slot、网络／凭证／文件交接。见

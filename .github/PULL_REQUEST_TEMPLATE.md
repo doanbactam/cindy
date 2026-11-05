@@ -69,8 +69,7 @@ pnpm ...
 
 ### 未执行的验证
 
-<!-- 没有执行某项验证时，说明原因；没有则写“无”。mobile 本地验证需注明
-branch/worktree、Metro 归属与 __DEV__ build label 证据。 -->
+<!-- 没有执行某项验证时，说明原因；没有则写“无”。 -->
 
 ## 风险
 
@@ -82,7 +81,7 @@ branch/worktree、Metro 归属与 __DEV__ build label 证据。 -->
 - [ ] 协议兼容
 - [ ] 权限 / 安全 / 用户数据
 - [ ] 存量插件兼容（批准状态 / 指纹 / manifest 校验 / 安装布局 / 包格式）
-- [ ] 原生层 / fingerprint / OTA
+- [ ] 原生层
 - [ ] 跨平台差异
 - [ ] 其他：
 
@@ -91,18 +90,12 @@ branch/worktree、Metro 归属与 __DEV__ build label 证据。 -->
 - 影响范围：
 - 回滚 / 降级方式：
 
-<!-- 命中 SQLite migration、system prompt、协议、原生层、fingerprint/OTA 或跨平台差异时，
+<!-- 命中 SQLite migration、system prompt、协议、原生层或跨平台差异时，
 必须写清影响和回滚/降级方式；不涉及风险时明确写“无”。
 
 命中「存量插件兼容」时，必须写明「存量插件影响：无」或「有 + 迁移与提示方案」，并说明
 基于旧布局的升级用例跑在哪。会让用户已装插件失效或需要重装／重新确认的改动与冷更同级，
-需把关人对该影响明确确认；规则见 docs/dev-rules/plugin-security-and-authoring.md 第 5 节。
-
-改动会改变 mobile runtime fingerprint（即触发冷更）时，还要写明为什么冷更不可避免、
-存量装机的影响范围与发版节奏建议；这类 PR 与技术框架变动同级，需仓库指定的把关人针对
-冷更明确确认后才能合并（提交者身份不构成例外）。冷更 PR 可保持 Ready 并正常审查，
-不因冷更要求新建讨论 issue 或转为 draft；确认可直接留在 PR 中。规则见
-docs/dev-rules/mobile-development.md 的「冷更边界」。 -->
+需把关人对该影响明确确认；规则见 docs/dev-rules/plugin-security-and-authoring.md 第 5 节。 -->
 
 ### 提交前检查
 

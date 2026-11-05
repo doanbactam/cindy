@@ -548,8 +548,7 @@ export type DeviceLinkRelayStatus = 'online' | 'connecting' | 'stopped';
 const PERMANENT_REMOTE_ERROR_MARKERS = [
   'REMOTE_DISABLED',
   'CHANNEL_NOT_ALLOWED',
-  // 控制端「目标设备无响应」熔断器的快速失败(见 apps/mobile 的
-  // unresponsiveDevicesStore):被控端连续 INVOKE_TIMEOUT 后熔断 open,新请求
+  // 控制端「目标设备无响应」熔断器的快速失败(见 deviceResponsiveness.ts):被控端连续 INVOKE_TIMEOUT 后熔断 open,新请求
   // 本地直拒。必须归为 permanent——否则 withTransientRemoteRetry 会把熔断
   // 快速失败再原地重试 6 次,熔断等于白做。
   'DEVICE_UNRESPONSIVE',
@@ -564,7 +563,7 @@ const TRANSIENT_REMOTE_ERROR_MARKERS = [
   'DEVICE_OFFLINE',
   'DEVICE_LINK_TIMEOUT',
   'INVOKE_TIMEOUT',
-  // HTTP 层(apps/mobile src/api/client.ts 的 ApiError)的弱网错误码:
+  // HTTP 层 ApiError 的弱网错误码:
   // 超时与离线同属典型瞬时故障,必须能被 withTransientRemoteRetry 识别重试。
   'REQUEST_TIMEOUT',
   'NETWORK_UNAVAILABLE',

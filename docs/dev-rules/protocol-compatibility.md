@@ -242,7 +242,7 @@ Mobile 暂无此确认界面；已保存任务及 Agent 工具的授权流程不
 旧被控端回 `CHANNEL_NOT_ALLOWED`：手机只在所有可达电脑都如此时让「自动」组件提示更新电脑，其他失败保留上次快照。
 其他电脑离线或单个账号读取失败时，该账号保留最后读数最多 3 天，单元格带可选 `stale` 且 `when` 写成「x 小时前」。
 单元格的可选 `resetsAtMs`、`stale` 只进 Desktop 内部视图模型与快照，菜单栏 helper 忽略未知字段。无服务端、relay
-或数据库变更；手机侧组件扩展需要原生新包，见 [Mobile 冷更边界](mobile-development.md#原生配置与-runtime-fingerprint冷更边界)。
+或数据库变更。
 
 ## 插件与伙伴包的十语资源（2026-10-31）
 
@@ -288,8 +288,7 @@ Mobile 暂无此确认界面；已保存任务及 Agent 工具的授权流程不
 
 新端在能力缺失或只读探测 404 时回退原 claim。服务端同时声明 `personalMask:1` 时也不使用探测：
 AI 代答与私人汇总只能由空闲的 `/mask/executions/claim` 发现，探测与 `work.available` 均不覆盖它们。
-旧客户端忽略新能力与事件；Mobile 无执行器协议变化。手机不运行伙伴：本人 actor scope 中只含 `work.available`
-的批次直接 ACK，不重读列表或历史，混合批次照常刷新（[`chatServerSubscription.ts`](../../apps/mobile/src/chat/chatServerSubscription.ts)）。
+旧客户端忽略新能力与事件。
 推荐先部署全部服务端，再发客户端；旧 dispatcher 混合窗口依靠兜底，不承诺即时唤醒。没有环境变量或 Schema 变化。
 actor 游标只保存在当前账号运行时，重连续读、重启从零；RESET_REQUIRED 与 CURSOR_AHEAD 都有恢复入口。
 RESET_REQUIRED 跳过的通知可能含主力迁移的 `actor.changed`，因此先重读伙伴与主力电脑，再从新游标续订和领取。
@@ -700,12 +699,11 @@ Electron 进程的 IPC/WebRTC smoke，以及 Desktop、Mobile 和共享包类型
 重组有字节、分片数和超时边界；在原可靠层接收之前重组，序号、去重与 ACK 语义不变。
 桥接在途字节与 SCTP bufferedAmount 一起参与背压，平台静默失效同样会触发原有中继回退。
 
-旧端不声明能力，双方仍走 relay；只升级一端不会启用直连。Desktop 与 Mobile 均接入，
+旧端不声明能力，双方仍走 relay；只升级一端不会启用直连。Desktop 接入，
 同账号远程供应商沿用这条共享路径；跨账号供应商分享和共享任务继续由 relay 逐帧授权。
-不改数据库、服务端、Mobile 原生依赖或配置。Mobile 使用现有 WebView，iOS 的 WebKit
-网络行为参考 [Apple TN3179](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy)。
-平台不可用或系统阻止局域网访问时沿用 relay，不能阻断业务。真实跨设备、iOS/Android
-前后台及系统网络权限的发布验收必须另记实测证据；浏览器本机 smoke 不等同于真机通过。
+不改数据库或服务端。
+平台不可用或系统阻止局域网访问时沿用 relay，不能阻断业务。真实跨设备及系统网络权限的
+发布验收必须另记实测证据；浏览器本机 smoke 不等同于真机通过。
 
 ## 自建中转服务（`packages/device-link-relay` 与客户端接入）
 
@@ -730,26 +728,26 @@ Electron 进程的 IPC/WebRTC smoke，以及 Desktop、Mobile 和共享包类型
   `auth: { t, b, r, c, s }`，中转原样转发、不解析（超过 512 字符或不是对象时回 `BAD_REQUEST`）。
   - `DeviceLinkClient` 的可选项 `frameAuth` 负责签名与核对，只在 `sendEnvelope` 和 `handleMessage` 两处生效。
   - 官方中转时它返回 null，wire 与旧版逐字节一致。
-  - 签名覆盖的字段与序列化规则以 `packages/device-link/src/selfHostedRelayAuth.ts` 为准，改动它就是改协议，Desktop、Mobile、中转必须一起改。
+  - 签名覆盖的字段与序列化规则以 `packages/device-link/src/selfHostedRelayAuth.ts` 为准，改动它就是改协议，Desktop 与中转必须一起改。
   - 中转新增 `GET /api/device-link/relay/certs`（主人签发的设备证书）。
-  - Desktop 与 Mobile 都在分发前核对入站帧，包含权限请求文案；证书未就绪时拒绝当前帧，
-    未知设备或已知设备签名不符时有界刷新，不重连共享链路。Mobile 复用已有纯 JS 加密实现。
+  - Desktop 在分发前核对入站帧，包含权限请求文案；证书未就绪时拒绝当前帧，
+    未知设备或已知设备签名不符时有界刷新，不重连共享链路。
   - 签名上下文 `cindy-relay-frame/2` 包含接收端启动挑战 `r`，避免接收端重启后旧请求再次执行。
     共享客户端消费保留的 `device-link:relay-auth` push 请求/响应；仅认证请求允许空挑战，
     不进入业务分发、不建立控制链路、不改变远控开关。待发队列按稳定签名身份和设备隔离，超时/断线/换身份后不发送旧请求。
     接收端重启且证书迟到时仅发有界认证探测；验签通过的新挑战只可恢复本机仍有效的原 `link-open`，保持请求 ID、签名身份与期限，不能恢复任意旧业务写操作。
-    中转已有 push 与 opaque auth 转发足够支持，无需新增协议 kind 或修改路由；互通同时覆盖关闭远控的手机接收插件同步与未建链查询。
+    中转已有 push 与 opaque auth 转发足够支持，无需新增协议 kind 或修改路由；互通同时覆盖关闭远控的设备接收插件同步与未建链查询。
     此自建功能尚未发布，开发期间旧的无 `r` 签名客户端需同步更新；官方客户端路径无此交换。
   - 加入申请必须带 `publicKey` / `proof`，同意必须带证书；`/relay/info` 的 `features` 声明 `device-signatures-v1`。
 - 加入链接 `<cindy|cindycn|cindydev>://relay/join?u=<中转地址>&c=<一次性加入码>&o=<主人公钥>&s=<配对秘密>` 由 `@cindy/device-link` 的
-  `buildRelayJoinLink` / `parseRelayJoinLink` 生成与解析，Desktop 与 Mobile 共用 `fetchRelayInfo` /
+  `buildRelayJoinLink` / `parseRelayJoinLink` 生成与解析，Desktop 使用 `fetchRelayInfo` /
   `submitRelayPairRequest` / `waitForRelayApproval`。`DeviceLinkClient.authorizationScheme` 也可传函数，每次建连前取值。
 - 客户端：Desktop 的地址与凭证经 `device-link/selfHostedRelayRouting.ts`（零依赖）读取，REST 统一走
   `deviceLinkApi.ts`（自建中转时带 `CindyRelay`、跳过账号刷新与会话失效；官方请求刷新后的重试只重读官方区域端点，
-  不随中转选择切到自建地址）；Mobile 见 `apps/mobile/src/device-link/selfHostedRelay*.ts`。
+  不随中转选择切到自建地址）。
 
 兼容：未选择自建中转时，客户端与官方 relay 的行为不变（没有登记中转来源或使用官方中转时一律回到原路径）。
-旧客户端没有入口；旧版手机无法加入自建中转。互通验证：`pnpm --filter @cindy/device-link-relay run interop`
+旧客户端没有入口。互通验证：`pnpm --filter @cindy/device-link-relay run interop`
 （本机起中转、走加入流程，再跑 `scripts/device-link/interop.test.ts`，认证方案由 `CINDY_TEST_AUTH_SCHEME` 指定；
 `CINDY_TEST_FRAME_AUTH` 提供测试签名密钥时全程开启设备签名，两端核对每一条对端消息）。
 
@@ -762,7 +760,7 @@ Electron 进程的 IPC/WebRTC smoke，以及 Desktop、Mobile 和共享包类型
 新增的证书状态 `transient` 为可选字段，旧客户端忽略；新客户端连接旧中转仍沿用原失败处理，线协议与主人身份不变。
 Nginx 后端的 `--trust-proxy` 只对回环连接的单个有效 `X-Forwarded-For` IP 启用配对来源识别，
 部署生成的代理配置必须覆盖该头；直连及默认未信任模式继续按 socket 来源限流，协议不变。
-Desktop/Mobile 继续共用原客户端，无须更改服务端；验证入口见
+Desktop 继续使用原客户端，无须更改服务端；验证入口见
 [`self-hosted-relay-plan.md §15.3`](../self-hosted-relay-plan.md#153-第-3-步设备签名一键部署到服务器远程管理2026-10-28)。
 
 **硬性要求：凡 Device Link 的改动会影响自建中转，必须在同一次改动中完成必要的同步适配、
@@ -770,8 +768,8 @@ Desktop/Mobile 继续共用原客户端，无须更改服务端；验证入口�
 
 - **触发范围**：共享客户端与协议（`packages/device-link`、`packages/device-link-protocol`）、
   relay 的握手／帧路由／顶层字段／能力协商、鉴权与设备签名、设备／媒体／ICE 接口，以及
-  Desktop、Mobile 的连接恢复与中转路由。判断以实际行为影响为准，不以修改文件的位置为准。
-- **一起适配**：修改前核对共享客户端、自建中转内核（`packages/device-link-relay`）及两端接入代码。
+  Desktop 的连接恢复与中转路由。判断以实际行为影响为准，不以修改文件的位置为准。
+- **一起适配**：修改前核对共享客户端、自建中转内核（`packages/device-link-relay`）及 Desktop 接入代码。
   需要调整的实现、测试和协议说明必须一起更新；能由已有通用转发或共享客户端直接支持的，
   不要求制造无意义的服务端改动，但必须说明为何无需修改并提供验证结果。
 - **一起验证**：影响通信兼容或恢复行为时，必须运行共享客户端测试、自建中转测试，以及
@@ -1000,16 +998,12 @@ Desktop 远程卡片复用查看端 Main 验证真实 frame 的通道；本机 I
 目标，不跨 device-link 传递。Main 保存远端 View 绑定，顶层 Renderer 只提交界面控制，
 不能通过通用 `deviceLink.invoke` 发送 MCP Apps RPC，也不能提供 HTML 或指定 frame 的
 目标 View。新查看端 Main 可连接既有 v1 Host，外链仍要求 `authorize-link` 明确回执；
-Mobile 和旧查看端的 wire 保持原样，完整 frame 边界需更新 Desktop 查看端。
+旧查看端的 wire 保持原样，完整 frame 边界需更新 Desktop 查看端。
 没有新增 channel、allowlist、relay 或原生配置。回归见 `remoteViews.test.ts`。
 本机与远控 Desktop 的 open IPC 只返回 `viewId`、`transport: "sandbox"` 与 `prefersBorder`，
 用于同版本 Main/Renderer 切换到 Main 验证真实 frame 的直连通道。凭证读取的 HTML、CSP 与
 资源策略只由 Main 供给隔离 frame，不进入顶层 Renderer。该描述符不向远程设备返回；
-Mobile 和 Desktop Main 之间的远程 v1 仍传完整文档，原有 channel 不变。Mobile 在原生
-HTML 资源模块增加独立 App 资源额度和内联承载视图，
-以不同来源隔离 proxy/App，并保留卸载后的有界 teardown；这改变 iOS/Android runtime
-fingerprint，须遵守 [冷更边界](mobile-development.md#原生配置与-runtime-fingerprint冷更边界)。
-旧 Mobile binary 保留卡片文本并提示更新手机，不回退到同源或 opaque-origin srcdoc。
+远程 v1 仍传完整文档，原有 channel 不变。
 
 > **状态**：权威开发规则（authoritative）
 > **读取时机**：修改插件分发来源边界、device-link 协议／relay／隧道 payload／IPC
@@ -1018,7 +1012,7 @@ fingerprint，须遵守 [冷更边界](mobile-development.md#原生配置与-run
 客户端与服务端分别维护本仓所需的 wire Bean、validator、parser 与 builder，不共享代码仓库
 或发布节奏。真正危险的是单端改变既有 wire 语义，或在不兼容变更中缺少协同；这类问题在
 单仓 typecheck／单测里发现不了，只有真实连接时才暴露。device-link 的运行时约束另见
-[`remote-and-mobile-adaptation.md`](remote-and-mobile-adaptation.md)。
+[`remote-adaptation.md`](remote-adaptation.md)。
 
 > **增量适用原则**：wire protocol 兼容对所有跨端改动生效，不因是小改而豁免。
 
@@ -1357,15 +1351,6 @@ Chat Server 新增只读 `/conversations/:roomId/execution-failures`：按成员
 本机清单不受此远程预算影响。
 切换设备、目录或账号后丢弃旧响应；打开菜单、重连或点击重试时重读，不阻塞菜单展开。
 旧主机拒绝未知通道时显示读取失败与重试入口，不用控制端清单替代；插件入口需要执行主机支持此通道。
-
-Mobile 的 `+` 插件入口复用同一清单与发送期指令模板。列表随草稿末尾的 `$` 查询词展开，
-选择后把插件指令放到消息开头，保留正文与富文本引用；移除 `$` 触发词或清空草稿后收起。
-旧主机拒绝清单通道时，发送链保留原文，不能阻断 `$100` 等普通文本；权限、断连或清单校验错误仍上抛。
-排队编辑通过 `maker:input:update-content` 分别传递模型文本与原稿。旧主机只支持
-`maker:input:update-text` 时，普通文本仍可保存；需要插件展开的编辑保留草稿并提示不支持，
-不把机器指令写入用户原稿或历史。
-实现与回归见 `apps/mobile/src/session/composerPlugins.ts`、`apps/mobile/src/device-link/mobileMakerTransport.ts`
-及 `apps/mobile/src/__tests__/composerPluginTransport.test.ts`。
 
 计划模式复用 `maker:create-session` 的既有可选 `planMode` 参数；新主机创建任务记录时将显式值
 与任务元数据一次写入既有 `planModeEnabled` 字段，写入失败复用创建清理路径，不在创建后另行补写。
@@ -2134,17 +2119,14 @@ URL，之后复用持久字节。本次不新增持久 URL 索引，冷启动离
 Desktop 完整文件与远程 HTML 预览复用现有磁盘副本，后台检查变化；HTML 的大小／mtime
 仅用于快照展示和传输上限，不作为后台跳过读取的版本判据。复验绕过外层 size／mtime 命中，
 device 仍可复用主机确认版本的字节，SSH 重新读取；新版原子保存前保留旧副本。HTML 直接通过
-现有磁盘索引定位副本，不再另维护进程内元数据索引和刷新集合。两端 HTML 先显示缓存，再在
+现有磁盘索引定位副本，不再另维护进程内元数据索引和刷新集合。HTML 先显示缓存，再在
 本次打开的后台读取中比较入口 HTML 内容；不同且新版快照准备完成时自动切换，相同或失败不重载。
 更新仅在当前仍停留于入口文档时应用；已导航到内页则保留当前页面，新缓存供下次打开使用。
-Mobile 直接复用后台准备好的快照；Desktop 缓存入口通过现有鉴权的本地预览服务读取一次更新结果，
-确认变化后重载。没有持续监听或轮询，检查完成后的修改需从 Cindy 重新打开；手机也可手动刷新，
-跳过旧副本并在成功后更新缓存。只改配套资源不触发入口重载。图片、PDF 保持后台更新供后续打开使用。
+Desktop 缓存入口通过现有鉴权的本地预览服务读取一次更新结果，
+确认变化后重载。没有持续监听或轮询，检查完成后的修改需从 Cindy 重新打开。只改配套资源不触发入口重载。图片、PDF 保持后台更新供后续打开使用。
 预览持有自己的副本，关闭时释放本次打开的新旧快照，不删除可复用的源缓存。
 零字节 HTML 配套资源也可按版本缓存。
-回归覆盖见 [Mobile 快照测试](../../apps/mobile/src/__tests__/mobileHtmlPreview.test.ts) 与
-[Desktop 预览测试](../../apps/desktop/src/main/file-browser/__tests__/html-preview.test.ts)。
-Mobile 分享及 HTML 资源复制在完成、失败、取消后释放传输暂存；独立消费者副本继续由原持有者管理。
+回归覆盖见 [Desktop 预览测试](../../apps/desktop/src/main/file-browser/__tests__/html-preview.test.ts)。
 音视频播放继续用保留的流式地址，不为了缓存而预先下载整份媒体；完整下载仍按上述规则。
 不可变聊天图片与目录维持已有专用缓存；Mobile 限量文本预览先显示缓存（包括绝对路径），
 后台读取后更新当前文本，失败不遮住已有内容，文本不改为无界整文件下载。
@@ -2417,7 +2399,7 @@ Codex 原生图片恢复（#6412）在既有 `maker:remote-agent:v1` 上追加�
   才可本机回答；隐藏文件和未知外部标记不能凭名字判不存在。本机回答使用
   原生的不存在错误 `-32004`(固定版本 `codex-rs/exec-server/src/remote_file_system.rs` 按 NotFound 处理)，不转给 A；
   B 的 Codex 在执行环境断开时按同一个 id 重新 `environment/add`，先用实验接口 `environment/status` 判断。两者都随
-  Codex 版本可能变化，升级时一并核对(见 [`remote-and-mobile-adaptation.md`](remote-and-mobile-adaptation.md)
+  Codex 版本可能变化，升级时一并核对(见 [`remote-adaptation.md`](remote-adaptation.md)
   「托管 Codex 启动的跨机往返与执行环境恢复」)。
   非完全访问档下 `process/start` 与 `fs/*` 带 `sandbox`(固定版本 `codex-rs/file-system/src/lib.rs` 的
   `WireFileSystemSandboxContext`)，其中目录与权限条目都是 B 上看到的 file URI，中继换成 A 的路径：虚拟工作区内的
@@ -2426,7 +2408,7 @@ Codex 原生图片恢复（#6412）在既有 `maker:remote-agent:v1` 上追加�
   一律原样保留；用户目录对不上时换成 A 本机的(Codex 缺了它会把 `~/…` 规则当解析失败、一律拒绝读取)；
   `file:///C:/…` 是否为盘符按 B 的路径约定(虚拟工作区路径)判断；网络配置按原值透传。Windows 沙箱档位通常
   保持原值；唯一例外是在已有虚拟映射、Agent 路径为 POSIX、本机执行端为 Windows、`permissions.type=managed`
-  且 `windowsSandboxLevel=disabled` 时，选择本机 `restricted-token`，见[远程适配规则](remote-and-mobile-adaptation.md)。
+  且 `windowsSandboxLevel=disabled` 时，选择本机 `restricted-token`，见[远程适配规则](remote-adaptation.md)。
   显式 Windows 选择、非受限请求与无虚拟映射的 legacy 分支不改；原生实现无法落实限制时仍拒绝，不删规则或转无沙箱。
   原样转发时两端系统不同可能被 A 的 exec-server 拒绝(`invalid sandbox permission path URI`)。
 - **Codex 启动清单批量探测（2026-10-29）**：B 在单条 exec-server 连接启动时，把首个插件清单所在
@@ -2605,7 +2587,7 @@ Codex 原生图片恢复（#6412）在既有 `maker:remote-agent:v1` 上追加�
   (与模型选择器读 B 的余量同一份镜像)，不新增 channel；任务价值与上下文仍读任务所在电脑。远程控制的任务把 Agent
   放在第三台电脑时读第三台，放在控制端自己时读本机；挂着换位置意图时桌面 chip 按意图里的电脑显示。分享来的供应商、
   共享任务访客与没指定来源的远程 Agent 读不到那份账号，只显示任务价值。桌面判定见
-  `apps/desktop/src/renderer/lib/usageAccountLocation.ts`，手机见 `apps/mobile/src/session/sessionUsageAccount.ts`。
+  `apps/desktop/src/renderer/lib/usageAccountLocation.ts`。
 - **供应商分享(另一个账号用 B 的供应商)**：契约见 `docs/provider-sharing-contract.md`，产品规则见
   `docs/product-rules/provider-sharing.md`。relay 新增 `Envelope.providerShare` 范围与能力 `provider-share-v1`
   (`packages/device-link-protocol/src/providerShare.ts`，两仓同文件)，与 `sharedTask` 并列、同一帧不能同时带两种范围；
@@ -2849,7 +2831,7 @@ B 上的 Worker 是一条普通任务，`sessions.orca_remote_lead`(migration 01
 到期清理不变。重复离线通知或流量不续期；两端都需更新，旧端与 Mobile 仍可能关闭通道。
 供应商分享既有短期许可不因此延长。本机 relay 恢复后若直连随后故障，可使用已恢复的 relay；
 对端仍明确离线时不能误判其可达。故障半径和验证入口见
-[`remote-and-mobile-adaptation.md`](remote-and-mobile-adaptation.md)「直连优先、中继兜底」。
+[`remote-adaptation.md`](remote-adaptation.md)「直连优先、中继兜底」。
 
 跨区组员恢复（2026-10-26）：控制端 Main 仅在同账号 `provider-group:remote` 的有效 `view` / `pick`
 回包或 `manage-group` 组视图引用分享时，恢复本机缺失的区域标记并通过既有 `/provider-shares/x/session` 核验成员关系。
@@ -2931,7 +2913,7 @@ B 上的 Worker 是一条普通任务，`sessions.orca_remote_lead`(migration 01
   仍满足 `readProviderShareGroupStatus` 的「状态数 = 台数」校验；新旧受邀者都按原格式读，只是项数变少。
 - 实现：`shared/providerGroup.ts`、`provider-group/router.ts`、`ipc.ts`、`directory.ts`、`removedShares.ts`、
   `reshareRuntime.ts`、`sharedStatus.ts`、`remoteHandler.ts`，界面聚合在
-  `renderer/features/provider-group/providerGroupPresentation.ts`，手机计数在 `apps/mobile/src/session/remoteProviderGroups.ts`；
+  `renderer/features/provider-group/providerGroupPresentation.ts`；
   回归见 `shared/__tests__/providerGroup.test.ts`、`provider-group/__tests__/` 下 `ipc`、`directory`、`removedShares`、
   `sharedStatus`、`remoteHandler` 测试与界面、手机同名测试。
 
@@ -3012,8 +2994,8 @@ B 上的 Worker 是一条普通任务，`sessions.orca_remote_lead`(migration 01
   最多 4000 条、超出丢最早的；读不出时保留原文件、按都没选过处理）。不同步、不外发；降级旧版忽略这个文件，相当于每次都不提议。
 - 实现：`provider-group/service.ts`、`usage.ts`(`providerGroupRebalanceTarget`)、`router.ts`(`rebalanceCandidates`)、`runtime.ts`、
   `ipc.ts`、`remoteHandler.ts`、`remoteRegistration.ts`、`sessionPrefs.ts`、`maker-ipc/sessionAgentSwitchHandler.ts`；客户端
-  `renderer/features/provider-group/sessionRebalancePrompt.ts` 与 `apps/mobile/src/session/sessionRebalancePrompt.ts`。回归见
-  `shared/__tests__/providerGroup.test.ts`、`provider-group/__tests__/service.test.ts`、两端 `sessionRebalancePrompt.test.ts`。
+  `renderer/features/provider-group/sessionRebalancePrompt.ts`。回归见
+  `shared/__tests__/providerGroup.test.ts`、`provider-group/__tests__/service.test.ts`、`sessionRebalancePrompt.test.ts`。
 
 ## 供应商组：受邀者经组所在电脑中转(P2b)
 

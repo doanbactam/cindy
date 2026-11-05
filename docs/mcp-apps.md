@@ -147,31 +147,6 @@ App 发起的工具调用与工具、资源、模板、提示列表及资源读�
 工具发现完成后、发起权限请求前也执行同一复核，避免已撤权的 View 弹出审批。
 回归见 `viewAuthorization.test.ts`。
 
-Mobile 扩展已有原生 HTML 资源模块，分别在两个 loopback 端口提供可信 proxy 与 App，
-两者同站但不同源；App iframe 使用 `allow-scripts allow-same-origin`，保留 localStorage /
-IndexedDB 的来源能力，同时不能访问 proxy 或跳转顶层页面、打开弹窗。原生 HTTP 响应提供
-App 的完整 CSP，proxy 的资源地址由宿主固定，不能被普通桥消息替换为同源内容。
-原生 App 资源与普通 HTML 预览分别计数：App 最多 16 个来源服务，容纳 4 个活跃 View 的
-双来源与退出期间的余量，普通预览仍限制为 4 个。原生内联 slot 承载根级 React host 持有的
-同一个 WebView；卡片离屏或实际页面卸载后，先将内容移回屏幕外 host，保留消息回调，
-收到 teardown 响应或满 1 秒后移除 WebView、停止两项资源服务并清理专属缓存。退后台
-关闭旧 View，原生资源最多保留本次后台代次 1 秒；回前台打开新 View，不重放工具调用。
-这改变两端 runtime fingerprint，必须有针对冷更的明确确认并发布原生新包；不能仅 OTA 交付。
-旧安装包缺少 App 承载能力时保留已保存文本并提示更新手机，不回退到同源或 opaque-origin
-`srcdoc`。下次进程首次打开时清理中断遗留的本功能随机目录。iOS 使用非持久 WebView
-数据存储；Android 不使用会清空其他 View cookie 的 incognito 开关，只删除本 View 的
-cookie，并避免本进程重用已发放的 App 端口。资源来源先加载可信初始化页，同步清除
-localStorage/sessionStorage、等待所有旧 IndexedDB 删除成功后才加载原始 App HTML；
-删除失败或被阻塞时不运行 App，由初始化超时报错。实际存储清理与端口重用隔离仍须
-Android 原生验收。Android 的 WebView 导航回调没有
-`isTopFrame`，因此声明的 `frameDomains` 仍按域校验，不把缺失字段当成顶层导航；
-iOS 另保留显式顶层请求拦截；可信 proxy 同时检查实际 `event.origin`，同一 WindowProxy
-导航到声明的第三方 frame 域后也无法获得 App 桥。回归见
-`apps/mobile/src/__tests__/mcpAppCard.test.tsx` 与 `mcpAppNativeDocument.test.ts`。这些测试
-使用 JS mock/VM，不是原生存储、内联 slot、异步 teardown 或系统返回手势的真机证据。
-手机卡片只在消息列表项可见或被定位时打开 View，离屏释放并保留高度占位，重新进入时
-重新读取；打开期间离屏会取消加载并回收晚到的 View，不重放 App 工具调用。
-
 ## 接入
 
 在 Cindy 设置中添加普通自定义 MCP，选择 Streamable HTTP 或 SSE 地址及所需认证。
@@ -320,7 +295,6 @@ pnpm.cmd --filter desktop exec vitest run src/main/mcp-apps/__tests__ --maxWorke
 pnpm.cmd --filter @cindy/maker-shared exec vitest run
 pnpm.cmd --filter desktop test:mcp-apps:sandbox
 pnpm.cmd --filter desktop typecheck
-pnpm.cmd --filter mobile typecheck
 pnpm.cmd --filter @cindy/maker-shared build
 pnpm.cmd --filter @cindy/device-link build
 pnpm.cmd check:i18n

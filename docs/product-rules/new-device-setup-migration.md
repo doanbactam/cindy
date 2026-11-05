@@ -2,7 +2,7 @@
 
 > **读取时机**：修改「迁移助理」（从其他电脑迁移）的入口、迁移范围、`maker:setup-snapshot` 协议、
 > 计划与应用规则、一次性配置清单，或新增一类可迁移的设置前。
-> 跨电脑通道见 [`../dev-rules/remote-and-mobile-adaptation.md`](../dev-rules/remote-and-mobile-adaptation.md)，
+> 跨电脑通道见 [`../dev-rules/remote-adaptation.md`](../dev-rules/remote-adaptation.md)，
 > 凭证边界见 [`../dev-rules/credentials-and-local-storage.md`](../dev-rules/credentials-and-local-storage.md)，
 > 插件安装确认见 [`../dev-rules/plugin-security-and-authoring.md`](../dev-rules/plugin-security-and-authoring.md) §3.1。
 

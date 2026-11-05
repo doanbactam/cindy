@@ -129,11 +129,6 @@ import { CONTROLLED_MODEL_CATALOG_CHANGED } from '../../../shared/controlledMode
 import { PROVIDER_SHARE_IPC } from '../../../shared/providerShare';
 import { createProviderShareUsageStore } from '../providerShareUsageStore';
 import { revokeProviderShareControllers } from '../dispatch';
-import {
-  clearAllProviderShareCatalogs,
-  getCachedProviderShareCatalogs,
-  refreshProviderShareCatalogs,
-} from '../../../../../mobile/src/device-link/providerShareCatalogCache';
 
 const createLink: ProviderShareManagementCommand = { action: 'create-link', providerId: 'anthropic' };
 const LINK_ID = 'a'.repeat(64);
@@ -164,7 +159,6 @@ beforeEach(() => {
   listProviders.mockResolvedValue([{ id: 'anthropic', name: 'Anthropic', connected: true, agents: ['claude-code'] }]);
   received.shares = [];
   received.ready = true;
-  clearAllProviderShareCatalogs();
   identityCard.mockResolvedValue({ card: 'test-identity-card' });
   api.createLink.mockResolvedValue({ invitation: 'test-invitation', linkId: LINK_ID });
   api.approve.mockResolvedValue({ ok: true });
@@ -226,8 +220,7 @@ it('refreshes local windows but does not push a catalog change for an unchanged 
 });
 
 /* Unit integration: the real received-catalogs producer must distinguish an explicit
- * per-share provider refusal from a temporary/offline null, and the real Mobile parser/cache
- * must retire only that share. */
+ * per-share provider refusal from a temporary/offline null. */
 it('propagates a per-share provider denial as an empty zero-budget catalog and keeps transient neighbors', async () => {
   const provider = (id = 'anthropic') => ({
     id, name: 'Anthropic', source: 'builtin', agents: ['claude-code'], auth: { method: 'none' },
@@ -239,11 +232,6 @@ it('propagates a per-share provider denial as an empty zero-budget catalog and k
     hostDeviceId: 'host-' + id, deviceName: 'Device ' + id,
     owner: { displayName: 'Owner', avatarUrl: null, region: 'global' },
     status: 'active', hostOnline: true, hostCapable: true,
-  });
-  const mobileShare = (id: string, catalog: unknown) => ({
-    agentDeviceId: 'share:' + id, shareId: id, providerId: 'anthropic', providerLabel: 'Anthropic',
-    deviceName: 'Device ' + id, owner: { displayName: 'Owner', avatarUrl: null },
-    status: 'active', hostOnline: true, catalog,
   });
   received.shares = [receivedShare('a'), receivedShare('b'), receivedShare('c'), receivedShare('d'), receivedShare('e')];
   const invoke = vi.fn(async (agentDeviceId: string): Promise<InvokeResultPayload> => {
@@ -275,43 +263,6 @@ it('propagates a per-share provider denial as an empty zero-budget catalog and k
   // A region feature flag is not a per-share revocation.
   expect(producerById.get('e')?.catalog).toBeNull();
 
-  vi.useFakeTimers({ toFake: ['Date', 'performance', 'setTimeout', 'clearTimeout'] });
-  try {
-    const seededCatalog = { providers: [provider()],
-      providerContinuity: { stale: false, remainingMs: 10_000 } };
-    await refreshProviderShareCatalogs('host', async () => ({ ready: true, shares: [
-      mobileShare('a', seededCatalog), mobileShare('b', seededCatalog), mobileShare('c', seededCatalog),
-      mobileShare('d', seededCatalog), mobileShare('e', seededCatalog),
-    ] }));
-    expect(getCachedProviderShareCatalogs('host')?.filter(entry => entry.payload))
-      .toHaveLength(5);
-
-    await vi.advanceTimersByTimeAsync(500);
-    await refreshProviderShareCatalogs('host', async () => producerResult);
-    const after = new Map((getCachedProviderShareCatalogs('host') ?? []).map(entry => [entry.shareId, entry]));
-    expect(after.get('a')?.payload).toBeNull();
-    expect(after.get('b')?.payload?.providers).toHaveLength(1);
-    expect(after.get('c')?.payload?.providers).toHaveLength(1);
-    expect(after.get('d')?.payload).toBeNull();
-    expect(after.get('e')?.payload?.providers).toHaveLength(1);
-
-    // C was never renewed by the transient null: its original 10s budget expires.
-    await vi.advanceTimersByTimeAsync(9_501);
-    const expired = new Map((getCachedProviderShareCatalogs('host') ?? []).map(entry => [entry.shareId, entry]));
-    expect(expired.get('c')?.payload).toBeNull();
-    expect(expired.get('e')?.payload).toBeNull();
-
-    // A fresh authoritative read restores A without touching B/C.
-    const freshA = { ...producerById.get('a')!, catalog: { providers: [provider()] } };
-    await refreshProviderShareCatalogs('host', async () => ({ ...producerResult,
-      shares: [freshA, producerById.get('b')!, producerById.get('c')!, producerById.get('d')!, producerById.get('e')!] }));
-    const recovered = new Map((getCachedProviderShareCatalogs('host') ?? []).map(entry => [entry.shareId, entry]));
-    expect(recovered.get('a')?.payload?.providers).toHaveLength(1);
-    expect(recovered.get('b')?.payload?.providers).toHaveLength(1);
-  } finally {
-    vi.useRealTimers();
-    clearAllProviderShareCatalogs();
-  }
 });
 
 /* Deleting a member must use the live host callback and retain offline M until it ACKs. tier: unit. */

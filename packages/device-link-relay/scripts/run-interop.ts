@@ -4,7 +4,7 @@
  * 1. 在临时目录初始化一个中转,主人电脑凭证在本进程生成;
  * 2. 在本机回环地址启动中转;
  * 3. 走真实的加入流程(加入码 → 申请 → 主人同意 → 取回凭证)拿到第二台设备的凭证;
- * 4. 以 `CindyRelay` 方案把两份凭证交给互通测试,由正式 DeviceLinkClient 与 Mobile 恢复核心连接;
+ * 4. 以 `CindyRelay` 方案把两份凭证交给互通测试,由正式 DeviceLinkClient 与 Desktop 控制端恢复逻辑连接;
  *    同时交出两台设备的签名密钥与中转上的证书,互通测试全程开启设备签名(主机核对每一条对端消息);
  * 5. 结束后关闭中转、删除临时目录。
  *
@@ -75,14 +75,14 @@ async function main(): Promise<number> {
   const relay = await startRelayServer({ dataDir, port: 0 });
   try {
     const base = relay.localUrl;
-    // 与 Desktop / Mobile 相同的加入路径:主人生成加入链接,新设备解析链接、申请、等主人同意。
+    // 与 Desktop 相同的加入路径:主人生成加入链接,新设备解析链接、申请、等主人同意。
     const { code } = await call(base, 'POST', '/api/device-link/relay/admin/join-codes', { credential: owner.credential });
     const pairSecret = createRelayPairSecret(crypto);
     const link = parseRelayJoinLink(
       buildRelayJoinLink({ baseUrl: base, code, ownerPublicKey: ownerKey.publicKey, pairSecret, app: 'cindy' }),
     )!;
     const relayFetch: RelayFetch = (url, init) => fetch(url, init);
-    const deviceId = 'interop-controller-phone';
+    const deviceId = 'interop-controller';
     const identity = createRelayJoinIdentity(crypto, link, relayId, deviceId);
     const request = await submitRelayPairRequest(relayFetch, link, {
       deviceId,
@@ -113,7 +113,7 @@ async function main(): Promise<number> {
     const { certs } = await call(base, 'GET', '/api/device-link/relay/certs', { credential: owner.credential });
 
     return await new Promise<number>((resolve) => {
-      const child = spawn(process.execPath, ['apps/mobile/scripts/device-link-reconnect-smoke.mjs', '--interop'], {
+      const child = spawn(process.execPath, ['scripts/device-link/run.mjs', '--interop'], {
         cwd: repoRoot,
         stdio: 'inherit',
         env: {

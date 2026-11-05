@@ -330,7 +330,7 @@ Mobile 使用现有文件缓存后端的 `cache/chat-history-v1/` 目录，以�
 
 ### 11.2 推荐表／集合
 
-下表是后续完整逻辑模型，不是本轮新增表清单或可直接执行的 migration。Desktop 与 Mobile 已共用 `maker-shared/chat-history` 算法、分别注入上述存储适配；未来新增原生 SQLite 依赖若触发 fingerprint 变化，仍须走 Mobile 冷更规则。
+下表是后续完整逻辑模型，不是本轮新增表清单或可直接执行的 migration。Desktop 通过 `maker-shared/chat-history` 算法注入上述存储适配。
 
 | 建议集合 | 核心字段／索引 | 用途 |
 | --- | --- | --- |

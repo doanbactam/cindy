@@ -204,7 +204,7 @@ const walk = (o, out = []) => {
   return out;
 };
 const files = execFileSync('git', ['ls-files',
-  'apps/desktop/src/renderer/i18n/locales/en', 'apps/mobile/src/i18n/locales/en',
+  'apps/desktop/src/renderer/i18n/locales/en',
 ], { encoding: 'utf8' }).split('\n').filter((f) => f.endsWith('.json'));
 const vals = files.flatMap((f) => walk(JSON.parse(fs.readFileSync(f, 'utf8'))));
 for (const w of ['session', 'conversation', 'dialogue', 'chat', 'thread']) {
@@ -375,9 +375,9 @@ mobile）的 key 逐条比对当前 HEAD。**数字会随 rebase 与 review 期�
 | # | 来源 | 覆盖办法 |
 |---|---|---|
 | 1 | `apps/desktop/src/renderer/i18n/locales/**` | diff locale |
-| 2 | `apps/mobile/src/i18n/locales/**` | diff locale |
+| 2 | ~~`apps/mobile/src/i18n/locales/**`~~ | 手机端已移除，编号保留 |
 | 3 | `apps/desktop/src/main/**` 硬编码 | 代码搜索（IM 通知、菜单影子 catalog、权限卡、IPC 错误） |
-| 4 | `apps/mobile/{src,app}/**` 硬编码 | 代码搜索（操作表、Alert 确认框） |
+| 4 | ~~`apps/mobile/{src,app}/**` 硬编码~~ | 手机端已移除，编号保留 |
 | 5 | **`packages/maker-shared/**` 硬编码** | 代码搜索。**最容易漏**：mobile 首页与设备详情的空态／筛选／副标题全在这里，不在 locale |
 | 6 | `packages/maker-core/**` 硬编码 | 代码搜索（agent capability 的 displayName / description） |
 | 7 | `packages/lizi-mcps/**` | **不改**：MCP 元数据是给 LLM 读的，不是 UI |
@@ -528,7 +528,7 @@ renderer 的 `$` 指令展开、`ghost_list`、`ghost_info` 与 `ghost_call` 都
 | 渠道直接发给用户 | 四个 `uiText.ts` | **改**（已清零） |
 | main 抛给 renderer 的 `Error` message | 见下方「一句一句追展示路径」——**按 code 映射 i18n 的不改，原样展示的必须改**，不能按文件一刀切 |
 | 插件 / MCP / LLM 读的字符串 | `cindy-brain/*Slot.ts`、`mcp-integrations/ghost.ts` | **不改**：不是 UI 文案，且多数确实指 Agent 进程会话（§6.0.2） |
-| Orca 协同术语 | 架构代码与内部标识继续用 session；手机端协同标签与只读提示（`apps/mobile/src/session/collaboration.ts` + i18n）会直接展示给用户 | **按展示路径分开**：架构术语不改，用户可见的 Orca Lead / Worker / 协作条目仍叫「任务」（含「协同子任务」「任务修改」） |
+| Orca 协同术语 | 架构代码与内部标识继续用 session；协同标签与只读提示会直接展示给用户 | **按展示路径分开**：架构术语不改，用户可见的 Orca Lead / Worker / 协作条目仍叫「任务」（含「协同子任务」「任务修改」） |
 | 测试 fixture | `packages/maker-shared/src/fixtures.ts` | **不改** |
 
 另有一类**刻意保留的渠道人格用词**：discord / feishu / wechat 把 session 叫「存档」、把接管
@@ -604,7 +604,7 @@ grep -rnE 'sendMarkdownText|sendFeishuText|desktopConfirmImNotifier|showDesktopT
   apps/desktop/src/main --include='*.ts' | grep -v __tests__
 # 2. 反向:列出所有含术语词的字符串字面量,逐条回答"它从哪个出口出去"
 #    ⚠️ 两个词都要搜。只搜「会话」会漏掉「这个对话所在的目录…」这类同样指条目的错句。
-grep -rnE '会话|对话' apps/desktop/src/main apps/mobile/src packages/*/src \
+grep -rnE '会话|对话' apps/desktop/src/main packages/*/src \
   --include='*.ts' --include='*.tsx' | grep -vE '__tests__|:[0-9]+:\s*(//|\*)'
 ```
 
@@ -702,10 +702,6 @@ grep -rnE '会话|对话' apps/desktop/src/main apps/mobile/src packages/*/src \
   已在本 PR 内迁到 i18n——它们是**页面自己的文案**、改法就是照抄隔壁，与共享层这一类不同。
   （`apps/mobile/src/session/messageActionMenu.ts` 原本也在此列，本次已改为走
   `i18n.t('session.messageMenu.*')`——同目录 `sessionMenu.ts` 早就是这个写法，它是唯一的例外）
-- **mobile 的 locale 没有 key 对齐门禁**：`pnpm check:i18n` 只校验
-  `apps/desktop/src/renderer/i18n/locales/<locale>/common.json`（见脚本头部注释），
-  `apps/mobile/src/i18n/locales/**` 的 15 个 json 不在其中。本次新增 mobile key 时是手工核对
-  四语一致的（各 235 个 key）。把门禁扩到 mobile 是独立改动，可能会暴露一批既有不齐
 - **代码标识符与内部注释仍以 Session 为主**：刻意不动。仅当中文注释被测试当作源码锚点、
   且新旧术语冲突时才跟进（本次有 1 处：`apps/mobile/app/sessions/new.tsx` 的
   「新建任务默认运行配置」）

@@ -72,7 +72,7 @@ SSH 共享 daemon 保留既有逐 thread 配置，不能传入本机目录路径
 源修正；不要把某个模型的正确数字硬编码进圆环，也不要用取最小值一律压掉显式长窗口。
 
 相关规则：[`configuration-and-overrides.md`](configuration-and-overrides.md)、
-[`pi-harness.md`](pi-harness.md)、[`remote-and-mobile-adaptation.md`](remote-and-mobile-adaptation.md)。
+[`pi-harness.md`](pi-harness.md)、[`remote-adaptation.md`](remote-adaptation.md)。
 
 ### 归档任务的模型设置
 

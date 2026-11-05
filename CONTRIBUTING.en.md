@@ -5,8 +5,8 @@
 # Contributing
 
 Thank you for contributing code, documentation, and feedback to Cindy. This
-repository is the open-source Cindy client: the desktop and mobile apps plus
-their shared packages. The server is maintained in a separate repository and
+repository is the open-source Cindy client: the desktop app plus
+its shared packages. The server is maintained in a separate repository and
 is outside the scope of this repository.
 
 ## Before you start
@@ -38,17 +38,11 @@ does not duplicate them.
 See [Desktop development, launch, and verification](docs/dev-rules/desktop-development.md)
 for startup, region selection, safe restarts, and verification commands.
 
-### Mobile
-
-See [Mobile development, simulators, and verification](docs/dev-rules/mobile-development.md)
-for simulators, native rebuilds, and verification commands.
-
 ### Verification
 
 Choose checks according to the risk-tiering principles in [AGENTS.md](AGENTS.md).
-Use the desktop and mobile commands defined by their respective development
-rules. When a change touches the database, protocol, endpoints, mobile scopes,
-or another specialized area, read the applicable rules and run their checks as
+Use the desktop commands defined by its development rules. When a change
+touches the database, protocol, endpoints, or another specialized area, read the applicable rules and run their checks as
 well. Every pull request must state the commands that were run and their results;
 explain why any highly relevant check was not run.
 

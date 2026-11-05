@@ -363,7 +363,7 @@ describe('mobile schedule form model', () => {
   });
 
   it('does not block editing a script-only desktop schedule on an empty prompt (codex review 966)', () => {
-    // 桌面端"仅运行脚本"任务(见 docs/dev-rules/remote-and-mobile-adaptation.md)prompt 合法为空——mobile
+    // 桌面端"仅运行脚本"任务(见 docs/dev-rules/remote-adaptation.md)prompt 合法为空——mobile
     // 没有编辑 scriptConfig 的 UI,不该拿桌面端才有意义的字段挡住 mobile 打开/
     // 保存这类任务的其它字段(改名、通知开关等)。
     const draft = createMobileScheduleDraft(schedule({

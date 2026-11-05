@@ -4,8 +4,7 @@
  * 消费方:
  *  - 桌面 `apps/desktop/src/renderer/lib/historyGap.ts`(re-export)→ `MessageStream`
  *    按它切 tool_segment、切工作组;
- *  - 手机 `apps/mobile/src/session/historyWindowGap.ts` 按它找窗口空洞并触发补齐;
- *  - 共享渲染 `messageRender.ts` 按它切 tool_group 与工作组(手机侧的分组实现)。
+ *  - 共享渲染 `messageRender.ts` 按它切 tool_group 与工作组。
  *
  * 为什么是 30 分钟:分页窗口之间可能隔着大段没加载的历史(缓存旧页 + 最新页拼接、
  * 断连期间漏收 push、补齐失败退回的孤岛窗口)。渲染层看到的是两段"相邻"item,中间的

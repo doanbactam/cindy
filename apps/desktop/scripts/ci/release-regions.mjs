@@ -1,7 +1,6 @@
 // =============================================================================
 // release-regions.mjs —— desktop 发布「地区渠道」配置的唯一加载入口(cn / global)
 //
-// 对齐 mobile 自建线的 self-host-regions 模式(apps/mobile/scripts/lib/self-host-region.mjs):
 // 随地区变化的**非机密**发布参数集中在发版机本地的 scripts/release-regions.json 里
 // (纯值,不入仓;只提交 .json.example):
 //   - oss:发布目标(CDN 基址 / OSS bucket / prefix / ossRegion);

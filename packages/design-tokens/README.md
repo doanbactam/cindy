@@ -1,6 +1,6 @@
 # @cindy/design-tokens
 
-Desktop 已接管设计数值的 DTCG 编辑源。Terrazzo **2.7.1** 在构建期校验并生成；产品运行时只读取生成的本地子集，**不 import 此包或生成器**。Mobile 保持原实现与原生输入，尚未接管。
+Desktop 已接管设计数值的 DTCG 编辑源。Terrazzo **2.7.1** 在构建期校验并生成；产品运行时只读取生成的本地子集，**不 import 此包或生成器**。
 
 ## 修改与生成
 
@@ -49,35 +49,4 @@ Effort/price 静态表也由 colors.ts 生成并导出，`effortTierColors.ts` i
 
 SC-01—12、实机证据、未测平台和人工审核状态持续登记在桌面唯一主计划；截图不入 Git。DS-8 已合并 [#4268](https://github.com/makecindy/cindy/pull/4268)（merge `2e74488d21`）；DS-7 已合并 [#4215](https://github.com/makecindy/cindy/pull/4215)，合并提交 `4f03ea9a7b5f6425e517acd91071df6d397c6079`。旧 DS-6/7 附件不能充当本版本证据。
 
-回退须整体恢复 DS-8 源/生成物/消费者及过渡守卫，保留上游工作；不回写用户数据或只抽掉生成源。G1 仅完成 Desktop 阶段；DS-9 已合并 #4300，桌面最终演练与交接由 DS-10 收尾，Mobile 新方案明确后再定消费接口。原影子层 2026-11-01 复查改为检查实际维护与消费情况，不取消维护责任。
-
-## DS-5 历史双端样本（非未来 Mobile 合同）
-
-以下是 DS-5 时点的取样。Mobile 正在重构，目录、布局与 API 仅供追溯，不约束新方案；平台源与共享角色须待新方案明确后共同确认。旧行号可能已漂移，应读取当前代码。
-
-采样：**2026-09-07，main `36638ff33ca8b28e259b247a47054a696d6c4ee4`**。本节保留当时用途与消费链采样，不是未来 Mobile API 合同或精确值维护表；源码数值仍以上述现行上游为准。未启动 Desktop / iOS / Android，Light/Dark 实机均未验证；不将源码核对算作视觉验收。
-
-生产链已穿透：
-
-- **D 输入**：[CCAgentSessionView:5101](../../apps/desktop/src/renderer/features/cc-agent/CCAgentSessionView.tsx#L5101) → [ChatInput](../../apps/desktop/src/renderer/components/new-chat/ChatInput.tsx) → [SendButton:45](../../apps/desktop/src/renderer/components/new-chat/SendButton.tsx#L45)。
-- **M 输入**：[会话页:10443](../../apps/mobile/app/sessions/[sessionId].tsx#L10443) → [MobileComposerInputRow:318](../../apps/mobile/src/session/MobileComposerInputRow.tsx#L318) → [ComposerRichInput](../../apps/mobile/src/session/ComposerRichInput.tsx) → [composerRichInputHtml](../../apps/mobile/src/session/composerRichInputHtml.ts)。该页传 `inputElement`，实际走 WebView；InputRow 原生 TextInput 是 fallback。发送仍在会话页 `renderComposerSendSlot`（:6813）。
-- **D 正文**：[CCAgentSessionView:4391](../../apps/desktop/src/renderer/features/cc-agent/CCAgentSessionView.tsx#L4391) → [MessageStream:5912](../../apps/desktop/src/renderer/components/chat/MessageStream.tsx#L5912) → [UserMessage:1546](../../apps/desktop/src/renderer/components/chat/UserMessage.tsx#L1546) / [AssistantMessage:323](../../apps/desktop/src/renderer/components/chat/AssistantMessage.tsx#L323)。助手正文继续进入 [MarkdownRenderer](../../apps/desktop/src/renderer/components/chat/MarkdownRenderer.tsx)；用户正文为 `renderContent` 的文字/链接/引用/chip，不走该 Markdown 样式。
-- **M 正文**：[会话页:9076](../../apps/mobile/app/sessions/[sessionId].tsx#L9076) → [MessageRenderer:4823](../../apps/mobile/src/session/MessageRenderer.tsx#L4823)，正文样式由该组件生成（:7698），页面另传外围样式。流式与完成态均走原生 Markdown；iOS 可选文字走 UITextView，其他情况走 RN Text（:499—547），不是 `selectableMarkdownHtml`。
-
-下表 D 颜色上游统一指 `colors.ts` + 内置/用户覆盖，D 非颜色指 globals / Tailwind / 字号缩放及列出的局部代码；M 颜色指 `tokens.ts` palettes → ThemeProvider，M 非颜色指 tokens 与列出的平台适配。**共享候选仅表示用途可复用，不表示两端值等价**。`composer.*` / `message.*` 均为拟定 component 角色，`typography.*` 为拟定 semantic 角色；本批不创建 JSON、不替换已存在 ID。
-
-| 用途 / 拟定角色 ID | Desktop 当前消费者 / 引用 | Mobile 当前消费者 / 引用 | 分类、理由与实施落点 |
-| --- | --- | --- | --- |
-| 输入文字 `composer.text` | ChatInput:2144—2145 → `chat-input-text`；colors:839 是独立默认，非 `text-primary` alias | 会话页:10490 → `colors.textPrimary` → HTML:93/59 的 `--text` | 共享用途候选，默认不等价；D 保留局部 ID，M 保留平台值；DS-8/10 分别生成，不能统一配色 |
-| 占位 `composer.placeholder` | globals:397 / ChatInput:8451 → `chat-input-placeholder-subtle`；colors:835 从 `chat-input-placeholder`（默认 `text-placeholder`）color-mix 派生 | 会话页:10489 → `textPlaceholder`(2026-09-27 起占位字专用档) → HTML:68/95；原生 fallback 才用 `placeholderTextColor` | 共享用途 + D 运行期透明度派生；只将基础静态角色入源，混合逻辑留代码，DS-8/10 |
-| 输入背景 `composer.surface` | ChatInput:8116/8163 → `chat-input-bg`，默认 `surface-elevated` | InputRow:542 → `chatCodeSurface`；WebView 背景透明 | 共享用途 + 平台覆盖；M `theme.background` 虽传入但 HTML 未消费，不能当生产证据；DS-8/10 保留现状 |
-| 输入外边框 `composer.border` | ChatInput:8117/8164 → `chat-input-border`，默认 `border-default` | InputRow:543—545 → `sheetActionBorder` + 原生 hairline | 共享用途 + 静态平台色 / 运行期像素适配；HTML `theme.border=colors.border` 只画 chip 边框；DS-8/10 不混淆作用域 |
-| 焦点描边 `composer.focusBorder` / 光标 `composer.caret` | ChatInput:8119/8166 → `chat-input-border-focus`（默认 `text-tertiary`，CINDY 有透明度覆盖）；globals:127/414 → `caret-accent` | 会话页:10488 → `inputCaret` → HTML:59/98 caret-color；outline:none；原生 fallback 用 cursorColor/selectionColor | 光标用途共享，焦点边框保留平台差异；M 字段名 focus 不代表 focus ring。聊天描边也不是通用 Input 环；DS-8/10 等值保留，新增焦点观感须裁决 |
-| 输入排版 `typography.composer` | ChatInput:2144 → `text-15 leading-[1.467]`；globals `--text-15` 与 compact 派生 | HTML:59—66 → [composerTextMetrics](../../apps/mobile/src/session/composerTextMetrics.ts):21—26 的 `typeScale.bodySmall`(原 `typeScale.code`,2026-09-27 更名) / `lineHeight.body` | 共享用途，平台排版/缩放保留；输入并非 M 正文 bodyLarge。DS-8/10 将静态基础纳源，缩放/compact 留代码 |
-| 输入尺寸/间距 `composer.geometry` | ChatInput:8115 卡片圆角与 padding、输入高度在组件内 | InputRow:544 单行 pill、:558—559 multiline 专用圆角、:566—569 card `radius.control`；composerTextMetrics:45—55 的平台上下 padding | 平台静态覆盖 + 展开/屏幕/光学运行期计算；D/M 不强制同几何。DS-8/10 纳入被选静态值；动态规则保留，新增外观待裁决 |
-| 发送可用 `composer.send.surface` / `.text` / `.hover` / `.pressed` | SendButton:55—57 → `send-btn-bg/icon/hover-bg/pressed-bg`；colors:1011 起 | 会话页:11646/6838 → `cta/ctaText`；:6826/11663 `sendButtonPressed` 由 RouteActionButton:10850—10852 在按下时叠 opacity 0.86；发送中 indicator 独立读 `textSecondary` | 共享动作用途，M 无对应 hover，pressed 通过透明度表达；保留旧局部覆盖，DS-8/10 |
-| 发送禁用 `composer.send.disabledSurface` / `.disabledText` / `.disabledOpacity` | SendButton:59 在 `disabled && !isStreaming` 时仍读可用色，加 opacity-40；**不消费**注册的 `send-btn-disabled-bg/icon` | 会话页:11656/6838 读 `surfaceChip/border/textSecondary`，通用禁用样式:11664 再叠 opacity 0.45 | 共享状态用途，派生方式不等价；静态透明度候选与状态条件分开，DS-8/10 保留真实效果，不按 registry 猜接线 |
-| 发送触控 `composer.send.geometry` | SendButton:54 会话 h-7/w-7，新建入口另有 30px；pill | 会话页:11646—11654 为 34×34 / `radius.pill`；:6823 引用 :639 的 `COMPOSER_CONTROL_HIT_SLOP` 扩点击区，仍受 InputRow 父布局边界限制 | 平台几何覆盖；Mobile 后续独立阶段 按触控与无障碍保持 M 命中区域，不能套用 D 图标按钮尺寸；不以相同圆形推断同尺寸 |
-| 用户 / 助手正文 `message.user.text` / `message.assistant.text` | UserMessage:1551 → `msg-user-text`，AssistantMessage:324 → `msg-assistant-text`；colors:1255/1259 默认都 alias `text-primary` | MessageRenderer:7698 → `colors.textPrimary`（用户/助手共用正文样式） | 共享正文用途，D 两个局部覆盖必须各自保留，不能抬升为全局或删除；DS-8 接源、DS-9 核真实消费、Mobile 后续独立阶段 接 M |
-| 正文排版 `typography.messageBody` | UserMessage:1550 / AssistantMessage:323 → `text-15 leading-[1.6]`，受用户字号和 compact（globals:330）影响 | MessageRenderer:7698 → `typeScale.bodyLarge/lineHeight.bodyLarge`（当前 17/26） | 共享用途 + 平台静态覆盖与缩放；用途一致不等于像素一致，DS-8/10 等值接管，DS-9 验证 D 长文与流式 |
-| 行内代码 `message.inlineCode.text` / `.surface` / `typography.inlineCode` | 仅助手 MarkdownRenderer:285/1785 → 继承正文颜色，`msg-md-inline-code-bg`、`font-mono text-14`、局部圆角；上游 colors:1301 / Tailwind fontFamily | MessageRenderer:7964—7974 → `chatInlineCodeText`、`typeScale.bodySmall/lineHeight.bodySmall`(原 `code` 档)、[monoFont](../../apps/mobile/src/theme/monoFont.ts)，有意无底色 | 用途共享、外观/字体平台覆盖；M 原生嵌套 Text 圆角限制已有代码说明。DS-9 保留 D 局部色、Mobile 后续独立阶段 保留 M 无底色；改观感须先裁决，字体平台选择仍在代码 |
+回退须整体恢复 DS-8 源/生成物/消费者及过渡守卫，保留上游工作；不回写用户数据或只抽掉生成源。G1 仅完成 Desktop 阶段；DS-9 已合并 #4300，桌面最终演练与交接由 DS-10 收尾。原影子层 2026-11-01 复查改为检查实际维护与消费情况，不取消维护责任。

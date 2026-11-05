@@ -29,7 +29,7 @@ HTML 不提供复制文件、在文件列表中定位或选择应用。无侧边
 无任务上下文的网页链接仍可右键复制和交给系统浏览器，只省略不可用的侧边栏项。
 键盘聚焦后 Enter 激活；Shift+Enter 保留 Shift+点击语义，Shift+F10／菜单键打开链接菜单，
 关闭菜单后焦点回到原链接。所有菜单复用语义主题组件，同时支持 Light／Dark。
-这组窗口与鼠标快捷键仅属于桌面端，不向手机增加无效的新窗口入口。
+这组窗口与鼠标快捷键仅属于桌面端。
 实现见 `components/chat/linkInteraction.ts`、`useLinkContextMenu.tsx`、`useOpenWithMenu.tsx`
 与 `useFileChipContextMenu.tsx`（均位于 Desktop renderer）。
 
@@ -96,12 +96,12 @@ HTML 不提供复制文件、在文件列表中定位或选择应用。无侧边
    它),而移动端普通链接没有独立链接色。要满足规则 1+2 的「两端统一」,聊天正文必须退出这个
    token,统一为**正文色 + 常显下划线**。token 本身保留(其它界面仍在用),只是不进
    markdown 正文与用户消息气泡。例外:伙伴群聊里的 `@成员` 点名不是链接,按产品裁决
-   (2026-10-20)用 `--msg-link` 着色、悬停出成员卡。2026-11-04 用户要求手机点名样式与 PC 对齐：Mobile 专用 `groupMentionText` 对应 CINDY Light／Dark 的 `msg-link`；只改字色，不额外加下划线、底色或字重，保留作者原有 Markdown 强调。广播及歧义点名可着色，但只有能唯一确定成员的点名提供身份入口；普通链接规则不变，见 `bot-group-chat.md`。
+   (2026-10-20)用 `--msg-link` 着色、悬停出成员卡。广播及歧义点名可着色，但只有能唯一确定成员的点名提供身份入口；普通链接规则不变，见 `bot-group-chat.md`。
 4. **候选判定:反引号不等于路径。** 行内 code 只接受真正的路径形状——带分隔符 / 绝对路径,
    或裸文件名;**不得**用「含斜杠或有个点后缀」兜底。显式 markdown 链接与正文裸路径不受此
    限(前者作者已声明,后者词法本就要求带分隔符)。
 5. **自动识别路径的点亮门槛按形态分级。** 显式 Markdown 文件链接（`[查看报告](路径)`）
-   在桌面和手机聊天中保留点击入口，不因尚未验证、文件缺失或断线退化为普通文字；点击时
+   在桌面聊天中保留点击入口，不因尚未验证、文件缺失或断线退化为普通文字；点击时
    通过原有文件访问通道打开或说明失败，保留复制目标的操作，不绕过权限、不猜搬迁位置。
    已解析文件仍沿用原有预览与文件菜单。没有文件访问上下文或不允许特权链接的内容面不因此
    获得文件访问能力。以下形态门槛仅适用于正文自动识别路径和行内 code。
@@ -224,10 +224,6 @@ PR #1144 的两轮 review 各捉到一个**同族**缺陷:「有下划线却点�
 | 桌面聊天正文            | **远程**会话里 stat 回 `unknown` 的引用     | 仅非歧义形状                           | 由 `isAmbiguousPathShape` 门槛裁决          |
 | 桌面聊天正文 / 用户气泡 | 会话 / 项目深链 chip(`InlineReferenceChip`) | 取决于是否注入 onClick | **与 `interactive` 同源**                   |
 | 桌面用户气泡            | URL / 图片路径                              | ✅                                     | ✅（改前只有 hover 下划线）                 |
-| 手机聊天正文            | 外链 / 图片 chip / 会话 chip                | 取决于 handler 是否注入                | **与 handler 同源**(`clickableInlineStyle`) |
-| 手机聊天正文            | 路径 chip                                   | 显式链接保留，其余取决于远端 verdict    | 由 `ChatPathChipSpan.lit` 单点裁决          |
-| 手机文件阅读器          | http(s)                                     | ✅                                     | ✅                                          |
-| 手机文件阅读器          | 会话 chip / 图片 chip / 本地路径 / mailto   | ❌（无 bridge、只放行 http(s)）        | ❌                                          |
 
 **正文文件类型图标（2026-09-22）**：桌面正文中已解析的文件链接与行内文件引用，文字前增加
 14px 共享 `FileTypeIcon`，按解析后的目标路径分类，继承文字颜色。图标只表达文件类型，
@@ -348,9 +344,7 @@ peek 有值 → 调用方跳过重验 → 链路恢复后也不再问。两端�
 守卫要求歧义判据「至少出现 2 处(sync + async 各一)」,而收敛后它只该有 1 处 —— 那条守卫在
 反向阻止判据单点化。计数式断言只在「必须存在」时用,不要用它表达「必须重复」。
 
-契约测试:`apps/mobile/src/__tests__/chatPathCandidate.test.ts`(候选精度 + 分级门槛 + 门槛
-来源无关性)、`apps/mobile/src/__tests__/selectableMarkdownHtml.test.ts`(阅读器点不动的元素
-一律无下划线无 pointer)、`apps/desktop/src/renderer/__tests__/markdownTarget.test.ts`
+契约测试:`apps/desktop/src/renderer/__tests__/markdownTarget.test.ts`
 (行内 code 不收宽松兜底)、`apps/desktop/src/renderer/__tests__/remotePathVerdictCache.test.ts`
 (不变量 A,含三种错误修法各自的反例)、
 `apps/desktop/src/renderer/__tests__/chatClickabilitySignal.test.ts`(源码级守卫)。

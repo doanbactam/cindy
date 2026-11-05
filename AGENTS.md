@@ -5,7 +5,7 @@ Cindy 是面向大众用户的开源 AI 助手，连接模型、工具与设备�
 
 ## 仓库边界与安全底线
 
-- 本仓库只负责 desktop、mobile 及其共享 packages。
+- 本仓库只负责 desktop 及其共享 packages。
 - 服务端位于独立仓库；除非用户明确要求，不要跨仓修改服务端。
 - 开始工作前先检查工作区状态，不覆盖、不回退用户已有改动。
 - 先读实际代码和测试，再决定实现；不要只依赖文档猜测现状。
@@ -32,7 +32,6 @@ Cindy 面向大众用户，让人以简单高效的方式用 AI 完成工作。�
 | 修改范围 | 模块规则入口 | 开发与架构正本 |
 | --- | --- | --- |
 | Desktop：main、renderer、preload、数据库、个人 IM / 官方 hook | [apps/desktop/AGENTS.md](apps/desktop/AGENTS.md) | [Desktop 开发](docs/dev-rules/desktop-development.md) |
-| Mobile：Expo 页面、远程调用、原生配置与模块；在手机上查看效果 | [apps/mobile/AGENTS.md](apps/mobile/AGENTS.md) | [Mobile 开发与冷更边界](docs/dev-rules/mobile-development.md) |
 | maker-core：Agent 编排、prompt、工具、translator、用量 | [packages/maker-core/AGENTS.md](packages/maker-core/AGENTS.md) | [Agent 行为](docs/dev-rules/maker-core-and-agent-behavior.md) |
 
 ## 当前规则索引
@@ -43,7 +42,7 @@ Cindy 面向大众用户，让人以简单高效的方式用 AI 完成工作。�
 
 - 首次接触本仓、需要定位功能代码位置或判断新代码归属模块时，先读仓库地图
   `docs/dev-rules/repo-map.md`。
-- 只为检查界面而需要启动 Desktop 或 Mobile 模拟器、且不需要真实账号时，用 `--mock`
+- 只为检查界面而需要启动 Desktop、且不需要真实账号时，用 `--mock`
   免登录模拟数据启动；新增或修改模拟任务、`--mock` 行为前先读 `docs/dev-rules/ui-mock-data.md`。
 - 首次安装、修复依赖或准备新 worktree 时，必须先读
   `docs/dev-rules/environment-setup.md`。
@@ -70,7 +69,7 @@ Cindy 面向大众用户，让人以简单高效的方式用 AI 完成工作。�
 - 修改共享任务、跨账号访客邀请、共享上下文或共享成员权限前，必须先读
   `docs/product-rules/shared-task-mode.md`；复用 device-link，同账号远控行为不变。
 - 修改 IM 工具授权、来源消息、多端确认或暂停期间的确认回执，或新增 IM 渠道前，
-  必须先读 `docs/product-rules/im-permission-confirmation.md`；Desktop、Mobile 与共享
+  必须先读 `docs/product-rules/im-permission-confirmation.md`；Desktop 与共享
   packages 共用同一最终决定，渠道收到回答不代表执行已恢复。
 - 新增或修改代输入（`ask_owner` 的 fill／scan、宿主步骤读取与执行、代输入卡、截图扫码、终端 askpass、
   单窗口实时画面、设备码识别，或任何经手主人填写值的路径）前，必须先读
@@ -200,7 +199,7 @@ Cindy 面向大众用户，让人以简单高效的方式用 AI 完成工作。�
   开关前，必须先读 `docs/dev-rules/configuration-and-overrides.md`。
 - 新增或修改涉及 workdir 文件、agent 进程、会话数据的功能，新增 IPC channel／推送事件，
   或修改 device-link 的重试／超时／断链恢复逻辑前，必须先读
-  `docs/dev-rules/remote-and-mobile-adaptation.md`；其中恢复路径改动必须回答该文件的
+  `docs/dev-rules/remote-adaptation.md`；其中恢复路径改动必须回答该文件的
   「故障半径三问」。
 - 在 Cindy 内嵌 worktree 会话里工作、准备提交或直推、或做 code review 前，必须先读
   `docs/dev-rules/development-workflow.md`。

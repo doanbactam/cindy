@@ -9,14 +9,12 @@ const ROOT = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const CANONICAL_DOCS = [
 	"docs/dev-rules/environment-setup.md",
 	"docs/dev-rules/desktop-development.md",
-	"docs/dev-rules/mobile-development.md",
 ];
 const CONTRIBUTING_DOCS = ["CONTRIBUTING.md", "CONTRIBUTING.en.md"];
 const CHECKED_DOCS = [...CONTRIBUTING_DOCS, ...CANONICAL_DOCS];
 const COMMAND_CHECKED_DOCS = [...CHECKED_DOCS, "apps/desktop/README.md"];
 const WORKSPACES = new Map([
 	["desktop", "apps/desktop/package.json"],
-	["mobile", "apps/mobile/package.json"],
 ]);
 const PNPM_BUILTINS = new Set(["install", "--version"]);
 
@@ -201,13 +199,10 @@ test("login-all-hifi embeds generated truth as a script-safe static literal", ()
 	assert.deepEqual(JSON.parse(match[1]), readJson("docs/design-previews/login-all-hifi/truth.json"));
 });
 
-test("login QA preview countdowns match Desktop and Mobile product constants", () => {
+test("login QA preview countdowns match Desktop product constants", () => {
 	const desktopMs = Number(readText("apps/desktop/src/renderer/components/login/loginDesignTokens.ts")
 		.match(/RESEND_COUNTDOWN_MS\s*=\s*([\d_]+)/)?.[1].replaceAll("_", ""));
-	const mobileSeconds = Number(readText("apps/mobile/src/auth/loginSkinLayout.ts")
-		.match(/RESEND_COUNTDOWN_SECONDS\s*=\s*([\d_]+)/)?.[1].replaceAll("_", ""));
-	assert.ok(desktopMs > 0 && mobileSeconds > 0);
-	assert.equal(desktopMs, mobileSeconds * 1000);
+	assert.ok(desktopMs > 0);
 	for (const demo of ["login-flow-hifi", "login-all-hifi"]) {
 		const dir = `docs/design-previews/${demo}`;
 		const truth = readJson(`${dir}/truth.json`);
@@ -215,17 +210,11 @@ test("login QA preview countdowns match Desktop and Mobile product constants", (
 		assert.ok(block, `${demo} must embed truth`);
 		assert.deepEqual(JSON.parse(block[1].replace(/^const RAW = /, "")), truth);
 		assert.equal((truth.desk ?? truth).constants.resendCountdownMs.value, desktopMs, demo);
-		if (truth.mobile) assert.equal(truth.mobile.constants.resendSeconds.value, mobileSeconds, demo);
 	}
 });
 
 test("current locale-aware QA artifacts cover every supported locale", () => {
 	const supportedLocales = readSupportedLocales("apps/desktop/src/shared/locale.ts");
-	assert.deepEqual(
-		readSupportedLocales("apps/mobile/src/i18n/locale.ts"),
-		supportedLocales,
-		"Desktop and Mobile must expose the same concrete locale set",
-	);
 	const expectedSet = [...supportedLocales].sort();
 	const currentLoginDemos = [
 		{
@@ -234,11 +223,11 @@ test("current locale-aware QA artifacts cover every supported locale", () => {
 		},
 		{
 			dir: "docs/design-previews/login-all-hifi",
-			copyPaths: [["desk", "copy"], ["mobile", "copy"]],
+			copyPaths: [["desk", "copy"]],
 		},
 		{
 			dir: "docs/design-previews/login-deletion-bubble",
-			copyPaths: [["desktop", "copy"], ["mobile", "copy"]],
+			copyPaths: [["desktop", "copy"]],
 		},
 	];
 

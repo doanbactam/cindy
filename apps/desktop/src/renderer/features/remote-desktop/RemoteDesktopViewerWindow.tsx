@@ -995,8 +995,7 @@ export function RemoteDesktopViewerWindow() {
   );
 }
 
-// Same glyphs as Mobile's remote desktop toolbar
-// (apps/mobile/src/remote-desktop/RemoteDesktopIcons.tsx).
+// Custom glyphs for the remote desktop toolbar.
 const WorkspaceLeftIcon = createLucideIcon('RemoteDesktopWorkspaceLeft', [
   ['rect', { x: '3', y: '3', width: '18', height: '14', rx: '2', key: 'screen' }],
   ['path', { d: 'M12 17v4M8 21h8M15 10H9m3-3-3 3 3 3', key: 'direction' }],

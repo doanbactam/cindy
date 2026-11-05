@@ -11,7 +11,7 @@
 
 可达组件、样式来源与 Token / 裸颜色 / 裸圆角统计不入库：需要时运行 `pnpm design:inventory:report`，输出到 `tmp/design-inventory-report.md`；要看某次提交时的数字，在该提交上重跑。
 
-登记 surface 数：59。平台包含 Desktop 与 Mobile；静态入口发现不表示已迁移或已实机验证。
+登记 surface 数：39。静态入口发现不表示已迁移或已实机验证。
 
 | ID | 平台 | 标题 | 生产入口 |
 | --- | --- | --- | --- |
@@ -54,26 +54,6 @@
 | `desktop.window.sidebar` | desktop | 右侧栏独立窗口 | `?sidebarWindow=1` → renderer/sidebar-window-entry.tsx；hash `/sidebar-window` |
 | `desktop.window.voice-dictionary-toast` | desktop | 语音词典 Toast 窗 | `?view=voice-input-dictionary-toast` → main-entry.tsx → VoiceInputDictionaryToast |
 | `desktop.window.voice-overlay` | desktop | 语音输入浮窗 | `?view=voice-input-overlay` → main-entry.tsx → VoiceInputOverlay |
-| `mobile.account-deletion` | mobile | 账号注销 | app/account-deletion.tsx |
-| `mobile.auth` | mobile | 登录与添加账号 | app/(auth)/login.tsx / app/add-account.tsx |
-| `mobile.chat.incoming-share` | mobile | 外部分享内容预览与任务、伙伴目标选择 | app/incoming-share.tsx |
-| `mobile.chat.new` | mobile | 新建任务 | app/sessions/new.tsx |
-| `mobile.chat.session` | mobile | 任务内容与输入 | app/sessions/[sessionId].tsx |
-| `mobile.chat.sharing` | mobile | 共享任务邀请与成员；供应商分享链接提示 | app/shared-session.tsx / app/provider-share.tsx |
-| `mobile.companions.cloud` | mobile | 云端伙伴：主力电脑离线时的对话与换电脑 | app/companions/cloud/[actorId].tsx |
-| `mobile.companions.direct` | mobile | 伙伴私聊回看 | app/companions/direct/[threadId].tsx |
-| `mobile.companions.groups` | mobile | 伙伴群聊与分工 | app/companions/groups/[groupId].tsx |
-| `mobile.device-management` | mobile | 设备管理 | app/devices/manage.tsx / app/devices/manage/[deviceId].tsx |
-| `mobile.devices` | mobile | 主机详情 | app/devices/[deviceId].tsx |
-| `mobile.files` | mobile | 任务文件与预览 | app/files/[sessionId].tsx / app/files/preview/[sessionId].tsx |
-| `mobile.home` | mobile | 主机与资源首页 | app/index.tsx / app/devices/index.tsx |
-| `mobile.mail` | mobile | 邮件阅读与附件预览 | app/mail-preview.tsx |
-| `mobile.overlay.connection-startup` | mobile | 根布局挂载的启动与连接反馈 | app/_layout.tsx → StartupSplashOverlay / ConnectionNoticeProvider；各页面 ConnectionBanner |
-| `mobile.plugins` | mobile | 插件目录、页面与原生交互 | app/plugins.tsx |
-| `mobile.relay-join` | mobile | 扫码加入自建中转 | app/relay-join.tsx |
-| `mobile.remote-desktop` | mobile | 远程桌面 | app/devices/desktop/[deviceId].tsx |
-| `mobile.resources` | mobile | 远程资源列表与详情 | app/resources/[collectionId].tsx / app/resources/[collectionId]/[resourceId].tsx |
-| `mobile.settings` | mobile | 设置（含调试与日志上传可见入口） | app/settings.tsx / app/settings/developer.tsx / app/settings/device-name.tsx / app/settings/user-bubble.tsx / app/settings/voice-dictionary.tsx / app/settings/voice-speaker-filter.tsx |
 
 ### 生产路由覆盖
 
@@ -128,54 +108,6 @@
 | `/cc-agent/orca/new` | /cc-agent/new | Navigate |
 | `/skillhub` | /skillhub/local | Navigate |
 
-### Mobile 文件路由覆盖
-
-| 入口 | 导出组件 | surface ID |
-| --- | --- | --- |
-| apps/mobile/app/(auth)/login.tsx | LoginRoute | `mobile.auth` |
-| apps/mobile/app/account-deletion.tsx | AccountDeletionScreen | `mobile.account-deletion` |
-| apps/mobile/app/add-account.tsx | AddAccountScreen | `mobile.auth` |
-| apps/mobile/app/companions/cloud/[actorId].tsx | CloudCompanionRoute | `mobile.companions.cloud` |
-| apps/mobile/app/companions/direct/[threadId].tsx | CompanionDirectMessages | `mobile.companions.direct` |
-| apps/mobile/app/companions/groups/[groupId].tsx | BotGroupChatRoute | `mobile.companions.groups` |
-| apps/mobile/app/devices/[deviceId].tsx | DeviceDetailScreen | `mobile.devices` |
-| apps/mobile/app/devices/desktop/[deviceId].tsx | RemoteDesktopRoute | `mobile.remote-desktop` |
-| apps/mobile/app/devices/index.tsx | HomeScreen | `mobile.home` |
-| apps/mobile/app/devices/manage/[deviceId].tsx | DeviceInformationScreen | `mobile.device-management` |
-| apps/mobile/app/devices/manage.tsx | DeviceManagementScreen | `mobile.device-management` |
-| apps/mobile/app/files/[sessionId].tsx | RemoteFileBrowserScreen | `mobile.files` |
-| apps/mobile/app/files/preview/[sessionId].tsx | RemoteFilePreviewScreen | `mobile.files` |
-| apps/mobile/app/incoming-share.tsx | IncomingShareScreen | `mobile.chat.incoming-share` |
-| apps/mobile/app/index.tsx | IndexScreen | `mobile.home` |
-| apps/mobile/app/mail-preview.tsx | MailPreviewScreen | `mobile.mail` |
-| apps/mobile/app/plugins.tsx | @/plugins/PluginsScreen | `mobile.plugins` |
-| apps/mobile/app/provider-share.tsx | ProviderShareLinkScreen | `mobile.chat.sharing` |
-| apps/mobile/app/relay-join.tsx | RelayJoinScreen | `mobile.relay-join` |
-| apps/mobile/app/resources/[collectionId]/[resourceId].tsx | RemoteResourceResolverScreen | `mobile.resources` |
-| apps/mobile/app/resources/[collectionId].tsx | RemoteCollectionScreen | `mobile.resources` |
-| apps/mobile/app/sessions/[sessionId].tsx | SessionScreen | `mobile.chat.session` |
-| apps/mobile/app/sessions/new.tsx | NewRemoteSessionScreen | `mobile.chat.new` |
-| apps/mobile/app/settings/developer.tsx | DeveloperSettingsScreen | `mobile.settings` |
-| apps/mobile/app/settings/device-name.tsx | RenameSelfDeviceScreen | `mobile.settings` |
-| apps/mobile/app/settings/user-bubble.tsx | UserBubblePage | `mobile.settings` |
-| apps/mobile/app/settings/voice-dictionary.tsx | VoiceDictionaryScreen | `mobile.settings` |
-| apps/mobile/app/settings/voice-speaker-filter.tsx | VoiceSpeakerFilterRoute | `mobile.settings` |
-| apps/mobile/app/settings.tsx | SettingsScreen | `mobile.settings` |
-| apps/mobile/app/shared-session.tsx | SharedSessionScreen | `mobile.chat.sharing` |
-
-### Mobile 布局 / 开发入口排除
-
-| 文件 | 原因 |
-| --- | --- |
-| apps/mobile/app/+native-intent.ts | native intent routing; no screen |
-| apps/mobile/app/_layout.tsx | layout; visible mounted feedback is a separate overlay surface |
-| apps/mobile/app/automations/[deviceId].tsx | legacy automation link redirect; no screen |
-| apps/mobile/app/listperf.tsx | __DEV__ list performance harness; not production UI |
-| apps/mobile/app/plugin-management-preview.tsx | gated plugin settings visual fixture; not production UI |
-| apps/mobile/app/splash-preview.tsx | MOBILE_VISUAL_MOCK_ENABLED preview; not production UI |
-
-Mobile 静态图跟随本地 import/reexport 与平台 TSX；根布局仅登记可见反馈，不把布局自身或资源实例另算 surface。服务端动态内容、运行期 import 拼接、原生系统呈现及未显式导入的消费者需人工复核；不宣称完整递归渲染图。
-
 <!-- END GENERATED: surface-facts -->
 
 ## 人工标注
@@ -185,8 +117,6 @@ DS-8（#4268 已合并；以下为 2026-09-10 接管证据）：Desktop 的 522/
 DS-9（2026-09-11，本地候选）：用户已决定桌面授权三项，聊天与授权呈现统一使用既有数值链及薄封装。工程/运行证据与未验证范围见 [DS-9 索引](../design-evidence/2026-09-11/ds9-desktop-core.md)。本轮 Codex 负责影响核对与修复，kirozeng 做视觉验收；长期 surface owner 不据此永久改派。没有把静态引用或组件样本等同整页 migrated。
 
 生成器不得改本表。首轮（DS-2a）：全部 `legacy`；暂无归属写 `unassigned`。`protected` 与迁移状态正交。
-
-Mobile 已由 DS-7 纳入同一台账（2026-09-10 静态入口发现），保留 legacy；数值接管留待 Mobile 独立阶段。发现维护由 Codex 执行、kirozeng 协调；长期页面负责人待认领，2026-09-17 复查，不以 unassigned 表示无人跟进。
 
 另册 / 排除（不进必做迁移清单）：
 
@@ -236,26 +166,6 @@ Mobile 已由 DS-7 纳入同一台账（2026-09-10 静态入口发现），保�
 | `desktop.window.sidebar` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | DESIGN.md §15 CINDY 皮肤族 | DS-9 保留现有专属表面；未改全局 Button/主题源，按共享依赖核影响 | 本批未直接改该入口；无真实实例的独立/原生/账号/插件场景保留原合同，未作完整运行验收；kirozeng 安排所需环境，Codex 核对，2026-09-17 或 DS-10 开工前复查 |
 | `desktop.window.voice-dictionary-toast` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | — | DS-9 保留现有专属表面；未改全局 Button/主题源，按共享依赖核影响 | 本批未直接改该入口；无真实实例的独立/原生/账号/插件场景保留原合同，未作完整运行验收；kirozeng 安排所需环境，Codex 核对，2026-09-17 或 DS-10 开工前复查 |
 | `desktop.window.voice-overlay` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | — | DS-9 保留现有专属表面；未改全局 Button/主题源，按共享依赖核影响 | 本批未直接改该入口；无真实实例的独立/原生/账号/插件场景保留原合同，未作完整运行验收；kirozeng 安排所需环境，Codex 核对，2026-09-17 或 DS-10 开工前复查 |
-| `mobile.account-deletion` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.auth` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.chat.incoming-share` | Chris / Codex（PR #6582） | legacy | — | iOS 外部分享目标选择新入口；沿用 Mobile 主题与 Typography，未声明整体设计系统迁移 | 2026-10-20 系统模拟器实测；发布前补充真机与专用目标发送验收 |
-| `mobile.chat.new` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.chat.session` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.chat.sharing` | unassigned | legacy | — | DS-7 发现入口，Mobile 独立阶段接管；未迁移 | 保持现状；发现问题记下一动作，本张不修视觉 |
-| `mobile.companions.cloud` | unassigned | legacy | — | DS-7 发现入口，Mobile 独立阶段接管；未迁移 | 保持现状；发现问题记下一动作，本张不修视觉 |
-| `mobile.companions.direct` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.companions.groups` | unassigned | legacy | — | DS-7 发现入口，Mobile 独立阶段接管；未迁移 | 保持现状；发现问题记下一动作，本张不修视觉 |
-| `mobile.device-management` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.devices` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.files` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.home` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.mail` | unassigned | legacy | — | DS-7 发现入口，Mobile 独立阶段接管；未迁移 | 保持现状；发现问题记下一动作，本张不修视觉 |
-| `mobile.overlay.connection-startup` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.plugins` | unassigned | legacy | — | DS-7 发现入口，Mobile 独立阶段接管；未迁移 | 保持现状；发现问题记下一动作，本张不修视觉 |
-| `mobile.relay-join` | unassigned | legacy | — | DS-7 发现入口，Mobile 独立阶段接管；未迁移 | 保持现状；发现问题记下一动作，本张不修视觉 |
-| `mobile.remote-desktop` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.resources` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
-| `mobile.settings` | kirozeng 协调 / Codex 发现维护；页面 owner 待认领 | legacy | — | DS-7 已发现入口；Mobile 独立阶段接管，未迁移 | 2026-09-17 复查入口变化和页面 owner；动态内容、平台实际呈现留 Mobile 独立阶段验证 |
 
 ### Usage History category colors (2026-09-09)
 
@@ -263,13 +173,6 @@ Mobile 已由 DS-7 纳入同一台账（2026-09-10 静态入口发现），保�
 - All historical model identities share the category palette across table and daily bars; Agent/harness marks reuse `--engine-badge-cc`, `--engine-badge-codex` and `--usage-model-1` for pi teal (owner refinement, 2026-09-09).
 - `usageHistoryColors.ts` derives OKLCH hues from existing `--usage-model-*` seeds at runtime (governance §3.4), outside static token migration.
 - Geometry, hit testing and filtering retain their existing contracts. Light/Dark evidence and designer acceptance are recorded separately.
-
-### Mobile login native actions (2026-09-21)
-
-- Surface: `mobile.auth`; partial iOS migration, not a whole-screen native conversion.
-- LoginNativeButton.ios shares nativeGlassButtonStyle with navigation chrome. Primary, social, back, method, resend, consent-dialog, captcha, organization-history and saved-account actions use SwiftUI Button; loading uses ProgressView. Brand artwork and login geometry remain owned by their existing components.
-- RN remains for non-iOS controls, inputs, consent checkbox and inline legal links. Login panels themselves remain RN layout. No authentication protocol or native fingerprint inputs changed.
-- Evidence: `docs/design-evidence/iphone-duo-adaptation.md`, login native actions section. Light iPad landscape inspected; dark and complete native interactions remain unverified.
 
 伙伴语音操作条：`CompanionVoiceToolbar.tsx` 复用原通话控制器，输入框保留草稿并锁定，操作条与详情预留布局空间；窄窗换行，Light/Dark 语义 token，退出及后台任务边界见 `docs/product-rules/companion-voice-mode.md`。
 

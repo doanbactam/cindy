@@ -18,7 +18,7 @@
 | Telegram 命令、消息、附件与官方／个人 bot 差异 | [Telegram 能力台账](telegram-bot-parity.md) |
 | 登录、密码、验证码等主人代输入 | [代输入](input-handoff.md) |
 | 邮件卡的收件人与编辑、发送确认、深浅色、已读标记与头像权限 | [邮件卡](mail-card.md) |
-| 目标运行、补充消息、停止与手机 `/goal` | [目标模式](goal-mode.md) |
+| 目标运行、补充消息与停止 | [目标模式](goal-mode.md) |
 | 自动任务与目标任务的生命线：归档后恢复、归档前确认、失败后手动继续 | [归档与自动化](archive-pauses-automations.md) |
 | 用量上限、重置时刻与自动继续 | [用量上限](usage-limit-auto-continue.md) |
 | 任务模型、来源、推理强度与 Fast | [运行时控制](session-runtime-control.md) |

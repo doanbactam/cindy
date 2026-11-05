@@ -53,13 +53,6 @@ packages/opencli-vendor/cli-manifest.json linguist-generated=true
 packages/opencli-vendor/UPSTREAM.json linguist-generated=true
 packages/opencli-vendor/cindy/modules.js linguist-generated=true
 
-# ── 开源公开仓排除(内部专用,不进对外发布)────────────────────────────
-# export-ignore 让 `git archive` 导出时自动剔除;若以「复制工作树 + git init」方式建
-# 公开仓,则在新仓首次提交前排除服务端桥接和官方发布链路。
-apps/mobile/scripts/release-*.mjs export-ignore
-apps/mobile/scripts/release-*.sh export-ignore
-apps/mobile/scripts/promote-*.mjs export-ignore
-
 # DTCG generated whole files / marked regions: stable bytes on Windows as well.
 apps/desktop/src/renderer/themes/colors.ts text eol=lf
 apps/desktop/src/renderer/themes/builtin/*.ts text eol=lf

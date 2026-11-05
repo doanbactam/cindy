@@ -1,8 +1,7 @@
 /**
  * deviceResponsiveness.ts — per-device「目标设备无响应」熔断器(纯逻辑,node 可单测)。
  * ---------------------------------------------------------------------------
- * desktop / mobile 控制端共享(原 apps/mobile/src/device-link/deviceResponsivenessBreaker.ts,
- * 2026-08 提炼到 maker-shared 供桌面控制端复用;两端各自持有 UI 镜像 store 与接线)。
+ * 桌面控制端使用(2026-08 从原手机端提炼到 maker-shared;UI 镜像 store 与接线由使用方持有)。
  *
  * 事故链背景(2026-07 生产):桌面端进程活着(relay 心跳 / presence 全正常)但内部
  * 卡死(DB gate 失败),invoke 永不回包。手机端每个请求都等满超时,重试链 + 多触发源

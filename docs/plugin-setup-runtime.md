@@ -477,12 +477,12 @@ Agent 只选择句柄，不能提供 URL、窗口参数、Secret key 路径或�
 
 ## 8. Desktop、Mobile、IM 与 Headless
 
-本期结论：**当前分支只交付 Desktop；Mobile UI 和跨设备配置另开独立
+本期结论：**当前分支只交付 Desktop；跨设备配置另开独立
 worktree / 分支 / PR。所有入口都不得静默绕过 setup gate。**
 
 - Desktop：完整 Ask-shell 卡片、Action、实时 update 和原调用恢复；
-- Mobile / device-link：当前分支不声明支持 `plugin_setup` 原生卡片，也不修改
-  `packages/maker-shared` / `apps/mobile`；后续任务需补协议 allowlist、只读等待态和
+- device-link 远程控制：当前分支不声明支持 `plugin_setup` 卡片，也不修改
+  `packages/maker-shared`；后续任务需补协议 allowlist、只读等待态和
   “请在被控桌面完成设置”的明确引导，配置仍只能在 Desktop 完成；
 - IM：返回安全的配置引导，不发送 Secret；需要 Desktop UI 的 Action 提示用户转到 Desktop；
 - Headless / hook：Host 返回结构化 `SETUP_REQUIRED`，包含安全 assessment 和可操作提示，不自动打开本地窗口；

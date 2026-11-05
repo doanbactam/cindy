@@ -368,8 +368,8 @@ test('glossary.json: exempt 路径带来源前缀,不是裸 key', () => {
     for (const item of term.exempt ?? []) {
       assert.match(
         item,
-        /^(desktop|mobile\/[a-zA-Z]+):.+$/,
-        `术语 ${term.id} 的豁免 "${item}" 缺来源前缀(desktop: / mobile/<ns>:)`,
+        /^desktop:.+$/,
+        `术语 ${term.id} 的豁免 "${item}" 缺来源前缀(desktop:)`,
       );
     }
   }
@@ -745,7 +745,7 @@ test('findHalfWidthPunct: 半角标点后有空格再接中文同样算违规', 
 test('glossary.json: punctuationExempt 格式合法且不滥用', () => {
   const list = glossary.punctuationExempt ?? [];
   for (const entry of list) {
-    assert.match(entry, /^(desktop|mobile\/[a-zA-Z]+):.+$/, `豁免项格式非法:${entry}`);
+    assert.match(entry, /^desktop:.+$/, `豁免项格式非法:${entry}`);
   }
   // 标点豁免的正当用途极窄(机器可读的结构化文本),数量失控就说明规则本身该改而不是加豁免
   assert.ok(list.length <= 5, `标点豁免已达 ${list.length} 条,请复核规则本身是否需要调整`);

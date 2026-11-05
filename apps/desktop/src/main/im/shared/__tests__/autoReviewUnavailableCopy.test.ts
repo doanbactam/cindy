@@ -18,10 +18,9 @@ function readNotice(file: string, key: 'AUTO_REVIEW_UNAVAILABLE' | 'AUTO_REVIEW_
 }
 
 const desktopLocales = ['zh-CN', 'zh-TW', 'en', 'ja', 'ko'] as const;
-const mobileLocales = desktopLocales;
 
 describe('auto-review unavailable copy', () => {
-  it('desktop and mobile locales suggest Full access and name the risk', () => {
+  it('desktop locales suggest Full access and name the risk', () => {
     const expected = {
       'zh-CN': ['完全访问', '风险更高'],
       'zh-TW': ['完全訪問', '風險更高'],
@@ -35,17 +34,6 @@ describe('auto-review unavailable copy', () => {
         'apps/desktop/src/renderer/i18n/locales',
         locale,
         'common.json',
-      ), 'AUTO_REVIEW_UNAVAILABLE');
-      for (const phrase of expected[locale]) expect(notice).toContain(phrase);
-      expect(notice).not.toContain('默认权限');
-      expect(notice).not.toContain('Default permissions');
-    }
-    for (const locale of mobileLocales) {
-      const notice = readNotice(path.join(
-        repoRoot,
-        'apps/mobile/src/i18n/locales',
-        locale,
-        'session.json',
       ), 'AUTO_REVIEW_UNAVAILABLE');
       for (const phrase of expected[locale]) expect(notice).toContain(phrase);
       expect(notice).not.toContain('默认权限');
@@ -65,13 +53,6 @@ describe('auto-review unavailable copy', () => {
     for (const locale of desktopLocales) {
       const notice = readNotice(path.join(
         repoRoot, 'apps/desktop/src/renderer/i18n/locales', locale, 'common.json',
-      ), 'AUTO_REVIEW_UNAVAILABLE_WECHAT');
-      for (const phrase of expected[locale]) expect(notice).toContain(phrase);
-      for (const phrase of forbidden) expect(notice).not.toContain(phrase);
-    }
-    for (const locale of mobileLocales) {
-      const notice = readNotice(path.join(
-        repoRoot, 'apps/mobile/src/i18n/locales', locale, 'session.json',
       ), 'AUTO_REVIEW_UNAVAILABLE_WECHAT');
       for (const phrase of expected[locale]) expect(notice).toContain(phrase);
       for (const phrase of forbidden) expect(notice).not.toContain(phrase);

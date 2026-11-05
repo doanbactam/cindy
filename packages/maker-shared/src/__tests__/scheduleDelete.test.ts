@@ -52,9 +52,9 @@ describe('mobile schedule delete model', () => {
   });
 
   it('buildScheduleDeletePreview excludes the hand-bound targetSessionId from the mobile preview', () => {
-    // mobile 删除确认(runDeleteSchedule)用 preview.sessionIds 批量 patchSessionMeta 改状态,
+    // 删除确认用 preview.sessionIds 批量 patchSessionMeta 改状态,
     // 手绑的用户既有会话(schedule.targetSessionId)必须从预览里排除,否则会被误软删
-    // (apps/mobile/app/automations/[deviceId].tsx 透传 schedule.targetSessionId 作 excludeSessionId)。
+    // (调用方透传 schedule.targetSessionId 作 excludeSessionId)。
     const boundId = 'user-session-bound';
     const preview = buildScheduleDeletePreview([
       run({ id: 'r1', sessionId: boundId }),

@@ -72,14 +72,6 @@ export const CONTRIBUTION_LIMITS = { title: 200, body: 60_000, name: 100, email:
  */
 const UI_PATH_PREFIXES = [
   'apps/desktop/src/renderer/',
-  'apps/mobile/app/',
-  'apps/mobile/src/auth/',
-  'apps/mobile/src/components/',
-  'apps/mobile/src/i18n/',
-  'apps/mobile/src/notifications/',
-  'apps/mobile/src/session/',
-  'apps/mobile/src/settings/',
-  'apps/mobile/src/theme/',
 ];
 const UI_FILE_SUFFIXES = ['.css', '.scss', '.less'];
 

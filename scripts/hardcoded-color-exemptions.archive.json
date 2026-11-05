@@ -107,36 +107,6 @@
    "owner": "SPLASH-V2"
   },
   {
-   "glob": "apps/mobile/src/theme/tokens.ts",
-   "reason": "mobile CINDY token source of truth: palette literals are the governed values, not component hardcoding",
-   "owner": "M1-mobile-align"
-  },
-  {
-   "glob": "apps/mobile/src/__tests__/themeTokens.test.ts",
-   "reason": "mobile token contract tests assert exact governed palette values",
-   "owner": "M1-mobile-align"
-  },
-  {
-   "glob": "apps/mobile/src/__tests__/homeDesktopFirst.test.ts",
-   "reason": "mobile desktop-parity tests assert token/icon migration evidence and expected palette strings",
-   "owner": "M1-mobile-align"
-  },
-  {
-   "glob": "apps/mobile/src/__tests__/mathWebViewHtml.test.ts",
-   "reason": "mobile webview HTML fallback color test mirrors token-derived CINDY surface",
-   "owner": "M1-mobile-align"
-  },
-  {
-   "glob": "apps/mobile/src/session/BlurBackdrop.tsx",
-   "reason": "mobile blur component comments document approved translucent token source values; runtime styles consume tokens",
-   "owner": "M1-mobile-align"
-  },
-  {
-   "glob": "apps/mobile/src/__tests__/typographyTokenDiscipline.test.ts",
-   "reason": "caret 防红回流守护测试:红色字面量是禁止匹配的正则模式与豁免蓝值,非组件硬编码",
-   "owner": "M1-mobile-align"
-  },
-  {
    "glob": "apps/desktop/src/renderer/components/sidebar/VendorIcon.tsx",
    "reason": "hsl(var(--sidebar-muted)) 合法 token 消费(规则16 HSL wrap);红胶囊反白重构 2026-07-19 改行形态后入账",
    "owner": "lead"
@@ -170,26 +140,6 @@
    "glob": "apps/desktop/src/renderer/components/login/LoginPage.tsx",
    "reason": "注释说明 Apple 图标暗色反相值(#2A2828),消费走 -dark.svg 资产",
    "owner": "login-dark"
-  },
-  {
-   "glob": "apps/mobile/app/(auth)/login.tsx",
-   "reason": "注释说明 loginError 语义豁免值(#D91F37),消费走 loginPalettes",
-   "owner": "login-dark"
-  },
-  {
-   "glob": "apps/mobile/src/components/LoginSkinControls.tsx",
-   "reason": "Apple/SSO 品牌图标反相 fill(资产固有色,与桌面 icons/*-dark.svg 同源;figma 489:676/489:710)+ 注释色值;主题色一律走 colors.login",
-   "owner": "login-dark"
-  },
-  {
-   "glob": "apps/mobile/src/components/MobileLoginHandoffStage.tsx",
-   "reason": "注释引用暗色 SLOGAN 资产固有色(#FBFBFB),消费走 -dark 资产与 colors.login",
-   "owner": "login-dark"
-  },
-  {
-   "glob": "apps/mobile/src/auth/__tests__/loginConsent.test.ts",
-   "reason": "consent 双态色板守卫单测(token 期望 hex/rgba,同 tokenRegistry.test.ts 先例)",
-   "owner": "login-consent"
   },
   {
    "glob": "apps/desktop/native/agent-island/macos-agent-island-helper.swift",

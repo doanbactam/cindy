@@ -474,7 +474,7 @@ describe('[1] link-accept 发送失败的有限重试', () => {
 
 describe('[4] 多控制端隔离:两个控制端共享同一被控端,一个静默不波及另一个', () => {
   it('ctrl-a 停止收 accept(持续背压重试→耗尽)期间与之后,ctrl-b 建链/订阅/回包全程零感知', () => {
-    // 故障半径三问的被控端拓扑用例(remote-and-mobile-adaptation §3):被控端与
+    // 故障半径三问的被控端拓扑用例(remote-adaptation §3):被控端与
     // relay 只有一条连接,ctrl-a 的 link 级故障(accept 送不出去 = peer 静默形态)
     // 的全部恢复动作(有限重试→放弃)必须收在 ctrl-a 的 link 内。
     const sendLinkAccept = vi.fn((dst: string) => {

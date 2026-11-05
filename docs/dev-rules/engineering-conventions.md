@@ -101,7 +101,7 @@ UI 文案的语气与措辞另见 [`DESIGN.md`](../design-rules/DESIGN.md) 的 V
 - **回归测试先红后绿**：修 bug 时先用最小用例复现修复前的失败，再验证修复后的通过。若
   只能测试静态契约，必须写出规则编号和保留原因，并把它放进明确的 guard／静态检查位置，
   不要把普通布局、类名、import 或调用顺序扫描伪装成 unit test。只包含跨文件静态契约的
-  Desktop / Mobile 测试文件必须加入 `scripts/test-workspaces.config.mjs` 的 guard allowlist，并由
+  Desktop 测试文件必须加入 `scripts/test-workspaces.config.mjs` 的 guard allowlist，并由
   CI 的 `pnpm test:guard` 执行；混合文件中的静态断言只有在保护权限、凭证、协议或竞态
   规则且无法从生产入口隔离时才保留，并在测试名或注释中写明失效后果。没有对应规则或
   失效后果的源码字面量断言直接删除。
@@ -274,9 +274,6 @@ PR 门禁必须在 Windows 上用多个并行分片（当前为 4 个）完整�
 - **影子 catalog**：有几批不走 i18next 的手写多语 catalog，根脚本只扫 locale JSON、扫不到
   这些 `.ts`。它们由 vitest 直接 import 运行时对象覆盖，复用
   `scripts/shared/glossary-rules.mjs` 的同一套判定，随 `test:unit` 阻断：
-  - mobile：`src/auth/loginMessages.ts`、`src/session/newSessionMessages.ts`、
-    `src/session/fullAccessConfirmationCopy.ts`（Full access 高风险权限提示）→
-    `apps/mobile/src/__tests__/shadowCatalogGlossary.test.ts`
   - desktop：`src/main/applicationMenuLabels.ts`（macOS 原生菜单栏）→
     `apps/desktop/src/main/__tests__/applicationMenuLabels.test.ts`
   - desktop：`src/main/endpointManifestDialogCopy.ts`（启动期端点清单获取失败的系统弹框，
@@ -288,21 +285,19 @@ PR 门禁必须在 Windows 上用多个并行分片（当前为 4 个）完整�
     CJK 与标点，免得实参本身影响判定。
 
   新增同类手写 catalog 时记得加进对应测试的 `collectEntries()`。**catalog 要单独成模块**：
-  原先这两份分别嵌在 `bootstrap-electron.ts` 与 `fullAccessConfirmation.ts` 里，测试一 import
-  就会拉起整个 Electron 主进程 / react-native，根本跑不起来——这也是它们长期是盲区的原因。
+  原先菜单文案嵌在 `bootstrap-electron.ts` 里，测试一 import 就会拉起整个 Electron 主进程，
+  根本跑不起来——这也是它长期是盲区的原因。
 - **Slack / IM 侧的文案不在任何 locale 文件里**：`src/main/hook-control/interactions.ts` 的
   权限卡片按钮是硬编码中文，与应用内 `permissions.alwaysAllowForSession` 是同一个动作。
   改产品术语时这类「同一动作、两处独立文案」要一起找出来，否则用户在 Slack 和 App 里
   看到两种说法。
 - **批量改术语时覆盖相关文案断言，完整单测由 CI 兜底**：仓库里有若干测试直接断言中文文案
-  （`automationGeneratedSessions.test.ts`、`builtinToolsCollabDescriptionI18n.test.ts`、
-  mobile 的 `sessionMenu.test.ts` 等）。它们是有意的文案锁，改词后要同步更新期望值，
-  不能靠 guard 绿灯就认为改完了。反过来这也是一层兜底——Session→对话 那轮正是
-  `mobileCindyVoiceSession.test.ts` 暴露了漏网的「语音识别会话」（ASR WebSocket
-  连接，不是产品对话）。
+  （`automationGeneratedSessions.test.ts`、`builtinToolsCollabDescriptionI18n.test.ts`
+  等）。它们是有意的文案锁，改词后要同步更新期望值，
+  不能靠 guard 绿灯就认为改完了。
 - **有些 locale 文案是 package 源的镜像**：改 locale 时必须同步改源，否则镜像断言会红。
   已知两处：`packages/maker-shared/src/sessionOperation.ts` 的 `DESKTOP_SESSION_CHAT_PLACEHOLDER_ZH_CN`
-  （mobile composer placeholder 必须等于 desktop `ccAgent.layout.chatPlaceholder`）、
+  （必须等于 desktop `ccAgent.layout.chatPlaceholder`）、
   `packages/maker-scheduler/src/builtin-templates.ts`（desktop locale 的 scheduler 模板块要求与
   package 源逐字一致）。这类断言不是碍事，正是它们保证了跨端文案不漂移。
 - **标点可能不在 locale 里**：部分错误消息由代码拼接（如 `cloudVoiceHttpErrorMessage()`

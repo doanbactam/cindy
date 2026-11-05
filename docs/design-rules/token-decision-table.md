@@ -64,7 +64,6 @@
 桌面 `ColorRegistry` 当前只管颜色。尺寸建议放在共享 login layout token / constants 模块中，例如：
 
 - desktop renderer：`apps/desktop/src/renderer/components/login/loginDesignTokens.ts`
-- mobile：`apps/mobile/src/theme/loginTokens.ts` 或 `apps/mobile/src/auth/loginDesignTokens.ts`
 - browser callback main：独立 HTML renderer 使用同一份可序列化常量，避免手写散落数值
 
 | Figma 值 | 出现场景 | 决策 | token / 类型 | 说明 |

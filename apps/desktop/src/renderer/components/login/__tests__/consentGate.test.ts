@@ -4,8 +4,6 @@ import { canResumePendingConsent, makeConsentStamp } from '../consentGate';
 
 /**
  * consentGate 行为单测(codex 审查 P1:pending 陈旧续接竞态)。
- * 手机镜像见 apps/mobile/src/auth/__tests__/consentGate.test.ts,
- * 用例集必须保持一致(双端语义同源)。
  */
 describe('consentGate:pending 续接校验', () => {
   const opened = makeConsentStamp('identifier', false, false);

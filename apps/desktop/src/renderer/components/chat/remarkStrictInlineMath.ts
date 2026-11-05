@@ -5,11 +5,10 @@
  * 允许横跨反引号,导致「价格在 $5 和 $10 之间」被配成公式「5 和」、
  * 「$10 …;`$HOME`」可能跨 code span 配对(模拟器实测误伤后收敛的结构性
  * 修复)。本插件在 parse 后用 Pandoc 风格紧贴规则复核每个 inlineMath,
- * 不满足的整体还原成原文 text 节点。**规则与 mobile parser 的 inline math
- * matcher 保持一致**(apps/mobile messageMarkdown.ts),两端语义对齐:
+ * 不满足的整体还原成原文 text 节点:
  *
  * - 内容首/尾是空白 → 降级(「$5 和 $」这类货币配对)。
- * - 内容含换行 → 降级。mobile 的 inline matcher 只接受单行公式,跨行内容
+ * - 内容含换行 → 降级。行内公式只接受单行,跨行内容
  *   是正文边界误配,不能交给 KaTeX 变成跨行排版或错误色文本。
  * - 内容含反引号 → 降级(合法 LaTeX 无 backtick,必是跨 code span 误判)。
  * - 闭合 $ 后紧跟数字 → 降级(「$5和$10」CJK 无空格形态)。

@@ -58,7 +58,6 @@ const CRITICAL_DEPS = [
   { name: 'better-sqlite3', checkPath: 'node_modules/better-sqlite3/package.json' },
 ];
 
-const WORKSPACE_CRITICAL_DEPS = CRITICAL_DEPS.slice(0, 2);
 // 子包下的残缺目录 —— 这些本不该存在于子包 node_modules（pnpm 10 会 hoist 到根），
 // 但某些 postinstall 残留（例如 electron postinstall 解压的 dist/）可能会让这些路径
 // 看起来"存在"。Node.js 的 require 解析会卡在残缺目录（有路径但没 package.json）
@@ -222,29 +221,6 @@ function findBrokenDeps(deps = CRITICAL_DEPS) {
     }
   }
   return broken;
-}
-
-// Simulator entrypoints are diagnostics/startup, never an implicit dependency repair.
-export function checkWorkspaceDependencies(root = ROOT) {
-  const missing = WORKSPACE_CRITICAL_DEPS.filter(({ checkPath }) =>
-    !fs.existsSync(path.join(root, checkPath))).map(({ name }) => name);
-  for (const name of ['expo', '@expo/env', 'react-native']) {
-    if (![path.join(root, 'apps/mobile/node_modules', name, 'package.json'),
-      path.join(root, 'node_modules', name, 'package.json')].some((file) => fs.existsSync(file))) missing.push(name);
-  }
-  return missing;
-}
-
-function ensureWorkspaceOnlyDependencies() {
-  const missing = checkWorkspaceDependencies();
-  const lockIssue = reasonLockfileOutOfSync();
-  if (missing.length || lockIssue) {
-    err(`依赖检查失败: ${missing.join(', ') || lockIssue}`);
-    err('保留现有 node_modules，未安装或删除依赖。请在当前 worktree 显式运行 pnpm install --frozen-lockfile。');
-    process.exitCode = 1;
-    return;
-  }
-  log('workspace 依赖检查通过（只读）');
 }
 
 function runInstall(args = ['install']) {
@@ -768,10 +744,6 @@ function ensureElectronNativeBinding(electronVersion, electronArch) {
 }
 
 function main() {
-  if (process.argv.slice(2).includes('--workspace-only')) {
-    ensureWorkspaceOnlyDependencies();
-    return;
-  }
   if (process.argv.slice(2).includes('--electron-binary')) {
     ensureElectronBinaryAfterInstall();
     return;

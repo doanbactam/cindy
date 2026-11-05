@@ -4,7 +4,7 @@
 > **读取时机**：修改凭证或授权信息处理、文件落盘位置、用户持久数据、临时文件、
 > 测试目录或运行时生成物之前
 
-本文约束 Desktop、Mobile、共享 package、脚本和测试中的本地文件写入。数据库 migration
+本文约束 Desktop、共享 package、脚本和测试中的本地文件写入。数据库 migration
 另见 [`database-and-migrations.md`](database-and-migrations.md)，Renderer 与 IPC 边界另见
 [`electron-security-and-process-boundaries.md`](electron-security-and-process-boundaries.md)。
 
@@ -205,7 +205,7 @@ Claude.ai 登录，也不得收集、存储或中转订阅凭证。Cindy 因此�
   错误步骤的成功 IPC 回包不等于登录成功，不清除该步骤的等待时间。
 - 限流帮助不建议重启、重装或切换网络，持续异常时引导用户将日志、版本和出错时间私下
   提供给支持人员。复用本机日志目录入口，不自动上传。旧响应适配器可省略 headers，
-  旧 IPC 消费者可忽略 retryAt；Mobile 暂不增加等待时间界面。
+  旧 IPC 消费者可忽略 retryAt。
 
 ### 运行时会话续期退避
 
@@ -272,11 +272,9 @@ relay 原有 60 秒主动续期节流保持不变。
 | 浏览器用户配方与经验 | `userData/browser-recipes/<site>/recipes/<id 的 SHA-256>.json`，每站多个流程，原子替换；兼容旧 `recipe.json`，新文件优先。只保存参数化定义及 candidate/active/suspended 状态、浏览器 profile 范围，不保存试跑 inputs/页面返回值；禁止写入凭据，业务变动值用 inputs。同站 `experience.json` 最多保存 32 种操作形状（动作枚举、次数、时间），不保存 URL 路径/查询、选择器、脚本或输入输出；删除站点目录一并重置。重复形状仅提示当前 Agent 判断，不触发后台模型。试跑凭证与单轮修复预算只在 MCP 会话内存，暂停状态跨重启保留。 |
 | 浏览器大结果补读 | MCP 工具会话内存中保留最近四份原始 JSON，每份最多 200 万字符；不落盘、不上传，关闭会话后释放。`readResult` 只能读当前会话生成的引用，沿用原页面实际 profile 的代输入读取限制；切换后端、stop 或读取受保护页面时清除。工具复用宿主现有生命周期与后端对象引用，在下一次访问及异步预检后核对，包括设置/其它任务切换、切走再切回和嵌入后端恢复；切换中的动作仍报告真实结果，但不缓存原文或保存试跑凭证。超过上限明确截断，不能声称完整原文已保存。 |
 | 自建中转服务（Desktop） | `owners/<owner-key>/device-link-relay/`：`config.json` 只存选择、本机中转设置与服务器部署记录（地址、中转 ID、主人公钥，不含秘密）；`secrets/<中转ID>.enc` 是本机在该中转上的设备凭证与 Ed25519 签名私钥（本机当主人时即主人密钥），经 safeStorage 加密，Linux 只有 basic_text 时拒绝保存；第 1 版的 `credential.enc` / `owner-credential.enc` 读到旧配置时删除；`host/` 是本机运行中转时的数据（`relay-state.json` 只存各设备凭证的 SHA-256 与档案，0600 原子写入；`media/` 为设备间中转的文件，创建 24 小时后清理）。全部按账号隔离，账号作用域未提交时不读写。见 `device-link/selfHostedRelayConfig.ts`、`packages/device-link-relay` 与 [方案](../self-hosted-relay-plan.md) |
-| 自建中转服务（Mobile） | AsyncStorage `cindy.mobile.self-hosted-relay.v2.<账号>` 只存选择（中转地址、名称、主人公钥、本机设备 ID），不含秘密；设备凭证与 Ed25519 签名私钥合存为 `expo-secure-store` 的 `cindy.selfHostedRelay.credential.v2.<账号哈希>`，仅本机、解锁后可读。没有签名私钥的 v1 记录不再使用，读到时尽力删除。见 `apps/mobile/src/device-link/selfHostedRelay.ts` |
 | 自建中转服务（用户服务器） | 「部署到我的服务器」经 SSH 写入用户自己的服务器：`/opt/cindy-relay`（Node 运行环境与 `relay.mjs`）、`/var/lib/cindy-relay`（属 `cindy-relay` 系统用户、0700：设备凭证哈希与证书档案、Let's Encrypt 账户密钥、0600 原子发布的 `tls/material.json` 证书与 TLS 私钥、`status.json`）、`/etc/systemd/system/cindy-relay.service`。旧分立 PEM 文件仅在密钥配对且未过期时兼容读取；续期提交失败保留上一完整代次。主人凭证明文与主人私钥从不离开主人电脑；卸载前核对中转 ID 和主人公钥，匹配才删除。见 `device-link/selfHostedRelayDeploy.ts` |
 | 本机应用 Agent 授权 | `owners/<owner-key>/local-agent/grants.json`，仅含令牌 SHA-256、自报应用资料、账号范围和按授权归属的原生恢复绑定，不存令牌明文、供应商凭据或消息。复用原子写入与恢复 helper；profile 根 `local-agent/host.lock` 复用跨进程锁，保证一个发现端点和写入者。开发连接码从当前服务内存按需生成，不新增公共实例登记或短码映射文件。临时输入与新授权的 Codex 运行历史在同一 owner 下的 `local-agent/clients/<grant-hash>/`；撤权同时关闭执行及工具入口，不允许跨授权恢复。协议与旧版兼容见 [本机应用接入](../local-agent-api.md) |
 | 预创建 worktree 的取消标记          | `userData/worktree-cancelled-creations/<sessionId 的 SHA-256>`，空文件原子排他创建；不含路径、草稿或关联密钥。保留以拒绝重启后迟到的创建请求，不按超时删除。只在核实未被任务认领后写入。同路径加 `.lock` 是可释放的跨进程操作锁，复用既有锁协议；同一 profile、同一任务的创建登记与取消回收串行，拿不到锁不得确认回收完成。异步创建完成后、登记前再次核对取消标记                                               |
-| Mobile 已取消创建的草稿             | 复用账号隔离的 durable outbox；持久创建流程先保存草稿、原项目目录和附件，再登记 reservation 和发送远端 worktree 创建；创建回包前暂停发件箱投递。回收确认后，`creation.cancelled` 与原项目目录先持久写入，再忘记回收账本。重建使用新远端 ID，`storageSessionId` 保持原 AsyncStorage 键和附件目录，通过单次记录写入提交；写入失败时原草稿仍可读。编辑页恢复目录时重新探测资格，不沿用旧 worktree 的资格或分支偏好 |
 | 对话交给插件的文件副本 | `owners/<账号>/ghost-handoff/<插件实例键>/<uuid>/`：以清理后的原文件名（每段最多 64 字符、无保留字符与尾点、避开 Windows 保留名）存批准时读入的字节，便于用户在设置页打开目录后认出；`.cindy-handoff.json` 只含显示用原文件名、磁盘文件名、类型、大小、SHA-256 与时间，不含原路径。写入先落 `.tmp/<uuid>` 并刷盘后整目录改名；删除先改名进 `.tmp/del-*`。连续 7 天未使用（签发页面地址、页面读取、上传成功会顺延）后在访问时、启动后延迟清理及切换账号时删除，卸载随插件删除，换源随归档实例键搬走；每实例 512 MiB／200 个。见 `cindy-brain/handoffStore.ts` |
 | 可丢弃的临时数据                    | `app.getPath('temp')` 或 `os.tmpdir()` 下的任务专属目录                                                                                                                                                                                                                                                                                                                                                         |
 | 测试生成物                          | `os.tmpdir()` 下通过 `mkdtemp` 创建的独立目录，并在测试结束时清理                                                                                                                                                                                                                                                                                                                                               |
@@ -300,19 +298,14 @@ relay 原有 60 秒主动续期节流保持不变。
 | macOS 菜单栏余量设置 | `userData/menubar-settings.json`，本机偏好：是否显示、来源顺序与显隐、菜单栏文字、快见底通知、隐藏个人信息、统计范围；只含供应商 id，不含凭证或用量数值 |
 | macOS 菜单栏 Cindy 余额样本 | `userData/owners/<账号>/menubar-credit-samples.json`，只记录观测到的余额数值与时间（按区域与币种分组），用于估算日均消耗；保留 30 天、原子替换写入，不含凭证或账号标识 |
 | 云端伙伴同步状态 | `userData/owners/<账号>/companion-cloud/<sha256(端点\n主人 actor id)>.json`，只记伙伴的云端 actor id、1:1 房间 id、对话导入游标（本机消息时间与 id）、已上传资料的内容哈希与版本号、是否已交出主力电脑（本机副本隐藏、不跑例行任务）、接管后待重建上下文的标记；原子替换写入，读不出时从空开始并向服务器重新核对，不含凭证、消息正文或资料正文。见 `main/companion-cloud/state.ts` |
-| 伙伴已读位置 | `userData/owners/<账号>/bot-read-state.json`（electron-store），只存这台电脑上伙伴私聊（伙伴 id）、早期本机群（`group:<群 id>`）与私聊话题（`thread:<Session id>`）的已读时刻，最多 2000 条；只前进不后退，读不出时从空开始，不含消息正文或凭证。本机窗口、手机与其他电脑经远程资源 `read` 推进同一份；Renderer 另在 localStorage `cindy.bots.readState.v1.<账号>` 留副本供首帧读取。见 `main/maker-ipc/botReadStateStore.ts` |
+| 伙伴已读位置 | `userData/owners/<账号>/bot-read-state.json`（electron-store），只存这台电脑上伙伴私聊（伙伴 id）、早期本机群（`group:<群 id>`）与私聊话题（`thread:<Session id>`）的已读时刻，最多 2000 条；只前进不后退，读不出时从空开始，不含消息正文或凭证。本机窗口与其他电脑经远程资源 `read` 推进同一份；Renderer 另在 localStorage `cindy.bots.readState.v1.<账号>` 留副本供首帧读取。见 `main/maker-ipc/botReadStateStore.ts` |
 | macOS 菜单栏 helper（开发构建） | `userData/menubar/`，开发时由 `swiftc` 编译的 helper 及其 wordmark 图片和源码哈希；打包版改用 `resources/tools/menubar/`，不在 userData 落盘 |
 | 供应商分享：受邀者会话登记 | `userData/remote-agent/guest-sessions.json`（控制端摘要 → 本机侧任务与原生会话 id），只用来限制受邀者只能恢复自己的会话，并在分享删除时精确清理影子工作区、附件与会话记录 |
 | 供应商分享：跨区域标记 | `userData/remote-agent/provider-share-regions.json`，账号摘要 → 对方区域；**不含凭证**。跨区连接凭证只在内存里，用新身份名片重新换取；没有标记的账号从不联系对方区域 |
 | 供应商分享：受邀者对分享的本机偏好 | `userData/owners/<账号>/provider-share-guest-prefs.json`，分享 id → 分享所属区域与「信任 {分享者}」（凭证操作不再确认）；只存显式打开的项，在同路径 `.lock` 跨进程安全锁内重读、修改和原子替换，拿不到锁不保存。持有权切换使排队和在途写入失效；已进入文件系统的替换在新持有者保存前完成，不能覆盖其撤销。不含昵称、对话或凭证。退出分享或分享从已确认区域的权威名单里消失时立即在内存撤销，并取消对应的在途启用；清理落盘失败也不恢复信任。实现与回归见 `providerShareGuestPrefs.ts` 及其同名单测 |
 | 语音输入声纹（生物特征） | `userData/owners/<账号>/voice-speaker-profile.json`，「识别我的声音」录入的声纹向量与录入时间，经 `safeStorage` 加密后整体落盘（钥匙串不可用时拒绝写入，不降级明文）；记录生成它的模型哈希，换模型后视为未录入。只在本机，不同步、不上传、不进日志（日志只记分数与次数）；用户删除即删文件。录入用的朗读音频只在内存中处理，不落盘 |
 | 语音输入声纹识别模型 | `userData/voice-models/<哈希前缀>-<文件名>.onnx`，按内容哈希从区域 CDN 下载并在可见前校验 SHA-256；不含个人数据，本机所有账号共用。新版本模型下载完成后删除旧版本文件 |
-| Mobile 语音输入声纹（生物特征） | SecureStore（iOS 钥匙串 / Android Keystore）键 `xdt.voiceSpeakerProfile.v1.<账号 key 的 SHA-256 前 32 位>`，内容同 Desktop：声纹向量、录入时间与模型哈希；开关与灵敏度 override 在 AsyncStorage `cindy.mobile.voice-speaker-filter.v1.<账号 key>`。只在本机，不同步、不上传、不进日志；退出登录时随该账号的其他本机数据一起删除（模型文件保留）。删除前写 AsyncStorage `cindy.mobile.voice-speaker-filter.cleanup.v1.<账号 key>` 重试标记，不含声纹；失败时保留标记，启动、回到前台及该账号下次读写前重试，全部删除成功后才移除。标记落盘也失败时保留进程内重试，无法保证进程终止后的恢复；不因声纹删除失败阻止退出凭证清除。朗读音频只在内存中处理 |
-| Mobile 语音输入声纹识别模型 | `cacheDirectory/voice-models/`，与 Desktop 同一组按内容哈希下载、校验 SHA-256 后才可见的文件；放缓存目录以免进入 iCloud / Android 备份。系统清理缓存后，下次语音输入发现缺失会在后台重新下载，本次不过滤 |
-| Mobile iOS 键盘停靠高度 | AsyncStorage `cindy.mobile.keyboard-docked-height.v2`（设备级，不分账号）：`{ 窗口宽度: 键盘高度 }` 两个整数，只在 iOS 正常停靠键盘、且不在转屏后 1 秒内时更新（取最高），供系统发来异常键盘坐标时沿用（见 `docs/dev-rules/mobile-development.md`「iOS 键盘坐标异常」）。不含用户内容，退出登录不清除。见 `apps/mobile/src/session/keyboardOverlap.ts` |
 | 新电脑设置：上次迁移记录 | `userData/owners/<账号>/setup-migration-state.json`，只记上次迁移来源电脑的名称、完成时间、一次性清单（类别、显示名称、插件实例键或供应商 / MCP id、完成标记）与是否已关闭首次建议；不含密钥、令牌、凭证或设置值。复用设置文件跨进程锁与原子替换，账号切换按目录隔离，用户「关闭清单」后清空。快照只带「是否已配置」的布尔提示。用户勾选「密钥」且原电脑的人允许后，API Key / PAT 以一次性加密传来，在 Main 内存中解开后写入各自原有的 safeStorage 存储，不落其他文件（`docs/product-rules/new-device-setup-migration.md`） |
-| iOS 桌面小组件数据 | App Group `group.<bundle id>`（与 expo-sharing 共用）里的 `usage-widget-snapshot.json`：每台电脑最近一次的余量与用量快照（已按电脑上「隐藏个人信息」打码，含账号名或邮箱前缀、余量、近 30 天用量与模型名）、「自动」所选电脑 id 与电脑名列表；不含凭证。同一 App Group 的 UserDefaults 键 `usageWidgetPins` 只记组件选中的电脑 id 与时间，超过 2 天的丢弃。App 在前台时整份原子替换写入；切换或退出账号时删除快照文件。见 `apps/mobile/modules/cindy-usage-widgets` 与 `plugins/usage-widgets` |
-| Android 桌面小组件数据 | 应用私有 `noBackupFilesDir/usage-widget-snapshot.json`（不进 Android 自动备份），内容与 iOS 的 App Group 文件相同（已打码的余量与用量快照、「自动」所选电脑 id 与电脑名列表，不含凭证）；SharedPreferences `cindy-usage-widgets` 里 `computer.<组件 id>` 记组件选中的电脑，`usageWidgetPins` 记固定电脑 id 与时间（超过 2 天丢弃），删除组件时清理。切换或退出账号时删除快照文件，并清掉所有 `computer.` / `pinned.` / `hidden.` 与 `usageWidgetPins`（它们含上一个账号的电脑 id 与账号名），再重绘组件。见 `apps/mobile/modules/cindy-usage-widgets/android` |
 | Windows 锁屏控制的系统服务程序 | `%ProgramFiles%\Cindy Remote Desktop\<安装目录哈希>\`,由「授权开启」的管理员提权步骤写入:两个原生 helper 与记录所属安装目录的 `install.txt`。目录与文件的所有者是 Administrators,只有 Administrators 与 SYSTEM 可写——SYSTEM 服务不能从用户可写的安装目录启动,否则本机任何普通进程都能换掉它。不含凭证、账号或对话。源码运行的开发版另将构建缓存放在 `userData/remote-desktop/development/<安装身份哈希>/`，只含本机编译产物与源码摘要；它仍复制到上述受保护目录后才注册服务。只有设置页的「移除服务」(同样需要管理员确认)会删除它;按安装目录分子目录,多份安装互不影响。见 `native/remote-desktop/windows-host/src/staging.rs`、`apps/desktop/src/main/remote-desktop/windowsHost.ts` 与 [`../remote-desktop.md`](../remote-desktop.md) |
 | 新项目存放位置 | `userData/owners/<账号>/projects-root-settings.json`，只存用户在设置页或「新建项目…」弹窗里经原生选择框选定的目录（`directory`），未设置为 null；推荐位置（已登记可见项目最常见的父目录，否则 `~/Projects`）读取时推算，不写回文件。复用 override settings 跨进程锁、原子写入与损坏保留，选择框返回后核对账号未切换再写入。不含凭证或对话；见 `projects-root-settings.ts`、`mcp-integrations/projectManagement.ts`（`resolveProjectsRoot`）与 `createProjectFromTaskHost.ts` |
 | 用户明确导出的文件                  | 用户选择或任务明确指定的目标路径                                                                                                                                                                                                                                                                                                                                                                                |
@@ -335,7 +328,7 @@ relay 原有 60 秒主动续期节流保持不变。
   特别不要写 `process.env.TEMP ?? process.cwd()` 一类跨平台会落入仓库的逻辑。
 - 使用 `path.join`、`path.resolve` 和现有路径策略，不硬编码平台分隔符，不手拼 `~`、
   `%APPDATA%` 等平台目录。
-- 共享 package 不直接依赖 Electron 来猜宿主目录；由 Desktop、Mobile 或测试显式注入路径。
+- 共享 package 不直接依赖 Electron 来猜宿主目录；由 Desktop 或测试显式注入路径。
 - 新模块不得在 import 时创建目录、写文件或复制授权材料。文件系统副作用应在显式初始化
   或用户动作中发生，便于控制路径、失败语义和清理。
 - 临时文件使用唯一目录或文件名，完成、失败和取消路径都应尽力清理；需要跨重启保留的
@@ -366,8 +359,7 @@ relay 原有 60 秒主动续期节流保持不变。
 6. 失败、取消和测试结束后，临时数据是否能安全清理？
 
 命中凭证进入仓库或不受信任边界的改动必须阻断。验证命令按
-[`desktop-development.md`](desktop-development.md) 或
-[`mobile-development.md`](mobile-development.md) 选择，并为路径回退、清理和秘密不外泄补
+[`desktop-development.md`](desktop-development.md) 选择，并为路径回退、清理和秘密不外泄补
 定向测试。
 
 ## Cindy 托管的预装技能

@@ -1,7 +1,0 @@
-{
-  "name": "cindy-chat-notifications",
-  "version": "0.1.0",
-  "private": true,
-  "main": "src/index.ts",
-  "license": "Apache-2.0"
-}

@@ -127,7 +127,7 @@
   不另造状态机。
 - **回报**：轮询发现派出的消息已进入对话且设备不在跑时，取最后一条 assistant 消息交给 auto-bridge；
   按消息 id 去重（`last_bridged_message_id`），断线重连后补报，同一条只报一次。
-- **恢复**：轮询代替订阅（Main 侧没有可复用的订阅入口）；断线按 `remote-and-mobile-adaptation.md`
+- **恢复**：轮询代替订阅（Main 侧没有可复用的订阅入口）；断线按 `remote-adaptation.md`
   的「故障半径三问」，只影响该设备上的 Worker，不重建 link、不影响其它设备和普通远控。
 - **工具**：`create_worker` / `create_workers` 新增 `execution_device_id`；`get_workspace_info`
   返回 `execution_devices` 与每个 Worker 的 `execution_device`；归属校验 `resolveWorkerRef` 不变。
@@ -163,7 +163,7 @@
 
 - `docs/dev-rules/orca-team-architecture.md`
 - `docs/dev-rules/protocol-compatibility.md`（远程 Agent、device-link allowlist）
-- `docs/dev-rules/remote-and-mobile-adaptation.md`（故障半径三问）
+- `docs/dev-rules/remote-adaptation.md`（故障半径三问）
 - `docs/dev-rules/database-and-migrations.md`
 - `docs/product-rules/task-device-migration.md`（跨电脑任务的既有口径）
 - 界面改动：`docs/design-rules/DESIGN.md`；术语：`i18n/GLOSSARY.md`（「设备」「远程电脑」「Worker」「Lead」）

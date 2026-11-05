@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/makecindy/cindy/i18n/glossary.schema.json",
   "title": "Cindy i18n Glossary",
-  "description": "产品术语表正本。desktop / mobile / 脚本 / AI agent 共用的唯一事实源。定位是**参考**：它回答「这个词该不该用」，不回答「该换成哪个」——后者取决于该 key 的英文源与用途，必须逐条读语境判断，不得用于脚本批量替换。",
+  "description": "产品术语表正本。desktop / 脚本 / AI agent 共用的唯一事实源。定位是**参考**：它回答「这个词该不该用」，不回答「该换成哪个」——后者取决于该 key 的英文源与用途，必须逐条读语境判断，不得用于脚本批量替换。",
   "type": "object",
   "required": ["version", "locales", "sourceLocale", "terms"],
   "additionalProperties": false,
@@ -28,7 +28,7 @@
     "punctuationExempt": {
       "type": "array",
       "description": "标点规则的豁免 key（格式同 term.exempt）。术语规则的 exempt 挂在术语条目上，标点规则不属于任何术语，需要独立清单。唯一正当用途：整条文案不是给人读的中文正文，而是机器可读的结构化文本——例如 GitHub issue 正文模板里的 `locale: {{locale}}` 元数据行，冒号是 key-value 分隔符、必须半角。这类形态与正文里的「无效 JSON: {{snippet}}」外形完全相同，静态扫描区分不了，只能按 key 声明。每条都应说明理由。",
-      "items": { "type": "string", "pattern": "^(desktop|mobile/[a-zA-Z]+):.+$" }
+      "items": { "type": "string", "pattern": "^desktop:.+$" }
     },
     "terms": {
       "type": "array",
@@ -116,7 +116,7 @@
           "description": "豁免的 key 路径。两种形式：完整路径精确匹配（desktop:settings.x.y），或以 . 结尾的子树前缀（desktop:settings.remote.）用于整段同形异义场景。绝不支持按末段 key 名匹配——那会让任意同名嵌套 key 被静默放过。每条豁免都应在 note 里说明理由。",
           "items": {
             "type": "string",
-            "pattern": "^(desktop|mobile/[a-zA-Z]+):.+$"
+            "pattern": "^desktop:.+$"
           }
         }
       }

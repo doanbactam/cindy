@@ -58,7 +58,7 @@ Git 引用后确认原分支不存在时，使用当前 owner 的
 worktree 建成空目录或自动切到项目根继续修改代码。
 
 恢复说明随本轮消息传给 Agent，明确原路径、文件未恢复和当前运行位置；消息被接受
-之后才消费说明。SSH 不使用本机备用目录；设备互联和手机沿用被控 Desktop 的发送链。
+之后才消费说明。SSH 不使用本机备用目录；设备互联沿用被控 Desktop 的发送链。
 实现见 `apps/desktop/src/main/maker-ipc/workingDirectoryRecovery.ts` 与 `register.ts`，
 回归见 `workingDirectoryRecovery.test.ts` 和 `makerSendTransaction.test.ts`。
 
@@ -113,7 +113,7 @@ worktree 建成空目录或自动切到项目根继续修改代码。
     不因选测器的保守回退强制占满本机。
   - **单次运行的并发默认值**：workspace runner 默认最多并行
     `min(4, os.availableParallelism())` 个普通 workspace，每个普通 Vitest workspace
-    使用 1 个 worker；Mobile 使用 4 个 worker，Desktop 最多 8 个且随可用 CPU 下调。
+    使用 1 个 worker；Desktop 最多 8 个且随可用 CPU 下调。
     重型 workspace 在本次 runner 内独占；这些边界不限制其它 session。
     可用 `--workspace-concurrency=1` 调低同一次运行的 workspace 并发；需要不同 worker
     配额时，可直接调用目标包 Vitest 的 `--maxWorkers` 参数。

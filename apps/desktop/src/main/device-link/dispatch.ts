@@ -936,7 +936,7 @@ let activeClient: DeviceLinkClient | null = null;
  * outbox **全量** flush 据此跳过注定 DEVICE_OFFLINE 的盲发:relay 在线时全量轮每
  * REMOTE_INVOKE_RESULT_OUTBOX_RETRY_MS(500ms)跑一次,对 presence 已明说离线的
  * 控制端就是 2 帧/秒的稳定无效出站,一直持续到 TTL 出清——只喂 relay 聚合背压
- * (2026-08-08 事故的第四层失效面,见 docs/dev-rules/remote-and-mobile-adaptation.md)。
+ * (2026-08-08 事故的第四层失效面,见 docs/dev-rules/remote-adaptation.md)。
  * 条目保留不丢,恢复由该控制端 link-open 触发的定向 flush
  * (flushRemoteInvokeResultOutbox(src),不受本门禁约束)与 presence 翻回 online 后的
  * 全量轮接棒。
@@ -1646,7 +1646,7 @@ function stageMakerEventPush(
 
 /**
  * 投递该控制端的离线积压,**对启用微批的控制端同样走批**(review P1:恢复动作不得
- * 重造触发条件,见 docs/dev-rules/remote-and-mobile-adaptation.md 的故障半径三问)。
+ * 重造触发条件,见 docs/dev-rules/remote-adaptation.md 的故障半径三问)。
  *
  * 不这样做的后果是实测量级的:断线期间同会话事件逐条进 offlinePushQueue,重订阅时
  * 一次 drain 可能有上百条,原本逐条 sendPush 就是同一 tick 内上百帧——正是 8/8 线上

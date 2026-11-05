@@ -155,7 +155,6 @@ test("desktop restart clears only desktop Vite dev caches", () => {
 	const desktopCacheDirs = desktopDevCacheDirs(repo);
 	const preservedDirs = [
 		path.join(repo, "node_modules", ".vite"),
-		path.join(repo, "apps", "mobile", "node_modules", ".vite"),
 		path.join(repo, "packages", "maker-shared", "node_modules", ".vite"),
 	];
 	try {

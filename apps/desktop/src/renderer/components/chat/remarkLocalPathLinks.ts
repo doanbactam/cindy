@@ -44,11 +44,6 @@
  * 只处理 `text` 节点,天然不碰代码:mdast 里 `code` / `inlineCode` 是带 `value`
  * 的叶子节点,没有 `text` 子节点,扫不到;唯一要跳过的是已经在 `link` 里的 text
  * (避免嵌套链接)。纯 AST 变换,无 IO、无副作用。
- *
- * 手机端对等物:`apps/mobile/src/session/chatPathCandidate.ts` 的
- * `findBareFilePathMatch`(shared/bareFilePathTokens 的移植,接进
- * messageMarkdown 的 inline 分词器)。**共享分词器的正则改了要同步过去**,否则两端会
- * 就"哪些正文路径可点"给出不同结果。
  */
 
 import type { Plugin } from 'unified';

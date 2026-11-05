@@ -45,42 +45,6 @@ export function printHelp(log = console.log) {
   log('    pnpm update:pi 0.83.0');
   log('    # 发布到 CDN 不在本仓：见同级 cindy-binary-release 工程（pnpm release:<kind>）');
 
-  log('\n  Mobile 本地开发:');
-  log('    # Cindy（Global，默认）：生成 iOS 工程、打开 Xcode 并启动 Metro');
-  log('    pnpm mobile:xcode');
-  log('    # 中国大陆版：生成 iOS 工程、打开 Xcode 并启动 Metro');
-  log('    pnpm mobile:xcode --region=cn');
-  log('    # macOS：一条命令在 iOS 模拟器上启动当前 worktree（只看界面加 -- --mock；可重复运行）');
-  log('    pnpm mobile:sim:up');
-  log('    # 分步：先 rebuild 安装，再 start 启动 Metro');
-  log('    pnpm mobile:sim:rebuild');
-  log('    pnpm mobile:sim:start');
-  log('    # 中国大陆版模拟器：先 rebuild 安装，再 start 启动 Metro');
-  log('    pnpm mobile:sim:rebuild -- --region=cn');
-  log('    # Windows 一键复用/启动 cindy-api36、配置 adb reverse，并启动中国大陆版 Metro');
-  log('    pnpm mobile:sim:start:cn');
-  log('    # 等价的显式区域写法；--no-emulator 可只启动 Metro');
-  log('    pnpm mobile:sim:start -- --region=cn');
-  log('    # 查看当前 Metro 对应的 checkout / branch');
-  log('    pnpm mobile:sim:whoami');
-  log('    # 验证后检查 Metro 日志：最近一次打包后的 ERROR 和新 WARN（并行设备加 -- --port 8082）');
-  log('    pnpm mobile:sim:logcheck');
-  log('    # macOS：打开唯一已启动设备的 Device Hub / Simulator 窗口（多设备时加 -- --udid <UDID>）');
-  log('    pnpm mobile:sim:open');
-  log('    # 外部窗口验收：额外检查所选 Xcode 的窗口程序是否运行');
-  log('    pnpm mobile:sim:whoami -- --viewer --json');
-
-  log('\n  Mobile 构建(纯构建,无上传/发布;region 必填,无默认值):');
-  log('    # 配置:按 apps/mobile/scripts/self-host-regions.json.example 复制填写');
-  log('    # self-host-regions.json(gitignore);构建只需 authRegion / 应用身份 / 签名段');
-  log('    # iOS(需 macOS + Xcode + 本机证书/描述文件)');
-  log('    pnpm mobile:build:ios -- --region cn            # dry-run 校验 + 打印计划');
-  log('    pnpm mobile:build:ios -- --region cn --execute  # 真正构建,产出 .ipa');
-  log('    # Android(需 Android SDK + JDK 17 + keystore 口令 env)');
-  log('    pnpm mobile:build:android -- --region cn');
-  log('    pnpm mobile:build:android -- --region cn --execute');
-  log('    # 常用可选参数:--out <dir> 拷产物 / --desktop-version x.y.z / --version-code <n>(仅 Android)');
-
   log('\n  开发检查:');
   log('    pnpm lint');
   log('    pnpm test:runner');

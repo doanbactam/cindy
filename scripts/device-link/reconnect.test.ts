@@ -6,7 +6,7 @@ import { createRelayFixture } from "./relayFixture";
 import {
   createClient,
   createHost,
-  createMobileRecovery,
+  createControllerRecovery,
   invoke,
   SESSION_ID,
   TOPICS,
@@ -31,13 +31,13 @@ async function setup() {
   const relay = await createRelayFixture();
   cleanups.push(() => relay.close());
   const host = createClient(relay.url, "host", true);
-  const controller = createClient(relay.url, "phone");
+  const controller = createClient(relay.url, "controller");
   cleanups.push(
     () => host.close(),
     () => controller.close(),
   );
   const data = createHost(host.client);
-  const recovery = createMobileRecovery(controller.client, "host");
+  const recovery = createControllerRecovery(controller.client, "host");
   cleanups.push(data.close, recovery.close);
   host.client.start();
   await until(() => expect(host.client.getStatus()).toBe("online"));
@@ -52,27 +52,26 @@ async function setup() {
     ).toBeGreaterThan(0),
   );
   await until(() => {
-    expect(host.client.getReliableSendQueueDepth("phone")).toBe(0);
+    expect(host.client.getReliableSendQueueDepth("controller")).toBe(0);
     expect(controller.client.getReliableSendQueueDepth("host")).toBe(0);
   });
   return { relay, host, controller, data, recovery };
 }
 
 describe("Device Link over real loopback WebSockets (contract fixture)", () => {
-  it('reuses a full long list message over real sockets on both desktop and mobile', async () => {
+  it('reuses a full long list message over real sockets on a desktop controller', async () => {
     const relay = await createRelayFixture();
     cleanups.push(() => relay.close());
     const host = createClient(relay.url, 'host', true);
-    const phone = createClient(relay.url, 'phone');
-    const desktop = createClient(relay.url, 'desktop', false, { desktop: true });
-    cleanups.push(() => host.close(), () => phone.close(), () => desktop.close());
+    const desktop = createClient(relay.url, 'desktop');
+    cleanups.push(() => host.close(), () => desktop.close());
     const text = '提前传输的完整聊天内容，打开时直接复用。'.repeat(2000);
     const row = { id: 'm1', clientId: 'm1', sessionId: SESSION_ID, role: 'assistant', content: text,
       createdAt: '2026-10-10T00:00:00.000Z' };
     const page = { version: 1, items: [{ type: 'messages', key: 'm1', messages: [row] }], hasMore: false, nextCursor: null };
     const wireResults: unknown[] = [];
-    const received = new Set<string>();
-    const subscribed = new Map<string, string[]>();
+    let pushed = false;
+    let subscribed: string[] | undefined;
     host.client.onFrame(env => {
       if (!env.src || !env.id) return;
       if (env.kind === 'link-open') {
@@ -80,7 +79,7 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
       } else if (env.kind === 'invoke') {
         const request = env.payload as InvokePayload;
         if (request.channel === 'device-link:subscribe') {
-          subscribed.set(env.src, (request.args[0] as { topics: string[] }).topics);
+          subscribed = (request.args[0] as { topics: string[] }).topics;
           host.client.sendInvokeResult(env.src, env.id, { ok: true, result: {} });
         } else {
           const result = encodeMessageBodies(request.channel, request.args, page);
@@ -89,26 +88,21 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
         }
       }
     });
-    host.client.start(); phone.client.start(); desktop.client.start();
-    await until(() => [host, phone, desktop].forEach(peer => expect(peer.client.getStatus()).toBe('online')));
-    for (const [id, controller] of [['phone', phone], ['desktop', desktop]] as const) {
-      controller.client.onFrame(env => { if (env.kind === 'push') received.add(id); });
-      await controller.client.openLink('host', { controllerName: id, protocolVersion: PROTOCOL_VERSION,
-        appVersion: 'test', capabilities: [CONTROLLER_CAPABILITY_SESSION_LIST_MESSAGES_V1] });
-      await invoke(controller.client, 'host', 'device-link:subscribe', [{ topics: ['sessions'] }]);
-      host.client.sendPush(id, 'local-db:messages:created', { sessionId: SESSION_ID, listMessage: true, message: versionMessageBody(row) });
-    }
-    await until(() => expect(received.size).toBe(2));
-    for (const controller of [phone, desktop]) {
-      const result = await invoke(controller.client, 'host', 'local-db:messages:view', [SESSION_ID, { lazyDetails: true }]);
-      expect(result).toMatchObject(page);
-    }
-    expect([...subscribed.values()]).toEqual([['sessions'], ['sessions']]);
-    for (const result of wireResults) {
-      expect(JSON.stringify(result)).not.toContain(text);
-      expect(Buffer.byteLength(JSON.stringify(result))).toBeLessThan(600);
-    }
-    process.stdout.write(`Message reuse wire evidence: full=${Buffer.byteLength(JSON.stringify(page))} bytes, phone=${Buffer.byteLength(JSON.stringify(wireResults[0]))} bytes, desktop=${Buffer.byteLength(JSON.stringify(wireResults[1]))} bytes; decoded text exact\n`);
+    host.client.start(); desktop.client.start();
+    await until(() => [host, desktop].forEach(peer => expect(peer.client.getStatus()).toBe('online')));
+    desktop.client.onFrame(env => { if (env.kind === 'push') pushed = true; });
+    await desktop.client.openLink('host', { controllerName: 'desktop', protocolVersion: PROTOCOL_VERSION,
+      appVersion: 'test', capabilities: [CONTROLLER_CAPABILITY_SESSION_LIST_MESSAGES_V1] });
+    await invoke(desktop.client, 'host', 'device-link:subscribe', [{ topics: ['sessions'] }]);
+    host.client.sendPush('desktop', 'local-db:messages:created', { sessionId: SESSION_ID, listMessage: true, message: versionMessageBody(row) });
+    await until(() => expect(pushed).toBe(true));
+    const result = await invoke(desktop.client, 'host', 'local-db:messages:view', [SESSION_ID, { lazyDetails: true }]);
+    expect(result).toMatchObject(page);
+    expect(subscribed).toEqual(['sessions']);
+    expect(wireResults).toHaveLength(1);
+    expect(JSON.stringify(wireResults[0])).not.toContain(text);
+    expect(Buffer.byteLength(JSON.stringify(wireResults[0]))).toBeLessThan(600);
+    process.stdout.write(`Message reuse wire evidence: full=${Buffer.byteLength(JSON.stringify(page))} bytes, desktop=${Buffer.byteLength(JSON.stringify(wireResults[0]))} bytes; decoded text exact\n`);
   });
 
   it("runs the explicit external-relay entry against a provisioned fixture without silently falling back", async () => {
@@ -116,7 +110,7 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
     cleanups.push(() => relay.close());
     const result = await promisify(execFile)(
       process.execPath,
-      ["apps/mobile/scripts/device-link-reconnect-smoke.mjs", "--interop"],
+      ["scripts/device-link/run.mjs", "--interop"],
       {
         cwd: fileURLToPath(new URL("../../", import.meta.url)),
         timeout: 45_000,
@@ -124,17 +118,17 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
           ...process.env,
           CINDY_TEST_RELAY_URL: relay.url,
           CINDY_TEST_HOST_TOKEN: "fixture-external-host",
-          CINDY_TEST_CONTROLLER_TOKEN: "fixture-external-phone",
+          CINDY_TEST_CONTROLLER_TOKEN: "fixture-external-controller",
         },
       },
     );
     expect(relay.connections.get("external-host")).toBe(1);
-    expect(relay.connections.get("external-phone")).toBeGreaterThan(1);
+    expect(relay.connections.get("external-controller")).toBeGreaterThan(1);
     expect(result.stdout + result.stderr).not.toContain("fixture-external-");
     expect(result.stdout + result.stderr).not.toContain(relay.url);
   }, 50_000);
 
-  it("automatically reconnects the SAME Mobile client and rehydrates missed data and subscriptions", async () => {
+  it("automatically reconnects the SAME controller client and rehydrates missed data and subscriptions", async () => {
     const { relay, controller, data, recovery } = await setup();
     expect(recovery.state.messages.map((message) => message.id)).toEqual([
       "m1",
@@ -143,47 +137,24 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
     // No manual connectDevice/openLink/subscribe after this fault: status callbacks drive recovery.
     data.addMessage("m2");
     data.setPaused(true);
-    data.subscriptions.delete("phone");
-    relay.disconnect("phone");
+    data.subscriptions.delete("controller");
+    relay.disconnect("controller");
     await until(() =>
       expect(recovery.state.completed).toBeGreaterThan(completed),
     );
     expect(controller.sockets.length).toBeGreaterThan(1);
-    expect(data.subscriptions.get("phone")).toEqual([...TOPICS]);
+    expect(data.subscriptions.get("controller")).toEqual([...TOPICS]);
     expect(recovery.state.messages.map((message) => message.id)).toEqual([
       "m1",
       "m2",
     ]);
     expect(recovery.state.queuePaused).toBe(true);
-    expect(recovery.state.reseeds).toBeGreaterThan(1);
-  });
-
-  it("heals a foreground return through the Mobile recovery core without replacing a healthy socket", async () => {
-    const { controller, data, recovery } = await setup();
-    const completed = recovery.state.completed;
-    recovery.background();
-    await invoke(controller.client, "host", "device-link:unsubscribe", [
-      { topics: TOPICS },
-    ]);
-    data.addMessage("background-message");
-    data.setPaused(true);
-    expect(recovery.state.messages).toHaveLength(1);
-    recovery.foreground();
-    await until(() =>
-      expect(recovery.state.completed).toBeGreaterThan(completed),
-    );
-    expect(recovery.state.messages.map((message) => message.id)).toEqual([
-      "m1",
-      "background-message",
-    ]);
-    expect(data.subscriptions.get("phone")).toEqual([...TOPICS]);
-    expect(controller.sockets).toHaveLength(1);
   });
 
   it("detects a half-open path via heartbeat and automatically recovers once traffic returns", async () => {
     const { relay, controller, data, recovery } = await setup();
     const completed = recovery.state.completed;
-    relay.dropFrames((frame) => frame.src === "phone");
+    relay.dropFrames((frame) => frame.src === "controller");
     data.addMessage("during-blackhole");
     await until(() =>
       expect(
@@ -201,7 +172,7 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
 
   it("keeps another controller and its in-flight request alive when one peer stops ACKing", async () => {
     const { relay, host, data } = await setup();
-    const healthy = createClient(relay.url, "desktop", false, { desktop: true });
+    const healthy = createClient(relay.url, "desktop");
     cleanups.push(() => healthy.close());
     healthy.client.start();
     await until(() => expect(healthy.client.getStatus()).toBe("online"));
@@ -217,12 +188,12 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
     await until(() => expect(data.hasHeldResult).toBe(true));
     relay.dropFrames(
       (frame) =>
-        frame.src === "phone" &&
+        frame.src === "controller" &&
         frame.kind === "push" &&
         (frame.payload as { channel?: string })?.channel ===
           DEVICE_LINK_TRANSPORT_ACK_CHANNEL,
     );
-    host.client.sendPush("phone", "maker:event", {
+    host.client.sendPush("controller", "maker:event", {
       sessionId: SESSION_ID,
       text: "unacknowledged",
     });
@@ -231,7 +202,7 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
         relay.frames.some(
           (frame) =>
             frame.kind === "link-close" &&
-            frame.dst === "phone" &&
+            frame.dst === "controller" &&
             (frame.payload as { reason?: string })?.reason ===
               "transport-timeout",
         ),
@@ -255,7 +226,7 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
     const { relay, controller, data } = await setup();
     let dropped = false;
     relay.dropFrames((frame) => {
-      if (frame.kind !== "invoke-result" || frame.dst !== "phone" || dropped)
+      if (frame.kind !== "invoke-result" || frame.dst !== "controller" || dropped)
         return false;
       dropped = true;
       return true;
@@ -295,15 +266,16 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
       ]),
     );
     expect(recovery.state.completed).toBeGreaterThan(completed);
-    expect(replacementData.subscriptions.get("phone")).toEqual([...TOPICS]);
-    expect(controller.sockets).toHaveLength(1);
+    expect(replacementData.subscriptions.get("controller")).toEqual([...TOPICS]);
+    // No socket-count assertion: Desktop keeps the default peerFailurePolicy, so a reliable frame
+    // stranded on the old host stream may legitimately escalate to one relay reconnect.
   });
 
   it("honors relay 1013 cooldown before recovering instead of immediately reopening", async () => {
     const { relay, controller, recovery } = await setup();
     const completed = recovery.state.completed;
     const closedAt = performance.now();
-    relay.disconnect("phone", 1013);
+    relay.disconnect("controller", 1013);
     await until(() => expect(controller.client.getStatus()).toBe("connecting"));
     controller.client.connectNow("test-foreground");
     await until(() =>
@@ -313,14 +285,12 @@ describe("Device Link over real loopback WebSockets (contract fixture)", () => {
     expect(controller.socketCreatedAt[1] - closedAt).toBeGreaterThanOrEqual(
       200,
     );
-    expect(relay.connections.get("phone")).toBe(2);
+    expect(relay.connections.get("controller")).toBe(2);
   });
 
   it("retries Desktop subscription replay over the wire after a transient subscribe failure", async () => {
     const { relay, data } = await setup();
-    const desktop = createClient(relay.url, "desktop", false, {
-      desktop: true,
-    });
+    const desktop = createClient(relay.url, "desktop");
     cleanups.push(() => desktop.close());
     let calls = 0;
     const scheduler = createSubscriptionReplayScheduler({

@@ -3,7 +3,7 @@ import { markBotReadPositions, readBotReadPosition } from './botReadStateStore.j
 import { teammateGroupActivity } from '@cindy/maker-shared/teammate-status';
 /**
  * Bot group chat for controllers (phones) through the Remote Resource protocol
- * (docs/product-rules/bot-group-chat.md §8, docs/dev-rules/remote-and-mobile-adaptation.md).
+ * (docs/product-rules/bot-group-chat.md §8, docs/dev-rules/remote-adaptation.md).
  *
  * The host keeps every rule: this module only projects groups and forwards actions to
  * the same group service the local window uses. Host paths never leave the computer, and a

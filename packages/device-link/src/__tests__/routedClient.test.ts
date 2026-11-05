@@ -3,7 +3,7 @@
  * - 生产入口与可观察结果:`RoutedDeviceLinkClient` —— Desktop 与 Mobile 唯一的连接入口,断言每帧实际写进哪条
  *   socket、host 收到哪些帧、两条连接断开时对方的状态。
  * - Bug/规则依据:docs/self-hosted-relay-plan.md §7(跨账号帧走官方中转、同账号帧不能借这条连接绕过自建中转)、
- *   docs/dev-rules/remote-and-mobile-adaptation.md 故障半径三问。
+ *   docs/dev-rules/remote-adaptation.md 故障半径三问。
  * - 现有覆盖缺口:新增路由层;client.test.ts 只覆盖单连接。
  * - 最小失败输入:见各用例(官方线路误开第二条连接、同账号 invoke 进入业务层、中转移除设备连带停掉官方连接)。
  * - tier:unit,fake WebSocket,无真实等待。

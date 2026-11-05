@@ -22,8 +22,7 @@
   `pnpm licenses:generate` 生成。
 - [全工程受限组件审计表](./notices/THIRD-PARTY-RESTRICTED.txt)：由同一命令生成，
   不作为开源包数量统计。
-- [各平台声明与审计表](./notices/)：桌面 Windows、macOS、Linux，以及移动端 iOS、
-  Android 的平台精确产物。
+- [各平台声明与审计表](./notices/)：桌面 Windows、macOS、Linux 的平台精确产物。
 - [SPDX 2.3 SBOM](./notices/sbom/)：与上述平台产物对应的依赖清单。
 
 ## 固定路径登记

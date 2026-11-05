@@ -20,19 +20,19 @@
 </p>
 
 Cindy is an **open-source AI agent, ready out of the box and yours to shape**.
-Connect your computers and phone, bring the models and subscriptions you already
+Connect your computers, bring the models and subscriptions you already
 use, and build a companion that knows how you like to work.
 
 ## All your devices. One Cindy.
 
-Your work computer, home desktop, laptop and phone belong together.
+Your work computer, home desktop and laptop belong together.
 
 - **Pick up the same work.** Open a session from another device, continue the
   conversation, and access its files without copying everything into a new chat.
 - **Share more than a screen.** Use model providers configured on another
   computer — including supported subscriptions, API providers and local models.
-- **Reach your whole desktop.** Built-in remote desktop on your phone lets you
-  open apps, type and operate a connected computer when a chat isn't enough.
+- **Reach your whole desktop.** Built-in remote desktop lets you open apps,
+  type and operate a connected computer when a chat isn't enough.
 
 Your computer becomes your server: **no server rental or self-hosting setup**.
 
@@ -100,7 +100,7 @@ including Claude Code or Codex plans, connect your own API keys, or use a local
 model. You can also use Cindy's managed model service. Provider limits and
 billing still apply; the free client does not mean unlimited model usage.
 
-**macOS · Windows · Linux · iOS · Android**
+**macOS · Windows · Linux**
 
 [Download Cindy](https://cindy.app/download) · [Service pricing](https://cindy.app/pricing)
 
@@ -126,15 +126,14 @@ for installation, updates, keyring setup and migration from a manual install.
 
 ## For developers
 
-This repository contains Cindy's open-source **desktop and mobile clients** and
-their shared packages, organized as a pnpm monorepo.
+This repository contains Cindy's open-source **desktop client** and
+its shared packages, organized as a pnpm monorepo.
 
 ### What's in this repo
 
 | Path | Description |
 | --- | --- |
 | `apps/desktop` | Electron desktop client |
-| `apps/mobile` | Expo / React Native mobile client |
 | `packages/*` | Shared client capabilities (auth, device-link, agent orchestration, model providers, …) |
 | `apps/*-bin` | Tool binaries shipped with the desktop app; none are committed — claude-code, codex, and ripgrep are downloaded per platform by `pnpm install`, and the Android platform-tools binaries are fetched (pinned version, sha256-verified) before Windows packaging |
 
@@ -180,7 +179,7 @@ pnpm restart:desktop:remote --region=global
 Remote development uses your own Cindy cloud account and existing login state, so
 you can continue existing sessions and work while developing the client. Use `cn`
 for Mainland China accounts and `global` for everyone else; do not rely
-on the internal default. Full desktop, mobile, data-isolation, and validation
+on the internal default. Full desktop, data-isolation, and validation
 workflows are in [`CONTRIBUTING.en.md`](CONTRIBUTING.en.md).
 
 “Skip Sign-In” on the login screen runs local agents without a Cindy account
@@ -237,29 +236,16 @@ ID after sign-in, so this is not fully anonymous. TapDB does **not** collect cha
 content, file content, or working-directory data.
 
 **You can disable usage analytics without editing code**: on Desktop, use
-Settings → About → Usage statistics; on Mobile, use Usage statistics in Settings.
+Settings → About → Usage statistics.
 The SDK checks the stored privacy-consent state and the statistics preference,
 which defaults to on. Accepting the Privacy Policy records consent; a one-time
 migration also records consent for eligible existing signed-in users.
 
-**Known Mobile exception:** enterprise SSO skips the policy-acceptance step. If no
-analytics consent record exists and that sign-in is restored after restarting the
-app, the current migration can mark even a new installation as consented. With
-TapDB configured and statistics enabled, reporting can then start without explicit
-policy acceptance. See [Mobile sign-in restoration](apps/mobile/src/auth/AuthContext.tsx)
-and the [consent migration](apps/mobile/src/analytics/analyticsConsentStore.ts).
-Turning off Usage statistics prevents reporting from being enabled by this migration.
-
 - Desktop stops subsequent analytics reporting immediately when disabled. Local
   mode (Skip sign-in) does not report to TapDB.
-- Mobile immediately unlinks the account and stops reports explicitly triggered
-  by Cindy. An already initialized native SDK cannot be uninitialized; fully quit
-  and relaunch the app to keep the SDK uninitialized.
 
-Implementation: [Desktop consent and settings](apps/desktop/src/main/analyticsSettingsService.ts),
-[Desktop SDK](apps/desktop/src/renderer/analytics/tapdbClient.ts),
-[Mobile consent](apps/mobile/src/analytics/analyticsConsentStore.ts), and
-[Mobile SDK](apps/mobile/src/analytics/mobileTapdb.ts).
+Implementation: [Desktop consent and settings](apps/desktop/src/main/analyticsSettingsService.ts)
+and [Desktop SDK](apps/desktop/src/renderer/analytics/tapdbClient.ts).
 
 Online heartbeats and diagnostic logs are separate mechanisms, unaffected by the
 usage statistics switch. Desktop sends heartbeats to Cindy services only during a
@@ -276,11 +262,6 @@ log upload option is also available. Log uploads require privacy consent. See th
   `XDT_TAPDB_DEV=1` lifts the build gate but still requires consent and the statistics
   preference. Self-packaged Desktop builds use the same analytics gates as official
   builds; you can disable analytics in Settings.
-- Mobile does not initialize the SDK without injected TapDB configuration
-  (`clientId` / `clientToken`). This does not mean all source builds default to off:
-  the self-hosted release pipeline requires nonempty configuration, while local
-  development permits empty values. See the
-  [Mobile build guide](apps/mobile/docs/simulator-debugging.md).
 
 ## License / 许可证
 

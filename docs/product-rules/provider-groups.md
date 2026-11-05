@@ -175,7 +175,7 @@
 两端 Desktop 更新后，保留已认证的数据通道最多 30 分钟；重复断线与业务流量不延长窗口。
 离线期间不建立新链路或放宽任务权限，显式断开、撤权、账号切换、设备移除、通道故障和到期仍清理。
 没有健康直连的电脑仍按既有中继重连与故障恢复处理。具体边界见
-[`remote-and-mobile-adaptation.md`](../dev-rules/remote-and-mobile-adaptation.md)「直连优先、中继兜底」。
+[`remote-adaptation.md`](../dev-rules/remote-adaptation.md)「直连优先、中继兜底」。
 
 - 判断是否归组依据任务实际使用的供应商连接。§1 的三种使用共用绑定、故障恢复与组策略（2026-10-15）：
   初次分配与故障重选都按组策略选电脑，只有本机的「暂停对外分配」区分来源——它拦同账号其他电脑与分享的人的任务，
@@ -577,7 +577,7 @@
 - **实现**：判断与执行在任务所在电脑的 `apps/desktop/src/main/provider-group/service.ts`（`rebalanceSuggestion`、
   `rebalanceDecision`、`beforeSend`），尺子是 `usage.ts` 的 `providerGroupRebalanceTarget`；「以后自动换」存在
   `provider-group/sessionPrefs.ts`。电脑在 `features/provider-group/sessionRebalancePrompt.ts`（发送前由
-  `CCAgentSessionView` 调用），手机在 `apps/mobile/src/session/sessionRebalancePrompt.ts`（会话页发送前调用）；
+  `CCAgentSessionView` 调用）；
   协议见 protocol-compatibility.md「供应商组任务进行中换号」。回归见 `provider-group/__tests__/service.test.ts`、
   `usage.test.ts`、两端的 `sessionRebalancePrompt.test.ts` 与分隔条的 `SystemCard.i18n.test.tsx`、手机 `systemCard.test.ts`。
 
@@ -843,12 +843,6 @@
     状态写「从这台电脑连不上」、圆点不显示可用，运行数照列（2026-10-11）；这台读那台的目录每次最多等 3 秒，到点还没结果时
     照组所在电脑的状态显示，不拖住整个组的状态。实现见
     `apps/desktop/src/main/provider-group/ipc.ts` 的 `markMembersUnreachableHere`。
-  - **手机的模型列表与桌面一致**（2026-10-11 用户要求）：已建任务与新任务都按上面的规则把组里的电脑收进组那一项，
-    分组标题与来源页写「{供应商} · {组所在电脑} · 供应商组 · 3 台电脑」（组在被控电脑上时「{供应商} · 供应商组 · 2 台电脑」）；
-    归组的任务在组那一项里选模型留在此刻运行的那台、不弹换电脑的确认；没归组的任务选组那一项照旧先确认换电脑。手机不显示组那一项
-    的用量与组内电脑状态。实现见 `apps/mobile/src/session/remoteProviderGroups.ts` 与 `UnifiedModelPickerSheet.tsx`。
-  - 手机输入框上方的状态与桌面一致(2026-10-11)：换电脑、重新连接期间显示「正在换一台电脑继续」「重新连接中 n/5」，不显示
-    「请求失败」。
 - Light 与 Dark 两种模式都要实现。
 
 ## 11. 与现有规则的关系

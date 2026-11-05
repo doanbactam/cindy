@@ -1,21 +1,21 @@
 # @cindy/device-link — 远程控制协议与契约
 
-同账号跨设备远程控制的**传输/协议层**。当前消费者是 desktop(`apps/desktop`)与 mobile(`apps/mobile`);desktop 既可作控制端也可作被控端,mobile 是纯控制端。
+同账号跨设备远程控制的**传输/协议层**。当前消费者是 desktop(`apps/desktop`),既可作控制端也可作被控端。
 
-> **为什么有这份文档**:**手机版 App = 纯控制端**(本地无 AI agent / 无会话 / 无 DB),完全经本协议连到桌面端 Cindy 驱动。手机版照着这份契约实现自己的客户端即可 —— 不需要本地 maker。本文件是「远程控制面」的 single source of truth;具体值以源码为准(见各节引用),改协议先读本文件的「兼容性」一节。
+> **为什么有这份文档**:控制端完全经本协议连到被控桌面端 Cindy 驱动,不需要本地 maker。本文件是「远程控制面」的 single source of truth;具体值以源码为准(见各节引用),改协议先读本文件的「兼容性」一节。
 
-本包**严格 host 无关**:WebSocket 实现、token、设备信息全部由 host 注入(见 `DeviceLinkClientOptions`,`src/client.ts`),不依赖 Electron / 渲染层。手机端注入自己的 WS + token 即可复用同一个 `DeviceLinkClient`,或用任意语言按本协议另写客户端。
+本包**严格 host 无关**:WebSocket 实现、token、设备信息全部由 host 注入(见 `DeviceLinkClientOptions`,`src/client.ts`),不依赖 Electron / 渲染层。其他控制端注入自己的 WS + token 即可复用同一个 `DeviceLinkClient`,或用任意语言按本协议另写客户端。
 
 ## 角色与拓扑
 
 ```
-控制端(desktop / mobile) ───┐                        ┌─ 被控端(desktop,开了「允许被控」)
+控制端(desktop)          ───┐                        ┌─ 被控端(desktop,开了「允许被控」)
                             ├─ server relay(哑中继)─┤
             另一控制端 ──────┘   apps/server/device-link └─ 另一被控端
 ```
 
 - **server 是哑中继**:只看路由头(`v` / `kind` / `dst`),不看 `payload`;按 `userId` 命名空间隔离、按 `deviceId` 路由(presence + Redis pub/sub)。同账号才可互达。
-- **控制端-only 是一等公民**:一个从不开「允许被控」、从不处理入站 `invoke` 的设备(手机)天然被支持 —— 它只发 `link-open` / `invoke`、只收 `push` / `presence-changed`。
+- **控制端-only 是一等公民**:一个从不开「允许被控」、从不处理入站 `invoke` 的设备天然被支持 —— 它只发 `link-open` / `invoke`、只收 `push` / `presence-changed`。
 - 身份在 WS 握手时由 server 用 JWT 固化;`Envelope.src` 由 server 回填(客户端传值会被覆盖,防伪造)。
 
 ## 连接生命周期(连接层帧)
@@ -73,8 +73,8 @@
   控制端会按既有可靠重试间隔有界重发确认。确认窗口耗尽仍无确认时，被控端复用现有 peer 级
   `transport-timeout` 重置，要求控制端重开链路，而不是永久停在等待态。迟到 accept、被新请求
   替换的 accept、错误 requestId、旧 stream 业务帧都不能跨代放行；任一端未声明本能力时继续
-  使用旧版即时 ready 行为，保证 Desktop 与 Mobile 可以独立升级，server relay 无需理解新字段。
-- Desktop 与 Mobile 的自动恢复共用同一条 presence 三态规则：当前连接代没有收到
+  使用旧版即时 ready 行为，保证控制端与被控端可以独立升级，server relay 无需理解新字段。
+- Desktop 的自动恢复使用同一条 presence 三态规则：当前连接代没有收到
   presence 时是 `unknown`，只允许熔断器/恢复器自己的单飞探测或定向重建尝试；relay
   明确报告 `false` 时才停止自动发送。这样重连清空 presence 不会把熔断器永久锁死，
   也不会把普通业务请求在未知状态下全部放行成洪峰。
@@ -94,7 +94,7 @@
   peer 级恢复，不等同于链路代际分叉。
 - `local-db:sessions:list` 探测本身仍超时：说明对端进程、数据库迁移或 IPC/DB 子系统
   仍未恢复；熔断器会继续保持单飞探测，不应把普通业务请求重新放成洪峰。
-- 真机版本未同时包含这组代码时，只能验证旧协议兼容路径；必须以 Desktop、Mobile
+- 真机版本未同时包含这组代码时，只能验证旧协议兼容路径；必须以 Desktop
   实际版本和 24 小时日志中的 `await-link-confirm`、`link-confirm-ack`、
   `link confirmation timeout` 与 `responsiveness probe` 证据判断发布效果，不能仅凭
   “online”判定连接健康。若同一 request 长期只有 `await-link-confirm`，说明对端没有
@@ -103,7 +103,7 @@
 
 设备列表另有 REST:`GET /api/device-link/devices` → `DeviceView[]`(DB 档案 ∪ presence 三态合成,含可选 `selfName/deviceInfo`);`PATCH`/`DELETE` 改名/删除。
 
-## 远程控制面(隧道层)—— 手机版要实现的核心
+## 远程控制面(隧道层)—— 控制端要实现的核心
 
 控制端对某台被控设备先 `link-open`(可选,见下),再用 `invoke` 调被控端的**白名单内 IPC channel**,并订阅被控端转发回来的 `push` 事件。
 
@@ -111,7 +111,7 @@
 
 - `Envelope{ kind:'invoke', dst:<deviceId>, id:<uuid>, payload:InvokePayload{ channel, args } }`。
 - 被控端**双层校验**(开关 + allowlist)后,用合成 event 调本机既有 `ipcMain.handle(channel)`,回 `invoke-result`。
-- **可远程调用的 channel 全集 = `REMOTE_INVOKE_ALLOWLIST`**(`src/allowlist.ts`,默认拒绝制)。这就是控制端能驱动被控端做的全部事 —— 手机版的能力边界完全由它定义。分组(以源码为准):
+- **可远程调用的 channel 全集 = `REMOTE_INVOKE_ALLOWLIST`**(`src/allowlist.ts`,默认拒绝制)。这就是控制端能驱动被控端做的全部事 —— 控制端的能力边界完全由它定义。分组(以源码为准):
   - 会话生命周期:`maker:create-session` / `close-session` / `abort-session` / `fork` / `fork-strip-encrypted`
   - 收发与流:`maker:send` / `steer` / 完整 `maker:input:*`(enqueue/steer/stop/resume/move/remove/update-text/clear-session/锁/重试…)
   - 交互审批:`maker:resolve-interaction`
@@ -147,7 +147,7 @@
 
 - `PROTOCOL_VERSION`(`src/protocol.ts`,当前 `1`)**只升不降**,不兼容改动 +1;`apps/server/src/device-link/protocol.ts` 的最小子集必须同步。
 - `allowlistHash`(`computeAllowlistHash`,FNV-1a)在 `link-accept` 回传,供控制端探测「对方 allowlist 与我不一致」并提示,而非静默 `CHANNEL_NOT_ALLOWED`。
-- **手机与桌面版本会错位**:新增/变更 channel 走兼容评估,别破坏老客户端;新增 push 事件控制端应忽略未知 channel。
+- **控制端与被控端版本会错位**:新增/变更 channel 走兼容评估,别破坏老客户端;新增 push 事件控制端应忽略未知 channel。
 - 物理帧上限 `MAX_FRAME_BYTES`(2MB,按 **UTF-8 字节** 计,两端一致)；可靠 wrapper 的
  逻辑消息上限和分片边界见上节。
 

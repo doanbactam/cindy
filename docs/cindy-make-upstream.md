@@ -900,8 +900,7 @@ Settings 的「同步」继续可用。创建制作任务前的同步仍为固�
   显示状态，避免通用手机卡片过滤只有摘要的资源。空闲时标题为 Cindy Make，不误报正在运行；
   有流程时沿用原卡片及其输入状态与操作。实现与回归见
   [remoteProjection](../apps/desktop/src/main/cindy-make/remoteProjection.ts)、
-  [remoteProvider.test](../apps/desktop/src/main/cindy-make/__tests__/remoteProvider.test.ts) 与
-  [SessionResourceCards.test](../apps/mobile/src/__tests__/SessionResourceCards.test.tsx)。
+  [remoteProvider.test](../apps/desktop/src/main/cindy-make/__tests__/remoteProvider.test.ts)。
 
 ### 简单创建的配套改进
 

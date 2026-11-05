@@ -1,9 +1,9 @@
 # UI 模拟数据：免登录看真实界面
 
-> **读取时机**：要在 Desktop 或 Mobile 上检查界面、截图、做 UI 回归，又不想登录真实
+> **读取时机**：要在 Desktop 上检查界面、截图、做 UI 回归，又不想登录真实
 > 账号或碰真实数据时；新增或修改模拟任务、`--mock` 启动参数时。
 
-Desktop 与 Mobile 共用一套模拟数据：展示项目、不同状态的回归任务和它们的消息。开发版
+Desktop 使用一套共享模拟数据：展示项目、不同状态的回归任务和它们的消息。开发版
 加 `--mock` 启动后直接进入主界面，不登录、不连服务器，也不碰任何正式或共享数据。适合检查
 任务列表、任务页、消息渲染、深浅色和多语言这类只关心界面的改动；登录、发送、跨设备、
 真实 Agent 运行仍要用真实账号验证。
@@ -11,9 +11,8 @@ Desktop 与 Mobile 共用一套模拟数据：展示项目、不同状态的回�
 | 端            | 启动                                                                     | 数据落在哪                                      |
 | ------------- | ------------------------------------------------------------------------ | ----------------------------------------------- |
 | Desktop       | `pnpm restart:desktop:remote -- --mock`                                  | 独立沙箱 `ui-mock`（与 `dev` 沙箱、正式版分开） |
-| Mobile 模拟器 | `pnpm mobile:sim:start -- --mock`（`whoami`、`rebuild` 同样加 `--mock`） | 只在 App 进程内存里                             |
 
-## 一套数据，两端共用
+## 数据正本
 
 正本在 `packages/maker-shared/src/uiMock.ts`（`@cindy/maker-shared/ui-mock`）：
 
@@ -23,15 +22,12 @@ Desktop 与 Mobile 共用一套模拟数据：展示项目、不同状态的回�
   已归档等任务；`登录页窄窗口错位排查` 一条覆盖标题、表格、代码块、列表、引用、思考与工具
   调用。
   两条 `插件模型：…` 任务覆盖新任务选了插件模型后的说明行（选了模型、插件没回应）。
-- `buildUiMockRows()`：按 Desktop 数据库行的格式生成任务与消息。Mobile 平时从电脑收到的
-  也是这些行，所以两端看到的是同一份内容。
+- `buildUiMockRows()`：按 Desktop 数据库行的格式生成任务与消息。
 
-`visual-*` 开头的任务 id 被 Mobile 用来叠加运行时状态（运行中、权限确认、排队消息）；
-这些状态在 Desktop 上来自真实 Agent，不在数据库里，所以 Desktop 只把它们显示成普通任务。
-Mobile 另外保留双端一致性测试用的 `session-primary` 与 Orca 两条任务
-（`SHARED_REMOTE_CONTROL_FIXTURE`）。
+`visual-*` 开头任务的运行时状态（运行中、权限确认、排队消息）在 Desktop 上来自真实 Agent，
+不在数据库里，所以 Desktop 只把它们显示成普通任务。
 
-要加一种界面状态，就在 `UI_MOCK_TASKS` 里加一条任务，两端会一起出现。只用 Desktop
+要加一种界面状态，就在 `UI_MOCK_TASKS` 里加一条任务。只用 Desktop
 已有的消息格式（`user`、`assistant`、`thinking`、工具调用与结果），不要为模拟数据新增
 数据库字段或协议。
 
@@ -57,25 +53,6 @@ pnpm restart:desktop:remote -- --mock --isolated=<名字>   # 另开一份模拟
 - 单个组件的改动仍优先用 `pnpm ui:check`（几秒出全部场景截图）；`--mock` 用于需要完整
   主界面、真实路由和侧栏交互的检查。
 
-## Mobile 模拟器
-
-```bash
-pnpm mobile:sim:start -- --mock
-pnpm mobile:sim:whoami -- --mock --json
-```
-
-- 只换 JS bundle 的环境变量 `EXPO_PUBLIC_CINDY_MOBILE_VISUAL_MOCK=1`，不改原生指纹，已装的
-  开发包可以直接用。
-- 开关是 Metro 环境的一部分：在真实数据和模拟数据之间切换时，`sim:start` 会提示 Metro 是旧
-  环境，加 `--takeover` 重启；`whoami` 不带相同的 `--mock` 会判定环境不一致。
-- App 里是一台在线的模拟电脑和一台离线电脑，任务、消息、插件演示、文件浏览都由
-  `apps/mobile/src/debug/visualMock.ts` 在内存里提供，写操作只在本次进程内生效，重启即还原。
-- 生效条件是开发构建（`__DEV__`）；正式包不包含这条路径。
-- 邮件阅读页：`cindy://mail-preview?deviceId=cindy-visual-mock-mac&sessionId=visual-running&url=<编码后的地址>`，
-  地址取 `apps/mobile/src/debug/mailVisualFixture.ts` 的 `VISUAL_MAIL_URLS`（宽版营销邮件、三封往来邮件），均为合成数据。
-- 写邮件卡片：`cindy://sessions/visual-mail-draft?deviceId=cindy-visual-mock-mac`（仅手机端的模拟任务，含一张回复草稿卡）。
-- 群聊点名：`cindy://companions/groups/mention-qa?deviceId=cindy-visual-mock-mac`，合成成员覆盖显式身份、唯一名称回退、重名、未知及群体提及。沿用实际群聊组件与成员身份 sheet，只用于界面验收；话题入口另由直连 Chat Server 的组件回归覆盖。
-
 ## 可复用的展示项目：Orbit Garden
 
 共享目录现在包含 `orbit-garden-zh` / `orbit-garden-en`：同一个虚构独立游戏的中英文
@@ -90,35 +67,22 @@ pnpm mobile:sim:whoami -- --mock --json
 | `release-zh` / `release-en`              | 未发送的试玩邀请草稿                                  |
 
 项目中的 `data/feedback.csv`、`data/completion.csv`、`reports/playtest.md` 与
-`plans/next-build.md` 和回答使用同一组数字。Desktop 创建这些小文件；Mobile 的 mock
-文件浏览通道读取同一目录，支持子目录、预览和搜索。两端仍是独立回放，**不代表已验证
-真实设备同步、远程桌面或 Agent 执行**。
+`plans/next-build.md` 和回答使用同一组数字。Desktop 创建这些小文件；这只是本机回放，
+**不代表已验证真实设备同步、远程桌面或 Agent 执行**。旧的 `cindy-demo`、`design-system`
+保留原有 Markdown 长文、翻页文件与媒体缩略图回归场景。
 
-Mobile 只对 `UI_MOCK_SHOWCASE_PROJECTS` 中的展示项目启用这套文件读取；旧的
-`cindy-demo`、`design-system` 保留原有 Markdown 长文、翻页文件与媒体缩略图回归场景。
-
-建议截图分工：桌面显示任务＋回答＋文件侧栏；笔记本聚焦回答；手机显示单栏；Duo 用真实
-展开布局显示任务与回答。不要裁掉错误提示后把结果当作验证通过，也不要将屏幕拉伸成
+建议截图分工：桌面显示任务＋回答＋文件侧栏；笔记本聚焦回答。不要裁掉错误提示后把结果当作验证通过，也不要将屏幕拉伸成
 另一种设备的布局。网页标注「真实界面 · 示例数据」。
 
-复用时记录源码版本/dirty 标识、场景 ID、区域、语言、主题、窗口尺寸或模拟器 UDID。
+复用时记录源码版本/dirty 标识、场景 ID、区域、语言、主题与窗口尺寸。
 切换界面语言不会翻译消息，需选择对应语言的任务。Desktop seed 不覆盖已有内容；修改
 文案后使用新的专用沙箱，不清空他人常用开发环境。截图只导航/查看/调整本地控件，不点
 发送；Desktop `--mock` 不是阻止真实模型调用的防火墙。
 
 数字与富回答协议回归：`packages/maker-shared/src/__tests__/uiMockShowcase.test.ts`。
-手机文件一致性回归：`apps/mobile/src/__tests__/visualMock.test.ts`。
 
 ## 数据边界
 
-手机 B2B 回归入口（仅 `--mock`）：
-`cindy://sessions/visual-teammate-b2b?deviceId=cindy-visual-mock-mac&resourceCollectionId=teammates&resourceKind=bot&resourceId=visual-bot-b2b`。
-该合成场景按收件、处理工具、发件、主人后续回复排列，内部助手正文 `B2B-INTERNAL-HIDDEN` 必须不可见；
-收发入口与处理记录沿正文左侧对齐，入口可打开两条完整往来并返回。用于 iOS/Android 真实界面及交互验收，
-不代表已验证真实设备同步或 APNs/FCM 送达。
-
 - 模拟数据只用于开发与界面验收，不进安装包逻辑，不上传，不触发真实 Agent。
-- 不在模拟数据里放真实姓名、邮箱、路径或聊天内容；要用真实数据预览手机界面时用
-  `apps/mobile/scripts/export-realdata-visual-snapshot.mjs`，它导出的是敏感数据，按脚本
-  里的限制使用。
+- 不在模拟数据里放真实姓名、邮箱、路径或聊天内容。
 - PR 截图来自模拟数据时要写明，不能当作真实账号、真实 Agent 行为已验证的证据。
