@@ -173,8 +173,8 @@ describe('delivery-path wiring (source contract)', () => {
       'async function sendToSessionInternal',
       'const welcomeDispatchReceipts',
     );
-    // create / live / resumed direct sends all pass the same source snapshot.
-    expect(internal.match(/\}, directSource\);/g)).toHaveLength(3);
+    // Creation and the shared live/resumed dispatch pass the same source snapshot.
+    expect(internal.match(/\}, directSource\);/g)).toHaveLength(2);
     expect(internal).toContain(
       '...(params.sourcePlugin ? { sourcePlugin: params.sourcePlugin } : {})',
     );

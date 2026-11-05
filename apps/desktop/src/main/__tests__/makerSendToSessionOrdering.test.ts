@@ -369,14 +369,9 @@ describe('sendToSession ordering', () => {
       'prepareUnhealthySession(targetSessionId)',
       'live = maker.getSession(targetSessionId);',
     );
-    const liveBranch = extractBetween(
+    const existingSessionBranch = extractBetween(
       block,
-      'live = maker.getSession(targetSessionId);',
-      'try {\n        const createOpts = buildCreateOptsWithStderr({',
-    );
-    const resumedBranch = extractBetween(
-      block,
-      'const createOpts = buildCreateOptsWithStderr({\n          id: targetSessionId,',
+      "const deliveryPath = live ? 'live' : 'resumed';",
       'return trackSendToSessionLockRun(',
     );
 
@@ -394,18 +389,10 @@ describe('sendToSession ordering', () => {
     expect(createBranch).toContain('const sendResult = await sendUserMessageWithAwaitedGitBaseline(session, message, clientId, {');
     expect(createBranch).toContain('planMode: false,');
     expect(createBranch).toContain("assertDesktopSendDispatched(sendResult, 'send_to_session create');");
-    expect(liveBranch).toContain('const sendResult = await sendUserMessageWithAwaitedGitBaseline(');
-    expect(liveBranch).toContain('live,');
-    expectOrder(liveBranch, 'message,', 'clientId,');
-    expect(liveBranch).toContain('onAccepted: persistUserMessage,');
-    expect(liveBranch).toContain('onDispatching: onInternalDispatching,');
-    expect(liveBranch).toContain("assertDesktopSendDispatched(sendResult, 'send_to_session live');");
-    expect(resumedBranch).toContain('const sendResult = await sendUserMessageWithAwaitedGitBaseline(');
-    expect(resumedBranch).toContain('session,');
-    expectOrder(resumedBranch, 'message,', 'clientId,');
-    expect(resumedBranch).toContain('onAccepted: persistUserMessage,');
-    expect(resumedBranch).toContain('onDispatching: onInternalDispatching,');
-    expect(resumedBranch).toContain("assertDesktopSendDispatched(sendResult, 'send_to_session resumed');");
+    expect(existingSessionBranch).toContain('const sendResult = await sendUserMessageWithAwaitedGitBaseline(live, message, clientId, {');
+    expect(existingSessionBranch).toContain('onAccepted: persistUserMessage,');
+    expect(existingSessionBranch).toContain('onDispatching: onInternalDispatching,');
+    expect(existingSessionBranch).toContain('assertDesktopSendDispatched(sendResult, `send_to_session ${deliveryPath}`);');
   });
 
   it('routes a retained Pi error handle through bounded close retry before sending', () => {
@@ -480,7 +467,8 @@ describe('sendToSession ordering', () => {
       'await beginTurnChangeSetAtDispatch(session, anchorClientId);',
       'await gitSnapshotCoordinator.onTurnStart(session.id, signal);',
     );
-    expect(countOccurrences(block, 'sendUserMessageWithAwaitedGitBaseline(')).toBe(3);
+    // Creation stays separate; live and resumed sessions share the same dispatch.
+    expect(countOccurrences(block, 'sendUserMessageWithAwaitedGitBaseline(')).toBe(2);
     expect(block).not.toContain(
       "const sendResult = await session.send({ type: 'user', content: message }, {",
     );
@@ -733,44 +721,27 @@ describe('sendToSession ordering', () => {
     expect(promptPreviewBlock).toContain('error: error instanceof Error ? error.message : String(error)');
   });
 
-  it('persists takeover user messages through the live session accepted hook', () => {
+  it('persists live and resumed takeover user messages through the shared accepted hook', () => {
     const block = extractSendToSessionSource();
     // 同 sendPersistedUserMessageToSession 的顺序硬约束(Codex review P2):
     // prompt preview 可先发,但 accepted 副作用仍必须等落库成功后才执行。
     expectOrder(block, 'notifyAgentIslandUserPrompt(previewSessionMeta', 'await createDbMessage(targetSessionId, {');
     expectOrder(block, 'await createDbMessage(targetSessionId, {', 'await runAcceptedCallback(onAccepted, targetSessionId, clientId);');
-    const liveBranch = extractBetween(
+    const existingSessionBranch = extractBetween(
       block,
-      'live = maker.getSession(targetSessionId);',
-      'try {\n        const createOpts = buildCreateOptsWithStderr({',
-    );
-
-    expect(liveBranch).toContain('const sendResult = await sendUserMessageWithAwaitedGitBaseline(');
-    expect(liveBranch).toContain('live,');
-    expect(liveBranch).toContain('onAccepted: persistUserMessage,');
-    expect(liveBranch).toContain('onDispatching: onInternalDispatching,');
-    expect(liveBranch).not.toContain('await persistUserMessage();');
-    expect(liveBranch).toContain('if (isSessionRunningError(err))');
-    expect(liveBranch).toContain('await enqueueSendToSessionMessage({');
-    expect(liveBranch).toContain("wakeKind: 'queued' as const");
-  });
-
-  it('persists takeover user messages through the resumed session accepted hook', () => {
-    const block = extractSendToSessionSource();
-    const resumedBranch = extractBetween(
-      block,
-      'const createOpts = buildCreateOptsWithStderr({\n          id: targetSessionId,',
+      "const deliveryPath = live ? 'live' : 'resumed';",
       'return trackSendToSessionLockRun(',
     );
 
-    expect(resumedBranch).toContain('const sendResult = await sendUserMessageWithAwaitedGitBaseline(');
-    expect(resumedBranch).toContain('session,');
-    expect(resumedBranch).toContain('onAccepted: persistUserMessage,');
-    expect(resumedBranch).toContain('onDispatching: onInternalDispatching,');
-    expect(resumedBranch).not.toContain('await persistUserMessage();');
-    expect(resumedBranch).toContain('if (isSessionRunningError(err))');
-    expect(resumedBranch).toContain('await enqueueSendToSessionMessage({');
-    expect(resumedBranch).toContain("wakeKind: 'queued' as const");
+    expect(existingSessionBranch).toContain('if (!live) {');
+    expectOrder(existingSessionBranch, 'await bootstrapSession(createOpts);', 'live = session;');
+    expectOrder(existingSessionBranch, 'live = session;', 'const sendResult = await sendUserMessageWithAwaitedGitBaseline(live, message, clientId, {');
+    expect(existingSessionBranch).toContain('onAccepted: persistUserMessage,');
+    expect(existingSessionBranch).toContain('onDispatching: onInternalDispatching,');
+    expect(existingSessionBranch).not.toContain('await persistUserMessage();');
+    expect(existingSessionBranch).toContain('if (isSessionRunningError(err))');
+    expect(existingSessionBranch).toContain('await enqueueSendToSessionMessage({');
+    expect(existingSessionBranch).toContain("wakeKind: 'queued' as const");
   });
 
   it('preserves stored permission and extraDirs when sendToWorker resumes a worker', () => {

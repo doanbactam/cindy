@@ -44,8 +44,8 @@ describe('sendToSessionInternal lazy-resume permission mode', () => {
   it('restores the stored permission mode when the host asks for it', () => {
     expect(lazyResumeCreateOpts()).toContain(
       `permissionMode: params.resumeWithStoredPermissionMode
-            ? permissionModeOrAsk(dbRow.permissionMode)
-            : 'bypassPermissions',`,
+              ? permissionModeOrAsk(dbRow.permissionMode)
+              : 'bypassPermissions',`,
     );
   });
 

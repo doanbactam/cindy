@@ -13272,143 +13272,62 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
           live = undefined;
         }
       }
-      if (live) {
-        lockStage = 'live-send';
-        try {
-          const sendResult = await sendUserMessageWithAwaitedGitBaseline(live, message, clientId, {
-            ...(params.autoReviewUserText !== undefined ? {
-              [AUTO_REVIEW_SOURCE_CONTENT]: typeof params.autoReviewUserText === 'string' ? params.autoReviewUserText : '',
-              ...(typeof params.autoReviewUserText === 'string' ? {} : params.autoReviewUserText.kind === 'delegated-continuation' ? {
-                [AUTO_REVIEW_USER_INTENT]: restoreAutoReviewUserIntent(await readAutoReviewHistory(targetSessionId)),
-                [AUTO_REVIEW_DELEGATED_CONTINUATION]: true as const,
-              } : { [AUTO_REVIEW_USER_INTENT]: verifiedOwnerRequestText(params.autoReviewUserText) ?? '' }),
-            } : {}),
-            planMode: false,
-            onAccepted: persistUserMessage,
-            onDispatching: onInternalDispatching,
-          }, directSource);
-          if (userPromptPreviewStarted) {
-            if (sendResult.accepted) {
-              commitAgentIslandUserPrompt(targetSessionId, clientId);
-            } else {
-              rollbackAgentIslandUserPrompt(
-                targetSessionId,
-                clientId,
-                'send_to_session:live:not-dispatched',
-              );
-            }
-          }
-          if (dispatchRejectedForDemotion) {
-            return { ok: false as const, errorCode: 'AGENT_NOT_READY' as const, message: SHADOWED_COMPANION_INPUT_MESSAGE };
-          }
-          assertDesktopSendDispatched(sendResult, 'send_to_session live');
-          return {
-            ok: true as const,
-            targetSessionId,
-            agentKind: meta.agentKind,
-            wakeKind: 'already-active' as const,
-            targetTitle: dbRow.title,
-            targetLastUserSendAt:
-              dbRow.userSendAt !== null ? new Date(dbRow.userSendAt).toISOString() : null,
-          };
-        } catch (err) {
-          if (isSessionRunningError(err)) {
-            if (userPromptPreviewStarted) {
-              rollbackAgentIslandUserPrompt(
-                targetSessionId,
-                clientId,
-                'send_to_session:live:queued-before-dispatch',
-              );
-            }
-            await enqueueSendToSessionMessage({
-              targetSessionId,
-              message,
-              persistedContent: persistedContent ?? message,
-              clientId,
-              meta,
-              dbRow,
-              onAccepted,
-              onAcceptedRollback,
-              onAcceptedCommit,
-              origin: queuedOrigin,
-              sourcePlugin,
-              autoReviewUserText: params.autoReviewUserText,
-              botTaskCoordination: params.botTaskCoordination,
-            });
-            return {
-              ok: true as const,
-              targetSessionId,
-              agentKind: meta.agentKind,
-              wakeKind: 'queued' as const,
-              queuedMessageId: clientId,
-              targetTitle: dbRow.title,
-              targetLastUserSendAt:
-                dbRow.userSendAt !== null ? new Date(dbRow.userSendAt).toISOString() : null,
-            };
-          }
-          if (userPromptPreviewStarted) {
-            rollbackAgentIslandUserPrompt(
-              targetSessionId,
-              clientId,
-              'send_to_session:live:failed-before-dispatch',
-            );
-          }
-          return {
-            ok: false as const,
-            errorCode: 'INTERNAL' as const,
-            message: err instanceof Error ? err.message : String(err),
-          };
-        }
-      }
 
-      lockStage = 'lazy-resume-bootstrap';
+      // Preparation differs, but persistence, dispatch and rollback share one path.
+      // Retain the original route for result/error semantics and diagnostic labels.
+      const deliveryPath = live ? 'live' : 'resumed';
+      if (live) lockStage = 'live-send';
       try {
-        const createOpts = buildCreateOptsWithStderr({
-          id: targetSessionId,
-          agentKind: meta.agentKind,
-          workingDir: meta.workDir,
-          model: meta.model,
-          resumeSessionId: meta.sdkSessionId,
-          // 插件任务的档位由用户在任务设置里给定(errand 还会再收窄),不能借 lazy-resume
-          // 的缺省 bypass 提权;档位不一致还会让 errand 复用判定每轮都失败、另开新会话
-          // (#5788)。由宿主的插件派发、伙伴后台任务派发等入口显式要求,未要求的 main 侧
-          // 通路(Orca 派活等)保持既有缺省。
-          permissionMode: params.resumeWithStoredPermissionMode
-            ? permissionModeOrAsk(dbRow.permissionMode)
-            : 'bypassPermissions',
-          // 计划模式同理按落库状态起档,运行态才与库内一致(心跳等权限边界读取方要求两者
-          // 相同)。下方 send 带 planMode:false,本轮仍是普通执行、不消耗武装态。
-          ...(params.resumeWithStoredPermissionMode
-            ? { planMode: dbRow.planModeEnabled === true }
-            : {}),
-          // 发起方回合结束后进程常被释放。漏掉 providerId = 回落到隐式默认路由,
-          // 订阅 / 自定义来源的伙伴会以 AGENT_NOT_READY 起不来,委派结果停在外发
-          // 队列里,表现就是「对方做完了,发起方没被叫醒」。
-          ...(dbRow.providerId ? { providerId: dbRow.providerId } : {}),
-        });
-        await synthesizeOrcaVendorOptionsFromDb(targetSessionId, createOpts);
-        if (createOpts.extraDirs === undefined) {
-          try {
-            const row = await readSessionExtraDirsFromDb(targetSessionId);
-            if (row.length > 0) Object.assign(createOpts, directoryGrantsForRuntime(row));
-          } catch (err) {
-            log.warn('sendToSession: read extra_dirs from DB failed (non-fatal)', {
-              targetSessionId,
-              err: err instanceof Error ? err.message : String(err),
-            });
+        if (!live) {
+          lockStage = 'lazy-resume-bootstrap';
+          const createOpts = buildCreateOptsWithStderr({
+            id: targetSessionId,
+            agentKind: meta.agentKind,
+            workingDir: meta.workDir,
+            model: meta.model,
+            resumeSessionId: meta.sdkSessionId,
+            // 插件任务的档位由用户在任务设置里给定(errand 还会再收窄),不能借 lazy-resume
+            // 的缺省 bypass 提权;档位不一致还会让 errand 复用判定每轮都失败、另开新会话
+            // (#5788)。由宿主的插件派发、伙伴后台任务派发等入口显式要求,未要求的 main 侧
+            // 通路(Orca 派活等)保持既有缺省。
+            permissionMode: params.resumeWithStoredPermissionMode
+              ? permissionModeOrAsk(dbRow.permissionMode)
+              : 'bypassPermissions',
+            // 计划模式同理按落库状态起档,运行态才与库内一致(心跳等权限边界读取方要求两者
+            // 相同)。下方 send 带 planMode:false,本轮仍是普通执行、不消耗武装态。
+            ...(params.resumeWithStoredPermissionMode
+              ? { planMode: dbRow.planModeEnabled === true }
+              : {}),
+            // 发起方回合结束后进程常被释放。漏掉 providerId = 回落到隐式默认路由,
+            // 订阅 / 自定义来源的伙伴会以 AGENT_NOT_READY 起不来,委派结果停在外发
+            // 队列里,表现就是「对方做完了,发起方没被叫醒」。
+            ...(dbRow.providerId ? { providerId: dbRow.providerId } : {}),
+          });
+          await synthesizeOrcaVendorOptionsFromDb(targetSessionId, createOpts);
+          if (createOpts.extraDirs === undefined) {
+            try {
+              const row = await readSessionExtraDirsFromDb(targetSessionId);
+              if (row.length > 0) Object.assign(createOpts, directoryGrantsForRuntime(row));
+            } catch (err) {
+              log.warn('sendToSession: read extra_dirs from DB failed (non-fatal)', {
+                targetSessionId,
+                err: err instanceof Error ? err.message : String(err),
+              });
+            }
           }
+          if (createOpts.writableDirs === undefined) {
+            const row = await readSessionWritableDirsFromDb(targetSessionId).catch(() => []);
+            if (row.length > 0) createOpts.writableDirs = row;
+          }
+          // lazy-resume 也要走 remote ensure:Orca 派活 / scheduler 等 main 侧
+          // 通路不带 remoteHostId 快照, ensure 内部会从 sessions 行兜底回填并
+          // 完成 SSH 重连 / agent 安装 / codex daemon MCP 注入。
+          await ensureRemoteReadyForSessionStart({ createOpts });
+          const { session } = await bootstrapSession(createOpts);
+          await markOrcaRoleIfNeeded(session.id, createOpts.orcaRole);
+          live = session;
         }
-        if (createOpts.writableDirs === undefined) {
-          const row = await readSessionWritableDirsFromDb(targetSessionId).catch(() => []);
-          if (row.length > 0) createOpts.writableDirs = row;
-        }
-        // lazy-resume 也要走 remote ensure:Orca 派活 / scheduler 等 main 侧
-        // 通路不带 remoteHostId 快照, ensure 内部会从 sessions 行兜底回填并
-        // 完成 SSH 重连 / agent 安装 / codex daemon MCP 注入。
-        await ensureRemoteReadyForSessionStart({ createOpts });
-        const { session } = await bootstrapSession(createOpts);
-        await markOrcaRoleIfNeeded(session.id, createOpts.orcaRole);
-        const sendResult = await sendUserMessageWithAwaitedGitBaseline(session, message, clientId, {
+        const sendResult = await sendUserMessageWithAwaitedGitBaseline(live, message, clientId, {
           ...(params.autoReviewUserText !== undefined ? {
             [AUTO_REVIEW_SOURCE_CONTENT]: typeof params.autoReviewUserText === 'string' ? params.autoReviewUserText : '',
             ...(typeof params.autoReviewUserText === 'string' ? {} : params.autoReviewUserText.kind === 'delegated-continuation' ? {
@@ -13427,19 +13346,19 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
             rollbackAgentIslandUserPrompt(
               targetSessionId,
               clientId,
-              'send_to_session:resumed:not-dispatched',
+              `send_to_session:${deliveryPath}:not-dispatched`,
             );
           }
         }
         if (dispatchRejectedForDemotion) {
           return { ok: false as const, errorCode: 'AGENT_NOT_READY' as const, message: SHADOWED_COMPANION_INPUT_MESSAGE };
         }
-        assertDesktopSendDispatched(sendResult, 'send_to_session resumed');
+        assertDesktopSendDispatched(sendResult, `send_to_session ${deliveryPath}`);
         return {
           ok: true as const,
           targetSessionId,
           agentKind: meta.agentKind,
-          wakeKind: 'resumed' as const,
+          wakeKind: deliveryPath === 'live' ? 'already-active' as const : 'resumed' as const,
           targetTitle: dbRow.title,
           targetLastUserSendAt:
             dbRow.userSendAt !== null ? new Date(dbRow.userSendAt).toISOString() : null,
@@ -13450,7 +13369,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
             rollbackAgentIslandUserPrompt(
               targetSessionId,
               clientId,
-              'send_to_session:resumed:queued-before-dispatch',
+              `send_to_session:${deliveryPath}:queued-before-dispatch`,
             );
           }
           await enqueueSendToSessionMessage({
@@ -13483,12 +13402,12 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
           rollbackAgentIslandUserPrompt(
             targetSessionId,
             clientId,
-            'send_to_session:resumed:failed-before-dispatch',
+            `send_to_session:${deliveryPath}:failed-before-dispatch`,
           );
         }
         return {
           ok: false as const,
-          errorCode: 'AGENT_NOT_READY' as const,
+          errorCode: deliveryPath === 'live' ? 'INTERNAL' as const : 'AGENT_NOT_READY' as const,
           message: err instanceof Error ? err.message : String(err),
         };
       }
