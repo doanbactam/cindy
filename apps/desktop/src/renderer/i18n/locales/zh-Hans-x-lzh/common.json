@@ -9936,8 +9936,7 @@
       "regionCodeCn": "CN",
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "览版本日志",
-      "reopenUpdateBanner": "有更新待重启，点之以览",
-      "downloadMobile": "取 Cindy 手机端"
+      "reopenUpdateBanner": "有更新待重启，点之以览"
     },
     "accountSwitcher": {
       "current": "当前名籍",
@@ -9955,29 +9954,6 @@
       "startFailed": "不能启登门之页，请稍后再试",
       "addAccount": "另登一名籍",
       "back": "归",
-      "close": "阖"
-    },
-    "mobileDownload": {
-      "title": "远程御 Cindy",
-      "subtitle": "掌中一机，遥连案头",
-      "qrAlt": "Cindy 手机端下载二维码",
-      "preparing": "方生二维码…",
-      "error": "二维码生成未成，请稍后再试",
-      "openPage": "启下载页",
-      "openFailed": "下载页未能启，请察系统预设浏览器之设",
-      "scanToOpen": "扫码启 Cindy App，并登同一名籍",
-      "scanAnother": "扫码增他设备",
-      "scanAnotherHint": "于另一手机启 Cindy",
-      "myDevices": "君之设备",
-      "deviceOffline": "失联",
-      "allowControl": "许同名籍设备操控此机",
-      "deviceName": "此机 · {{name}}",
-      "remoteAction": {
-        "checking": "方察…",
-        "unavailable": "暂不可用",
-        "enable": "往启",
-        "enabled": "已启"
-      },
       "close": "阖"
     }
   },

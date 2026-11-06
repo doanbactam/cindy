@@ -1,7 +1,7 @@
 ---
 id: remote
 title: Remote workspaces and device control
-summary: Run agents on a remote machine over SSH, let your other signed-in devices (e.g. your phone) control this computer or view its desktop, and manage local app connections — all in Settings > Remote Connection.
+summary: Run agents on a remote machine over SSH, let your other signed-in computers control this computer or view its desktop, and manage local app connections — all in Settings > Remote Connection.
 tab: remote-control
 ---
 **Settings > Remote Connection** has three parts: **My devices** (control your other signed-in devices, or let them control this one), **SSH remote hosts** (run an agent on another machine), and **Local App Connections**.
@@ -18,10 +18,10 @@ tab: remote-control
 
 **My devices (shown when you're signed in):**
 
-- **No manual pairing** — every device signed into the **same Cindy account** appears automatically (this is how the phone app connects to your computer). If none appear, sign in with the same account on the other device.
+- **No manual pairing** — every device signed into the **same Cindy account** appears automatically. If none appear, sign in with the same account on the other device.
 - The **top card is this device**: rename it, see its connection status, and the master switch **"Allow same-account devices to control this machine"** (no per-connection approval; a visible indicator shows while it's being controlled, and you can disconnect at any time).
 - Below it, **Allow remote desktop** lets your signed-in devices view and operate all apps on this computer (device control must also be on). On macOS this needs Screen Recording and Accessibility permission; on Windows, **Lock screen control** additionally needs administrator authorization.
-- Each **other device** shows what each side may do as two rows of toggle buttons: **I can — Control it** (you control that device) and **It can — Control this device** (it controls this computer). Each is independent; tap to turn it on or off. Rename and delete are on the card too. Desktops also have a **Remote desktop** button to open their screen. Phones can control this computer but can't be controlled.
+- Each **other device** shows what each side may do as two rows of toggle buttons: **I can — Control it** (you control that device) and **It can — Control this device** (it controls this computer). Each is independent; tap to turn it on or off. Rename and delete are on the card too. Desktops also have a **Remote desktop** button to open their screen.
 - While another device is connected, a "<device> is connected to Cindy" notice appears on this computer with a **Revoke** button (with several devices, **View** opens this page). A revoked device can't reconnect until you restore its access here.
 
 **Using another computer:**
@@ -30,7 +30,7 @@ tab: remote-control
 
 **What a controlling device can and can't do:**
 
-- A controlling device (like the phone app, which is control-only — it has no local agent of its own) can drive sessions: create / close / fork them, send and steer input, approve prompts, switch model / effort / permission mode, rewind, manage collaboration workers and Automations, and read session / message lists.
+- A controlling computer can drive sessions: create / close / fork them, send and steer input, approve prompts, switch model / effort / permission mode, rewind, manage collaboration workers and Automations, and read session / message lists.
 - It can **not** touch sign-in or API keys, change the controlled computer's global settings, trigger updates, or open local shell / file dialogs there. A new remote session's working directory must be currently accessible on the controlled computer; disconnected network drives are rejected.
 
 **Local App Connections:**

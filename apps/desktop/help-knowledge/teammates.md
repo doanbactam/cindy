@@ -3,7 +3,7 @@ id: teammates
 title: Teammates (Cindy and custom companions)
 summary: Teammates are long-lived AI companions (the built-in Cindy plus ones you create) listed at the top of the left sidebar. Chat with them, set their profile, model, memory, capabilities, projects, voice, messaging platforms, and routines; let them run background tasks, follow up on your sessions, and keep todos; put several in a group chat; choose which computer runs them.
 ---
-A **teammate** is a long-lived AI companion with its own name, avatar, personality, memory, skills, and one continuous conversation. **Cindy** is built in and is added automatically the first time you use teammates; you can create more. A teammate belongs to your account, not to one computer: you see the same teammate on every computer and on your phone, but it runs on one **main computer**.
+A **teammate** is a long-lived AI companion with its own name, avatar, personality, memory, skills, and one continuous conversation. **Cindy** is built in and is added automatically the first time you use teammates; you can create more. A teammate belongs to your account, not to one computer: you see the same teammate on every computer, but it runs on one **main computer**.
 
 **Where teammates are:**
 
@@ -74,7 +74,7 @@ A **teammate** is a long-lived AI companion with its own name, avatar, personali
 **Voice conversations (desktop):**
 
 - Set up **Voice** in the teammate's settings (needs a text-to-speech model from a connected provider). Then click **Start voice conversation** in the message box. Speak; it sends after a pause and reads replies aloud. Speak again to interrupt; **Mute** and **End** are on the call bar.
-- Work you ask for during a call is handed to the teammate's main conversation ("Work from this call"). A record of the call is saved as a card. Voice mode works for teammates on this computer, one-on-one only; it's not available on the phone.
+- Work you ask for during a call is handed to the teammate's main conversation ("Work from this call"). A record of the call is saved as a card. Voice mode works for teammates on this computer, one-on-one only.
 
 **Group chats:**
 
@@ -86,16 +86,10 @@ A **teammate** is a long-lived AI companion with its own name, avatar, personali
 
 **Main computer and other devices:**
 
-- The computer where you created a teammate is its **Main Computer**. Its working folder, logins, model connections, and routines live there. Other computers and your phone see the same teammate and can chat with it through remote control. This needs "Allow same-account devices to control this machine" on in Settings → Remote Connection on the main computer.
+- The computer where you created a teammate is its **Main Computer**. Its working folder, logins, model connections, and routines live there. Other computers see the same teammate and can chat with it through remote control. This needs "Allow same-account devices to control this machine" on in Settings → Remote Connection on the main computer.
 - To move it, use **Main Computer** in its settings or **Computers** in **at a glance**, then **Move to "…"**. Chat history, memory, skills, todos, and routine definitions come along. Working directories, connections, and local files stay where they are. On the new computer it uses that computer's default permissions, and if its model isn't available there, it follows that computer's default model.
 - If the main computer is offline, other computers show the cloud copy of the conversation (read only) and offer **Continue on This Computer**. Only visible messages and final replies are saved in the cloud; tool details stay on the main computer.
 - If you had a separate Cindy on several computers, Cindy's settings show **Merge Duplicate Cindys**. It merges them into one and keeps everyone's history, memories, skills, todos, and routines.
-
-**On your phone:**
-
-- The phone's home screen starts with the same **Teammates** section (tap **+** to create a teammate or group chat). Creating a teammate needs a computer that's online and signed in to the same account.
-- In a chat, tap the teammate's avatar at the top for **at a glance**. Use the settings button for **Teammate settings**: Profile & Personality, Memory, Skills & Connections, Artifacts, Teammate Messages, Models & Permissions, Main Computer, and Messaging platforms.
-- Routines can't be managed on the phone (except **Check every day**). Voice conversations and private threads are desktop-only.
 
 **Settings shared by all teammates** (Settings > General > **Teammates**):
 

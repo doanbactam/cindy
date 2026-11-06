@@ -18,7 +18,7 @@ A provider is a source of models (with its own billing). Every model you can pic
 - You don't paste a key — it's **provisioned automatically after you sign in** ("Fetching credentials…" while that happens, then **Connected**). Because it's tied to your account, it works on every computer you sign into. Organization accounts may show "Not enabled for your organization".
 - The detail pane shows your remaining balance or plan allowance, with **View usage** and **Buy a plan** / **Upgrade plan** (these open **Settings > Usage and billing**).
 - Credential actions are in the **···** (More Actions) menu: **Refresh credentials**, **Rotate key**, **Disconnect** (clears the locally saved Cindy AI key), plus the masked key (click to copy).
-- **Rotate key** revokes the old key immediately: running sessions, remote sessions, and mobile voice that use it need to be restarted.
+- **Rotate key** revokes the old key immediately: running sessions and remote sessions that use it need to be restarted.
 
 **Adding other providers (Add provider):**
 

@@ -647,9 +647,6 @@
     "apps/desktop/src/renderer/__tests__/menuButtonSettingsEntry.test.ts": {
       "sourceReads": 1
     },
-    "apps/desktop/src/renderer/__tests__/mobileDownloadDialog.test.tsx": {
-      "sourceReads": 3
-    },
     "apps/desktop/src/renderer/__tests__/modelDefinitionsDefaults.test.ts": {
       "resetModules": 1
     },

@@ -28,4 +28,4 @@ When the plan is ready, a **Review the agent's plan** card replaces the composer
 
 **Notes:**
 
-- You can also review and approve plans from the Cindy mobile app when you control this computer from your phone.
+- You can also review and approve plans from another computer that controls this one.

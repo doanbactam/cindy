@@ -11,7 +11,6 @@ Settings > General controls the display language, desktop notifications, and a f
 
 - **Display language**: Auto (follow system) / English / 简体中文 / Traditional Chinese (繁體中文) / 日本語 / 한국어. It's used for the interface and AI error reports. Other replies follow your message or language request.
 - Changes apply immediately. With **Auto (follow system)**, Cindy reads the system language at startup, so restart Cindy after changing your computer's language.
-- On mobile, the phone app's display language is used for AI error reports for messages sent from that phone.
 
 **Notifications:**
 

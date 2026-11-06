@@ -29,7 +29,7 @@ Plugins extend what the agents can do — they add tools the agent can call, pan
 - Click **Install** on a Recommended plugin, or open **Add plugin** and choose **Install from file…** to pick a `.cindy` file. You can also drag a `.cindy` file anywhere onto the Cindy window, or double-click it in your file manager.
 - **Add plugin > Add Plugin Marketplace…** adds a custom marketplace from a GitHub repository, Git URL, or local folder; its plugins then show under **Custom**.
 - Before anything is installed, a **confirmation dialog** lists everything the plugin will be able to do (network addresses, credentials, background tasks, skills, bundled code, panels…). Nothing is installed until you confirm; after that the plugin is enabled right away.
-- When you ask an agent to install a plugin, the same confirmation appears as a card in that task — whatever the task's permission mode, including Full Access. This also works from your phone when you control this computer remotely. If you deny it, nothing is installed.
+- When you ask an agent to install a plugin, the same confirmation appears as a card in that task — whatever the task's permission mode, including Full Access. This also works when you control this computer from another computer. If you deny it, nothing is installed.
 - Plugins installed for you by default (for example, ones your organization rolls out) are installed and updated without a confirmation.
 
 **Updates:**

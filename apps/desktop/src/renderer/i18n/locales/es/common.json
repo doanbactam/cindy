@@ -10056,8 +10056,7 @@
       "regionCodeCn": "CN",
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "Ver notas de la versión",
-      "reopenUpdateBanner": "Actualización lista: haz clic para revisarla",
-      "downloadMobile": "Descargar Cindy Mobile"
+      "reopenUpdateBanner": "Actualización lista: haz clic para revisarla"
     },
     "accountSwitcher": {
       "current": "Cuenta actual",
@@ -10076,29 +10075,6 @@
       "addAccount": "Iniciar sesión en otra cuenta",
       "back": "Atrás",
       "close": "Cerrar"
-    },
-    "mobileDownload": {
-      "title": "Controla Cindy de forma remota",
-      "subtitle": "Conecta tu teléfono a esta computadora",
-      "qrAlt": "Código QR para descargar Cindy Mobile",
-      "preparing": "Preparando el código QR…",
-      "error": "No se pudo crear el código QR. Inténtalo más tarde.",
-      "openPage": "Abrir página de descarga",
-      "openFailed": "No se pudo abrir la página de descarga. Revisa la configuración del navegador de tu sistema.",
-      "scanToOpen": "Escanea para abrir la aplicación Cindy e iniciar sesión con la misma cuenta",
-      "scanAnother": "Escanear otro dispositivo",
-      "scanAnotherHint": "Abrir Cindy en otro teléfono",
-      "myDevices": "Mis dispositivos",
-      "deviceOffline": "Sin conexión",
-      "allowControl": "Permitir que los dispositivos de la misma cuenta controlen esta computadora",
-      "deviceName": "Este dispositivo · {{name}}",
-      "remoteAction": {
-        "checking": "Comprobando…",
-        "unavailable": "No disponible",
-        "enable": "Activar",
-        "enabled": "Activado"
-      },
-      "close": "Cerrar diálogo de descarga"
     }
   },
   "bots": {

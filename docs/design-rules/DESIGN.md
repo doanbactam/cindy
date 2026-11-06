@@ -1182,7 +1182,6 @@ Only the two registered chart members inside Usage History may enlarge their non
   - **Parameters**: each segment `--motion-base` / `--motion-ease-out`, opacity 0→1 and `translateY(6px→0)`; adjacent segments start **30ms** apart via `--rise-index` (`animation-delay: calc(var(--rise-index) * 30ms)`); at most **6** segments (the index is clamped at 5). `transform` / `opacity` only. This is an explicit exception to the rule that stagger is limited to the composer-container rows (≤20ms/row) and must not leak elsewhere.
   - **Degradation**: `.bot-market-rise` is in the `prefers-reduced-motion` whitelist in `globals.css`; reduced motion lands on the final frame directly.
   - **Scope boundary**: this page only. The same detail page's other motion uses existing tiers: the header identity and compact action fade in on `--motion-fast` / `--motion-ease-out` and out on `--motion-instant` / `--motion-ease-in` (a state-driven transition, not a keyframe); placeholders appear only after 300ms of loading, static, with no shimmer. Implementation: `.bot-market-rise` in `globals.css`.
-- **Retired: mobile-download QR brand edge** — a rotating app-icon edge on the `MobileDownloadDialog` QR card was briefly registered here as a fourth (persistent) motion class on 2026-07-25 and **removed the same day** at the user's request: read as a strange ring turning behind the code. There is **no sanctioned persistent decorative motion** — the red lines above hold without exception. The card is now a bare QR (no edge, no border, no shadow, no tilt); its only motion is the linked ↔ onboarding size tween. Do not re-add. Contract test: `mobileDownloadDialog.test.tsx` → `keeps the QR card flat with no brand edge`.
 
 ### 14.5 聊天正文的可点性信号(Clickability in message bodies)
 
@@ -1294,13 +1293,6 @@ The splash wordmark is a separate asset pair (`assets/splash/wordmark.png`, whit
 - **Lockup**: Desktop uses one static 40×40px product-approved Cindy character crop (8px radius), followed by the active theme's 24px-high wordmark with an 8px gap. Do not append a website or regional host. The character keeps the source asset's original color and opacity without component-authored filtering.
 - **Constraints**: no animation, shadow, decorative background, additional brand color, enlarged hero treatment, or alternate character composition. This approval identifies the source of an exported Cindy conversation; it is not precedent for adding mascots to cards, dialogs, tool output, or other share-adjacent UI.
 - **Theme boundary**: Light and Dark use their matching wordmark assets. The same static character crop may be used in both modes because it is an exported brand asset, not a UI color surface.
-
-**Sanctioned brand surface — mobile download dialog (approved 2026-07-25).**
-
-- **Where**: `components/sidebar/MobileDownloadDialog.tsx` only, and only the dialog header icon (64px `resources/icon.png`). This is a promotion surface for the mobile app, so showing the app's own icon is identification, not decoration.
-- **Constraints**: the color comes only from the official asset — no component-authored gradient or brand hex. The QR card itself carries **no brand edge, no border, no shadow and no pointer 3D tilt**: a 2px edge made of the scaled app icon was tried on 2026-07-25 and removed the same day (it read as a strange ring rotating behind the code — see §14.4). Do not re-add it in any form, static or animated.
-- **Scope boundary**: this dialog only. Other working-UI surfaces keep the neutral treatment; a new brand surface needs a new entry here. Contract test: `mobileDownloadDialog.test.tsx` → `keeps the QR card flat with no brand edge`.
-- **Reference renders** (light theme, zh-CN, @2x — `assets/mobile-download-dialog/`): [local mode](assets/mobile-download-dialog/guest-local.webp) (QR only — no account, so no permission card) · [signed in, no linked mobile](assets/mobile-download-dialog/onboarding.webp) (228px QR + permission card) · [signed in, mobile linked](assets/mobile-download-dialog/linked.webp) (132px QR + device list). Re-shoot these when the dialog's layout changes. **Stale as of 2026-07-25**: all three still show the retired brand edge around the QR — read them for layout only, not for the card's treatment.
 
 **Sanctioned brand surface — Alipay payment QR (approved 2026-07-29).**
 

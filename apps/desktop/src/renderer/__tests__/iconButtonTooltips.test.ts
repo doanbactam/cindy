@@ -313,7 +313,6 @@ describe('icon-only button tooltip coverage', () => {
 
     expect(source).toContain("import { Tip } from '@/components/ui/tooltip';");
     expect(source).toContain('<Tip text={moreLabel} side="right">');
-    expect(source).toContain("text={t('sidebar.user.downloadMobile')}");
     expect(source).toMatch(
       /text=\{\s*isFlameReopen\s*\? t\('sidebar\.user\.reopenUpdateBanner'\)\s*: t\('sidebar\.user\.viewReleaseNotes'\)\s*\}/,
     );
@@ -358,14 +357,10 @@ describe('icon-only button tooltip coverage', () => {
   });
 
   it('keeps modal tips visible and row details separate from inline action tips', () => {
-    const mobileDownload = rendererSource('components/sidebar/MobileDownloadDialog.tsx');
     const sessionExport = rendererSource('features/cc-agent/sidebar/SessionShareExportDialog.tsx');
     const automation = rendererSource('features/cc-agent/sidebar/AutomationSessionGroupItem.tsx');
     const sessionItem = rendererSource('features/cc-agent/sidebar/SessionItem.tsx');
 
-    expect(mobileDownload).toMatch(
-      /text=\{t\('sidebar\.mobileDownload\.close'\)\}[\s\S]*?contentClassName="z-\[10001\]"/,
-    );
     expect(sessionExport).toMatch(
       /sessionShare\.export\.(?:hide|show)Password[\s\S]*?contentClassName="z-\[10001\]"/,
     );

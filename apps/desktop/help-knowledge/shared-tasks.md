@@ -3,7 +3,7 @@ id: shared-tasks
 title: Sharing a task with other people
 summary: Share a task with other Cindy accounts through an invitation link (Share Task in the task menu); guests see the full history and message the same Agent. Manage sharing in Settings > Share Task; to send a copy instead, export a .cshare file.
 ---
-**Share Task** lets people on **other Cindy accounts** join one of your tasks. They see its full history, tool results, and attachments, and can message the same Agent. The task keeps running on your computer (the "host"), using your models and connections. To use your own phone or other computers on the **same account**, you don't need sharing; see the Remote topic.
+**Share Task** lets people on **other Cindy accounts** join one of your tasks. They see its full history, tool results, and attachments, and can message the same Agent. The task keeps running on your computer (the "host"), using your models and connections. To use your own other computers on the **same account**, you don't need sharing; see the Remote topic.
 
 **Starting to share (host):**
 

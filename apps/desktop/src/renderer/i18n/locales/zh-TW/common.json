@@ -9936,8 +9936,7 @@
       "regionCodeCn": "CN",
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "檢視版本日誌",
-      "reopenUpdateBanner": "有更新待重啟，點選檢視",
-      "downloadMobile": "下載 Cindy 移動端"
+      "reopenUpdateBanner": "有更新待重啟，點選檢視"
     },
     "accountSwitcher": {
       "current": "目前帳號",
@@ -9955,29 +9954,6 @@
       "startFailed": "無法開啟登入頁面，請稍後再試",
       "addAccount": "登入更多帳號",
       "back": "返回",
-      "close": "關閉"
-    },
-    "mobileDownload": {
-      "title": "遠端控制 Cindy",
-      "subtitle": "移動端連線桌面端",
-      "qrAlt": "Cindy 移動端下載二維碼",
-      "preparing": "正在生成二維碼…",
-      "error": "二維碼生成失敗，請稍後重試",
-      "openPage": "開啟下載頁面",
-      "openFailed": "下載頁面開啟失敗，請檢查系統預設瀏覽器設定",
-      "scanToOpen": "掃碼開啟 Cindy App，並登入同一帳號",
-      "scanAnother": "掃碼新增另一臺裝置",
-      "scanAnotherHint": "在另一臺手機上開啟 Cindy",
-      "myDevices": "我的裝置",
-      "deviceOffline": "離線",
-      "allowControl": "允許同帳號裝置控制本機",
-      "deviceName": "本機 · {{name}}",
-      "remoteAction": {
-        "checking": "正在檢查…",
-        "unavailable": "暫不可用",
-        "enable": "去開啟",
-        "enabled": "已開啟"
-      },
       "close": "關閉"
     }
   },

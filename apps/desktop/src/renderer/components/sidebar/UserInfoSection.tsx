@@ -7,7 +7,6 @@ import {
   Flame,
   Settings,
   Shield,
-  Smartphone,
   UserPlus,
   UserRound,
 } from 'lucide-react';
@@ -31,7 +30,6 @@ import { toast } from '@/lib/toast';
 import type { DesktopSavedAccount } from '@/lib/authService';
 import { CURRENT_CINDY_REGION } from '../../../shared/brandRegion';
 import { shouldLabelRegion } from '../../../shared/regionCode';
-import { MobileDownloadDialog } from './MobileDownloadDialog';
 
 interface UserInfoSectionProps {
   isCollapsed: boolean;
@@ -73,14 +71,12 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
   const navigate = useNavigate();
   const location = useLocation();
   const [avatarError, setAvatarError] = useState(false);
-  const [mobileDownloadOpen, setMobileDownloadOpen] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<DesktopSavedAccount[]>([]);
   const [savedAccountsOwnerKey, setSavedAccountsOwnerKey] = useState<string | null>(null);
   const [accountsMutationAllowed, setAccountsMutationAllowed] = useState(true);
   const [accountsSyncing, setAccountsSyncing] = useState(false);
   const [switchingAccountKey, setSwitchingAccountKey] = useState<string | null>(null);
   const [addingAccount, setAddingAccount] = useState(false);
-  const mobileDownloadButtonRef = useRef<HTMLButtonElement>(null);
   const accountsLoadGenerationRef = useRef(0);
   const { t } = useTranslation();
   const accountsOwnerKey = mode === 'cloud' ? dataOwnerId : null;
@@ -147,7 +143,6 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
     : appDisplayVersionDetail;
   const visibleVersionLabel = appVersionLabel;
   const visibleVersionLabelDetail = appVersionLabelDetail;
-  const remoteAvailable = mode === 'cloud';
 
   const openSettings = () => {
     if (location.pathname !== '/settings') navigate('/settings');
@@ -330,37 +325,6 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
     </DropdownMenu>
   );
 
-  const openRemoteSettings = () => {
-    setMobileDownloadOpen(false);
-    navigate('/settings?tab=remote-control');
-  };
-
-  const openLinkedDevices = () => {
-    setMobileDownloadOpen(false);
-    navigate('/settings?tab=remote-control&section=devices');
-  };
-
-  const mobileDownloadEntry = (
-    <Tip text={t('sidebar.user.downloadMobile')} side="right">
-      <button
-        ref={mobileDownloadButtonRef}
-        type="button"
-        onClick={() => setMobileDownloadOpen(true)}
-        aria-label={t('sidebar.user.downloadMobile')}
-        className={cn(
-          'mobile-download-btn',
-          'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full',
-          !isCollapsed && 'mr-1',
-          'border border-[var(--sidebar-user-card-border)] bg-[var(--sidebar-user-card-bg)]',
-          'text-[var(--sidebar-user-card-text)] transition-colors hover:bg-sidebar-item-hover',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]',
-        )}
-      >
-        <Smartphone className="h-3 w-3" aria-hidden="true" />
-      </button>
-    </Tip>
-  );
-
   if (isCollapsed) {
     return (
       <>
@@ -409,16 +373,7 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
               </button>,
             )}
           </Tip>
-          {mobileDownloadEntry}
         </div>
-        <MobileDownloadDialog
-          open={mobileDownloadOpen}
-          onOpenChange={setMobileDownloadOpen}
-          remoteAvailable={remoteAvailable}
-          onOpenRemoteSettings={openRemoteSettings}
-          onOpenDevices={openLinkedDevices}
-          triggerRef={mobileDownloadButtonRef}
-        />
       </>
     );
   }
@@ -432,7 +387,6 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
           'flex h-10 items-center rounded-full border border-[var(--sidebar-user-card-border)] bg-[var(--sidebar-user-card-bg)] px-[7px]',
           'transition-colors hover:bg-[var(--sidebar-user-card-bg-hover)]',
           'has-[.flame-btn:hover]:bg-[var(--sidebar-user-card-bg)]',
-          'has-[.mobile-download-btn:hover]:bg-[var(--sidebar-user-card-bg)]',
         )}
       >
         {renderMoreMenu(
@@ -513,7 +467,6 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
           </button>,
         )}
 
-        {mobileDownloadEntry}
 
         {/* Flame icon button — 默认打开更新历史;banner 被 dismiss 且有 pending
           update 时切换为「唤回 banner」入口,视觉涂黑(fill 实心 + foreground 主色)
@@ -563,15 +516,6 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
           </Tip>
         )}
       </div>
-
-      <MobileDownloadDialog
-        open={mobileDownloadOpen}
-        onOpenChange={setMobileDownloadOpen}
-        remoteAvailable={remoteAvailable}
-        onOpenRemoteSettings={openRemoteSettings}
-        onOpenDevices={openLinkedDevices}
-        triggerRef={mobileDownloadButtonRef}
-      />
     </div>
   );
 }
