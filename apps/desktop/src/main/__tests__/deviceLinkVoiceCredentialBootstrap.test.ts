@@ -187,7 +187,8 @@ function recoveryDesktop(relay: RecoveryRelay, id: string) {
   const context = createContext({
     client, subscriptions: registry, isProviderSharePeer, isSharedTaskPeer,
     cancelLinkAcceptRetry: noOp, readDeviceLinkSettings: () => ({ remoteControlEnabled: true }),
-    isControllerRevoked: () => false, resolveControllerName: (_peer: string, name: string) => name,
+    isControllerRevoked: () => false, isPhoneController: () => false,
+    resolveControllerName: (_peer: string, name: string) => name,
     // This recovery-only harness fixes permissions to allowed; bind the new
     // admission observer so the actual handleLinkOpen can reach its replay callback.
     noteControllerAccessAllowed: noOp,

@@ -115,6 +115,7 @@ import {
 import {
   clearControllerPlatforms,
   getControllerPlatform,
+  isMobilePlatform,
   setControllerPlatform,
 } from './controllerPlatform';
 import {
@@ -194,6 +195,15 @@ const relayDnsLookup = createDnsFallbackLookup({ log });
 const WS_PATH = '/api/device-link/ws';
 
 /** 官方中转的 WebSocket 地址:主连接走自建中转时,跨账号 peer 仍连这里。 */
+/**
+ * 登记控制端平台。手机端已下线:平台在 link 建立之后才到、且是 iOS / Android 时,
+ * 立刻清掉它已装上的订阅与离线队列,不再等下次 link-open 被拒才停推送。
+ */
+function recordControllerPlatform(deviceId: string, platform: string | null): void {
+  setControllerPlatform(deviceId, platform);
+  if (isMobilePlatform(platform)) purgeRevokedController(deviceId);
+}
+
 function officialWsUrl(): string {
   return officialDeviceLinkApiBase().replace(/^http/, 'ws') + WS_PATH;
 }
@@ -302,7 +312,7 @@ export function applyControllerPresenceListSnapshot(
     getOnline: (deviceId) => presenceOnlineByDevice.get(deviceId),
     setOnline: (deviceId, online) => presenceOnlineByDevice.set(deviceId, online || hasOfflineDirectPath(deviceId)),
     forgetOnline: (deviceId) => { if (!hasOfflineDirectPath(deviceId)) presenceOnlineByDevice.delete(deviceId); },
-    setPlatform: setControllerPlatform,
+    setPlatform: recordControllerPlatform,
     setName: (deviceId, name) => presenceNameByDevice.set(deviceId, name),
     shouldNotifyPeerOnline: ({ deviceId, online, platform }) =>
       online &&
@@ -1124,7 +1134,7 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
     // presence 不可用又让探测永久不合格,「无响应」会一直遮蔽真实离线/禁用态
     // (review P2)。翻转判据统一为「观察到进入某状态(含从未知)即触发一次」。
     if (!available && wasAvailable !== false) responsivenessTracker?.clearDevice(snap.deviceId);
-    setControllerPlatform(snap.deviceId, snap.platform);
+    recordControllerPlatform(snap.deviceId, snap.platform);
     applyControllerDisplayNamePresence({
       deviceId: snap.deviceId,
       name: snap.deviceName,

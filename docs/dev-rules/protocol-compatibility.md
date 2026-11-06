@@ -230,6 +230,15 @@ Mobile `historyViewProvider.test.tsx` 的 offline mask / explicit-off 用例。
 Mobile 暂无此确认界面；已保存任务及 Agent 工具的授权流程不变。无数据库迁移或新增持久授权记录。
 官方及自建中转沿用通用 invoke／push 转发，没有帧、鉴权或重连协议变化，无需修改中转内核。
 
+## 手机控制端拒绝（2026-11）
+
+手机端下线后，被控端对同账号 iOS / Android 控制端（按 presence 自报的 `platform`）的
+link-open 回 `link-close('revoked')`，订阅与 invoke 回 `ACCESS_REVOKED`
+（message `phone controllers are no longer supported`）。复用既有关闭原因与错误码，不新增 wire 字段，
+旧手机据此停在「已撤销」终态而不是反复重试。平台由对端自报，这只是明确拒绝、不是安全边界；
+平台未知（presence 未到）的控制端照常走远程控制开关与逐设备撤销。电脑控制端、共享任务访客与
+供应商分享访客不受影响。官方及自建中转只转发帧，不需要修改中转内核或 `RELAY_VERSION`。
+
 ## iPhone / Android 桌面小组件快照（已下线）
 
 只读 invoke `device-link:usage-widget:snapshot:v1` 只服务手机桌面小组件，已随手机端一起从

@@ -456,7 +456,7 @@ function createPresenceListAdapter(status: 'connecting' | 'online' | 'stopped', 
   const apply = new Function(
     'client', 'linkTornDown', 'applyControllerPresenceDirectorySnapshot', 'controllerPresenceFreshness',
     'presenceOnlineByDevice', 'presenceAvailableByDevice', 'presenceControlDisabledByDevice',
-    'hasOfflineDirectPath', 'setControllerPlatform', 'presenceNameByDevice', 'isDeviceRevoked',
+    'hasOfflineDirectPath', 'recordControllerPlatform', 'presenceNameByDevice', 'isDeviceRevoked',
     'shouldExchangeDictionaryWith', 'handleDesktopPeerOnline', 'replayActiveSubscriptions', 'retireControlOffRetention',
     compiled + '\nreturn applyPresenceList;',
   )(client, tornDown, applyControllerPresenceDirectorySnapshot, freshness, online, available, disabled,

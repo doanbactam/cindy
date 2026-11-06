@@ -128,7 +128,7 @@ import {
   assertRemoteBotInvocationAllowed, projectRemoteSessionResult, projectRemoteBotPush,
   hasRemoteBotSessionLookup, setRemoteBotSessionLookup,
 } from './remoteBotSessionBoundary.js';
-import { getControllerPlatform } from './controllerPlatform';
+import { getControllerPlatform, isMobilePlatform } from './controllerPlatform';
 import { getDeviceLinkInvokeContext, runDeviceLinkInvokeContext } from './invoke-context';
 import {
   redactInputProjectionForSharedGuest,
@@ -2793,6 +2793,21 @@ const pendingSharedTaskOpens = new Map<string, object>();
 const REVOKED_LINK_OPEN_REJECT_INTERVAL_MS = 30_000;
 const revokedLinkOpenRejectAt = new Map<string, number>();
 
+/**
+ * 手机端已下线:同账号 iOS / Android 控制端的 link-open、订阅与 invoke 一律拒绝。
+ * 复用 ACCESS_REVOKED / link-close('revoked'),让仍装着旧 App 的手机停在明确的终态,
+ * 不新增 wire 错误码,也不反复重试。平台由对端 hello 自报,这只是明确的拒绝,不是安全边界;
+ * 真正的准入仍是远程控制开关与逐设备撤销。
+ */
+const PHONE_CONTROLLER_REJECTED: InvokeResultPayload = {
+  ok: false,
+  error: { code: 'ACCESS_REVOKED', message: 'phone controllers are no longer supported' },
+};
+
+function isPhoneController(src: string): boolean {
+  return isMobilePlatform(getControllerPlatform(src));
+}
+
 function cancelLinkAcceptRetry(src: string): void {
   pendingSharedTaskOpens.delete(src);
   const timer = linkAcceptRetryTimers.get(src);
@@ -2951,6 +2966,17 @@ function handleLinkOpen(
     const last = revokedLinkOpenRejectAt.get(src) ?? 0;
     if (now - last >= REVOKED_LINK_OPEN_REJECT_INTERVAL_MS) {
       log.warn(`link-open from ${shortId(src)} rejected: access revoked`);
+      revokedLinkOpenRejectAt.set(src, now);
+      client.closeLink(src, 'revoked', 'inbound');
+    }
+    return;
+  }
+  if (isPhoneController(src)) {
+    purgeRevokedController(src);
+    const now = Date.now();
+    const last = revokedLinkOpenRejectAt.get(src) ?? 0;
+    if (now - last >= REVOKED_LINK_OPEN_REJECT_INTERVAL_MS) {
+      log.warn(`link-open from ${shortId(src)} rejected: phone controller`);
       revokedLinkOpenRejectAt.set(src, now);
       client.closeLink(src, 'revoked', 'inbound');
     }
@@ -3340,6 +3366,7 @@ function currentRemoteInvokeAdmissionFailure(src: string): InvokeResultPayload |
     noteControllerAccessDenied(src);
     return { ok: false, error: { code: 'ACCESS_REVOKED', message: 'access revoked by target device' } };
   }
+  if (isPhoneController(src)) return PHONE_CONTROLLER_REJECTED;
   noteControllerAccessAllowed(src);
   return null;
 }
@@ -4250,6 +4277,7 @@ function handleSubscriptionFrame(
     if (!isSharedTaskPeer(src)) noteControllerAccessDenied(src);
     return { ok: false, error: { code: 'ACCESS_REVOKED', message: 'access revoked by target device' } };
   }
+  if (!isSharedTaskPeer(src) && isPhoneController(src)) return PHONE_CONTROLLER_REJECTED;
   if (!isSharedTaskPeer(src)) noteControllerAccessAllowed(src);
   const arg = (payload.args ?? [])[0];
   const o =
@@ -4642,6 +4670,7 @@ async function executeRemoteInvoke(src: string, payload: InvokePayload | undefin
     log.warn(`blocked invoke from revoked controller ${shortId(src)}: ${payload.channel}`);
     return { ok: false, error: { code: 'ACCESS_REVOKED', message: 'access revoked by target device' } };
   }
+  if (ordinaryPeer && isPhoneController(src)) return PHONE_CONTROLLER_REJECTED;
   if (ordinaryPeer) noteControllerAccessAllowed(src);
   // 双层校验之二:allowlist(权威)
   if (!REMOTE_INVOKE_ALLOWLIST.has(payload.channel)) {

@@ -10,6 +10,8 @@
  * (`HelloPayload.platform`,client→server),本仓没有服务端校验或覆盖 —— 一台改过的
  * 同账号已配对设备可以声称自己是 `ios`。消费方只能拿它做"要不要换个呈现 / 多说一句"
  * 这类无权限后果的分流;任何鉴权、权限或安全判定都不得建立在它上面。
+ * 唯一的例外方向是「只拒不放」:手机端下线后,dispatch 用它拒绝 iOS / Android 控制端
+ * (见 dispatch.ts 的 PHONE_CONTROLLER_REJECTED)。它只会让自称手机的设备被拒,不会放行任何东西。
  *
  * 单独成模块而不是留在 device-link/index.ts 里,是为了让 dispatch.ts 也能读:
  * index.ts 已经 import dispatch.ts(`index.ts` 顶部),反向 import 会成环。这里是

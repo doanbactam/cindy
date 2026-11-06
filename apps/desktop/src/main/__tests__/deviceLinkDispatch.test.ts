@@ -46,6 +46,7 @@ import {
   isDeviceLinkInvoke,
 } from '../device-link/invoke-context';
 import * as subscriptions from '../device-link/subscriptions';
+import { clearControllerPlatforms, setControllerPlatform } from '../device-link/controllerPlatform';
 import { createDesktopOnlyConfirmationRequestId } from '../cindy-brain/desktopOnlyConfirmationProjection';
 import { PLUGIN_OAUTH_CHANNEL } from '@cindy/device-link';
 import { initializePluginOauthHost, invalidatePluginOauth, publishedPluginOauthIdentity } from '../plugin-oauth/runtime';
@@ -113,6 +114,26 @@ describe('runInvoke 双层校验', () => {
     registry.register('maker:list-active', () => ['s']);
     const r = await runInvoke('ctrl', { channel: 'maker:list-active', args: [] });
     expect(r).toEqual({ ok: true, result: ['s'] });
+  });
+
+  it('iOS / Android 控制端一律拒绝(手机端已下线),电脑与未知平台照常', async () => {
+    const handler = vi.fn(() => ['s']);
+    registry.register('maker:list-active', handler);
+    setControllerPlatform('phone', 'ios');
+    setControllerPlatform('tablet', 'android');
+    setControllerPlatform('mac', 'darwin');
+    try {
+      for (const src of ['phone', 'tablet']) {
+        await expect(runInvoke(src, { channel: 'maker:list-active', args: [] })).resolves.toEqual({
+          ok: false, error: { code: 'ACCESS_REVOKED', message: 'phone controllers are no longer supported' },
+        });
+      }
+      expect(handler).not.toHaveBeenCalled();
+      await expect(runInvoke('mac', { channel: 'maker:list-active', args: [] })).resolves.toEqual({ ok: true, result: ['s'] });
+      await expect(runInvoke('presence-pending', { channel: 'maker:list-active', args: [] })).resolves.toEqual({ ok: true, result: ['s'] });
+    } finally {
+      clearControllerPlatforms();
+    }
   });
 
   it('allowlist channel:dispatch 到本机 handler 并回传 result', async () => {
