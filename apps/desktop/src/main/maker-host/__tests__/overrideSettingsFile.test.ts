@@ -295,6 +295,22 @@ describe('createOverrideSettingsFile', () => {
       store.invalidateIfChanged();
       expect(store.read().limit).toBe(3);
 
+      // 同一 mtime tick 内的改写(Linux 粗粒度时钟下常见):长度不同、或 tmp+rename
+      // 换成等长新文件,都必须失效。mtime 钉成同一值来稳定复现。
+      const sameTick = new Date(Date.now() + 10_000);
+      fs.utimesSync(file, sameTick, sameTick);
+      store.invalidateIfChanged();
+      expect(store.read().limit).toBe(3);
+      fs.writeFileSync(file, JSON.stringify({ limit: 42 }), 'utf-8');
+      fs.utimesSync(file, sameTick, sameTick);
+      store.invalidateIfChanged();
+      expect(store.read().limit).toBe(42);
+      fs.writeFileSync(`${file}.next`, JSON.stringify({ limit: 24 }), 'utf-8');
+      fs.utimesSync(`${file}.next`, sameTick, sameTick);
+      fs.renameSync(`${file}.next`, file);
+      store.invalidateIfChanged();
+      expect(store.read().limit).toBe(24);
+
       // 外部删除文件 → 失效 → 回到默认态。
       fs.rmSync(file);
       store.invalidateIfChanged();

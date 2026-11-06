@@ -30,7 +30,7 @@ export interface OverrideSettingsFile<T> {
   resetAtomic(): Promise<T>;
   /**
    * 文件被进程外修改(用户/agent 手改配置)时失效缓存,下次 read 现读。
-   * mtime 守卫:文件没变时零开销(一次 stat),不重读不重复打 loaded 日志。
+   * mtime + 大小 + inode 守卫:文件没变时零开销(一次 stat),不重读不重复打 loaded 日志。
    * 支持"直接改文件即生效"语义的 store 在读取入口调用;不调用 = 原缓存语义。
    */
   invalidateIfChanged(): void;
@@ -72,16 +72,21 @@ export function createOverrideSettingsFile<T>(options: {
 }): OverrideSettingsFile<T> {
   let cached: CachedState<T> | null = null;
   let cachedResolvedPath: string | null = null;
-  /** 缓存装载时文件的 mtimeMs;null = 装载时文件不存在(默认态)。 */
-  let cachedFileMtimeMs: number | null = null;
+  /** 缓存装载时文件的 mtime + 大小 + inode 签名;null = 装载时文件不存在(默认态)。 */
+  let cachedFileSignature: string | null = null;
 
   const defaults = (): T =>
     clone(typeof options.defaults === 'function' ? (options.defaults as () => T)() : options.defaults);
 
-  /** 当前文件 mtimeMs;文件不存在/不可 stat 时 null(与"无文件"同态)。 */
-  function statFileMtimeMs(): number | null {
+  /**
+   * 当前文件签名;文件不存在/不可 stat 时 null(与"无文件"同态)。
+   * 只看 mtime 不够:Linux 的 mtime 取自粗粒度时钟(一个 tick 数毫秒),同一 tick 内
+   * 的两次写入 mtime 逐位相同。大小覆盖改写成不同长度,inode 覆盖 tmp+rename 式的
+   * 原子替换;同一 tick 内原地等长改写仍是已知盲区。
+   */
+  function statFileSignature(): string | null {
     try {
-      return fs.statSync(options.filePath()).mtimeMs;
+      return fileSignature(fs.statSync(options.filePath()));
     } catch {
       return null;
     }
@@ -105,7 +110,7 @@ export function createOverrideSettingsFile<T>(options: {
           throw new Error('settings file root must be an object');
         }
         const overrides = isLoggableObject(parsed) ? parsed : {};
-        cachedFileMtimeMs = stat.mtimeMs;
+        cachedFileSignature = fileSignature(stat);
         cached = {
           value: options.normalize({ ...defaults(), ...overrides }),
           isCustomized: Object.keys(overrides).length > 0,
@@ -142,9 +147,9 @@ export function createOverrideSettingsFile<T>(options: {
       }
     }
 
-    // 保留坏文件时记住它的 mtime，避免每次读取重复解析/刷日志；用户修复后
-    // invalidateIfChanged 会看到 mtime 变化并自动重试。
-    cachedFileMtimeMs = readStatus === 'unreadable' ? statFileMtimeMs() : null;
+    // 保留坏文件时记住它的文件签名，避免每次读取重复解析/刷日志；用户修复后
+    // invalidateIfChanged 会看到文件签名变化并自动重试。
+    cachedFileSignature = readStatus === 'unreadable' ? statFileSignature() : null;
     cached = {
       value: defaults(),
       isCustomized: false,
@@ -159,9 +164,9 @@ export function createOverrideSettingsFile<T>(options: {
   function invalidateIfChanged(): void {
     invalidateIfPathChanged();
     if (!cached) return;
-    if (statFileMtimeMs() !== cachedFileMtimeMs) {
+    if (statFileSignature() !== cachedFileSignature) {
       cached = null;
-      cachedFileMtimeMs = null;
+      cachedFileSignature = null;
     }
   }
 
@@ -261,7 +266,7 @@ export function createOverrideSettingsFile<T>(options: {
     fs.mkdirSync(pathDirname(file), { recursive: true });
     fs.writeFileSync(tmp, serialized, 'utf-8');
     fs.renameSync(tmp, file);
-    cachedFileMtimeMs = statFileMtimeMs();
+    cachedFileSignature = statFileSignature();
     const next = options.normalize({ ...defaults(), ...overrides });
     cached = {
       value: next,
@@ -287,7 +292,7 @@ export function createOverrideSettingsFile<T>(options: {
       });
       throw err;
     }
-    cachedFileMtimeMs = null;
+    cachedFileSignature = null;
     cached = {
       value: defaults(),
       isCustomized: false,
@@ -335,7 +340,7 @@ export function createOverrideSettingsFile<T>(options: {
 
   function invalidate(): void {
     cached = null;
-    cachedFileMtimeMs = null;
+    cachedFileSignature = null;
     cachedResolvedPath = null;
   }
 
@@ -343,7 +348,7 @@ export function createOverrideSettingsFile<T>(options: {
     const currentPath = options.filePath();
     if (cachedResolvedPath === null || cachedResolvedPath === currentPath) return;
     cached = null;
-    cachedFileMtimeMs = null;
+    cachedFileSignature = null;
     cachedResolvedPath = currentPath;
   }
 
@@ -440,6 +445,10 @@ export function portableOverrideSettings<T>(
       }
     },
   };
+}
+
+function fileSignature(stat: fs.Stats): string {
+  return `${stat.mtimeMs}:${stat.size}:${stat.ino}`;
 }
 
 function pathDirname(filePath: string): string {
