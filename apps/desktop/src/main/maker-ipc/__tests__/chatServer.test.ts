@@ -2658,7 +2658,6 @@ describe('Chat Server result delivery and refresh', () => {
       organizer_id: botId, creator_id: selfId, status: 'running', current_step: 0,
       steps: [{ position: 0, botId, botName: 'Bot', task: 'Discuss', status: 'running' }], created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
     deps.workDir = { prepare: vi.fn(), snapshot: vi.fn(), changedFiles: vi.fn(), trashGroupFolder: vi.fn() };
-    deps.onStepSettled = vi.fn();
     let published = false;
     fixture.handle.mockImplementation((route, _method, body) => {
       if (body?.action === 'complete') { published = true; plan.status = 'waiting'; }
@@ -3434,14 +3433,13 @@ describe('Chat Server result delivery and refresh', () => {
       }
     });
 
-  it.each(['all', 'mentions', 'none'] as const)('keeps server plan steps in a grant-specific chat-only lane and applies %s to work reminders', async notificationMode => {
+  it.each(['all', 'mentions', 'none'] as const)('keeps server plan steps in a grant-specific chat-only lane (notifications: %s)', async notificationMode => {
     fixture.profiles = [{ id: 'local-bot', displayName: 'Bot', avatar: null, status: 'active' }];
     const planId = '70000000-0000-4000-8000-000000000001';
     const plan = { id: planId, revision: 1, source_message_id: execution.source_message_id, request_text: 'Discuss the draft',
       organizer_id: botId, creator_id: selfId, status: 'running', current_step: 0,
       steps: [{ position: 0, botId, botName: 'Bot', task: 'Discuss', status: 'running' }], created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
     deps.workDir = { prepare: vi.fn(), snapshot: vi.fn(), changedFiles: vi.fn(), trashGroupFolder: vi.fn() };
-    deps.onStepSettled = vi.fn();
     fixture.handle.mockImplementation((route, _method, body) => {
       if (body?.action === 'complete') plan.status = 'waiting';
       if (route.endsWith('/snapshot')) return { body: { room: room(roomId), members: [], messages: [], cursor: '1', reads: [
@@ -3457,7 +3455,6 @@ describe('Chat Server result delivery and refresh', () => {
     expect(deps.workDir.prepare).not.toHaveBeenCalled();
     expect(deps.dispatch).toHaveBeenCalledWith(expect.objectContaining({ toolsDisabled: true, message: expect.stringContaining('Discuss the draft') }));
     await service.settleLaneTurn(terminal);
-    expect(deps.onStepSettled).toHaveBeenCalledTimes(notificationMode === 'none' ? 0 : 1);
   });
   it('projects which computer runs my companion, so a phone reaching the group through here reads its tasks there', async () => {
     fixture.profiles = [{ id: 'local-bot', displayName: 'Bot', status: 'active' }];

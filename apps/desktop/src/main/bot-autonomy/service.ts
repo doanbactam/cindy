@@ -14,7 +14,7 @@ import { getAgentIslandService } from '../agent-island/service.js';
 import { getAppCapabilities } from '../appCapabilities.js';
 import { ownerScopedUserDataPath } from '../appSessionState.js';
 import { getSafeDataOwnerPushStamp, tapWindowBroadcast } from '../device-link/broadcast-tap.js';
-import { getMobileNotifyGeneration, remoteBackgroundInvoke, sendMobileSessionNotify } from '../device-link/index.js';
+import { remoteBackgroundInvoke } from '../device-link/index.js';
 import { defaultDeps as deviceDirectoryDeps, handleListDevices } from '../device-link/ipc.js';
 import { createLogger } from '../logger.js';
 import { readBotAutonomySettingsOverride } from '../maker-host/bot-autonomy-settings-store.js';
@@ -155,7 +155,7 @@ function startRuntime(engine: RoutineEngine, scope: string): void {
       for (const snapshot of island.getSessionActivitySnapshots()) watch.applyActivity(snapshot.sessionId, snapshot);
       return island.subscribeSessionActivity(({ sessionId, current: next }) => watch.applyActivity(sessionId, next));
     },
-    remind: (row, eventId) => remindOwner(row, eventId),
+    remind: (row) => remindOwner(row),
     push: (payload) => {
       if (!scopeIsCurrent(scope)) return;
       for (const window of BrowserWindow.getAllWindows()) {
@@ -177,7 +177,7 @@ function startRuntime(engine: RoutineEngine, scope: string): void {
 }
 
 /** 没人跟的本机任务在等主人：桌面通知（主窗口在前台时不弹）+ 手机推送。 */
-function remindOwner(row: WatchedSession, eventId: string): void {
+function remindOwner(row: WatchedSession): void {
   const getWindow = () => getBotAutonomyHostDeps().getMainWindow?.() ?? null;
   const window = getWindow();
   const focused = !!window && !window.isDestroyed() && window.isVisible() && window.isFocused();
@@ -189,13 +189,5 @@ function remindOwner(row: WatchedSession, eventId: string): void {
       ...(row.pendingQuestion ? { body: row.pendingQuestion } : {}),
     });
   }
-  sendMobileSessionNotify({
-    sessionId: row.sessionId,
-    title: row.title,
-    kind: 'needs-reply',
-    ...(row.pendingQuestion ? { detail: row.pendingQuestion } : {}),
-    eventId: `bot-autonomy:${eventId}`,
-    generation: getMobileNotifyGeneration(),
-  });
 }
 

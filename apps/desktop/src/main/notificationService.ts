@@ -26,7 +26,6 @@ import type { FeishuIM } from '@cindy/im';
 import * as path from 'node:path';
 
 import { markSessionNeedsAttention } from './appBadgeService';
-import { getMobileNotifyGeneration, sendMobileSessionNotify } from './device-link';
 import { notificationPreview } from './notificationPreview';
 import { companionAvatarThumbnail } from './agent-island/companionIdentity';
 import { getDeepLinkMainWindow, openMainWindowChatMessage, openMainWindowSession } from './deepLink';
@@ -126,10 +125,8 @@ interface ShowSessionEventPayload {
    * 渠道偏好。renderer 侧 gate 后填入,缺省时按"仅桌面"兼容,防御漏传——
    * 当前唯一 invoke 调用方 CCAgentSidebarUpper.tsx 总是显式传 channels,
    * 这层 default 仅为新增调用方留兜底。
-   * mobile 通道没有桌面侧开关:是否收到由手机端自行注册/注销推送 token 决定,
-   * 发送侧的防打扰(远程正在看该会话 / 短窗去重)在 device-link 模块内收口。
    */
-  channels?: { desktop?: boolean; feishu?: boolean; mobile?: boolean };
+  channels?: { desktop?: boolean; feishu?: boolean };
   /** 其它设备的任务传 false:未读归属那台设备,不记本机 Dock 角标。 */
   markAttention?: boolean;
 }
@@ -147,9 +144,9 @@ type NotifiedReply = ({ eventId: string } | { fallbackSentAt: number }) & { hand
 const notifiedReplies = new Map<string, NotifiedReply>();
 const pendingFeishuReplies = new Set<string>();
 const pendingFeishuFallbacks = new Map<string, number>();
-type ReplyNotificationChannel = 'desktop' | 'mobile' | 'feishu';
+type ReplyNotificationChannel = 'desktop' | 'feishu';
 
-function replyNotificationKey(scope: string | number, sessionId: string, channel: ReplyNotificationChannel): string {
+function replyNotificationKey(scope: string, sessionId: string, channel: ReplyNotificationChannel): string {
   return `${scope}:${sessionId}:${channel}`;
 }
 
@@ -259,14 +256,11 @@ export function initNotificationService(deps: NotificationServiceDeps): void {
       // 这条 handler 的 channels / markAttention 全由 renderer 自报,先验来源:只认 Cindy
       // 自有顶层 renderer(插件 webview 等其它 webContents 一律 PERMISSION_DENIED)。
       assertTrustedAppRendererEvent(event);
-      // renderer payload 不可信:mobile 通道会把 title/kind 送出本机(经 relay/APNs),
-      // main 必须做运行时形状校验,TS 类型不算(electron-security 规则)。正文摘要
-      // 不来自 renderer(main 侧读库),relay 有 per-user 频控、main 侧另有 5s
-      // 去重与「被远程观看则不推」收口。
+      // renderer payload 不可信:飞书通道会把 title/kind 送出本机,main 必须做运行时
+      // 形状校验,TS 类型不算(electron-security 规则)。正文摘要不来自 renderer(main 侧读库)。
       assertValidSessionEventPayload(payload);
       const { sessionId, title, kind, channels } = payload;
       const markAttention = payload.markAttention !== false;
-      const generation = getMobileNotifyGeneration();
       // Capture at IPC arrival, not after the asynchronous preview: a newer
       // turn can begin while the current completion waits on persistence.
       const signal = kind === 'done' ? getSessionNotificationTurnSignal(sessionId) : undefined;
@@ -278,7 +272,7 @@ export function initNotificationService(deps: NotificationServiceDeps): void {
       const wantDesktop = channels?.desktop ?? true;
       const wantFeishu = channels?.feishu === true;
       if (markAttention) markSessionNeedsAttention(sessionId);
-      // 「消息免打扰」任务不再走任何外向提醒通道（系统 toast / 灵动岛 / 手机 / 飞书）；
+      // 「消息免打扰」任务不再走任何外向提醒通道（系统 toast / 灵动岛 / 飞书）；
       // 未读与角标已在上一行照常记账，任务内的提醒不受影响。静音标记属于本机那行任务，
       // 其它设备的任务（markAttention === false）可能与本机有同 id 的无关任务行，不查。
       // main 没有远端任务的权威映射（device-link 镜像在 renderer），这一位仍由 renderer 报，
@@ -289,12 +283,10 @@ export function initNotificationService(deps: NotificationServiceDeps): void {
       // a timeout is not a dedupe window and never causes a second late toast.
       void (async () => {
         let preview: SessionNotificationPreview | undefined;
-        // Only routes the phone to the teammate chat; titles and fallbacks stay per kind.
-        let teammateBotId: string | undefined;
         let postDrainPreviewReady = false;
         let detail: string | undefined;
         let avatarJpeg: string | undefined;
-        if (kind === 'done' || wantDesktop || channels?.mobile === true) {
+        if (kind === 'done' || wantDesktop) {
           let finished = false;
           let timer: ReturnType<typeof setTimeout> | undefined;
           // Resolve identity and artwork within the same bounded enrichment window.
@@ -307,7 +299,7 @@ export function initNotificationService(deps: NotificationServiceDeps): void {
           };
           const routeRead = kind !== 'done'
             ? readSessionNotificationPreview(sessionId, false, true).then(
-              async (identity) => { if (!finished) { teammateBotId = identity.teammateBotId; preview = identity; await readAvatar(identity); } },
+              async (identity) => { if (!finished) { preview = identity; await readAvatar(identity); } },
               () => undefined)
             : undefined;
           try {
@@ -323,7 +315,6 @@ export function initNotificationService(deps: NotificationServiceDeps): void {
                   // message broadcaster. Keep only the teammate name here;
                   // an old event ID must never identify this completion.
                   preview = { teammateName: identity.teammateName };
-                  teammateBotId = identity.teammateBotId;
                 }
                 if (finished || !isDataOwnerBroadcastScopeCurrent(ownerScope)) return;
                 await drainPersistQueue();
@@ -361,12 +352,8 @@ export function initNotificationService(deps: NotificationServiceDeps): void {
         const teammate = !!preview?.teammateName;
         const notificationTitle = preview?.teammateName ?? safeTitle;
         const eventId = signal?.id ?? preview?.eventId;
-        const mobileEventId = preview?.eventId ?? signal?.fallbackEventId;
-        // A device-link handoff advances only the mobile send generation. It
-        // must not make an already accepted desktop/Feishu reply eligible again.
         const ownerKey = ownerScope.ownerScopeKey ?? JSON.stringify(ownerScope.ownerStamp ?? null);
         const desktopKey = replyNotificationKey(ownerKey, sessionId, 'desktop');
-        const mobileKey = replyNotificationKey(generation, sessionId, 'mobile');
         const feishuKey = replyNotificationKey(ownerKey, sessionId, 'feishu');
         if (kind === 'done' && notifiedReplies.get(desktopKey)?.handledByTeammate && wasReplyNotified(desktopKey, eventId)) return;
         // Decide at the send boundary, after preview enrichment. The native
@@ -382,18 +369,16 @@ export function initNotificationService(deps: NotificationServiceDeps): void {
           if (afterHandoffSignal?.id !== signal?.id || (afterHandoffSignal && !afterHandoffSignal.ended)) return;
         }
         // 取正文 / 等交接判定期间用户可能刚开了免打扰:真正发之前再确认一次。
-        // 手机通道在 sendMobileSessionNotify 内另有同一道门。
         if (markAttention && isSessionNotificationsMutedSync(sessionId)) return;
         if (kind === 'done' && handledByTeammate) {
           // Consume this event in the existing per-channel ledger. Removing a
           // delegation later must not replay a completion already handed off.
-          for (const key of [desktopKey, mobileKey, feishuKey]) {
+          for (const key of [desktopKey, feishuKey]) {
             notifiedReplies.set(key, eventId ? { eventId, handledByTeammate: true } : { fallbackSentAt: Date.now(), handledByTeammate: true });
           }
           return;
         }
         const fallbackBody = teammate && kind === 'done' ? getTeammateNotificationFallback() : undefined;
-        const mobileTeammateBotId = preview?.teammateBotId ?? teammateBotId;
         if (wantDesktop && (kind !== 'done' || !wasReplyNotified(desktopKey, eventId))) {
           try {
             const accepted = showDesktopSessionEvent(getWindow, {
@@ -406,22 +391,6 @@ export function initNotificationService(deps: NotificationServiceDeps): void {
             }
           } catch (err) {
             log.warn('[notification] desktop reply notification failed (non-fatal)', err);
-          }
-        }
-        if (channels?.mobile === true && (kind !== 'done' || !wasReplyNotified(mobileKey, eventId))) {
-          try {
-            const accepted = sendMobileSessionNotify({
-              sessionId, title: notificationTitle, kind, generation, ...(detail ? { detail } : {}),
-              ...(fallbackBody ? { fallbackBody } : {}), ...(mobileEventId ? { eventId: mobileEventId } : {}),
-              ...(mobileTeammateBotId ? { teammateBotId: mobileTeammateBotId } : {}),
-              ...(preview?.teammateAvatar ? { teammateAvatar: preview.teammateAvatar } : {}),
-              ...(markAttention ? {} : { muteExempt: true }),
-            });
-            if (kind === 'done' && accepted) {
-              notifiedReplies.set(mobileKey, eventId ? { eventId } : { fallbackSentAt: Date.now() });
-            }
-          } catch (err) {
-            log.warn('[notification] mobile reply notification failed (non-fatal)', err);
           }
         }
         if (wantFeishu && kind === 'done' && !wasReplyNotified(feishuKey, eventId)) {

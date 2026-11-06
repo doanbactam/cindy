@@ -19,7 +19,7 @@ import type { Logger } from '@cindy/maker-scheduler';
 import { stripTrailingPathSeparators } from '../../shared/pathText';
 import { showDesktopSessionEvent } from '../notificationService';
 import { isSessionNotificationsMutedSync } from '../localDb/sessionFlagRegistry';
-import { getMobileNotifyGeneration, sendMobileSessionNotify } from '../device-link';
+import { getLinkGeneration } from '../device-link';
 import type { WecomGroupNotificationPublisher } from '../wecomGroupNotification';
 
 export interface DesktopNotifierDeps {
@@ -42,7 +42,7 @@ export class DesktopNotifier implements Notifier {
   async notify(schedule: Schedule, run: ScheduleRun): Promise<void> {
     // 链路代次在任何 await 之前捕获:飞书分支的 await 期间可能发生登出/换号,
     // 发送侧按代次不一致丢弃,旧账号调度的通知不会进新账号的链路。
-    const generation = getMobileNotifyGeneration();
+    const generation = getLinkGeneration();
     if (schedule.silentWhenIdle && run.status === 'failed') {
       try {
         if (await this.deps.hasUnrecoveredMatchingFailure?.(run)) return;
@@ -51,9 +51,8 @@ export class DesktopNotifier implements Notifier {
         this.deps.logger.warn?.('scheduler failure dedup lookup failed', error);
       }
     }
-    if (getMobileNotifyGeneration() !== generation) return;
-    // 「消息免打扰」任务不再发个人提醒。wecomGroup 是共享群通知,不跟个人静音走;
-    // 手机通道在 sendMobileSessionNotify 内另有同一道门,覆盖不走这里的调用方。
+    if (getLinkGeneration() !== generation) return;
+    // 「消息免打扰」任务不再发个人提醒。wecomGroup 是共享群通知,不跟个人静音走。
     const muted = run.sessionId ? isSessionNotificationsMutedSync(run.sessionId) : false;
     if (
       schedule.notify.desktop &&
@@ -79,24 +78,6 @@ export class DesktopNotifier implements Notifier {
         await this.deps.wecomGroupPublisher.publishMarkdown(renderExternalMessage(schedule, run));
       } catch (err) {
         this.deps.logger.warn?.('WeCom group notify failed', err);
-      }
-    }
-    // 手机推送只跟随个人通知通道:desktop / feishu 全关表示用户不想被这个调度
-    // 单独打扰。wecomGroup 是共享群通知,不能隐式开启个人移动推送。
-    if (run.sessionId && (schedule.notify.desktop || schedule.notify.feishu)) {
-      try {
-        // 正文带运行结果摘要(与飞书卡片同源素材):成功给 resultText,失败给
-        // errorMsg;缺省回退终态短文案。截断由 mobileNotify 按协议上限统一处理。
-        const detail = run.status === 'success' ? run.resultText : run.errorMsg;
-        sendMobileSessionNotify({
-          sessionId: run.sessionId,
-          title: schedule.name,
-          kind: run.status === 'success' ? 'done' : 'error',
-          generation,
-          ...(detail ? { detail } : {}),
-        });
-      } catch (err) {
-        this.deps.logger.warn?.('mobile notify failed', err);
       }
     }
   }

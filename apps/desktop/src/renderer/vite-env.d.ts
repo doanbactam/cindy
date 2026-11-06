@@ -3034,7 +3034,7 @@ interface ElectronAPI {
      * mobile = 手机推送:桌面侧无独立开关(手机端注册/注销 token 决定接收),
      * 发送侧防打扰在 main 的 device-link 模块收口,renderer 恒传 true。
      */
-    channels?: { desktop?: boolean; feishu?: boolean; mobile?: boolean };
+    channels?: { desktop?: boolean; feishu?: boolean };
     /** 其它设备的任务传 false:未读归属那台设备,不记本机 Dock 角标。 */
     markAttention?: boolean;
   }) => Promise<void>;

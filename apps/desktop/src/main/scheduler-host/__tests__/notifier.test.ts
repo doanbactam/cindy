@@ -4,17 +4,16 @@ import type { Schedule, ScheduleRun } from '@cindy/maker-scheduler';
 import type { FeishuIM } from '@cindy/im';
 
 import { showDesktopSessionEvent } from '../../notificationService';
-import { getMobileNotifyGeneration, sendMobileSessionNotify } from '../../device-link';
+import { getLinkGeneration } from '../../device-link';
 import { DesktopNotifier } from '../notifier';
 
 vi.mock('../../notificationService', () => ({
   showDesktopSessionEvent: vi.fn(),
 }));
 
-// 手机推送真实实现在 device-link host(依赖 electron/ws 全家桶),这里只验分发。
+// 链路代次真实实现在 device-link host(依赖 electron/ws 全家桶),这里只验账号边界。
 vi.mock('../../device-link', () => ({
-  getMobileNotifyGeneration: vi.fn(() => 7),
-  sendMobileSessionNotify: vi.fn(() => true),
+  getLinkGeneration: vi.fn(() => 7),
 }));
 
 const isSessionNotificationsMutedSync = vi.fn((_sessionId: string): boolean => false);
@@ -125,22 +124,6 @@ describe('DesktopNotifier desktop status mapping', () => {
     await notifier.notify(schedule, run('success'));
 
     expect(showDesktopSessionEvent).not.toHaveBeenCalled();
-    // 手机推送不受桌面开关影响(手机端自持开关;发送侧防打扰在 device-link 收口)
-    expect(sendMobileSessionNotify).toHaveBeenCalledWith({
-      sessionId: 'session-1',
-      title: '每日检查',
-      kind: 'done',
-      // notify() 入口(任何 await 之前)捕获的链路代次,原样透传
-      generation: 7,
-    });
-  });
-
-  it('skips the mobile push when the run is not bound to a session', async () => {
-    const { notifier } = createNotifier();
-
-    await notifier.notify(schedule, { ...run('success'), sessionId: undefined });
-
-    expect(sendMobileSessionNotify).not.toHaveBeenCalled();
   });
 
   it('lets Agent Island replace a desktop notification for a session-bound run', async () => {
@@ -174,23 +157,8 @@ describe('DesktopNotifier desktop status mapping', () => {
     },
   );
 
-  it('mobile 正文带运行结果摘要:成功用 resultText,失败用 errorMsg', async () => {
-    const { notifier } = createNotifier();
-
-    await notifier.notify(schedule, { ...run('success'), resultText: '巡检完成,无异常。' });
-    expect(sendMobileSessionNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'done', detail: '巡检完成,无异常。' }),
-    );
-
-    vi.mocked(sendMobileSessionNotify).mockClear();
-    await notifier.notify(schedule, { ...run('failed'), errorMsg: '网络超时' });
-    expect(sendMobileSessionNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'error', detail: '网络超时' }),
-    );
-  });
-
-  it('respects the per-schedule opt-out: desktop 与 feishu 全关时 mobile 也不发', async () => {
-    const { notifier } = createNotifier();
+  it('respects the per-schedule opt-out: desktop 与 feishu 全关时不发个人提醒', async () => {
+    const { notifier, sendMarkdownText } = createNotifier();
     const mutedSchedule = {
       ...schedule,
       notify: { desktop: false, feishu: false },
@@ -198,8 +166,8 @@ describe('DesktopNotifier desktop status mapping', () => {
 
     await notifier.notify(mutedSchedule, run('success'));
 
-    expect(sendMobileSessionNotify).not.toHaveBeenCalled();
     expect(showDesktopSessionEvent).not.toHaveBeenCalled();
+    expect(sendMarkdownText).not.toHaveBeenCalled();
   });
 
   it('renders and sends a successful Feishu notification', async () => {
@@ -249,11 +217,9 @@ describe('DesktopNotifier desktop status mapping', () => {
 
     await notifier.notify(groupSchedule, { ...run('success'), resultText: '检查通过' });
     expect(publishMarkdown).toHaveBeenCalledWith(expect.stringContaining('检查通过'));
-    expect(sendMobileSessionNotify).not.toHaveBeenCalled();
 
     await expect(notifier.notify(groupSchedule, run('failed'))).resolves.toBeUndefined();
     expect(warn).toHaveBeenCalledWith('WeCom group notify failed', sendError);
-    expect(sendMobileSessionNotify).not.toHaveBeenCalled();
   });
 
   it('does not expose local attachment references in WeCom group notifications', async () => {
@@ -306,27 +272,29 @@ it('keeps repeated quiet failures in history without repeating personal or exter
   const { notifier, sendMarkdownText, publishMarkdown } = createNotifier({ hasUnrecoveredMatchingFailure: async () => true });
   await notifier.notify({ ...schedule, silentWhenIdle: true, notify: { desktop: true, feishu: true, wecomGroup: true } }, { ...run('failed'), errorMsg: 'check failed' });
   expect(showDesktopSessionEvent).not.toHaveBeenCalled();
-  expect(sendMobileSessionNotify).not.toHaveBeenCalled();
   expect(sendMarkdownText).not.toHaveBeenCalled();
   expect(publishMarkdown).not.toHaveBeenCalled();
   await notifier.notify({ ...schedule, silentWhenIdle: false }, run('success'));
-  expect(sendMobileSessionNotify).toHaveBeenCalledOnce();
+  expect(showDesktopSessionEvent).toHaveBeenCalledOnce();
 });
 
 it('still reports a failure if its dedup history cannot be read', async () => {
   vi.clearAllMocks();
   const { notifier } = createNotifier({ hasUnrecoveredMatchingFailure: async () => { throw new Error('unavailable'); } });
   await notifier.notify({ ...schedule, silentWhenIdle: true }, run('failed'));
-  expect(sendMobileSessionNotify).toHaveBeenCalledOnce();
+  expect(showDesktopSessionEvent).toHaveBeenCalledExactlyOnceWith(expect.any(Function), {
+    sessionId: 'session-1',
+    title: '每日检查',
+    kind: 'error',
+  });
 });
 
 
 it('does not notify a replacement account after the failure history read crosses logout', async () => {
   vi.clearAllMocks();
-  vi.mocked(getMobileNotifyGeneration).mockReturnValueOnce(7).mockReturnValueOnce(8);
+  vi.mocked(getLinkGeneration).mockReturnValueOnce(7).mockReturnValueOnce(8);
   const { notifier, sendMarkdownText } = createNotifier({ hasUnrecoveredMatchingFailure: async () => false });
   await notifier.notify({ ...schedule, silentWhenIdle: true, notify: { desktop: true, feishu: true } }, run('failed'));
   expect(showDesktopSessionEvent).not.toHaveBeenCalled();
   expect(sendMarkdownText).not.toHaveBeenCalled();
-  expect(sendMobileSessionNotify).not.toHaveBeenCalled();
 });

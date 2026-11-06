@@ -58,7 +58,6 @@ import {
   type LinkClosePayload,
   type Envelope,
   type PushPayload,
-  type NotifySender,
   DeviceLinkError,
   resolveRemoteInvokeTimeoutMs,
 } from '@cindy/device-link';
@@ -71,7 +70,6 @@ import { createLogger } from '../logger';
 import { markStartupMilestone } from '../startupTimeline';
 import { onQuit } from '../lifecycle';
 import { getCurrentDbClientUserId } from '../localDb/client/current';
-import { isSessionNotificationsMutedSync } from '../localDb/sessionFlagRegistry';
 import { createOutboundHttpAgent } from '../maker-host/outbound-fetch';
 import {
   DeviceLinkOwnershipArbiter,
@@ -173,14 +171,7 @@ import {
 } from './providerShareGuest.js';
 import { crossRegionInvoke, isCrossRegionProviderShareTarget } from './providerShareCrossRegion.js';
 import { sharedTaskApi } from './sharedTaskApi.js';
-import {
-  MobileNotifyDeduper,
-  buildBotGroupNotifyPayload,
-  buildSessionNotifyPayload,
-  type MobileSessionEventKind,
-} from './mobileNotify';
 import { createSubscriptionReplayScheduler, isPermanentSubscriptionReplayError } from './subscriptionReplayScheduler';
-import { getNotificationImageLabel, getSessionNotificationBody } from '../sessionNotificationCopy';
 import { deviceLinkApiFetch, officialDeviceLinkApiBase, resolveDeviceLinkApiBase } from './deviceLinkApi.js';
 import { activeSelfHostedRelay } from './selfHostedRelayRouting.js';
 import { currentRelayFrameAuth } from './selfHostedRelayFrameAuth.js';
@@ -1576,13 +1567,13 @@ let linkTornDown = false;
 /**
  * 链路代次:每次 teardown(登出 / 失去持有权)递增。跨 await 的通知任务在发起时
  * 捕获、发送时校验 —— 期间发生过账号边界,任务即过期丢弃,防止旧账号触发的
- * 通知经新账号重连后的 client 发到新账号的手机。
+ * 通知在新账号下送出。
  */
-let mobileNotifyGeneration = 0;
+let linkGeneration = 0;
 
-/** 当前链路代次。异步取通知正文前捕获,随 payload 传回 sendMobileSessionNotify。 */
-export function getMobileNotifyGeneration(): number {
-  return mobileNotifyGeneration;
+/** 当前链路代次。异步取通知正文前捕获,发送前比对。 */
+export function getLinkGeneration(): number {
+  return linkGeneration;
 }
 
 /**
@@ -1605,7 +1596,7 @@ function teardownActiveLink(): void {
   linkTornDown = true;
   invalidateProviderMetadataContinuity();
   controllerDisplayNameRefreshGeneration += 1;
-  mobileNotifyGeneration += 1;
+  linkGeneration += 1;
   if (relayAuthRecoveryRetryTimer !== null) {
     clearTimeout(relayAuthRecoveryRetryTimer);
     relayAuthRecoveryRetryTimer = null;
@@ -2371,109 +2362,6 @@ export async function remoteUnsubscribe(
   assertNotStandby();
   if (!client) throw new Error('[DEVICE_LINK_NOT_CONNECTED] device-link client not initialized');
   return client.invoke(deviceId, { channel: DL_UNSUBSCRIBE_CHANNEL, args: [{ topics }] });
-}
-
-// ─── 手机推送(notify 帧,经 relay 下发 APNs)───────────────────────────────────
-
-const mobileNotifyDeduper = new MobileNotifyDeduper();
-
-/**
- * 会话终态时给本账号已注册推送 token 的手机发系统推送(fire-and-forget)。
- * 静默跳过的场景(返回 false):
- *  - relay 未连接 / server 未声明 notify capability(老 relay,黑洞防护)
- *  - 该任务开了「消息免打扰」(含代输入等不走会话终态路径的调用方)
- *  - 有控制端正订阅该会话的实时流(session:<id> topic)——人已经在手机上看着这
- *    个会话,系统推送只会重复打扰
- *  - 同 session + kind 5s 短窗去重
- * 手机端是否收得到由手机侧开关决定(注册/注销 token),桌面端不再设第二个开关。
- */
-export function sendMobileSessionNotify(payload: {
-  sessionId: string;
-  title: string;
-  kind: MobileSessionEventKind;
-  /** 内容摘要(最近一条 assistant 内容 / 定时任务结果),缺省回退终态短文案 */
-  detail?: string;
-  fallbackBody?: string;
-  eventId?: string;
-  /** 伙伴主任务的 Bot id；让手机按伙伴聊天打开通知。 */
-  teammateBotId?: string;
-  teammateAvatar?: NotifySender['avatar'];
-  /**
-   * 发起时捕获的 getMobileNotifyGeneration()。调用路径里有 await(取正文/等
-   * 其它通道)时必传:与当前代次不一致说明期间发生过登出/失去持有权,任务
-   * 过期丢弃,不得把旧账号的通知发进新账号的链路。
-   */
-  generation?: number;
-  /**
-   * 这条提醒来自其它设备(device-link)的任务:本机上可能恰有同 id 的无关任务行,
-   * 那一行的静音标记管不到这条远端事件,不参与手机通道的免打扰判定。
-   */
-  muteExempt?: boolean;
-}): boolean {
-  if (!client) return false;
-  // 「消息免打扰」任务不推手机。放在这里而不是各调用方:代输入等旁路不经过
-  // notification:show-session-event,这里是所有发起方的唯一出口。
-  if (!payload.muteExempt && isSessionNotificationsMutedSync(payload.sessionId)) return false;
-  if (payload.generation !== undefined && payload.generation !== mobileNotifyGeneration) {
-    log.debug(
-      `mobile notify dropped: link generation changed (account/ownership boundary), session=${payload.sessionId.slice(0, 8)}`,
-    );
-    return false;
-  }
-  const selfDeviceId = client.getSelfDeviceId();
-  if (!selfDeviceId) return false;
-  if (getControllersForTopic(`session:${payload.sessionId}`).length > 0) {
-    log.debug(
-      `mobile notify skipped: session ${payload.sessionId.slice(0, 8)} is being watched remotely`,
-    );
-    return false;
-  }
-  const now = Date.now();
-  if (!mobileNotifyDeduper.shouldSend(payload.sessionId, payload.kind, now, payload.eventId)) return false;
-  const sent = client.sendNotify(
-    buildSessionNotifyPayload({
-      sessionId: payload.sessionId,
-      title: payload.title,
-      kind: payload.kind,
-      selfDeviceId,
-      fallbackBody: payload.fallbackBody ?? getSessionNotificationBody(payload.kind),
-      detail: payload.detail,
-      imageFallback: getNotificationImageLabel(),
-      ...(payload.teammateBotId ? { teammateBotId: payload.teammateBotId } : {}),
-      ...(payload.teammateAvatar ? { teammateAvatar: payload.teammateAvatar } : {}),
-    }),
-  );
-  if (sent) {
-    mobileNotifyDeduper.recordSent(payload.sessionId, payload.kind, now, payload.eventId);
-    log.debug(`mobile notify sent: session=${payload.sessionId.slice(0, 8)} kind=${payload.kind}`);
-  }
-  return sent;
-}
-
-/** Phone push for a 分工 step that stopped for the user (bot-group-chat.md §8.3). */
-export function sendMobileBotGroupNotify(payload: {
-  groupId: string;
-  title: string;
-  body: string;
-  /** Unique per settled step, so a redo of the same step notifies again. */
-  eventId: string;
-  generation?: number;
-}): boolean {
-  if (!client) return false;
-  if (payload.generation !== undefined && payload.generation !== mobileNotifyGeneration) return false;
-  const selfDeviceId = client.getSelfDeviceId();
-  if (!selfDeviceId) return false;
-  const key = `bot-group:${payload.groupId}`;
-  const now = Date.now();
-  if (!mobileNotifyDeduper.shouldSend(key, 'needs-reply', now, payload.eventId)) return false;
-  const sent = client.sendNotify(buildBotGroupNotifyPayload({
-    groupId: payload.groupId,
-    title: payload.title,
-    body: payload.body,
-    selfDeviceId,
-  }));
-  if (sent) mobileNotifyDeduper.recordSent(key, 'needs-reply', now, payload.eventId);
-  return sent;
 }
 
 export function broadcast(channel: string, payload: unknown): void {

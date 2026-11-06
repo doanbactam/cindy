@@ -2428,14 +2428,6 @@ function createChatServer(local: BotGroupChatService, deps: BotGroupChatServiceD
           const bot = localBot(run.execution.bot_id);
           if (bot && companion) await companion.receivePrivateReport(bot.id);
         }
-        if (!pending.cancelled && run.plan && deps.onStepSettled) {
-          const s = await snapshot(run.execution.conversation_id);
-          const step = run.plan.steps[run.execution.plan_step!];
-          const latest = (await api<ServerPlan[]>(`/conversations/${s.room.id}/plans?ids=${run.plan.id}`)).find(p => p.id === run.plan!.id);
-          if (latest?.status !== 'running' && !s.reads?.some(read => read.thread_key === 'main' && read.muted)) deps.onStepSettled({ groupId: s.room.id, groupName: s.room.name,
-            memberBotIds: s.members.flatMap(m => localBot(m.id)?.id ?? []), planId: run.plan.id, position: step.position,
-            botName: step.botName, task: step.task, outcome: pending.terminal.outcome === 'error' ? 'failed' : 'done', planDone: latest?.status === 'done' }, scope);
-        }
       } catch (error) {
         if (error instanceof ChatResponseError && error.message === 'STOP_REQUESTED' && !pending.cancelled) {
           // A remote stop can race the final reply. Retire the lease with cancel,

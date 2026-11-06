@@ -2241,17 +2241,11 @@
       "feishuHint": "经已系之飞书或 Lark 机器人，私遣一讯于君；唯窗口失焦时遣之。",
       "feishuDisabledHint": "须先于「飞书 / Lark 机器人」中配 bot，并遣一讯予之以成绑定。",
       "feishuAria": "切换差事毕之飞书告",
-      "botGroupPlan": {
-        "stepDone": "{{name}}已毕「{{task}}」，待君续之",
-        "stepFailed": "{{name}}未毕「{{task}}」，可再试",
-        "planDone": "分工尽毕，功成收官；末一步乃{{name}}之「{{task}}」"
-      },
       "sessionEvent": {
         "untitled": "无题差事",
         "done": "功成 ✓",
         "error": "行之未成",
         "needsReply": "待君回复",
-        "inputHandoff": "待君代书",
         "externalDone": "Cindy · 差事「{{title}}」功成 ✓",
         "externalError": "Cindy · 差事「{{title}}」行之未成",
         "externalNeedsReply": "Cindy · 差事「{{title}}」待君回复",

@@ -109,11 +109,9 @@ export function sendSessionEventNotification(
      */
     remoteDevice?: boolean;
     remoteDeviceId?: string | null;
-    /** Main owns the fixed-copy phone push for input-handoff steps. */
-    mobile?: boolean;
     /** Explicit Feishu delivery override for the ordinary notification path. */
     feishu?: boolean;
-    /** Main owns the phone push; Feishu falls back only without an IM target. */
+    /** Feishu falls back only without an IM target. */
     inputHandoff?: true;
     /** The request that caused this event, independent of later task state. */
     inputHandoffRequestId?: string;
@@ -126,7 +124,7 @@ export function sendSessionEventNotification(
   if (kind === 'needs-reply' && options.inputHandoff) {
     // Keep the desktop reminder immediate; Main owns request-scoped IM routing.
     deliverSessionEventNotification(sessionId, title, kind, options.remoteDevice === true,
-      { ...options, mobile: false, feishu: false });
+      { ...options, feishu: false });
     // The controller cannot resolve the execution host's IM bindings locally.
     if (options.remoteDevice !== true && options.feishu !== false && options.inputHandoffRequestId
       && getFeishuNotificationsEnabled()) {
@@ -156,7 +154,7 @@ async function sendUnhandledHandoffFeishuNotification(sessionId: string, title: 
     await window.electronAPI.notificationShowSessionEvent({
       sessionId, title, kind: 'needs-reply', markAttention: false,
       inputHandoffRequestId: requestId,
-      channels: { desktop: false, feishu: true, mobile: false },
+      channels: { desktop: false, feishu: true },
     });
   } catch {
     // Best effort: a failed lookup never delays the desktop or duplicates an IM pointer.
@@ -218,9 +216,6 @@ function deliverSessionEventNotification(
     channels: {
       desktop: !remoteDevice && getNotificationsEnabled() && !islandActive,
       feishu: options.feishu !== false && getFeishuNotificationsEnabled(),
-      // Mobile owns registration/unregistration of its push token. There is
-      // deliberately no second desktop setting for the same channel.
-      mobile: options.mobile !== false,
     },
   });
 }

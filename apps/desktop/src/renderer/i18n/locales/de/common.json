@@ -2271,17 +2271,11 @@
       "feishuHint": "Sendet eine private Nachricht über den verknüpften Feishu- oder Lark-Bot; nur, wenn das Fenster nicht fokussiert ist.",
       "feishuDisabledHint": "Richte zuerst den Bot unter „Feishu / Lark Bot“ ein und sende ihm eine Direktnachricht, um die Verknüpfung abzuschließen.",
       "feishuAria": "FeiShu-Benachrichtigungen bei Sitzungsende ein-/ausschalten",
-      "botGroupPlan": {
-        "stepDone": "{{name}} hat „{{task}}“ abgeschlossen — fahre fort, wenn du bereit bist",
-        "stepFailed": "{{name}} hat „{{task}}“ nicht abgeschlossen — du kannst es erneut versuchen",
-        "planDone": "Die aufgeteilte Arbeit ist erledigt; der letzte Schritt war „{{task}}“ von {{name}}"
-      },
       "sessionEvent": {
         "untitled": "Unbenannte Sitzung",
         "done": "Abgeschlossen ✓",
         "error": "Fehlgeschlagen",
         "needsReply": "Antwort erforderlich",
-        "inputHandoff": "Eingabeübergabe erforderlich",
         "externalDone": "Cindy · Sitzung „{{title}}“ abgeschlossen ✓",
         "externalError": "Cindy · Sitzung „{{title}}“ fehlgeschlagen",
         "externalNeedsReply": "Cindy · Sitzung „{{title}}“ benötigt deine Antwort",

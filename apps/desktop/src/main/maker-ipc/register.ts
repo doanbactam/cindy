@@ -275,7 +275,7 @@ import { isRetainableProjectSession } from '../../shared/sessionSource.js';
 import { initializePluginOauthCards } from '../plugin-oauth/cards.js';
 import { currentOauthIdentityScope, loadOauthSigningKey } from '../plugin-oauth/desktopIdentity.js';
 import { readDeviceLinkSettings, readLastKnownDeviceNames } from '../device-link/settings-store.js';
-import { getDeviceLinkStatus, getMobileNotifyGeneration, sendMobileBotGroupNotify, sendMobileSessionNotify } from '../device-link/index.js';
+import { getDeviceLinkStatus } from '../device-link/index.js';
 import type { AgentMeta, Session as RendererSession } from '../../renderer/lib/ccAgent.types';
 import {
   deriveAutoTitleSeed,
@@ -687,7 +687,6 @@ import type { CompanionCloudActionResult, CompanionCloudFailureCode, CompanionHo
 import { createBotGroupPlanDecider } from './botGroupPlanDecider.js';
 import { botGroupMembersVisibleRemotely, registerBotGroupRemoteResourceProvider } from './botGroupRemoteResourceProvider.js';
 import { broadcastBotGroupRemoteResourceChanged } from './botGroupRemoteResourceInvalidation.js';
-import { getBotGroupStepNotificationBody, getInputHandoffNotificationBody } from '../sessionNotificationCopy.js';
 import { readSessionTitle } from '../im/shared/controlProjects.js';
 import { readSessionNotificationPreview } from '../localDb/sessionNotificationPreview.js';
 import { createBotGroupWorkDir } from './botGroupWorkDir.js';
@@ -3600,16 +3599,13 @@ function describeInputHandoffDevice(deviceId: string): Omit<InputHandoffHolder, 
 }
 const inputHandoffImNotifier = createFeishuDesktopConfirmNotifier(buildInputHandoffNoticeText);
 /**
- * Tell the owner a screen is waiting, wherever they are. The phone push is
- * sent from main (not the renderer) so an unattended desktop with Cindy
- * focused still alerts, and each new screen alerts again. The body is fixed
- * copy: no screen contents, no purpose text, never a value.
+ * Tell the owner a screen is waiting through their IM channel. Sent from main
+ * (not the renderer) so each new screen alerts again. The body is fixed copy:
+ * no screen contents, no purpose text, never a value.
  */
 function notifyInputHandoffOwner(sessionId: string, snapshot: InputHandoffSnapshot): void {
-  // 「消息免打扰」任务不提醒主人:这一行的 IM 指引(渠道内一行 / 飞书兜底)与
-  // 手机推送都不发。推送侧另有同一道门,这里同时收掉 IM 一侧。
+  // 「消息免打扰」任务不提醒主人:这一行的 IM 指引(渠道内一行 / 飞书兜底)不发。
   if (isSessionNotificationsMutedSync(sessionId)) return;
-  const generation = getMobileNotifyGeneration();
   const ownerScope = captureDataOwnerBroadcastScope();
   const titleRead = readSessionTitle(sessionId);
   // Register before any await: Renderer can race both lookup and handoff completion.
@@ -3620,28 +3616,6 @@ function notifyInputHandoffOwner(sessionId: string, snapshot: InputHandoffSnapsh
     return inputHandoffImNotifier(sessionId, title);
   }, () => isDataOwnerBroadcastScopeCurrent(ownerScope))
     .catch(err => log.warn('[input-handoff] owner IM notice failed (non-fatal)', err));
-  void (async () => {
-    try {
-      const [title, preview] = await Promise.all([
-        titleRead,
-        readSessionNotificationPreview(sessionId, false).catch(() => undefined),
-      ]);
-      // Preserve main's send-time mute check after the asynchronous reads.
-      if (isSessionNotificationsMutedSync(sessionId)) return;
-      sendMobileSessionNotify({
-        sessionId,
-        title: preview?.teammateName ?? title,
-        kind: 'needs-reply',
-        fallbackBody: getInputHandoffNotificationBody(),
-        eventId: `input-handoff:${snapshot.requestId}:${snapshot.stepNumber}`,
-        generation,
-        ...(preview?.teammateBotId ? { teammateBotId: preview.teammateBotId } : {}),
-        ...(preview?.teammateAvatar ? { teammateAvatar: preview.teammateAvatar } : {}),
-      });
-    } catch (err) {
-      log.warn('[input-handoff] owner push failed (non-fatal)', err);
-    }
-  })();
 }
 let inputHandoffContinuation:
   | ((sessionId: string, requestId: string, message: string) => Promise<void>)
@@ -13865,24 +13839,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
       if (!current() || !getDesktopNotificationsEnabled()) return;
       if (event.conversationKind !== 'direct' && getAgentIslandService()?.notifyGroupChat(event.groupId)) return;
       void showDesktopChatMessage(event, current).catch(() => log.warn('Chat notification unavailable'));
-    },
-    onStepSettled: (event, scope) => {
-      const ownerScope = scope as ReturnType<typeof captureDataOwnerBroadcastScope> | undefined;
-      if (ownerScope && !isDataOwnerBroadcastScopeCurrent(ownerScope)) return;
-      const generation = getMobileNotifyGeneration();
-      // Same boundary as the phone's group list: a group with a hidden member never reaches it.
-      void botGroupMembersVisibleRemotely(event.memberBotIds).then((visible) => {
-        if (!visible || (ownerScope && !isDataOwnerBroadcastScopeCurrent(ownerScope))) return;
-        sendMobileBotGroupNotify({
-          groupId: event.groupId,
-          title: event.groupName,
-          body: getBotGroupStepNotificationBody(event),
-          eventId: `${event.planId}:${event.position}:${event.outcome}:${Date.now()}`,
-          generation,
-        });
-      }).catch((error: unknown) => {
-        log.warn('bot group step push skipped', { error: error instanceof Error ? error.message : String(error) });
-      });
     },
     log,
   };

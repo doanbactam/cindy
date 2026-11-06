@@ -2306,17 +2306,11 @@
       "feishuHint": "Envía un mensaje privado a través del bot Feishu o Lark vinculado; sólo cuando la ventana está desenfocada.",
       "feishuDisabledHint": "Primero configure el bot en \"Feishu / Lark Bot\" y envíele un mensaje de texto una vez para completar el enlace.",
       "feishuAria": "Alternar notificaciones de FeiShu realizadas durante la sesión",
-      "botGroupPlan": {
-        "stepDone": "{{name}} finalizó “{{task}}”; continúe cuando esté listo",
-        "stepFailed": "{{name}} no terminó “{{task}}”; puedes volver a intentarlo",
-        "planDone": "La división del trabajo está hecha; el último paso fue “{{task}}” de {{name}}"
-      },
       "sessionEvent": {
         "untitled": "Sesión sin título",
         "done": "Completado ✓",
         "error": "Fallido",
         "needsReply": "Se necesita respuesta",
-        "inputHandoff": "Se necesita transferencia de entrada",
         "externalDone": "Cindy · Sesión “{{title}}” completada ✓",
         "externalError": "Cindy · La sesión “{{title}}” falló",
         "externalNeedsReply": "Cindy · La sesión “{{title}}” necesita su respuesta",

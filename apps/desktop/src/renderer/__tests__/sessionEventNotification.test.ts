@@ -88,7 +88,7 @@ describe('shared session event notifications', () => {
     vi.restoreAllMocks();
   });
 
-  it('uses the same desktop, Feishu and mobile channel gates for every sidebar', () => {
+  it('uses the same desktop and Feishu channel gates for every sidebar', () => {
     gates.feishu = true;
 
     sendSessionEventNotification('session-1', 'LiZi · 修复登录', 'needs-reply');
@@ -98,21 +98,21 @@ describe('shared session event notifications', () => {
       sessionId: 'session-1',
       title: 'LiZi · 修复登录',
       kind: 'needs-reply',
-      channels: { desktop: true, feishu: true, mobile: true },
+      channels: { desktop: true, feishu: true },
     });
   });
 
-  it('keeps the desktop reminder but skips duplicate phone and Feishu delivery for an input handoff', () => {
+  it('keeps the desktop reminder but skips duplicate Feishu delivery for an input handoff', () => {
     gates.feishu = true;
 
-    sendSessionEventNotification('handoff-session', 'Task', 'needs-reply', { mobile: false, feishu: false });
+    sendSessionEventNotification('handoff-session', 'Task', 'needs-reply', { feishu: false });
 
     expect(markAttention).toHaveBeenCalledWith('handoff-session');
     expect(showSessionEvent).toHaveBeenCalledWith({
       sessionId: 'handoff-session',
       title: 'Task',
       kind: 'needs-reply',
-      channels: { desktop: true, feishu: false, mobile: false },
+      channels: { desktop: true, feishu: false },
     });
   });
 
@@ -135,20 +135,20 @@ describe('shared session event notifications', () => {
     // Desktop must not wait for the asynchronous route lookup.
     expect(showSessionEvent).toHaveBeenCalledWith({
       sessionId: 'handoff', title: 'Task', kind: 'needs-reply',
-      channels: { desktop: true, feishu: false, mobile: false },
+      channels: { desktop: true, feishu: false },
     });
     await Promise.resolve();
     await Promise.resolve();
 
     expect(showSessionEvent.mock.calls.map(([payload]) => payload.channels)).toEqual([
-      { desktop: true, feishu: false, mobile: false },
-      ...(entry.fallback ? [{ desktop: false, feishu: true, mobile: false }] : []),
+      { desktop: true, feishu: false },
+      ...(entry.fallback ? [{ desktop: false, feishu: true }] : []),
     ]);
     expect(markAttention).toHaveBeenCalledTimes(1);
     if (entry.fallback) expect(showSessionEvent).toHaveBeenLastCalledWith({
       sessionId: 'handoff', title: 'Task', kind: 'needs-reply', markAttention: false,
       inputHandoffRequestId: 'request-1',
-      channels: { desktop: false, feishu: true, mobile: false },
+      channels: { desktop: false, feishu: true },
     });
   });
 
@@ -167,7 +167,7 @@ describe('shared session event notifications', () => {
       expect(showSessionEvent).toHaveBeenCalledTimes(1);
       expect(showSessionEvent).toHaveBeenCalledWith({
         sessionId: 'handoff', title: 'Task', kind: 'needs-reply',
-        channels: { desktop: true, feishu: false, mobile: false },
+        channels: { desktop: true, feishu: false },
       });
     },
   );
@@ -179,7 +179,7 @@ describe('shared session event notifications', () => {
     });
     expect(showSessionEvent).toHaveBeenCalledExactlyOnceWith({
       sessionId: 'remote-handoff', title: 'Task', kind: 'needs-reply', markAttention: false,
-      channels: { desktop: false, feishu: false, mobile: false },
+      channels: { desktop: false, feishu: false },
     });
     expect(getSession).not.toHaveBeenCalled();
     expect(resolveBinding).not.toHaveBeenCalled();
@@ -194,7 +194,7 @@ describe('shared session event notifications', () => {
 
     expect(showSessionEvent).toHaveBeenCalledWith(
       expect.objectContaining({
-        channels: { desktop: false, feishu: true, mobile: true },
+        channels: { desktop: false, feishu: true },
       }),
     );
   });
@@ -209,12 +209,12 @@ describe('shared session event notifications', () => {
     expect(showSessionEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         markAttention: false,
-        channels: { desktop: false, feishu: true, mobile: true },
+        channels: { desktop: false, feishu: true },
       }),
     );
   });
 
-  it.each([true, false])('uses the execution host decision for remote mobile/Feishu completion calls (%s)', async handled => {
+  it.each([true, false])('uses the execution host decision for remote Feishu completion calls (%s)', async handled => {
     gates.feishu = true;
     let resolve!: (handled: boolean) => void;
     const relay = new SessionActivityRelay(payload => applyRemoteSessionActivity('host', payload), {
@@ -235,7 +235,7 @@ describe('shared session event notifications', () => {
     resolve(handled);
     await relay.waitForCompletionNotification('remote-task');
     expect(showSessionEvent).toHaveBeenCalledTimes(handled ? 0 : 1);
-    if (!handled) expect(showSessionEvent).toHaveBeenCalledWith({ sessionId: 'remote-task', title: 'Task', kind: 'done', markAttention: false, channels: { desktop: false, feishu: true, mobile: true } });
+    if (!handled) expect(showSessionEvent).toHaveBeenCalledWith({ sessionId: 'remote-task', title: 'Task', kind: 'done', markAttention: false, channels: { desktop: false, feishu: true } });
     expect(markAttention).not.toHaveBeenCalled();
     expect(getRemoteSessionActivity('remote-task', 'host')).toMatchObject({ phase: 'completed', attention: true, compactDetail: 'Final result' });
     relay.replay([completed]);
@@ -251,7 +251,7 @@ describe('shared session event notifications', () => {
     expect(showSessionEvent).not.toHaveBeenCalled();
     if (boundary === 'error' || boundary === 'needs-interaction') {
       sendSessionEventNotification('remote-task', 'Task', boundary === 'error' ? 'error' : 'needs-reply', { remoteDevice: true, remoteDeviceId: 'host' });
-      expect(showSessionEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: boundary === 'error' ? 'error' : 'needs-reply', channels: { desktop: false, feishu: true, mobile: true } }));
+      expect(showSessionEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: boundary === 'error' ? 'error' : 'needs-reply', channels: { desktop: false, feishu: true } }));
     }
   });
 
@@ -263,13 +263,13 @@ describe('shared session event notifications', () => {
     else gates.feishu = false;
     applyRemoteSessionActivity('host', { sessionId: 'remote-task', phase: 'completed', attention: true });
     if (boundary === 'focus') expect(showSessionEvent).not.toHaveBeenCalled();
-    else expect(showSessionEvent).toHaveBeenCalledWith(expect.objectContaining({ channels: { desktop: false, feishu: false, mobile: true } }));
+    else expect(showSessionEvent).toHaveBeenCalledWith(expect.objectContaining({ channels: { desktop: false, feishu: false } }));
   });
 
   it('keeps old-host remote completion calls unchanged', () => {
     applyRemoteSessionActivity('old-host', { sessionId: 'legacy', phase: 'completed', attention: true });
     sendSessionEventNotification('legacy', 'Task', 'done', { remoteDevice: true, remoteDeviceId: 'old-host' });
-    expect(showSessionEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: 'done', channels: { desktop: false, feishu: false, mobile: true } }));
+    expect(showSessionEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: 'done', channels: { desktop: false, feishu: false } }));
   });
 
   it('does not send external notifications while the user is already looking at Cindy', () => {
