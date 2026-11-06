@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
   name: "CindyRemoteCredentials",
-  platforms: [.macOS(.v12), .iOS(.v16)],
+  platforms: [.macOS(.v12)],
   products: [
     .library(name: "CindyRemoteCredentials", targets: ["CindyRemoteCredentials"]),
     .executable(name: "cindy-macos-remote-credentials", targets: ["CredentialHost"]),

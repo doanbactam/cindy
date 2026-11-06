@@ -986,9 +986,6 @@
     "packages/maker-pi-manager/src/__tests__/server.test.ts": {
       "realWaits": 5
     },
-    "packages/maker-shared/src/__tests__/remoteDesktopViewerSource.test.ts": {
-      "sourceReads": 1
-    },
     "packages/model-providers/src/__tests__/piNativeCatalog.test.ts": {
       "resetModules": 2
     },

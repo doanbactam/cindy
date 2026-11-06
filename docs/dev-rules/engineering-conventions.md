@@ -296,9 +296,7 @@ PR 门禁必须在 Windows 上用多个并行分片（当前为 4 个）完整�
   等）。它们是有意的文案锁，改词后要同步更新期望值，
   不能靠 guard 绿灯就认为改完了。
 - **有些 locale 文案是 package 源的镜像**：改 locale 时必须同步改源，否则镜像断言会红。
-  已知两处：`packages/maker-shared/src/sessionOperation.ts` 的 `DESKTOP_SESSION_CHAT_PLACEHOLDER_ZH_CN`
-  （必须等于 desktop `ccAgent.layout.chatPlaceholder`）、
-  `packages/maker-scheduler/src/builtin-templates.ts`（desktop locale 的 scheduler 模板块要求与
+  已知一处：`packages/maker-scheduler/src/builtin-templates.ts`（desktop locale 的 scheduler 模板块要求与
   package 源逐字一致）。这类断言不是碍事，正是它们保证了跨端文案不漂移。
 - **标点可能不在 locale 里**：部分错误消息由代码拼接（如 `cloudVoiceHttpErrorMessage()`
   给 `composer.voice.refineFailed` 补半角冒号），guard 只扫 locale JSON，改不到也管不到。

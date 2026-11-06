@@ -174,22 +174,13 @@ computer. Closing/minimizing retires its lease, clears pixels and stops polling;
 ordinary focus loss releases held input while retaining viewing. A crashed or
 automatically restored viewer uses `resume`, preserving a host's explicit stop.
 An account boundary destroys the viewer windows. The host's single-viewer lease
-and explicit takeover rules apply equally to phone and Desktop viewers.
+and explicit takeover rules apply to every Desktop viewer.
 
 No new server, media protocol or native input helper is introduced. `device-link`
 owns the shared viewer lease/signaling adapters; `maker-shared/remote-desktop-viewer`
-owns the browser media, input queue and geometry used by both clients. Desktop
-imports it as a static module without inline scripts or eval. The Mobile HTML
-embeds a generated source literal because Hermes does not preserve function
-source. After editing the common browser module, run:
-
-```sh
-node scripts/sync-remote-desktop-viewer.mjs
-```
-
-The source parity test prevents Mobile from shipping a stale copy. Mobile retains
-its touch UI, native keyboard, PiP and optional unlock integration. Desktop does
-not add password storage, virtual controls, screen rotation or PiP. Its dedicated
+owns the browser media, input queue and geometry.
+Desktop imports it as a static module without inline scripts or eval. The viewer
+has no password storage, virtual controls, screen rotation or PiP. Its dedicated
 preload exposes only fixed viewer/window operations; Main binds requests to the
 actual window, account generation, target and returned lease. Text clipboard
 contents stay in Main. `stop` never calls `closeLink` or resets the shared relay,
