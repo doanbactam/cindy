@@ -111,7 +111,6 @@ const FULL_MANIFEST = JSON.stringify({
   cindySkillHubApiBaseUrl: 'https://cindy-skillhub.remote.example.com',
   pluginApiBaseUrl: 'https://plugin.remote.example.com',
   cdnBaseUrl: 'https://cdn.remote.example.com/app',
-  mobileUpdateBaseUrl: 'https://mobile-update.remote.example.com',
 });
 
 /** localhost http 清单(local 模式 endpoint.local.json 形态)。 */
@@ -832,7 +831,6 @@ describe('用户确认的离线出口', () => {
     parsed: {
       ok: true as const,
       endpoints: { ...TEST_CLIENT_ENDPOINTS, authApiBaseUrl: 'https://auth.cached.example.com' },
-      reviewVersion: null,
       region: null,
     },
     savedAt: '2026/7/29 06:22',
@@ -1614,7 +1612,6 @@ describe('getter / IPC', () => {
       voiceApiBaseUrl: 'https://voice.cn.example.com',
       websiteUrl: 'https://www.cn.example.com',
       cdnBaseUrl: 'https://cdn.cn.example.com/app',
-      mobileUpdateBaseUrl: 'https://update.cn.example.com',
     };
     const global = {
       ...TEST_CLIENT_ENDPOINTS,
@@ -1625,7 +1622,6 @@ describe('getter / IPC', () => {
       voiceApiBaseUrl: 'https://voice.global.example.com',
       websiteUrl: 'https://www.global.example.com',
       cdnBaseUrl: 'https://cdn.global.example.com/app',
-      mobileUpdateBaseUrl: 'https://update.global.example.com',
     };
     resetClientEndpointsForTest(cn, {
       buildRegion: 'cn',
@@ -1642,7 +1638,6 @@ describe('getter / IPC', () => {
 
     expect(getClientEndpoint('websiteUrl')).toBe(cn.websiteUrl);
     expect(getClientEndpoint('cdnBaseUrl')).toBe(cn.cdnBaseUrl);
-    expect(getClientEndpoint('mobileUpdateBaseUrl')).toBe(cn.mobileUpdateBaseUrl);
     expect(getClientEndpointForRealm('global', 'cdnBaseUrl')).toBe(cn.cdnBaseUrl);
 
     resetClientEndpointRealm();

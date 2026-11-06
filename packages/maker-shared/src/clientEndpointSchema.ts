@@ -40,9 +40,12 @@
  *    cdnBaseUrl)同样没有 bump:删必填字段对**新客户端**是纯放松(清单里多出
  *    的该字段按未知字段忽略);退役时新路径清单尚无已发布的 packaged 消费者,
  *    线上清单已同步删除,无兼容包袱。
- *  - 2026-07-17 追加可选字符串字段 review(手机版审核模式的送审版本号,见
- *    CLIENT_ENDPOINT_REVIEW_KEY)同样没有 bump:可选字段、缺失/空串即关闭,
+ *  - 2026-07-17 追加可选字符串字段 review(手机版审核模式的送审版本号)
+ *    同样没有 bump:可选字段、缺失/空串即关闭,
  *    老清单不受影响;老客户端按未知字段忽略。
+ *  - 2026-11 随手机端下线退役 review 与 mobileUpdateBaseUrl(同样不 bump):
+ *    两者只有手机端读取;已发布的 desktop 解析器把缺失端点视作 '' 且从不读取
+ *    这两个值,review 本就可选。
  *  - 2026-07-17 退役 xdGatewayBaseUrl(同样不 bump,理由同上):XD 网关推理
  *    入口一律由 model-access server 随凭据成对下发(desktop
  *    model-access/effectiveEndpoint.ts),清单不再承载网关端点,杜绝
@@ -107,11 +110,6 @@ export const CLIENT_ENDPOINT_KEYS = [
   'shareBaseUrl',
   // 更新/hotfix 链的 CDN base(manifest-*.json / hotfix 包 / agent 二进制)。
   'cdnBaseUrl',
-  // 自建线手机整包发现的 mobile-update-server 基址(`${base}/latest`)。仅
-  // mobile 自建变体(IS_OTA_SELFHOST)消费,desktop 与 EAS 线不读;清单值
-  // 优先于烧包的 EXPO_PUBLIC_XDT_OTA_URL,让已发自建包可远程迁域名。
-  // 注意热更通道的 updates.url 仍烧在原生层(expo-updates 架构),不吃本字段。
-  'mobileUpdateBaseUrl',
 ] as const;
 
 export type ClientEndpointKey = (typeof CLIENT_ENDPOINT_KEYS)[number];
@@ -125,30 +123,6 @@ export type ClientEndpointRegion = 'cn' | 'global';
 export type RealmManifestBaseUrls = Readonly<
   Record<ClientEndpointRegion, string>
 >;
-
-/**
- * 可选字符串字段:`review` = 手机版审核模式的**送审版本号**(App 审核期间填
- * 送审构建的二进制版本号,如 "1.4.0")。mobile 启动时用它与自身二进制版本号
- * **严格相等匹配**,且 iOS StoreKit 未识别为 TestFlight 时才进入审核模式:
- * TestFlight 即使版本命中也继续更新;其余命中构建关闭全部 JS 显式更新检查路径(启动
- * JS 热更门 / 整包检查 / resume 静默检查)直接进主界面,设置页隐藏「检查更新 /
- * 检查整包更新」;desktop 不消费。按版本定向的意义:清单是 region 级共享文件,
- * 版本匹配把影响面从"全量用户"收窄到"同版本号的构建"——存量其它版本用户的
- * 更新检查与强更通道不受影响。注意命中粒度是**版本号而非送审构建本身**:
- * app.json 的 version 为 iOS/Android 各变体共用,若送审版本号与其它平台/变体
- * 正在线上跑的版本号相同,这些同版本用户也会进入审核模式(iOS TestFlight 除外);
- * 填写前需确认送审版本号未与其它线上线重叠,或接受重叠期影响。
- * **可选、缺失或空串即关闭**——线上已发布的清单没有该字段,若设为必填会让新
- * 客户端对老清单启动阻断;可选纯增量也是不 bump schemaVersion 的前提(见上方
- * 版本注释)。存在但非 string 视为配置错,整份拒绝(配置错要炸出来,不静默猜测)。
- * 覆盖边界与运维义务(填写前必须知晓):
- *  - **管不到 expo-updates 原生层**:CheckOnLaunch 是 build-time 原生配置
- *    (当前烘焙 ALWAYS),冷启动仍会后台静默 check+下载、下次启动生效——
- *    该缺口无法用运行时清单字段封,审核窗口内需同时冻结热更发布;
- *  - 送审版本过审对外发布后必须及时把该字段清回 ""(或删除),否则线上同
- *    版本的非 TestFlight 用户会一直处于审核模式、收不到后续 JS 更新检查与强更提示。
- */
-export const CLIENT_ENDPOINT_REVIEW_KEY = 'review';
 
 /** 各字段允许的 URL 协议白名单。 */
 const FIELD_PROTOCOLS: Record<ClientEndpointKey, readonly string[]> = {
@@ -171,7 +145,6 @@ const FIELD_PROTOCOLS: Record<ClientEndpointKey, readonly string[]> = {
   pluginApiBaseUrl: ['https:'],
   shareBaseUrl: ['https:'],
   cdnBaseUrl: ['https:'],
-  mobileUpdateBaseUrl: ['https:'],
 };
 
 /** 解析选项;allowHttp 仅供 dev 本地文件路径(endpoint.local.json 等)开启。 */
@@ -205,7 +178,6 @@ export type ParseClientEndpointManifestResult =
   | {
       ok: true;
       endpoints: ClientEndpointMap;
-      reviewVersion: string | null;
       /** 可选诊断元数据；缺失时由受信任清单地址确定区域。 */
       region: ClientEndpointRegion | null;
     }
@@ -213,9 +185,7 @@ export type ParseClientEndpointManifestResult =
 
 /**
  * 解析并校验一份清单原文。纯函数,输入任意文本都不会抛出。
- * 端点缺失 / 空白时写入 `''` 并继续;非空值仍校验 URL、协议与凭据;
- * `review` 可选字符串(送审版本号),缺失 / 空白 = null 即审核模式关闭
- * (语义见 CLIENT_ENDPOINT_REVIEW_KEY)。
+ * 端点缺失 / 空白时写入 `''` 并继续;非空值仍校验 URL、协议与凭据。
  */
 export function parseClientEndpointManifest(
   rawText: string,
@@ -272,13 +242,6 @@ export function parseClientEndpointManifest(
     endpoints[key] = normalized;
   }
 
-  const rawReview = record[CLIENT_ENDPOINT_REVIEW_KEY];
-  if (rawReview !== undefined && typeof rawReview !== 'string') {
-    return { ok: false, reason: `invalid-field:${CLIENT_ENDPOINT_REVIEW_KEY}` };
-  }
-  const reviewVersion =
-    typeof rawReview === 'string' && rawReview.trim() ? rawReview.trim() : null;
-
   const rawRegion = record.region;
   const region =
     rawRegion === undefined
@@ -302,7 +265,6 @@ export function parseClientEndpointManifest(
   return {
     ok: true,
     endpoints,
-    reviewVersion,
     region,
   };
 }

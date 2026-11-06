@@ -29,7 +29,6 @@ const VALID_MANIFEST = {
   pluginApiBaseUrl: 'https://plugin.example.com',
   shareBaseUrl: 'https://share.example.com',
   cdnBaseUrl: 'https://cdn.example.com/app',
-  mobileUpdateBaseUrl: 'https://mobile-update.example.com',
 };
 
 describe('parseClientEndpointManifest(字段可按 region 缺省)', () => {
@@ -156,46 +155,14 @@ describe('parseClientEndpointManifest(字段可按 region 缺省)', () => {
     expect(parseClientEndpointManifest(raw)).toEqual({ ok: false, reason });
   });
 
-  describe('review 可选字符串字段(手机版审核模式的送审版本号)', () => {
-    it('缺失 → reviewVersion=null(线上老清单不受影响,不阻断)', () => {
-      const result = parseClientEndpointManifest(JSON.stringify(VALID_MANIFEST));
-      expect(result).toMatchObject({ ok: true, reviewVersion: null });
-    });
-
-    it.each([
-      ['空串', ''],
-      ['纯空白', '   '],
-    ])('%s → reviewVersion=null(审核模式关闭)', (_label, value) => {
-      const result = parseClientEndpointManifest(
-        JSON.stringify({ ...VALID_MANIFEST, review: value }),
-      );
-      expect(result).toMatchObject({ ok: true, reviewVersion: null });
-    });
-
-    it('版本号字符串 → trim 后原样透出', () => {
-      const result = parseClientEndpointManifest(
-        JSON.stringify({ ...VALID_MANIFEST, review: ' 1.4.0 ' }),
-      );
-      expect(result).toMatchObject({ ok: true, reviewVersion: '1.4.0' });
-    });
-
-    it.each([
-      ['boolean true', true],
-      ['数字 1', 1],
-      ['null', null],
-    ])('存在但非 string(%s)→ 整份拒绝(配置错要炸出来)', (_label, value) => {
-      expect(
-        parseClientEndpointManifest(JSON.stringify({ ...VALID_MANIFEST, review: value })),
-      ).toEqual({ ok: false, reason: 'invalid-field:review' });
-    });
-  });
-
-  it('忽略已退役字段 apiBaseUrl / cdnInternalBaseUrl / xdGatewayBaseUrl(老清单向前兼容)', () => {
+  it('忽略已退役字段 apiBaseUrl / cdnInternalBaseUrl / xdGatewayBaseUrl / mobileUpdateBaseUrl / review(老清单向前兼容)', () => {
     const result = parseClientEndpointManifest(
       JSON.stringify({
         ...VALID_MANIFEST,
         cdnInternalBaseUrl: 'http://cdn-internal.example.com:20080/app',
         xdGatewayBaseUrl: 'https://gateway.example.com',
+        mobileUpdateBaseUrl: 'https://mobile-update.example.com',
+        review: true,
       }),
     );
     expect(result).toMatchObject({ ok: true });
@@ -203,6 +170,7 @@ describe('parseClientEndpointManifest(字段可按 region 缺省)', () => {
     expect('apiBaseUrl' in result.endpoints).toBe(false);
     expect('cdnInternalBaseUrl' in result.endpoints).toBe(false);
     expect('xdGatewayBaseUrl' in result.endpoints).toBe(false);
+    expect('mobileUpdateBaseUrl' in result.endpoints).toBe(false);
   });
 });
 

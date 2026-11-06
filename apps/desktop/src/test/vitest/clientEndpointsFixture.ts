@@ -43,5 +43,4 @@ export const TEST_CLIENT_ENDPOINTS: ClientEndpointMap = {
   pluginApiBaseUrl: 'https://plugin.test.invalid',
   shareBaseUrl: '',
   cdnBaseUrl: TEST_CDN_BASE_URL,
-  mobileUpdateBaseUrl: 'https://mobile-update.test.invalid',
 };

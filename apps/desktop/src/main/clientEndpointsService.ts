@@ -611,7 +611,6 @@ let startedFromCachedManifest = false;
 const BUILD_SCOPED_ENDPOINT_KEYS = new Set<ClientEndpointKey>([
   'websiteUrl',
   'cdnBaseUrl',
-  'mobileUpdateBaseUrl',
 ]);
 
 /** 弹框语言:跟随系统语言偏好列表,与原生菜单栏同一套解析。 */
