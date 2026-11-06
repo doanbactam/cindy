@@ -5,6 +5,7 @@
  * 不加载 Electron 启动入口的前提下执行术语与标点门禁。
  */
 import type { SupportedLocale } from '../shared/locale.js';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 export interface RsbBrowserWebAuthnLabels {
   title: string;
@@ -23,7 +24,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
   'zh-CN': {
     title: '选择通行密钥',
     message: '选择用于 {{relyingPartyId}} 的通行密钥',
-    detail: 'Cindy 只会把你的选择交给认证器；通行密钥的私密信息始终留在认证器中。',
+    detail: `${BRAND_NAME} 只会把你的选择交给认证器；通行密钥的私密信息始终留在认证器中。`,
     cancel: '取消通行密钥登录',
     unknownAccount: '通行密钥 {{index}}',
     unknownRelyingParty: '此网站',
@@ -32,7 +33,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
   'zh-TW': {
     title: '選擇通行密鑰',
     message: '選擇用於 {{relyingPartyId}} 的通行密鑰',
-    detail: 'Cindy 只會將你的選擇交給驗證器；通行密鑰的私密資訊始終留在驗證器中。',
+    detail: `${BRAND_NAME} 只會將你的選擇交給驗證器；通行密鑰的私密資訊始終留在驗證器中。`,
     cancel: '取消通行密鑰登入',
     unknownAccount: '通行密鑰 {{index}}',
     unknownRelyingParty: '此網站',
@@ -42,7 +43,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
     title: 'Choose a Passkey',
     message: 'Choose a passkey for {{relyingPartyId}}',
     detail:
-      'Cindy only passes your selection to the authenticator; the passkey secret stays in the authenticator.',
+      `${BRAND_NAME} only passes your selection to the authenticator; the passkey secret stays in the authenticator.`,
     cancel: 'Cancel Passkey Sign-In',
     unknownAccount: 'Passkey {{index}}',
     unknownRelyingParty: 'this website',
@@ -52,7 +53,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
     title: 'パスキーを選択',
     message: '{{relyingPartyId}} で使用するパスキーを選択',
     detail:
-      'Cindy は選択内容のみを認証器に渡します。パスキーの秘密情報は常に認証器内に保持されます。',
+      `${BRAND_NAME} は選択内容のみを認証器に渡します。パスキーの秘密情報は常に認証器内に保持されます。`,
     cancel: 'パスキーでのサインインをキャンセル',
     unknownAccount: 'パスキー {{index}}',
     unknownRelyingParty: 'このウェブサイト',
@@ -62,7 +63,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
     title: '패스키 선택',
     message: '{{relyingPartyId}}에 사용할 패스키 선택',
     detail:
-      'Cindy는 선택 내용만 인증 장치에 전달하며, 패스키의 비밀 정보는 항상 인증 장치에 남아 있습니다.',
+      `${BRAND_NAME}는 선택 내용만 인증 장치에 전달하며, 패스키의 비밀 정보는 항상 인증 장치에 남아 있습니다.`,
     cancel: '패스키 로그인 취소',
     unknownAccount: '패스키 {{index}}',
     unknownRelyingParty: '이 웹사이트',
@@ -72,7 +73,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
   "es": {
     "title": "Elegir clave de acceso",
     "message": "Elige una clave de acceso para {{relyingPartyId}}",
-    "detail": "Cindy solo envía tu selección al autenticador. El secreto de la clave de acceso permanece en el autenticador.",
+    "detail": `${BRAND_NAME} solo envía tu selección al autenticador. El secreto de la clave de acceso permanece en el autenticador.`,
     "cancel": "Cancelar inicio con clave de acceso",
     "unknownAccount": "Clave de acceso {{index}}",
     "unknownRelyingParty": "este sitio web",
@@ -81,7 +82,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
   "fr": {
     "title": "Choisir une clé d'accès",
     "message": "Choisissez une clé d'accès pour {{relyingPartyId}}",
-    "detail": "Cindy transmet uniquement votre choix à l'authentificateur ; le secret de la clé d'accès reste dans l'authentificateur.",
+    "detail": `${BRAND_NAME} transmet uniquement votre choix à l'authentificateur ; le secret de la clé d'accès reste dans l'authentificateur.`,
     "cancel": "Annuler la connexion par clé d'accès",
     "unknownAccount": "Clé d'accès {{index}}",
     "unknownRelyingParty": "ce site web",
@@ -90,7 +91,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
   "de": {
     "title": "Passkey wählen",
     "message": "Passkey für {{relyingPartyId}} wählen",
-    "detail": "Cindy gibt nur deine Auswahl an den Authentifikator weiter. Der geheime Schlüssel des Passkeys bleibt im Authentifikator.",
+    "detail": `${BRAND_NAME} gibt nur deine Auswahl an den Authentifikator weiter. Der geheime Schlüssel des Passkeys bleibt im Authentifikator.`,
     "cancel": "Passkey-Anmeldung abbrechen",
     "unknownAccount": "Passkey {{index}}",
     "unknownRelyingParty": "diese Website",
@@ -99,7 +100,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
   "pt-PT": {
     "title": "Escolher uma chave de acesso",
     "message": "Escolha uma chave de acesso para {{relyingPartyId}}",
-    "detail": "A Cindy apenas envia a sua escolha ao autenticador. O segredo da chave de acesso permanece no autenticador.",
+    "detail": `A ${BRAND_NAME} apenas envia a sua escolha ao autenticador. O segredo da chave de acesso permanece no autenticador.`,
     "cancel": "Cancelar início de sessão com chave de acesso",
     "unknownAccount": "Chave de acesso {{index}}",
     "unknownRelyingParty": "este site",
@@ -108,7 +109,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
   "pt-BR": {
     "title": "Escolher uma chave de acesso",
     "message": "Escolha uma chave de acesso para {{relyingPartyId}}",
-    "detail": "A Cindy apenas envia sua escolha ao autenticador. O segredo da chave de acesso permanece no autenticador.",
+    "detail": `A ${BRAND_NAME} apenas envia sua escolha ao autenticador. O segredo da chave de acesso permanece no autenticador.`,
     "cancel": "Cancelar login com chave de acesso",
     "unknownAccount": "Chave de acesso {{index}}",
     "unknownRelyingParty": "este site",
@@ -117,7 +118,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
   'zh-Hant-x-lzh': {
     title: '擇通行密鑰',
     message: '擇 {{relyingPartyId}} 所用之通行密鑰',
-    detail: 'Cindy 唯將君之所擇交予驗證器；通行密鑰之私密資訊始終存於驗證器中。',
+    detail: `${BRAND_NAME} 唯將君之所擇交予驗證器；通行密鑰之私密資訊始終存於驗證器中。`,
     cancel: '罷通行密鑰登入',
     unknownAccount: '通行密鑰 {{index}}',
     unknownRelyingParty: '此網站',
@@ -126,7 +127,7 @@ export const RSB_BROWSER_WEBAUTHN_LABELS: Record<
   'zh-Hans-x-lzh': {
     title: '择通行密钥',
     message: '择 {{relyingPartyId}} 所用之通行密钥',
-    detail: 'Cindy 唯将君之所择交予验证器；通行密钥之私密信息始终存于验证器中。',
+    detail: `${BRAND_NAME} 唯将君之所择交予验证器；通行密钥之私密信息始终存于验证器中。`,
     cancel: '罢通行密钥登录',
     unknownAccount: '通行密钥 {{index}}',
     unknownRelyingParty: '此网站',

@@ -132,6 +132,7 @@ import { prepareRemoteAgentInstall } from './codex-install-lifecycle.js';
 import { getRemoteCodexLiveTurnChecker } from '../maker-host/remote-session-start-ensure.js';
 import { withRehydrateCloseSuppressed } from '../maker-host/rehydrateCloseSuppression.js';
 import { RemoteHostHydrationQueue } from './hydration-queue.js';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 export { redactSshSensitiveText };
 
@@ -1107,7 +1108,7 @@ function throwManagedConfigWriteError(action: 'update' | 'remove', error: unknow
   if (code === MANAGED_CONFIG_OWNERSHIP_REQUIRED_CODE) {
     throwIpcError(
       'SSH_CONFIG_OWNERSHIP_REQUIRED',
-      'The existing Cindy SSH config is not owned by Cindy; add the ownership marker or choose another file.',
+      `The existing ${BRAND_NAME} SSH config is not owned by ${BRAND_NAME}; add the ownership marker or choose another file.`,
     );
   }
   if (code === MANAGED_CONFIG_WRITE_TOKEN_REQUIRED_CODE) {
@@ -1123,7 +1124,7 @@ function throwReloadRequired(action: string, error: unknown): never {
   });
   throwIpcError(
     'SSH_CONFIG_RELOAD_REQUIRED',
-    `${action}已写入 SSH 配置，但 Cindy 刷新失败；请重新加载 SSH 配置。`,
+    `${action}已写入 SSH 配置，但 ${BRAND_NAME} 刷新失败；请重新加载 SSH 配置。`,
   );
 }
 
@@ -1179,7 +1180,7 @@ export async function addRemoteSshHost(rawHost: unknown): Promise<{ host: HostSn
       if ((err as { code?: string }).code === MANAGED_CONFIG_OWNERSHIP_REQUIRED_CODE) {
         throwIpcError(
           'SSH_CONFIG_OWNERSHIP_REQUIRED',
-          'The existing Cindy SSH config is not owned by Cindy; add the ownership marker or choose another file.',
+          `The existing ${BRAND_NAME} SSH config is not owned by ${BRAND_NAME}; add the ownership marker or choose another file.`,
         );
       }
       throwIpcError('SSH_CONFIG_IO_FAILED', SSH_CONFIG_WRITE_FAILED_MESSAGE);
@@ -1296,7 +1297,7 @@ export async function updateRemoteSshHost(rawHost: unknown, options: { patch?: b
       if (!latestHost?.managedByCindy) {
         throwIpcError(
           'SSH_CONFIG_OWNERSHIP_REQUIRED',
-          'This SSH host is no longer uniquely managed by Cindy. Reload the SSH configuration before editing.',
+          `This SSH host is no longer uniquely managed by ${BRAND_NAME}. Reload the SSH configuration before editing.`,
         );
       }
       if (remoteConnectionFieldsChanged(existing.config, latestHost)) {
@@ -1371,7 +1372,7 @@ export async function removeRemoteSshHost(args: unknown) {
     if (!latestHost?.managedByCindy) {
       throwIpcError(
         'SSH_CONFIG_OWNERSHIP_REQUIRED',
-        'This SSH host is no longer uniquely managed by Cindy. Reload the SSH configuration before removing it.',
+        `This SSH host is no longer uniquely managed by ${BRAND_NAME}. Reload the SSH configuration before removing it.`,
       );
     }
     const managedWriteToken = managedWriteTokenOrThrow(latest);
@@ -1716,7 +1717,7 @@ export function registerRemoteSshIpc(): void {
       if (!env) {
         throwIpcError(
           'SSH_AGENT_NOT_INSTALLED',
-          'Cindy AI is not connected in Cindy; connect it in Settings → Model Providers first',
+          `Cindy AI is not connected in ${BRAND_NAME}; connect it in Settings → Model Providers first`,
         );
       }
       // tunnel 模式内部会等隧道 armed (超时抛错, fail-closed 不静默直连);
@@ -1733,7 +1734,7 @@ export function registerRemoteSshIpc(): void {
       if (!apiKey || !endpoint) {
         throwIpcError(
           'SSH_AGENT_NOT_INSTALLED',
-          'Cindy AI is not connected in Cindy; connect it in Settings → Model Providers first',
+          `Cindy AI is not connected in ${BRAND_NAME}; connect it in Settings → Model Providers first`,
         );
       }
       // heredoc 注入防御:endpoint 进 bash heredoc(<<'PIEOF'),含换行会提前终止
@@ -1852,7 +1853,7 @@ export function registerRemoteSshIpc(): void {
     if (!localAuthPath) {
       throwIpcError(
         'SSH_AGENT_NOT_INSTALLED',
-        'no local Codex auth.json found; log in via Cindy (or `codex login`) first',
+        `no local Codex auth.json found; log in via ${BRAND_NAME} (or \`codex login\`) first`,
       );
     }
 

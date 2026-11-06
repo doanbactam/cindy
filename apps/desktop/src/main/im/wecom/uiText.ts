@@ -1,6 +1,7 @@
 import type { IMUnsupportedEntry } from '@cindy/im';
 
 import type { ImUiTextPack } from '../shared/types';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 export const ui = {
   slash: {
@@ -18,7 +19,7 @@ export const ui = {
     detachedBySlash: '🚪 已结束接管，后续消息回到企业微信对话。',
     detachedByRevoke: '⚠️ desktop 端已收回接管，后续消息回到企业微信对话。',
     notAttached: '当前没有正在接管的任务。',
-    companionManagedCommand: '🧭 这个连接已交给伙伴，模型、权限和工作目录跟随伙伴设置。请在 Cindy 的伙伴设置里修改。',
+    companionManagedCommand: `🧭 这个连接已交给伙伴，模型、权限和工作目录跟随伙伴设置。请在 ${BRAND_NAME} 的伙伴设置里修改。`,
   },
   agent: {
     completedNoText: '✅ 任务已完成（本轮没有文本输出）',
@@ -102,7 +103,7 @@ export const ui = {
       failed: (reason: string) => `❌ 权限模式切换失败：${reason}`,
       fullAccessConfirmTitle: '⚠️ 确认开启 Full access？',
       fullAccessConfirmBody:
-        'Full access 会关闭工作区沙箱并跳过常规审批。Cindy 可以修改工作区外文件并执行联网命令；内置高风险操作仍会要求确认。',
+        `Full access 会关闭工作区沙箱并跳过常规审批。${BRAND_NAME} 可以修改工作区外文件并执行联网命令；内置高风险操作仍会要求确认。`,
       btnConfirmFullAccess: '开启 Full access',
       btnCancelFullAccess: '保留当前权限',
       fullAccessCancelled: '已取消，保留当前权限',

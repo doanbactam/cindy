@@ -130,7 +130,7 @@ describe('Skill activation preferences', () => {
   });
   it('keeps built-in activation intent across immutable bundle revisions', async () => {
     const prefs = await import('../activationPreferences');
-    const versions = path.join(root, 'Cindy', 'shared-system-skills', '.versions');
+    const versions = path.join(root, 'Hana', 'shared-system-skills', '.versions');
     const oldSkill = path.join(
       versions,
       'v6-0123456789abcdef-11111111-1111-1111-1111-111111111111',

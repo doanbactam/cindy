@@ -34,9 +34,9 @@ const CASES: Array<{
     done: '已完成 ✓',
     error: '执行失败',
     needsReply: '需要你回复',
-    externalDone: 'Cindy · 任务「整理报告」已完成 ✓',
-    externalError: 'Cindy · 任务「整理报告」执行失败',
-    externalNeedsReply: 'Cindy · 任务「整理报告」需要你回复',
+    externalDone: 'Hana · 任务「整理报告」已完成 ✓',
+    externalError: 'Hana · 任务「整理报告」执行失败',
+    externalNeedsReply: 'Hana · 任务「整理报告」需要你回复',
   },
   {
     locale: 'zh-TW',
@@ -45,9 +45,9 @@ const CASES: Array<{
     done: '已完成 ✓',
     error: '執行失敗',
     needsReply: '需要你回覆',
-    externalDone: 'Cindy · 任務「整理報告」已完成 ✓',
-    externalError: 'Cindy · 任務「整理報告」執行失敗',
-    externalNeedsReply: 'Cindy · 任務「整理報告」需要你回覆',
+    externalDone: 'Hana · 任務「整理報告」已完成 ✓',
+    externalError: 'Hana · 任務「整理報告」執行失敗',
+    externalNeedsReply: 'Hana · 任務「整理報告」需要你回覆',
   },
   {
     locale: 'en',
@@ -56,9 +56,9 @@ const CASES: Array<{
     done: 'Completed ✓',
     error: 'Failed',
     needsReply: 'Reply needed',
-    externalDone: 'Cindy · Session “Report” completed ✓',
-    externalError: 'Cindy · Session “Report” failed',
-    externalNeedsReply: 'Cindy · Session “Report” needs your reply',
+    externalDone: 'Hana · Session “Report” completed ✓',
+    externalError: 'Hana · Session “Report” failed',
+    externalNeedsReply: 'Hana · Session “Report” needs your reply',
   },
   {
     locale: 'ja',
@@ -67,9 +67,9 @@ const CASES: Array<{
     done: '完了しました ✓',
     error: '実行に失敗しました',
     needsReply: '返信が必要です',
-    externalDone: 'Cindy · セッション「レポート」が完了しました ✓',
-    externalError: 'Cindy · セッション「レポート」の実行に失敗しました',
-    externalNeedsReply: 'Cindy · セッション「レポート」への返信が必要です',
+    externalDone: 'Hana · セッション「レポート」が完了しました ✓',
+    externalError: 'Hana · セッション「レポート」の実行に失敗しました',
+    externalNeedsReply: 'Hana · セッション「レポート」への返信が必要です',
   },
   {
     locale: 'ko',
@@ -78,9 +78,9 @@ const CASES: Array<{
     done: '완료됨 ✓',
     error: '실행 실패',
     needsReply: '답변이 필요합니다',
-    externalDone: 'Cindy · 세션 “보고서” 완료됨 ✓',
-    externalError: 'Cindy · 세션 “보고서” 실행 실패',
-    externalNeedsReply: 'Cindy · 세션 “보고서”에 답변이 필요합니다',
+    externalDone: 'Hana · 세션 “보고서” 완료됨 ✓',
+    externalError: 'Hana · 세션 “보고서” 실행 실패',
+    externalNeedsReply: 'Hana · 세션 “보고서”에 답변이 필요합니다',
   },
 ];
 
@@ -111,13 +111,13 @@ describe('session notification copy', () => {
     (title) => {
       setMainLocale('en');
       expect(getSessionExternalNotificationText(title, 'done')).toBe(
-        `Cindy · Session “${title}” completed ✓`,
+        `Hana · Session “${title}” completed ✓`,
       );
       expect(getSessionExternalNotificationText(title, 'error')).toBe(
-        `Cindy · Session “${title}” failed`,
+        `Hana · Session “${title}” failed`,
       );
       expect(getSessionExternalNotificationText(title, 'needs-reply')).toBe(
-        `Cindy · Session “${title}” needs your reply`,
+        `Hana · Session “${title}” needs your reply`,
       );
     },
   );

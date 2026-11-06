@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 /**
  * im/desktopConfirmNotice.ts — 桌面专属确认卡挂起时的 IM 侧提示(#926)。
  *
@@ -50,7 +51,7 @@ export async function resolveFeishuNoticeTarget(
 
 /** 提示文案(纯函数,便于单测锚定)。 */
 export function buildDesktopConfirmNoticeText(what: string): string {
-  return `🔔 ${what}正在桌面端 Cindy 等待你的确认;超时将自动取消,如需继续请到桌面端操作。`;
+  return `🔔 ${what}正在桌面端 ${BRAND_NAME} 等待你的确认;超时将自动取消,如需继续请到桌面端操作。`;
 }
 
 /**
@@ -58,7 +59,7 @@ export function buildDesktopConfirmNoticeText(what: string): string {
  * 任务名是原样数据,模板只做拼接。
  */
 export function buildInputHandoffNoticeText(taskTitle: string): string {
-  return `🔐 需要你帮忙输入:${taskTitle} · 在 Cindy 中打开`;
+  return `🔐 需要你帮忙输入:${taskTitle} · 在 ${BRAND_NAME} 中打开`;
 }
 
 /**

@@ -678,7 +678,7 @@ describe('GhostSummonCard(chip 形态)', () => {
     expect(container.querySelector('svg.lucide-check')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { expanded: false }));
-    expect(screen.getByText('发送给 Agent 的 Cindy 能力路由')).toBeTruthy();
+    expect(screen.getByText('发送给 Agent 的 Hana 能力路由')).toBeTruthy();
     expect(screen.getByText('cindy_ios_simulator')).toBeTruthy();
     expect(screen.getByText(/不要通过 ghost_call 调用/)).toBeTruthy();
   });

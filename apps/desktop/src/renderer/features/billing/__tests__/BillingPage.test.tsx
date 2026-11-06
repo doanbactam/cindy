@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInstance } from 'i18next';
 import type {
@@ -35,7 +36,7 @@ const i18n = createInstance();
 void i18n.init({
   lng: 'en',
   initAsync: false,
-  interpolation: { escapeValue: false },
+  interpolation: { escapeValue: false, defaultVariables: { appName: BRAND_NAME } },
   resources: Object.fromEntries(
     Object.entries(billingLocales).map(([locale, resource]) => [locale, { translation: resource }]),
   ),
@@ -3327,7 +3328,7 @@ describe('BillingPage order history', () => {
     await waitFor(() => expect(window.electronAPI.openExternal).toHaveBeenCalledTimes(1));
     const mailto = new URL(vi.mocked(window.electronAPI.openExternal).mock.calls[0][0] as string);
     expect(mailto.pathname).toBe('feedback@cindy.app');
-    expect(mailto.searchParams.get('subject')).toBe(`Cindy 退款申请 - ${fixture.sourceId}`);
+    expect(mailto.searchParams.get('subject')).toBe(`Hana 退款申请 - ${fixture.sourceId}`);
     const body = mailto.searchParams.get('body');
     expect(body).toContain(`订单号：${fixture.sourceId}`);
     expect(body).toContain('渠道交易号：alipay_refund_fixture');
@@ -3615,13 +3616,13 @@ describe('BillingPage order history', () => {
         .mockResolvedValueOnce({ success: false })
         .mockResolvedValueOnce({ success: true });
       uiMocks.confirm.mockResolvedValueOnce(true);
-      const policy = resources.billing.orders.invoice.personalInvoicePolicy.replace(
+      const policy = resources.billing.orders.invoice.personalInvoicePolicy.replaceAll('{{appName}}', BRAND_NAME).replace(
         /<\/?strong>/g,
         '',
       );
       if (locale === 'zh-CN') {
         expect(policy).toBe(
-          'Cindy 个人版充值默认开具个人抬头发票，抬头可填写姓名或“个人”。如需开具企业抬头发票用于公司报销，请提供加盖公司公章的报销说明，并在说明中注明开票抬头。',
+          'Hana 个人版充值默认开具个人抬头发票，抬头可填写姓名或“个人”。如需开具企业抬头发票用于公司报销，请提供加盖公司公章的报销说明，并在说明中注明开票抬头。',
         );
       }
 

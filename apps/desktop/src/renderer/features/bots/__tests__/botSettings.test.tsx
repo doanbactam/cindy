@@ -835,7 +835,7 @@ describe('Bot settings unified autosave', () => {
     try {
       renderSettings();
       fireEvent.click(screen.getByRole('button', { name: 'bots.profile.changeAvatar' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Cindy' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Hana' }));
       await waitFor(() => expect(mocks.chooseBotAvatar).toHaveBeenCalledWith('bot-1', 'cG9ydHJhaXQ='));
       expect(mocks.updateBotProfile).not.toHaveBeenCalled();
       expect((screen.getByLabelText('bots.nameLabel') as HTMLInputElement).value).toBe('PR steward');

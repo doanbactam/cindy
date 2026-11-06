@@ -15,6 +15,7 @@ import type { IMUnsupportedEntry } from '@cindy/im';
 
 import { t } from '../../i18n';
 import type { ImUiTextPack } from '../shared/types';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 export const ui = {
   // ── slash command replies ──────────────────────────────────────────────────
@@ -42,7 +43,7 @@ export const ui = {
       '🧭 这里是伙伴的主对话，会一直接着聊，不会另开新任务。想换个话题直接说就好；需要单独做的事，伙伴会自己开后台任务。',
     companionLaneNew: '🌱 已为这个群开始一段新对话，之前的上下文收起来了，从头开始吧~',
     companionManagedCommand:
-      '🧭 这个连接已交给伙伴，模型、权限和工作目录跟随伙伴设置。请在 Cindy 的伙伴设置里修改。',
+      `🧭 这个连接已交给伙伴，模型、权限和工作目录跟随伙伴设置。请在 ${BRAND_NAME} 的伙伴设置里修改。`,
   },
 
   // ── agent runtime feedback ─────────────────────────────────────────────────
@@ -161,7 +162,7 @@ export const ui = {
       failed: (reason: string) => `❌ 权限模式没切过去：${reason}`,
       fullAccessConfirmTitle: '⚠️ 确认开启 Full access？',
       fullAccessConfirmBody:
-        'Full access 会关闭工作区沙箱并跳过常规审批。Cindy 可以修改工作区外的文件、执行联网命令且不再询问；内置高风险操作仍会要求确认。',
+        `Full access 会关闭工作区沙箱并跳过常规审批。${BRAND_NAME} 可以修改工作区外的文件、执行联网命令且不再询问；内置高风险操作仍会要求确认。`,
       btnConfirmFullAccess: '开启 Full access',
       btnCancelFullAccess: '保留当前权限',
       fullAccessCancelled: '已取消，保留当前权限',

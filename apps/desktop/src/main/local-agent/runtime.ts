@@ -22,6 +22,7 @@ import {
 } from './visibleSessions.js';
 import { withSendToSessionLock } from '../maker-ipc/sendToSessionLock.js';
 import { buildMessageSourceNote } from '@cindy/maker-shared/message-source';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 const object = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
@@ -147,7 +148,7 @@ export function createEventProjection(
         (typeof d.isTerminal === 'boolean' ? d.isTerminal : d.willRetry !== true) &&
         !ended
       ) {
-        const failed = string(d.message) || message('EXECUTION_FAILED', 'Cindy 执行未完成。');
+        const failed = string(d.message) || message('EXECUTION_FAILED', `${BRAND_NAME} 执行未完成。`);
         if (d.usage) {
           addEventUsage(d);
           reportUsage();
@@ -217,7 +218,7 @@ export async function openLocalAgentRuntime(
 ): Promise<LocalAgentRuntime> {
   let resumeBinding: ReturnType<typeof readLocalAgentResumeId>;
   try { resumeBinding = readLocalAgentResumeId(input.resume); }
-  catch { throw new LocalAgentError('RESUME_UNAVAILABLE', 'Cindy 原会话无法恢复，请在调用应用中开始新的任务。'); }
+  catch { throw new LocalAgentError('RESUME_UNAVAILABLE', `${BRAND_NAME} 原会话无法恢复，请在调用应用中开始新的任务。`); }
   let instructions = input.instructions;
   // The effort last applied by send.effort survives an instructions rebuild.
   let effort = input.effort;
@@ -225,7 +226,7 @@ export async function openLocalAgentRuntime(
     ? localAgentVisibleSessionHost(maker as Maker)
     : undefined;
   if (input.visibleSession && !visibleHost)
-    throw new LocalAgentError('SESSION_UNAVAILABLE', 'Cindy 任务入口尚未就绪。');
+    throw new LocalAgentError('SESSION_UNAVAILABLE', `${BRAND_NAME} 任务入口尚未就绪。`);
   const sessionId = visibleHost ? randomUUID() : `local-agent-${randomUUID()}`;
   const source = input.visibleSession
     ? { pluginId: `local-app:${input.visibleSession.clientId}`, name: input.visibleSession.title }
@@ -257,7 +258,7 @@ export async function openLocalAgentRuntime(
   let epoch = 0,
     turn = 0;
   const assertCurrent = (expected: number) => {
-    if (closed) throw new LocalAgentError('SESSION_UNAVAILABLE', 'Cindy 会话已关闭。');
+    if (closed) throw new LocalAgentError('SESSION_UNAVAILABLE', `${BRAND_NAME} 会话已关闭。`);
     if (epoch !== expected)
       throw new LocalAgentError('INTERRUPTED', '本次发送已停止，未继续提交消息。');
   };
@@ -272,7 +273,7 @@ export async function openLocalAgentRuntime(
   // Only stable public remote codes cross the API, never peer diagnostics.
   const remoteFailure = (error: unknown): never => {
     const code = error instanceof Error ? /^\[(REMOTE_AGENT_PEER_TOO_OLD|REMOTE_AGENT_SHARE_PAUSED|REMOTE_AGENT_SHARE_REMOVED|REMOTE_AGENT_PROVIDER_NOT_ALLOWED|REMOTE_AGENT_UNAVAILABLE)\]/.exec(error.message)?.[1] : undefined;
-    if (code) throw new LocalAgentError(code, localize(code, '远程供应商暂不可用，请在 Cindy 中检查连接或更新远端版本。'));
+    if (code) throw new LocalAgentError(code, localize(code, `远程供应商暂不可用，请在 ${BRAND_NAME} 中检查连接或更新远端版本。`));
     throw error;
   };
   const locked = <T>(task: () => Promise<T>) =>
@@ -365,7 +366,7 @@ export async function openLocalAgentRuntime(
       await next.close();
       throw new LocalAgentError(
         'RESUME_UNAVAILABLE',
-        'Cindy 原会话已不存在，请在调用应用中开始新的任务。未重放旧消息。',
+        `${BRAND_NAME} 原会话已不存在，请在调用应用中开始新的任务。未重放旧消息。`,
       );
     }
     notifyLoad = trackLoad?.(sessionId, route, next) ?? (() => {});
@@ -389,7 +390,7 @@ export async function openLocalAgentRuntime(
       // Native interactive prompts cannot be answered on behalf of the user. The dismissal
       // goes back to the engine first; the turn fails once it actually settles.
       projection.failAtEnd(
-        localize('INTERACTION_UNAVAILABLE', 'Cindy 引擎需要交互确认，当前应用无法接收。'),
+        localize('INTERACTION_UNAVAILABLE', `${BRAND_NAME} 引擎需要交互确认，当前应用无法接收。`),
       );
       if (request.kind === 'ask_user_question')
         return { kind: 'ask_user_question', answers: {}, dismissed: true };
@@ -414,7 +415,7 @@ export async function openLocalAgentRuntime(
       if (status === 'closed') unsubscribe();
       if (!closed && handle === next && !preparing && (status === 'closed' || status === 'error')) {
         busy = false;
-        projection.fail(localize('SESSION_UNAVAILABLE', 'Cindy 执行连接已结束。'));
+        projection.fail(localize('SESSION_UNAVAILABLE', `${BRAND_NAME} 执行连接已结束。`));
       }
     });
     return next;
@@ -491,7 +492,7 @@ export async function openLocalAgentRuntime(
           pathOrigin: 'desktop-host',
         });
         await fs.writeFile(file, bytes, { mode: 0o600 });
-      } else throw new LocalAgentError('INVALID_INPUT', '所选 Cindy 模型不支持这类输入。');
+      } else throw new LocalAgentError('INVALID_INPUT', `所选 ${BRAND_NAME} 模型不支持这类输入。`);
     }
   };
   return {
@@ -503,7 +504,7 @@ export async function openLocalAgentRuntime(
       return resumed;
     },
     async call(method, params) {
-      if (closed) throw new LocalAgentError('SESSION_UNAVAILABLE', 'Cindy 会话已关闭。');
+      if (closed) throw new LocalAgentError('SESSION_UNAVAILABLE', `${BRAND_NAME} 会话已关闭。`);
       if (method === 'interrupt') {
         const interrupted = ++epoch;
         busy = true;
@@ -606,7 +607,7 @@ export async function openLocalAgentRuntime(
           if (closed || turn !== generation) return;
           if (epoch === current) {
             busy = false;
-            projection.fail(localize('EXECUTION_FAILED', 'Cindy 未能完成本次发送。'));
+            projection.fail(localize('EXECUTION_FAILED', `${BRAND_NAME} 未能完成本次发送。`));
           } else {
             // An interrupt cancelled the turn before the supplier saw it: no native terminal follows.
             projection.fail('', 'interrupted');

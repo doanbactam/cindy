@@ -51,7 +51,7 @@ describe('shared teammate portrait gallery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'bots.profile.changeAvatar' }));
     const buttons = within(screen.getByRole('dialog')).getAllByRole('button');
     expect(buttons).toHaveLength(18);
-    expect(buttons[0].getAttribute('aria-label')).toBe('Cindy');
+    expect(buttons[0].getAttribute('aria-label')).toBe('Hana');
     expect(buttons.slice(1, 17).map((button) => button.getAttribute('aria-label'))).toEqual(
       Array.from({ length: 16 }, (_, i) => `bots.guided.portrait-${i + 1}`),
     );
@@ -66,7 +66,7 @@ describe('shared teammate portrait gallery', () => {
     const onChange = vi.fn();
     render(<BotPortraitPicker onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'bots.profile.changeAvatar' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cindy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hana' }));
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith('data:image/png;base64,cG9ydHJhaXQ='),
     );
@@ -106,7 +106,7 @@ describe('shared teammate portrait gallery', () => {
 
     render(<BotPortraitPicker onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'bots.profile.changeAvatar' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cindy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hana' }));
     fireEvent.click(screen.getByRole('button', { name: 'bots.guided.upload' }));
     await act(async () => complete());
     expect(chooseAvatar).toHaveBeenCalledOnce();
@@ -124,7 +124,7 @@ describe('shared teammate portrait gallery', () => {
     const onChange = vi.fn();
     const view = render(<BotPortraitPicker onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'bots.profile.changeAvatar' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cindy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hana' }));
     view.unmount();
     await act(async () => complete());
     expect(onChange).not.toHaveBeenCalled();
@@ -187,7 +187,7 @@ it('keeps the newer gallery operation pending when an older decode settles', asy
   const onChange = vi.fn();
   render(<BotPortraitPicker onChange={onChange} onPreparingChange={pending} />);
   fireEvent.click(screen.getByRole('button', { name: 'bots.profile.changeAvatar' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Cindy' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Hana' }));
   fireEvent.click(screen.getByRole('button', { name: 'bots.guided.portrait-1' }));
   await act(async () => decodes[0]());
   expect(pending.mock.calls).toEqual([[true]]);
@@ -203,7 +203,7 @@ it('releases preparation after a gallery decode failure', async () => {
   const onChange = vi.fn();
   render(<BotPortraitPicker onChange={onChange} onPreparingChange={pending} />);
   fireEvent.click(screen.getByRole('button', { name: 'bots.profile.changeAvatar' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Cindy' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Hana' }));
   expect(pending).toHaveBeenNthCalledWith(1, true);
   await screen.findByRole('alert');
   expect(pending.mock.calls).toEqual([[true], [false]]);

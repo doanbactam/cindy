@@ -11,7 +11,7 @@ vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => k
 vi.mock('../botGroupStore', () => ({ refreshBotGroups: vi.fn() }));
 vi.mock('@/lib/toast', () => ({ toast: { success: vi.fn() } }));
 const token = 'synthetic-invitation-'.padEnd(43, 'a');
-const link = `cindy://chat-invite/${token}`;
+const link = `hana://chat-invite/${token}`;
 const k = (name: string) => `bots.groupChat.server.${name}`;
 function Location() { return <p data-testid="location">{useLocation().pathname}</p>; }
 function mount() {
@@ -144,7 +144,7 @@ it('queues a second invite without replacing the current confirmation and reuses
   fireEvent.click(screen.getByRole('button', { name: k('accept') }));
   await screen.findByRole('alert');
   fireEvent.click(screen.getByRole('button', { name: k('accept') }));
-  await waitFor(() => expect(api.previewInvite).toHaveBeenLastCalledWith({ link: `cindy://chat-invite/${'b'.repeat(43)}` }));
+  await waitFor(() => expect(api.previewInvite).toHaveBeenLastCalledWith({ link: `hana://chat-invite/${'b'.repeat(43)}` }));
   expect(api.acceptInvite.mock.calls[0][0].clientId).toBe(api.acceptInvite.mock.calls[1][0].clientId);
 });
 

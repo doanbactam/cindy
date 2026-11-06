@@ -1,6 +1,7 @@
 import illustration from '../../renderer/assets/splash/illustration.webp?inline';
 import wordmarkDark from '../../renderer/assets/splash/wordmark.png?inline';
 import wordmarkLight from '../../renderer/assets/splash/wordmark-light.png?inline';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 export const escapeHtml = (value: string) =>
   value.replace(
@@ -29,7 +30,7 @@ p{font-size:14px;line-height:1.8;color:var(--text-secondary);margin:20px 0 0;tex
 @media(max-aspect-ratio:1/1){main{flex-direction:column;gap:16px;text-align:center}.hero{width:min(68vw,46vh)}.wordmark{margin:0 auto 20px}.copy{max-width:85vw}h1{font-size:22px}}
 </style></head><body><main>
 <img class="hero" src="${illustration}" alt="">
-<section class="copy"><picture><source media="(prefers-color-scheme:dark)" srcset="${wordmarkDark}"><img class="wordmark" src="${wordmarkLight}" alt="Cindy"></picture>
+<section class="copy"><picture><source media="(prefers-color-scheme:dark)" srcset="${wordmarkDark}"><img class="wordmark" src="${wordmarkLight}" alt="${BRAND_NAME}"></picture>
 <h1>${escapeHtml(status)}</h1><p>${escapeHtml(hint)}</p></section>
 </main></body></html>`;
 }

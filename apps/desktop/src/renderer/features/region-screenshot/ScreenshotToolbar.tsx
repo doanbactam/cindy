@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { useTranslation } from 'react-i18next';
 import {
   Check,
@@ -254,7 +255,7 @@ export function ScreenshotAiMenu(props: ScreenshotAiMenuProps) {
     <Button ref={triggerRef} size="xs" variant="secondary" tone={props.aiMenuOpen ? 'default' : 'quiet'} disabled={!props.canAsk}
       aria-label={t('regionScreenshot.cindy')} aria-expanded={props.aiMenuOpen}
       onMouseDown={(event) => event.preventDefault()}
-      onClick={props.onToggleAiMenu}><Sparkles size={14} className="text-[var(--warning-fg)]" />Cindy</Button>
+      onClick={props.onToggleAiMenu}><Sparkles size={14} className="text-[var(--warning-fg)]" />{BRAND_NAME}</Button>
     {props.aiMenuOpen && <div ref={menuRef} role="menu" aria-label={t('regionScreenshot.cindy')}
       className="absolute right-0 top-full z-20 mt-2 flex w-64 max-w-[calc(100vw-16px)] flex-col rounded-xl border border-[var(--border-default)] bg-[var(--surface-elevated)] p-1.5"
       onKeyDown={(event) => {

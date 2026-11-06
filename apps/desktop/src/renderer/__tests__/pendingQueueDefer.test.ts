@@ -1067,12 +1067,12 @@ describe('renderer input queue facade', () => {
 
   it('preserves queued source device hints while editing an anchored link', async () => {
     const sid = `row-ref-${Math.random().toString(36).slice(2, 8)}`;
-    const item = queued('q-ref', 'compare cindy://session/source?message=old-anchor');
+    const item = queued('q-ref', 'compare hana://session/source?message=old-anchor');
     item.sessionRefs = [{ sessionId: 'source', messageClientId: 'old-anchor', deviceId: 'source-device' }];
 
     makerChatStore.initGlobalListeners();
     projectionHandler?.(projection(sid, { pendingQueue: [item] }));
-    makerChatStore.updateQueueItem(sid, item.clientId, 'edited cindy://session/source?message=new-anchor');
+    makerChatStore.updateQueueItem(sid, item.clientId, 'edited hana://session/source?message=new-anchor');
     await flushPromises();
 
     expect(input.updateText).toHaveBeenCalledWith(sid, item.clientId, expect.any(String), [{
@@ -1084,7 +1084,7 @@ describe('renderer input queue facade', () => {
 
   it('preserves queued source device hints in composer queue edits', async () => {
     const sid = `content-ref-${Math.random().toString(36).slice(2, 8)}`;
-    const item = queued('q-content-ref', 'compare cindy://session/source?message=old-anchor');
+    const item = queued('q-content-ref', 'compare hana://session/source?message=old-anchor');
     item.sessionRefs = [
       { sessionId: 'source', messageClientId: 'old-anchor', deviceId: 'source-device' },
     ];
@@ -1094,7 +1094,7 @@ describe('renderer input queue facade', () => {
 
     const saved = await makerChatStore.updateQueueItemContent(sid, item.clientId, {
       content: {
-        text: 'edited cindy://session/source?message=new-anchor',
+        text: 'edited hana://session/source?message=new-anchor',
         mentions: [],
         hasQuotes: false,
         agentReferences: [],

@@ -6,6 +6,7 @@ import type { InstalledGhost } from '../../../shared/ghost';
 import { featureRetirementById } from '../../../shared/featureRetirements';
 import { GhostPluginIcon } from './GhostPluginIcon';
 import { PluginDetailTopBar, usePluginDetailScrolled } from './PluginDetailTopBar';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 export function RetiredFeatureDetail({
   ghost,
@@ -63,7 +64,7 @@ export function RetiredFeatureDetail({
               {t(`${descriptor.copyKey}.replacementName`)}
             </h2>
             <p className="mt-1 text-12 text-[var(--text-tertiary)]">
-              Cindy · {t('settings.ghosts.title')}
+              {BRAND_NAME} · {t('settings.ghosts.title')}
             </p>
             <p className="mt-4 text-14 leading-6 text-[var(--text-secondary)]">
               {t(`${descriptor.copyKey}.replacementDescription`)}

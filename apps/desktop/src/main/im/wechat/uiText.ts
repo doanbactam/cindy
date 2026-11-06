@@ -5,6 +5,7 @@
 import type { IMUnsupportedEntry } from '@cindy/im';
 
 import type { ImUiTextPack } from '../shared/types';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 export const ui = {
   slash: {
@@ -132,7 +133,7 @@ export const ui = {
       failed: (reason: string) => `❌ 权限模式没切过去：${reason}`,
       fullAccessConfirmTitle: '⚠️ 确认开启 Full access？',
       fullAccessConfirmBody:
-        'Full access 会关闭工作区沙箱并跳过常规审批。Cindy 可以修改工作区外的文件、执行联网命令且不再询问；内置高风险操作仍会要求确认。',
+        `Full access 会关闭工作区沙箱并跳过常规审批。${BRAND_NAME} 可以修改工作区外的文件、执行联网命令且不再询问；内置高风险操作仍会要求确认。`,
       btnConfirmFullAccess: '开启 Full access',
       btnCancelFullAccess: '保留当前权限',
       fullAccessCancelled: '已取消，保留当前权限',

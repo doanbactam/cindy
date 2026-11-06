@@ -10,6 +10,7 @@ import path from 'node:path';
 import type { LocalAgentModel } from './catalog.js';
 import { atomicWriteFileSync, readAtomicFileSync } from '../utils/atomicWriteFile.js';
 import type { LocalAgentInstanceInfo } from '../../shared/localAgent.js';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 const MAX_BODY = 16 * 1024 * 1024;
 const MAX_EVENTS = 8 * 1024 * 1024;
@@ -288,7 +289,7 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
     if (clients.size >= MAX_CLIENTS || owned() >= MAX_GRANT_CLIENTS)
       throw new LocalAgentError(
         'CLIENT_LIMIT',
-        '本机连接数量已满，请稍后重试或在 Cindy 中重新授权。',
+        `本机连接数量已满，请稍后重试或在 ${BRAND_NAME} 中重新授权。`,
       );
   };
   let base = '';
@@ -381,7 +382,7 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
     if (!run || run.owner !== owner || run.closed)
       throw new LocalAgentError(
         'SESSION_UNAVAILABLE',
-        'Cindy 会话已关闭，请重新发送消息以接续会话。',
+        `${BRAND_NAME} 会话已关闭，请重新发送消息以接续会话。`,
       );
     run.touched = Date.now();
     return run;
@@ -389,10 +390,10 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
   const authorize = (req: IncomingMessage) => {
     const authorization = req.headers.authorization;
     if (!authorization?.startsWith('Bearer '))
-      throw new LocalAgentError('UNAUTHORIZED', '请先在 Cindy 中允许连接。');
+      throw new LocalAgentError('UNAUTHORIZED', `请先在 ${BRAND_NAME} 中允许连接。`);
     const digest = hash(authorization.slice(7));
     const grant = grants.find((g) => g.scope === deps.scope() && equal(g.hash, digest));
-    if (!grant) throw new LocalAgentError('UNAUTHORIZED', 'Cindy 连接授权已失效，请重新连接。');
+    if (!grant) throw new LocalAgentError('UNAUTHORIZED', `${BRAND_NAME} 连接授权已失效，请重新连接。`);
     return grant;
   };
   const assertGrant = (grant: Grant) => {
@@ -443,7 +444,7 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
     }
     if (method === 'session/open') {
       if (runs.size >= MAX_RUNS)
-        throw new LocalAgentError('BUSY', 'Cindy 本机接入的会话已满，请先结束不再使用的会话。');
+        throw new LocalAgentError('BUSY', `${BRAND_NAME} 本机接入的会话已满，请先结束不再使用的会话。`);
       const sessionId = text(p.sessionId, 128),
         id = runKey(grant, sessionId);
       if (runs.has(id)) throw new LocalAgentError('SESSION_EXISTS', '会话编号已被使用。');
@@ -452,7 +453,7 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
       if (!model)
         throw new LocalAgentError(
           'MODEL_UNAVAILABLE',
-          '所选模型或供应商已不可用，请在 Cindy 中检查后重新选择。',
+          `所选模型或供应商已不可用，请在 ${BRAND_NAME} 中检查后重新选择。`,
         );
       const cwd = text(p.cwd, 32768);
       if (!path.isAbsolute(cwd) || !(await fs.stat(cwd).catch(() => undefined))?.isDirectory())
@@ -490,7 +491,7 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
       if (resumeKey && (!previous || previous.owner !== grant.id))
         throw new LocalAgentError(
           'RESUME_UNAVAILABLE',
-          '原 Cindy 会话无法在此授权下恢复，未重新执行消息。',
+          `原 ${BRAND_NAME} 会话无法在此授权下恢复，未重新执行消息。`,
         );
       // A deliberate model/source change starts a fresh engine session. The client sees
       // resumed:false and supplies its existing context handoff, without replaying
@@ -499,11 +500,11 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
       if (Object.keys(bindings).length >= 4096 && !binding)
         throw new LocalAgentError(
           'RESUME_LIMIT',
-          '本机接入的恢复记录已满，请在 Cindy 中撤销连接后重新连接。',
+          `本机接入的恢复记录已满，请在 ${BRAND_NAME} 中撤销连接后重新连接。`,
         );
       assertGrant(grant);
       if (runs.has(id)) throw new LocalAgentError('SESSION_EXISTS', '会话编号已被此连接使用。');
-      if (runs.size >= MAX_RUNS) throw new LocalAgentError('BUSY', 'Cindy 本机接入的会话已满。');
+      if (runs.size >= MAX_RUNS) throw new LocalAgentError('BUSY', `${BRAND_NAME} 本机接入的会话已满。`);
       const run: Run = {
         owner: grant.id,
         touched: Date.now(),
@@ -555,7 +556,7 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
         if (!binding && Object.keys(bindings).length >= 4096)
           throw new LocalAgentError(
             'RESUME_LIMIT',
-            '本机接入的恢复记录已满，请在 Cindy 中撤销连接后重新连接。',
+            `本机接入的恢复记录已满，请在 ${BRAND_NAME} 中撤销连接后重新连接。`,
           );
         run.resumeKey = binding && resumeKey ? resumeKey : token();
         const key = run.resumeKey,
@@ -640,8 +641,8 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
       return {};
     }
     if (!['send', 'steer', 'interrupt', 'instructions'].includes(method))
-      throw new LocalAgentError('METHOD_UNSUPPORTED', '此 Cindy 版本不支持该会话操作。');
-    if (!run.runtime) throw new LocalAgentError('SESSION_STARTING', 'Cindy 会话还在启动。');
+      throw new LocalAgentError('METHOD_UNSUPPORTED', `此 ${BRAND_NAME} 版本不支持该会话操作。`);
+    if (!run.runtime) throw new LocalAgentError('SESSION_STARTING', `${BRAND_NAME} 会话还在启动。`);
     const result = await run.runtime.call(method, p);
     await syncBinding(run);
     return result;
@@ -710,10 +711,10 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
         });
         const copy = message(
           'CONNECT_RESULT',
-          '请回到申请的应用查看连接结果。连接授权由 Cindy 中的确认窗口决定。',
+          `请回到申请的应用查看连接结果。连接授权由 ${BRAND_NAME} 中的确认窗口决定。`,
         );
         res.end(
-          `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cindy</title><p>${copy.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</p>`,
+          `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>${BRAND_NAME}</title><p>${copy.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</p>`,
         );
         return;
       }
@@ -797,7 +798,7 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
           '本机 Agent 协议版本不兼容，请更新对应客户端。',
         );
       if (rpc.instance !== undefined && rpc.instance !== instanceId)
-        throw new LocalAgentError('INSTANCE_CHANGED', 'Cindy 已重新启动，未重放旧实例中的操作。');
+        throw new LocalAgentError('INSTANCE_CHANGED', `${BRAND_NAME} 已重新启动，未重放旧实例中的操作。`);
       if (method === 'capabilities') {
         json(res, 200, {
           result: {
@@ -905,7 +906,7 @@ export async function createLocalAgentServer(deps: LocalAgentServerDeps) {
       json(res, code === 'UNAUTHORIZED' || code === 'FORBIDDEN' ? 403 : 400, {
         error: {
           code,
-          message: message(code, known ? error.message : 'Cindy 本机接入操作未完成。'),
+          message: message(code, known ? error.message : `${BRAND_NAME} 本机接入操作未完成。`),
         },
       });
     }

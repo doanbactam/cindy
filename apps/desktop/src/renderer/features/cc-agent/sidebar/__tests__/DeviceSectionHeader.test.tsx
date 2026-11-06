@@ -116,11 +116,11 @@ it.each([
   [{ online: false }, 'This computer is offline.'],
   [
     { remoteControlEnabled: false },
-    i18n.getResource('en', 'common', 'remoteDesktop.remoteDisabled'),
+    i18n.t('remoteDesktop.remoteDisabled', { lng: 'en' }),
   ],
   [
     { controlEnabled: false },
-    i18n.getResource('en', 'common', 'remoteDesktop.shortcut.controlDisabled'),
+    i18n.t('remoteDesktop.shortcut.controlDisabled', { lng: 'en' }),
   ],
   [{ platform: 'ios' }, 'This device does not support remote desktop.'],
   [{ isSelf: true }, 'This device does not support remote desktop.'],

@@ -322,7 +322,7 @@ describe('HookTaskCard attached context', () => {
   it('marks the channel header as a source so share images keep only the message body', () => {
     const { container } = render(<HookTaskCard im="slack" userText="帮我看下这个报错" />);
     const header = container.querySelector(`[${SHARE_SOURCE_ATTR}]`);
-    expect(header?.textContent).toBe('Cindy · 来自 Slack');
+    expect(header?.textContent).toBe('Hana · 来自 Slack');
     const clone = container.cloneNode(true) as HTMLElement;
     stripMessageSources(clone);
     expect(clone.textContent).not.toContain('来自 Slack');
@@ -353,7 +353,7 @@ describe('HookTaskCard attached context', () => {
         </ConfirmDialogProvider>
       </MemoryRouter>,
     );
-    expect(screen.getByText('Cindy · 来自 Slack')).toBeTruthy();
+    expect(screen.getByText('Hana · 来自 Slack')).toBeTruthy();
     expect(screen.queryByRole('textbox')).toBeNull();
     fireEvent.mouseEnter(screen.getByText('Please check the error').closest('[data-user-msg-id]')!);
     await act(async () => {

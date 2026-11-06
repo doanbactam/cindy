@@ -8,6 +8,7 @@
 import type { IMUnsupportedEntry } from '@cindy/im';
 
 import type { ImUiTextPack } from '../shared/types';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 export const discordUiText = {
   expiredCardNotice: '卡片已过期',
@@ -34,7 +35,7 @@ export const ui = {
     detachedByRevoke: '⚠️ 你在 desktop 那边把接管收回去了，后续消息回到我们俩的 Discord 私聊。',
     notAttached: '🤷 你现在没在接管任何任务，/exctr 闲着也没事可干。',
     companionManagedCommand:
-      '🧭 这个 bot 已经交给伙伴啦 — 模型、权限和工作目录都跟着伙伴设置走，想改的话去 Cindy 的伙伴设置里调~',
+      `🧭 这个 bot 已经交给伙伴啦 — 模型、权限和工作目录都跟着伙伴设置走，想改的话去 ${BRAND_NAME} 的伙伴设置里调~`,
   },
 
   agent: {
@@ -126,7 +127,7 @@ export const ui = {
       resolved: (label: string) => `✅ 权限模式切到 ${label} 了`,
       failed: (reason: string) => `❌ 权限模式没切过去：${reason}`,
       fullAccessConfirmTitle: '⚠️ 确认开启 Full access？',
-      fullAccessConfirmBody: 'Full access 会关闭工作区沙箱并跳过常规审批。Cindy 可以修改工作区外的文件、执行联网命令且不再询问；内置高风险操作仍会要求确认。',
+      fullAccessConfirmBody: `Full access 会关闭工作区沙箱并跳过常规审批。${BRAND_NAME} 可以修改工作区外的文件、执行联网命令且不再询问；内置高风险操作仍会要求确认。`,
       btnConfirmFullAccess: '开启 Full access',
       btnCancelFullAccess: '保留当前权限',
       fullAccessCancelled: '已取消，保留当前权限',

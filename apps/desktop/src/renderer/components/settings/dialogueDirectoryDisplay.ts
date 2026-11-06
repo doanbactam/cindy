@@ -1,3 +1,5 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
+
 /** Display only. Preserve the original path for copying and never use this for filesystem access. */
 export function dialogueDirectoryDisplayParts(directory: string, platform: string): string[] {
   const parts = directory.split(platform === 'win32' ? /[\\/]/ : '/').filter(Boolean);
@@ -8,7 +10,7 @@ export function dialogueDirectoryDisplayParts(directory: string, platform: strin
   }
   // Default locations: <profile>/owners/<owner>/dialogues.
   if (parts.at(-3) === 'owners' && ownerKey.test(parts.at(-2) ?? '') && parts.at(-1) === 'dialogues') {
-    return [parts.at(-4) ?? 'Cindy', 'dialogues'];
+    return [parts.at(-4) ?? BRAND_NAME, 'dialogues'];
   }
   return parts.slice(-2);
 }

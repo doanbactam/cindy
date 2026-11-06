@@ -52,7 +52,7 @@ describe('model-window switch IPC errors', () => {
       '模型未切换：无法确认当前模型的上下文窗口。请检查自定义模型的窗口设置；若无法修改，请保留当前模型或新建任务',
     );
     expect(en.ipcError.MODEL_WINDOW_TARGET_CONTEXT_UNKNOWN).toBe(
-      'Model not switched: Cindy can’t verify the target model’s context window. Check the window setting for a custom model. If it can’t be changed, choose another model or start a new task.',
+      'Model not switched: {{appName}} can’t verify the target model’s context window. Check the window setting for a custom model. If it can’t be changed, choose another model or start a new task.',
     );
     expect(zhCN.ipcError.MODEL_WINDOW_REMOTE_REBUILD_UNSUPPORTED).toBe(
       '模型未切换：远程任务无法为更小的上下文窗口安全整理上下文。请保留当前模型，或新建任务后选择目标模型',

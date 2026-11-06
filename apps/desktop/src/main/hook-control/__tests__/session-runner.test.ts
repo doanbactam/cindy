@@ -3000,7 +3000,7 @@ describe('上游过载自动重试期间的渠道进度(零产出窗口)', () =>
     expect(outcome.errorMessage).toContain('Telegram 官方 bot');
     expect(outcome.errorMessage).toContain('GPT-6 Astra');
     expect(outcome.errorMessage).toContain('测试任务（sess-new）');
-    expect(outcome.errorMessage).toContain('在 Cindy 里打开这个任务');
+    expect(outcome.errorMessage).toContain('在 Hana 里打开这个任务');
     expect(outcome.errorMessage).not.toContain('/new');
   });
 

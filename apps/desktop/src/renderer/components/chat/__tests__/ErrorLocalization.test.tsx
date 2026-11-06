@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, act } from '@testing-library/react';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
@@ -42,7 +43,7 @@ it.each(['thread not found', 'app-server force-retired: auth changed'])(
   'retains the specific execution failure in details: %s',
   async (error) => {
     const i18n = createInstance();
-    await i18n.init({ lng: 'en', resources: { en: { translation: en } } });
+    await i18n.init({ lng: 'en', resources: { en: { translation: en } }, interpolation: { defaultVariables: { appName: BRAND_NAME } } });
     const onDiagnose = vi.fn();
     const onRetry = vi.fn();
     render(<I18nextProvider i18n={i18n}>
@@ -59,7 +60,7 @@ it.each(['thread not found', 'app-server force-retired: auth changed'])(
 // 诊断入口只在展开详情后出现；预填给新任务的提示带出错任务链接，且与详情同样脱敏。
 it('offers diagnosis after expanding details with a redacted prompt for the failed session', async () => {
   const i18n = createInstance();
-  await i18n.init({ lng: 'en', resources: { en: { translation: en } }, interpolation: { escapeValue: false } });
+  await i18n.init({ lng: 'en', resources: { en: { translation: en } }, interpolation: { escapeValue: false, defaultVariables: { appName: BRAND_NAME } } });
   const onDiagnose = vi.fn();
   const error = 'Unexpected provider failure; api_key=private-test-value';
   render(<I18nextProvider i18n={i18n}><ErrorBanner error={error} onRetry={vi.fn()} onDiagnose={onDiagnose} /></I18nextProvider>);
@@ -102,7 +103,7 @@ it('appends the diagnosis prompt to an unsent new-task draft instead of replacin
 describe.each(SUPPORTED_LOCALES)('error presentation in %s', locale => {
   it('builds a localized diagnosis without a task link for early execution failures', async () => {
     const i18n = createInstance();
-    await i18n.init({ lng: locale, resources: { [locale]: { translation: locales[locale] } }, interpolation: { escapeValue: false } });
+    await i18n.init({ lng: locale, resources: { [locale]: { translation: locales[locale] } }, interpolation: { escapeValue: false, defaultVariables: { appName: BRAND_NAME } } });
     const prompt = buildErrorDiagnosisPrompt(i18n.t, null, {
       message: 'Execution failed', details: 'runId: early-run; api_key=private-value',
     });

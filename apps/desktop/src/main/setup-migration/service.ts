@@ -40,6 +40,7 @@ import {
 import type { SetupSettingsGroup } from './settingsGroups.js';
 import { collectSetupSnapshot, type SetupSnapshotSourceDeps } from './snapshot.js';
 import type { SetupTransferApplyDeps } from './transferApply.js';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 const PLAN_TTL_MS = 30 * 60_000;
 const MAX_PLANS = 4;
@@ -160,12 +161,12 @@ export function createSetupMigrationService(deps: SetupMigrationServiceDeps) {
     } catch (error) {
       const code = (error as { code?: unknown } | null)?.code;
       if (code === 'CHANNEL_NOT_ALLOWED' || code === 'UNSUPPORTED_CAPABILITY') {
-        setupError('SETUP_SOURCE_OUTDATED', 'Update Cindy on the other computer');
+        setupError('SETUP_SOURCE_OUTDATED', `Update ${BRAND_NAME} on the other computer`);
       }
       setupError('SETUP_SOURCE_UNAVAILABLE', 'The other computer did not answer');
     }
     if (setupSnapshotCapsVersion(caps) < SETUP_SNAPSHOT_VERSION) {
-      setupError('SETUP_SOURCE_OUTDATED', 'Update Cindy on the other computer');
+      setupError('SETUP_SOURCE_OUTDATED', `Update ${BRAND_NAME} on the other computer`);
     }
     let raw: unknown;
     try {

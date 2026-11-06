@@ -33,6 +33,7 @@ import { createLocalAgentGroupRouteResolver } from './groupRoute.js';
 import { listProviderGroups } from '../provider-group/store.js';
 
 import { confirmLocalAgent, cancelLocalAgentConfirmations } from './confirmation.js';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 const log = createLogger('local-agent');
 let current: Promise<Awaited<ReturnType<typeof createLocalAgentServer>>> | undefined;
@@ -82,7 +83,7 @@ async function startWithProfileLease(deps: LocalAgentServerDeps) {
       if (!status.held)
         throw new LocalAgentError(
           'HOST_IN_USE',
-          '此 profile 的本机应用连接由另一个 Cindy 实例管理。',
+          `此 profile 的本机应用连接由另一个 ${BRAND_NAME} 实例管理。`,
         );
       if (!deps.scope()) throw new LocalAgentError('UNAUTHORIZED', '本机应用授权范围已更改。');
       const server = await createLocalAgentServer(deps);
@@ -131,16 +132,16 @@ export function installLocalAgentHost(maker: Maker): void {
       scope: scopeNow,
       async models() {
         if (scopeNow() !== scope)
-          throw new LocalAgentError('UNAUTHORIZED', 'Cindy 当前账号已更改，请重新连接。');
+          throw new LocalAgentError('UNAUTHORIZED', `${BRAND_NAME} 当前账号已更改，请重新连接。`);
         const providers = await getDesktopProviderService({
           allowSideEffects: false,
         }).listProviders({
           allowSideEffects: false,
         });
-        if (scopeNow() !== scope) throw new LocalAgentError('UNAUTHORIZED', 'Cindy 当前账号已更改，请重新连接。');
+        if (scopeNow() !== scope) throw new LocalAgentError('UNAUTHORIZED', `${BRAND_NAME} 当前账号已更改，请重新连接。`);
         const localModels = localAgentModels(providers, maker.listAvailableAgents());
         const remoteModels = await remoteLocalAgentModels(() => scopeNow() === scope, listProviderGroups(), localModels);
-        if (scopeNow() !== scope) throw new LocalAgentError('UNAUTHORIZED', 'Cindy 当前账号已更改，请重新连接。');
+        if (scopeNow() !== scope) throw new LocalAgentError('UNAUTHORIZED', `${BRAND_NAME} 当前账号已更改，请重新连接。`);
         return [...localModels, ...remoteModels]
           .map((model, index) => ({ ...model, isDefault: index === 0 }));
       },
@@ -166,7 +167,7 @@ export function installLocalAgentHost(maker: Maker): void {
           import('../provider-group/runtime.js'), import('../device-link/index.js'),
         ]);
         const assertCurrent = () => {
-          if (scopeNow() !== scope) throw new LocalAgentError('UNAUTHORIZED', 'Cindy 当前账号已更改，请重新连接。');
+          if (scopeNow() !== scope) throw new LocalAgentError('UNAUTHORIZED', `${BRAND_NAME} 当前账号已更改，请重新连接。`);
         };
         assertCurrent();
         const load = getProviderGroupApplicationLoad();

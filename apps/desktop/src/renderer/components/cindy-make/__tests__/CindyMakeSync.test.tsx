@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
@@ -27,7 +28,7 @@ async function show(
   await i18n.init({
     lng: locale,
     fallbackLng: false,
-    interpolation: { escapeValue: false },
+    interpolation: { escapeValue: false, defaultVariables: { appName: BRAND_NAME } },
     resources: { [locale]: { translation: locales[locale] } },
   });
   return render(
@@ -133,10 +134,10 @@ describe('Sync status line', () => {
     expect(container.textContent).toContain(zhCN.cindyMake.sync.errors.github);
   });
 
-  it('explains a personal version already ahead of this computer’s Cindy', async () => {
+  it('explains a personal version already ahead of this computer’s Hana', async () => {
     const { container } = await show({ done: { at: 1, ahead: true } });
     expect(container.textContent).toContain(zhCN.cindyMake.sync.doneCurrent);
-    expect(container.textContent).toContain(zhCN.cindyMake.sync.ahead);
+    expect(container.textContent).toContain(zhCN.cindyMake.sync.ahead.replaceAll('{{appName}}', BRAND_NAME));
   });
 
   it.each(Object.keys(locales) as (keyof typeof locales)[])(

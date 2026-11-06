@@ -221,7 +221,7 @@ describe('local client runtime lifecycle', () => {
     if (outcome === 'owner-changed') await expect(opening).rejects.toThrow('owner changed');
     else if (outcome === 'unavailable' || outcome === 'denied') {
       await expect(opening).rejects.toMatchObject({ code: 'REMOTE_AGENT_UNAVAILABLE',
-        message: '远程供应商暂不可用，请在 Cindy 中检查连接或更新远端版本。' });
+        message: '远程供应商暂不可用，请在 Hana 中检查连接或更新远端版本。' });
     } else {
       const f = await opening;
       const opts = f.maker.startLocalAgentSession.mock.calls[0][1];
@@ -257,7 +257,7 @@ describe('local client runtime lifecycle', () => {
     await f.runtime.call('instructions', { instructions: 'updated' });
     await expect(f.runtime.call('send', message)).rejects.toMatchObject({
       code: 'REMOTE_AGENT_PEER_TOO_OLD',
-      message: '远程供应商暂不可用，请在 Cindy 中检查连接或更新远端版本。',
+      message: '远程供应商暂不可用，请在 Hana 中检查连接或更新远端版本。',
     });
     expect(f.first.send).not.toHaveBeenCalled();
   });
@@ -401,7 +401,7 @@ describe('local client runtime lifecycle', () => {
     await vi.waitFor(() =>
       expect(f.events).toContainEqual({
         type: 'turn_end',
-        data: { status: 'failed', message: 'Cindy 未能完成本次发送。' },
+        data: { status: 'failed', message: 'Hana 未能完成本次发送。' },
       }),
     );
     expect(dispatched).not.toHaveBeenCalled();

@@ -1,4 +1,5 @@
 import { remoteControlSettings } from './RemoteControlSection.settings-search';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { deviceDisplayName } from '@/lib/deviceName';
 import { Button } from '@/components/ui/button';
 /**
@@ -87,7 +88,7 @@ function deviceSubtitle(
 ): string {
   const parts = [
     platformLabel(device.platform),
-    device.appVersion?.trim() ? `Cindy ${device.appVersion.trim()}` : null,
+    device.appVersion?.trim() ? `${BRAND_NAME} ${device.appVersion.trim()}` : null,
     hardwareLabel(device.deviceInfo),
     memoryLabel(device.deviceInfo?.memoryGb),
     opts.statusOverride ?? deviceStatusLabel(device, t),

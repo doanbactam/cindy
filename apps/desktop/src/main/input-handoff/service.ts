@@ -23,6 +23,7 @@ import { markSecretEntered } from './secretTaint.js';
 import { TerminalPromptSession, type TerminalProgram } from './terminalPrompt.js';
 import { ImageQrHandoffSession } from './imageQr.js';
 import { qrContent } from './qrCode.js';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 /**
  * Process-local registry of 代输入 requests. Owns card broadcast, owner
@@ -169,7 +170,7 @@ export function buildInputHandoffContinuation(result: HandoffResult): string {
     : result.status === 'succeeded'
     ? 'The owner\'s fields were typed in and confirmed. Check the current screen yourself and handle any buttons or options left; values they entered were not shared with you.'
     : result.failure === 'permission'
-      ? 'Cindy lacks macOS Accessibility permission for input handoff. Ask the owner to allow it on this computer, or continue another way.'
+      ? `${BRAND_NAME} lacks macOS Accessibility permission for input handoff. Ask the owner to allow it on this computer, or continue another way.`
     : result.failure === 'screen_locked'
       ? 'This computer\'s screen is locked (a display going to sleep locks it too), so nothing was read or typed. Ask the owner to wake and unlock it; request input handoff again only after they say it is unlocked.'
       : 'The handoff did not complete. Do not retry it automatically; tell the owner what is still needed or continue another way.';
@@ -267,8 +268,8 @@ export class InputHandoffService {
     if (namesHost || frontIsHost) {
       return {
         errorCode: 'TARGET_IS_CINDY',
-        message: (frontIsHost ? 'Cindy itself is in front, and ' : '')
-          + 'Cindy\'s own window cannot be handed off. A screen shown inside Cindy (such as the device simulator) is not a '
+        message: (frontIsHost ? `${BRAND_NAME} itself is in front, and ` : '')
+          + `${BRAND_NAME}'s own window cannot be handed off. A screen shown inside ${BRAND_NAME} (such as the device simulator) is not a `
           + 'window here: for a sign-in QR code on it, ask again with kind="scan" and `image` set to a fresh screenshot; '
           + 'for other fields there, tell the owner what is needed.',
       };
@@ -307,8 +308,8 @@ export class InputHandoffService {
     }
     if (found && 'error' in found) {
       return found.error === 'not_image'
-        ? { ok: false, errorCode: 'NOT_AN_IMAGE', message: 'That file is not a picture Cindy can read (use PNG or JPEG).' }
-        : { ok: false, errorCode: 'QR_UNREADABLE', message: 'Cindy could not read that picture right now. Tell the owner what is needed instead.' };
+        ? { ok: false, errorCode: 'NOT_AN_IMAGE', message: `That file is not a picture ${BRAND_NAME} can read (use PNG or JPEG).` }
+        : { ok: false, errorCode: 'QR_UNREADABLE', message: `${BRAND_NAME} could not read that picture right now. Tell the owner what is needed instead.` };
     }
     const qr = found ? qrContent(found.text) : null;
     if (!found || !qr) {

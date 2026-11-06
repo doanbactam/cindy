@@ -1,4 +1,5 @@
 import { atomOneLight } from './builtin/atom-one-light';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { defaultDark } from './builtin/default-dark';
 import { defaultLight } from './builtin/default-light';
 import { eclipse } from './builtin/eclipse';
@@ -32,7 +33,7 @@ export const DEFAULT_FAMILY_ID = 'cindy';
 const BUILTIN_FAMILIES: ThemeFamily[] = [
   {
     id: 'cindy',
-    name: 'Cindy',
+    name: BRAND_NAME,
     light: cindyLight,
     dark: cindyDark,
   },

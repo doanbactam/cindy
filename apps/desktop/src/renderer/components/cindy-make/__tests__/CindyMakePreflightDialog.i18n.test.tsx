@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInstance } from 'i18next';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
@@ -53,7 +54,7 @@ describe('Cindy Make close confirmation with real translations', () => {
       locale: 'en',
       resource: en,
       close: 'Dismiss',
-      title: 'Close Cindy Make?',
+      title: 'Close Hana Make?',
       keep: 'Keep Viewing',
       source: 'Source preparation is still running.',
       complete: 'Preparation is complete, but work has not started.',
@@ -62,7 +63,7 @@ describe('Cindy Make close confirmation with real translations', () => {
       locale: 'zh-CN',
       resource: zhCN,
       close: '关闭',
-      title: '关闭 Cindy Make？',
+      title: '关闭 Hana Make？',
       keep: '继续查看',
       source: '源码准备尚未完成。',
       complete: '准备已完成，尚未开始制作。',
@@ -71,7 +72,7 @@ describe('Cindy Make close confirmation with real translations', () => {
       locale: 'zh-TW',
       resource: zhTW,
       close: '關閉',
-      title: '關閉 Cindy Make？',
+      title: '關閉 Hana Make？',
       keep: '繼續查看',
       source: '原始碼準備尚未完成。',
       complete: '準備已完成，尚未開始製作。',
@@ -80,7 +81,7 @@ describe('Cindy Make close confirmation with real translations', () => {
       locale: 'ja',
       resource: ja,
       close: '閉じる',
-      title: 'Cindy Make を閉じますか？',
+      title: 'Hana Make を閉じますか？',
       keep: '表示を続ける',
       source: 'ソースコードの準備が進行中です。',
       complete: '準備は完了していますが、制作はまだ始まっていません。',
@@ -89,7 +90,7 @@ describe('Cindy Make close confirmation with real translations', () => {
       locale: 'ko',
       resource: ko,
       close: '닫기',
-      title: 'Cindy Make를 닫을까요?',
+      title: 'Hana Make를 닫을까요?',
       keep: '계속 보기',
       source: '소스 코드를 준비하고 있습니다.',
       complete: '준비가 완료되었지만 제작은 아직 시작되지 않았습니다.',
@@ -103,7 +104,7 @@ describe('Cindy Make close confirmation with real translations', () => {
         fallbackLng: false,
         defaultNS: 'common',
         resources: { [locale]: { common: resource } },
-        interpolation: { escapeValue: false },
+        interpolation: { escapeValue: false, defaultVariables: { appName: BRAND_NAME } },
       });
       render(
         <I18nextProvider i18n={i18n}>

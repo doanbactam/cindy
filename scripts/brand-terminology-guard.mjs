@@ -48,7 +48,8 @@ const ALLOWED_LEGACY_OCCURRENCES = new Set([
 // ---------------------------------------------------------------------------
 
 const LOCALE_FILE_RE = /^apps\/desktop\/src\/renderer\/i18n\/locales\/[^/]+\/common\.json$/;
-const LOCALE_BRAND_RE = /XDMaker|XD Maker|xdt-maker/;
+// Hana fork: "Cindy" goes through {{appName}} as well; @Cindy names the Slack bot on Cindy servers.
+const LOCALE_BRAND_RE = /XDMaker|XD Maker|xdt-maker|(?<![@\w])Cindy(?!\w)/;
 /**
  * key 级豁免:当前为空。历史豁免均已随 2026-07 品牌翻转清退:
  *  - openForLoginHint(Chrome 受管 profile 显示名)→ profile 已翻 Cindy,文案同步;

@@ -88,6 +88,7 @@ import {
   WINDOWS_UPDATER_RUNTIME_FILES,
   WINDOWS_UPDATER_RUNTIME_MISSING_ERROR_CODE,
 } from './windowsUpdaterPrerequisites';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 const log = createLogger('updateService');
 let cancelStartupBinaryUpdateCheck: (() => void) | undefined;
@@ -2105,7 +2106,7 @@ function agentUpdateApplyBlockReason(): string | null {
   if (process.platform !== 'win32' && process.platform !== 'darwin' && process.platform !== 'linux') {
     return '当前平台不支持应用内更新。';
   }
-  if (isMacAppTranslocated()) return '请先将 Cindy 移入「应用程序」文件夹，再安装更新。';
+  if (isMacAppTranslocated()) return `请先将 ${BRAND_NAME} 移入「应用程序」文件夹，再安装更新。`;
   if (process.platform === 'win32' && !checkWindowsUpdaterPrerequisites(undefined, process.resourcesPath).satisfied) {
     return 'Windows 更新器运行环境不可用；已下载的更新将保留。';
   }
@@ -2237,7 +2238,7 @@ export async function applyConfirmedAppUpdateForAgent(options: {
     if (isRelaunching || autoRelaunchInProgress) return { status: 'relaunching', targetVersion };
     return {
       status: 'failed',
-      reason: '更新器没有启动，Cindy 未重启。',
+      reason: `更新器没有启动，${BRAND_NAME} 未重启。`,
       errorCode: lastErrorCode ?? 'relaunch_not_started',
     };
   };
@@ -2245,7 +2246,7 @@ export async function applyConfirmedAppUpdateForAgent(options: {
   // is not this request's: report it instead of claiming its outcome.
   const relaunchInProgress: AgentConfirmedAppUpdateResult = {
     status: 'failed',
-    reason: 'Cindy 已经在通过设置页或空闲自动安装重启更新，本次请求没有另外安装。',
+    reason: `${BRAND_NAME} 已经在通过设置页或空闲自动安装重启更新，本次请求没有另外安装。`,
     errorCode: 'relaunch_in_progress',
   };
   const unsupported = agentUpdateUnsupportedReason();
@@ -2285,7 +2286,7 @@ export async function applyConfirmedAppUpdateForAgent(options: {
   if (process.platform === 'darwin') {
     return isRelaunching
       ? { status: 'relaunching', targetVersion }
-      : { status: 'failed', reason: '更新器没有启动，Cindy 未重启。', errorCode: lastErrorCode ?? 'relaunch_not_started' };
+      : { status: 'failed', reason: `更新器没有启动，${BRAND_NAME} 未重启。`, errorCode: lastErrorCode ?? 'relaunch_not_started' };
   }
   return awaitRelaunchOutcome(targetVersion, AGENT_RELAUNCH_SETTLE_MS);
 }

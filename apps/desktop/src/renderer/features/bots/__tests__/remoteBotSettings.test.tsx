@@ -646,7 +646,7 @@ it.each(['gallery', 'file'])(
     fireEvent.click(screen.getByRole('button', { name: 'bots.profile.changeAvatar' }));
     let canClose: unknown;
     await act(async () => {
-      if (source === 'gallery') fireEvent.click(screen.getByRole('button', { name: 'Cindy' }));
+      if (source === 'gallery') fireEvent.click(screen.getByRole('button', { name: 'Hana' }));
       else fireEvent.click(screen.getByRole('button', { name: 'bots.guided.upload' }));
       canClose = await close.current?.();
     });

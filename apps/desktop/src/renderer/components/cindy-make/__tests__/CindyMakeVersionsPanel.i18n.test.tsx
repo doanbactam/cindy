@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInstance } from 'i18next';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
@@ -111,7 +112,7 @@ describe('Cindy Make versions with real translations', () => {
         fallbackLng: false,
         defaultNS: 'common',
         resources: { [locale]: { common: resource } },
-        interpolation: { escapeValue: false },
+        interpolation: { escapeValue: false, defaultVariables: { appName: BRAND_NAME } },
       });
       const { container } = render(
         <I18nextProvider i18n={i18n}>
@@ -133,7 +134,7 @@ describe('Cindy Make versions with real translations', () => {
         fallbackLng: false,
         defaultNS: 'common',
         resources: { [locale]: { common: resource } },
-        interpolation: { escapeValue: false },
+        interpolation: { escapeValue: false, defaultVariables: { appName: BRAND_NAME } },
       });
       const { container } = render(
         <I18nextProvider i18n={i18n}>

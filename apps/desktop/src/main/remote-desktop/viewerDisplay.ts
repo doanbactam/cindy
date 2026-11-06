@@ -6,6 +6,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import type { RemoteDesktopDisplay } from '@cindy/device-link';
 import { createLinuxViewerDisplay, supportsLinuxViewerDisplay } from './linuxViewerDisplay';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 const exec = promisify(execFile);
 let build: Promise<string> | undefined;
@@ -197,7 +198,7 @@ export async function createViewerDisplay(
         )
           return {
             id: String(actual.id),
-            name: actual.label || 'Cindy Remote Desktop',
+            name: actual.label || `${BRAND_NAME} Remote Desktop`,
             width: actual.size.width,
             height: actual.size.height,
           };

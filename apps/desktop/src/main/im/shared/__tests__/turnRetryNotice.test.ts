@@ -320,14 +320,14 @@ describe('额度类终态错误', () => {
     expect(personal).not.toContain('工作目录');
     const official = terminalErrorText({ message: SPEND_CAP }, { surface: 'official' });
     expect(official).toContain('官方 bot');
-    expect(official).toContain('在 Cindy 里打开这个任务');
+    expect(official).toContain('在 Hana 里打开这个任务');
     expect(official).not.toContain('/model');
     expect(official).not.toContain('/new');
   });
 
   it.each([false, undefined])('个人渠道未支持 /model (%s) 时只指向 Cindy 当前任务', (supportsModelCommand) => {
     const text = terminalErrorText({ message: SPEND_CAP }, { surface: 'personal', supportsModelCommand });
-    expect(text).toContain('在 Cindy 里打开这个任务');
+    expect(text).toContain('在 Hana 里打开这个任务');
     expect(text).toContain('更换供应商或模型');
     expect(text).toContain('回到这里重发这条消息');
     expect(text).not.toContain('/model');

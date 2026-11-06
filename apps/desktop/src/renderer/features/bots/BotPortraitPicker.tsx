@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import * as Popover from '@radix-ui/react-popover';
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -233,7 +234,7 @@ export function BotPortraitPicker({
           >
             <div className="grid grid-cols-4 gap-2 min-[400px]:grid-cols-6">
               {Array.from({ length: BOT_PORTRAIT_COUNT }, (_, index) => {
-                const label = index === 0 ? 'Cindy' : t('bots.guided.portrait', { number: index });
+                const label = index === 0 ? BRAND_NAME : t('bots.guided.portrait', { number: index });
                 const cell = index - 1;
                 return (
                   <Tip key={index} text={label}>

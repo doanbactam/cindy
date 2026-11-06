@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 import { parseLegalSegments } from '../LoginControls';
 import { CONSENT_DIALOG } from '../loginDesignTokens';
@@ -18,7 +19,8 @@ function loadLogin(locale: string): Record<string, unknown> {
     resolve(process.cwd(), `src/renderer/i18n/locales/${locale}/common.json`),
     'utf8',
   );
-  return (JSON.parse(raw) as { login: Record<string, unknown> }).login;
+  // 与界面一致：先注入 i18n defaultVariables 的品牌名，再量宽度。
+  return (JSON.parse(raw.replaceAll('{{appName}}', BRAND_NAME)) as { login: Record<string, unknown> }).login;
 }
 
 describe('consent 文案 catalog 严校验(5 语 × statement/body)', () => {

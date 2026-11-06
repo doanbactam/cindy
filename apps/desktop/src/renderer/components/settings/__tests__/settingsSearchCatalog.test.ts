@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { createInstance, type TFunction } from 'i18next';
 import { TAB_IDS, TAB_LABEL_KEY } from '@/lib/tabLabels';
 import zhCN from '../../../i18n/locales/zh-CN/common.json';
@@ -40,7 +41,7 @@ const t = ((key: string) => translations[key] ?? key) as unknown as TFunction;
 const searchI18n = createInstance();
 await searchI18n.init({ lng: 'zh-CN', fallbackLng: 'en', resources: {
   'zh-CN': { translation: zhCN }, en: { translation: en },
-} });
+}, interpolation: { defaultVariables: { appName: BRAND_NAME } } });
 const searchContext = { platform: 'win32', region: 'cn', mode: 'cloud', membershipKind: 'personal',
   voiceInput: { serviceMode: 'byok', asrProvider: 'custom-realtime-asr' },
 } as const;
@@ -465,6 +466,7 @@ describe('settings search catalog', () => {
         lng: language,
         resources: { [language]: { translation } },
         fallbackLng: false,
+        interpolation: { defaultVariables: { appName: BRAND_NAME } },
       });
       for (const entry of SETTINGS_SEARCH_ENTRIES) {
         for (const key of [
