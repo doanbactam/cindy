@@ -97,12 +97,15 @@ import { router } from './router';
  * useAuth 取值下传(Step 3b WHAT2 宿主契约)。
  */
 function LoginHandoffHost({ children }: { children: React.ReactNode }) {
-  const { isInitializing, isAuthenticated, canEnterApp } = useAuth();
+  const { isInitializing, canEnterApp } = useAuth();
   const { coverHeld } = useAppShellCover();
   return (
     <LoginHandoffProvider
       authResolved={!isInitializing}
-      authenticated={isAuthenticated || canEnterApp}
+      // Sign-in is removed, so no login panel ever mounts. Always take the brand
+      // exit; waiting for a panel would keep the opaque brand stage up forever
+      // when startup fails (ProtectedRoute then shows the retry screen).
+      authenticated
       coverHeld={coverHeld}
     >
       {/* 认证恢复后已登录(直进受保护路由、LoginPage 不挂载)时结束首启亮色门,

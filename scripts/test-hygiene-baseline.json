@@ -22,9 +22,6 @@
     "apps/desktop/src/main/__tests__/appearanceZoomMenu.test.ts": {
       "sourceReads": 1
     },
-    "apps/desktop/src/main/__tests__/authAccountsIpcSecurity.test.ts": {
-      "sourceReads": 1
-    },
     "apps/desktop/src/main/__tests__/authCredentialRecoveryWiring.test.ts": {
       "sourceReads": 1
     },

@@ -11,13 +11,11 @@
 
 可达组件、样式来源与 Token / 裸颜色 / 裸圆角统计不入库：需要时运行 `pnpm design:inventory:report`，输出到 `tmp/design-inventory-report.md`；要看某次提交时的数字，在该提交上重跑。
 
-登记 surface 数：37。静态入口发现不表示已迁移或已实机验证。
+登记 surface 数：35。静态入口发现不表示已迁移或已实机验证。
 
 | ID | 平台 | 标题 | 生产入口 |
 | --- | --- | --- | --- |
-| `desktop.auth.add-account` | desktop | 添加账号 | hash `/add-account`（ProtectedRoute → AddAccountLoginPage） |
 | `desktop.auth.legacy-migration` | desktop | 首登数据迁移弹窗 | App 顶层挂载 LegacyMigrationDialog（仅主窗；main 检测到旧版 userData 经 `legacy-migration:state` 驱动） |
-| `desktop.auth.login` | desktop | 登录页 | hash `/login`（GuestRoute → LoginPage） |
 | `desktop.bots` | desktop | 伙伴（列表 / 对话 / 设置 / 历史 / 伙伴私聊 / 群聊） | hash `/bots`、`/bots/list`、`/bots/:botId`、`/bots/roster` 及伙伴当前/历史任务、伙伴私聊、伙伴群聊路由（BotsFeatureLayout） |
 | `desktop.chat.files` | desktop | 工作目录文件浏览 | hash `/cc-agent/files/:sessionId`（WorkdirBrowseRoute） |
 | `desktop.chat.new-draft` | desktop | 新建任务草稿页 | hash `/cc-agent/new`（NewMakerDraftRoute） |
@@ -59,7 +57,6 @@
 
 | 路由 | 组件 | surface ID |
 | --- | --- | --- |
-| `/add-account` | AddAccountLoginPage | `desktop.auth.add-account` |
 | `/apps/:ghostId` | GhostMainViewFeatureLayout | `desktop.plugins.app-main` |
 | `/bots` | BotsHomeView | `desktop.bots` |
 | `/bots/:botId` | BotsHomeView | `desktop.bots` |
@@ -80,7 +77,6 @@
 | `/cc-agent/orca/:sessionId` | OrcaWorkflowRoute | `desktop.chat.orca-workflow` |
 | `/cc-agent/scheduled` | SchedulerPage | `desktop.chat.scheduled` |
 | `/issues` | IssueTrackerFeatureLayout | `desktop.issues.guide` |
-| `/login` | LoginPage | `desktop.auth.login` |
 | `/maker-experimental` | MakerExperimentalView | `desktop.dev.maker-experimental` |
 | `/plugins` | GhostPluginPage | `desktop.plugins.installed` |
 | `/settings` | SettingsView | `desktop.settings` |
@@ -125,9 +121,7 @@ DS-9（2026-09-11，本地候选）：用户已决定桌面授权三项，聊天
 
 | ID | owner | 迁移状态 | protected | 目标道路 | 下一动作 |
 | ------------------------------------------ | ------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `desktop.auth.add-account` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | DESIGN.md §16 登录链路 | DS-9 保留现有专属表面；未改全局 Button/主题源，按共享依赖核影响 | 本批未直接改该入口；无真实实例的独立/原生/账号/插件场景保留原合同，未作完整运行验收；kirozeng 安排所需环境，Codex 核对，2026-09-17 或 DS-10 开工前复查 |
 | `desktop.auth.legacy-migration` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | DESIGN.md §16 登录链路（消费 --login-callback-* 品牌豁免族 component token） | DS-9 保留现有专属表面；未改全局 Button/主题源，按共享依赖核影响 | 本批未直接改该入口；无真实实例的独立/原生/账号/插件场景保留原合同，未作完整运行验收；kirozeng 安排所需环境，Codex 核对，2026-09-17 或 DS-10 开工前复查 |
-| `desktop.auth.login` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | DESIGN.md §16 登录链路 | 既有登录品牌保护；本批无全局按钮/主题变更 | 真实隔离窗口走过登录→本地模式；没有验证 Apple/Google/企业账号登录；2026-09-17 或 DS-10 开工前复查 |
 | `desktop.bots` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | — | 当前 #4283 伙伴设置与聊天路径；操作集合由原业务决定 | 核标准/伙伴精简消息与授权相邻回归；实际远程伙伴/跨账号联调留 kirozeng 安排，Codex 复测，不以样本标整页完成；2026-09-17 或 DS-10 开工前复查；#6768（2026-10-22）区分朗读候选可见性与已保存选择，保留当前隐藏选择的展示和调用，其余隐藏候选不展示；不改变停用/账号准入，双主题五语言单页证据随 PR 提供 |
 | `desktop.chat.files` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | — | 文件页聊天 rail 继承本批呈现；文件扫描与 watcher 不变 | 核真实文件路由与窄栏；整页不标迁移，文件新鲜度/焦点继续用既有回归保护；2026-09-17 或 DS-10 开工前复查 |
 | `desktop.chat.new-draft` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | DESIGN.md §15.15 创建页内容位 | 保持既有 ChatInput 与新建布局，本批改动在后续消息与授权 | 真实本地新建入口正常；完整聊天与授权分别验收，不把创建页标 migrated；2026-09-17 或 DS-10 开工前复查 |

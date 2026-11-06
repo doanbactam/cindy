@@ -432,35 +432,6 @@ export function catalogSurfaces() {
       routerPaths: [],
     },
     {
-      id: 'desktop.auth.login',
-      platform: 'desktop',
-      title: '登录页',
-      productionEntry: 'hash `/login`（GuestRoute → LoginPage）',
-      reachableComponents: ['LoginPage', 'LoginBrandStage', 'LoginControls', 'LoginCaptchaOverlay'],
-      styleRoots: [
-        'apps/desktop/src/renderer/components/login/LoginPage.tsx',
-        'apps/desktop/src/renderer/components/login/LoginBrandStage.tsx',
-        'apps/desktop/src/renderer/components/login/LoginControls.tsx',
-        'apps/desktop/src/renderer/components/login/LoginCaptchaOverlay.tsx',
-        'apps/desktop/src/renderer/components/login/loginDesignTokens.ts',
-      ],
-      routerPaths: ['/login'],
-      routeEntryComponents: { '/login': 'LoginPage' },
-    },
-    {
-      id: 'desktop.auth.add-account',
-      platform: 'desktop',
-      title: '添加账号',
-      productionEntry: 'hash `/add-account`（ProtectedRoute → AddAccountLoginPage）',
-      reachableComponents: ['AddAccountLoginPage'],
-      // AddAccountLoginPage 是薄壳,渲染即委托 <LoginPage intent="add-account">;
-      // 样式事实在 LoginPage 一侧,只扫壳会得到全 0 的假统计,故并入登录皮肤同组 roots。
-      styleRoots: ['apps/desktop/src/renderer/components/login/AddAccountLoginPage.tsx'],
-      extraStyleRoots: ['desktop.auth.login'],
-      routerPaths: ['/add-account'],
-      routeEntryComponents: { '/add-account': 'AddAccountLoginPage' },
-    },
-    {
       id: 'desktop.chat.session',
       platform: 'desktop',
       title: '会话工作台',
@@ -999,8 +970,7 @@ export function catalogSurfaces() {
       productionEntry:
         'App → SplashScreen；同源 gating 下并挂 LoginBrandStage（z-9980 品牌画布，启动期即可见、Splash(z-9999) 之下）',
       reachableComponents: ['SplashScreen', 'LoginBrandStage'],
-      // LoginBrandStage 同时是登录页品牌层（desktop.auth.login 已登记）；此处并挂是
-      // 同一组件的启动期可达事实，样式根共享故统计一致。
+      // LoginBrandStage 是启动期品牌画布；登录页已随 Cindy 账号登录移除。
       styleRoots: [
         'apps/desktop/src/renderer/components/splash',
         'apps/desktop/src/renderer/components/login/LoginBrandStage.tsx',
@@ -1108,7 +1078,7 @@ export function buildGeneratedSurfaces(repoRoot, { catalog = catalogSurfaces() }
       for (const id of extraRefs) {
         if (!byId.has(id)) danglingExtraStyleRoots.push(`${surface.id} → ${id}`);
       }
-      // 渲染即委托的薄壳（如 AddAccountLoginPage → LoginPage）按 extraStyleRoots
+      // 渲染即委托的薄壳（如 Orca 工作台 → 会话视图）按 extraStyleRoots
       // 指向被委托 surface 的 styleRoots，统计口径与其保持同一组事实源。
       const roots = [
         ...surface.styleRoots,
@@ -1349,8 +1319,6 @@ export function defaultHumanSeed(surfaces) {
  * 与迁移状态正交，只在这里登记一次；未列出的 surface 无保护标签。
  */
 const PROTECTED_TAGS = {
-  'desktop.auth.login': ['DESIGN.md §16 登录链路'],
-  'desktop.auth.add-account': ['DESIGN.md §16 登录链路'],
   'desktop.auth.legacy-migration': [
     'DESIGN.md §16 登录链路（消费 --login-callback-* 品牌豁免族 component token）',
   ],

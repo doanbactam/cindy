@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,9 +10,13 @@ const authState = vi.hoisted(() => ({
     isInitializing: false,
     dataOwnerId: 'user-1' as string | null,
     canEnterApp: true,
+    retryInitialize: vi.fn(async () => undefined),
   },
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => authState.current,
 }));
@@ -39,38 +43,36 @@ describe('ProtectedRoute', () => {
       isInitializing: false,
       dataOwnerId: 'user-1',
       canEnterApp: true,
+      retryInitialize: vi.fn(async () => undefined),
     };
   });
 
   it('keeps the shell mounted while same-owner refresh still allows entry', () => {
-    authState.current = {
-      mode: 'cloud',
-      isInitializing: false,
-      dataOwnerId: 'user-1',
-      canEnterApp: true,
-    };
+    authState.current = { ...authState.current, mode: 'cloud', dataOwnerId: 'user-1' };
     renderAt('/');
     expect(screen.getByTestId('app-shell')).toBeTruthy();
   });
 
-  it('renders nothing while the local session is still being committed', () => {
+  // Regression: with sign-in removed, a failed startup used to leave a blank
+  // window because there was no login page left to fall back to.
+  it('offers a startup retry when the account-free session could not be opened', async () => {
+    const retryInitialize = vi.fn(async () => undefined);
     authState.current = {
-      mode: 'local',
+      mode: 'signed-out',
       isInitializing: false,
-      dataOwnerId: 'local-v1',
+      dataOwnerId: null,
       canEnterApp: false,
+      retryInitialize,
     };
-    const { container } = renderAt('/');
-    expect(container.innerHTML).toBe('');
+    renderAt('/');
+    expect(screen.queryByTestId('app-shell')).toBeNull();
+    expect(screen.getByText('startupRecovery.title')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'startupRecovery.retry' }));
+    await waitFor(() => expect(retryInitialize).toHaveBeenCalledOnce());
   });
 
   it('lets local mode enter the app without a Cindy account', () => {
-    authState.current = {
-      mode: 'local',
-      isInitializing: false,
-      dataOwnerId: 'local-v1',
-      canEnterApp: true,
-    };
+    authState.current = { ...authState.current, mode: 'local', dataOwnerId: 'local-v1' };
     renderAt('/');
     expect(screen.getByTestId('app-shell')).toBeTruthy();
   });

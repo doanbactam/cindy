@@ -682,7 +682,7 @@ test("desktop unit excludes integration, migration, direct db-tier, and source-c
 			"src/main/scheduler-host/__tests__/*.db.test.ts",
 			"src/main/__tests__/directSessionSendGuard.test.ts",
 			"src/main/__tests__/makerSendToSessionOrdering.test.ts",
-			"src/main/__tests__/authCaptchaIpcSecurity.test.ts",
+			"src/main/__tests__/authPassiveSharedInstance.test.ts",
 			"**/*.bench.ts",
 		],
 	};
@@ -702,7 +702,7 @@ test("desktop unit excludes integration, migration, direct db-tier, and source-c
 			"apps/desktop/src/main/scheduler-host/__tests__/storage.test.ts",
 			"apps/desktop/src/main/__tests__/directSessionSendGuard.test.ts",
 			"apps/desktop/src/main/__tests__/makerSendToSessionOrdering.test.ts",
-			"apps/desktop/src/main/__tests__/authCaptchaIpcSecurity.test.ts",
+			"apps/desktop/src/main/__tests__/authPassiveSharedInstance.test.ts",
 			"apps/desktop/src/main/__tests__/lifecycle.test.ts",
 		]),
 		[
@@ -890,7 +890,7 @@ test("desktop guard selects source-contract tests only", () => {
 			"apps/desktop/src/main/plugin-oauth/__tests__/runtimePrompt.test.ts",
 			"apps/desktop/src/main/__tests__/directSessionSendGuard.test.ts",
 			"apps/desktop/src/main/__tests__/makerSendToSessionOrdering.test.ts",
-			"apps/desktop/src/main/__tests__/authCaptchaIpcSecurity.test.ts",
+			"apps/desktop/src/main/__tests__/authPassiveSharedInstance.test.ts",
 			"apps/desktop/src/main/cindy-brain/__tests__/ghostIpcSenderTrust.test.ts",
 			"apps/desktop/src/main/__tests__/lifecycle.test.ts",
 			"apps/desktop/src/main/localDb/ipc/messages.test.ts",
@@ -899,7 +899,7 @@ test("desktop guard selects source-contract tests only", () => {
 			"apps/desktop/src/main/plugin-oauth/__tests__/runtimePrompt.test.ts",
 			"apps/desktop/src/main/__tests__/directSessionSendGuard.test.ts",
 			"apps/desktop/src/main/__tests__/makerSendToSessionOrdering.test.ts",
-			"apps/desktop/src/main/__tests__/authCaptchaIpcSecurity.test.ts",
+			"apps/desktop/src/main/__tests__/authPassiveSharedInstance.test.ts",
 			"apps/desktop/src/main/cindy-brain/__tests__/ghostIpcSenderTrust.test.ts",
 		],
 	);

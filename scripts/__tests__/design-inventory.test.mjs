@@ -111,7 +111,6 @@ test('extractRouterFacts: 真实 router.tsx 的三类去向逐条钉死', () => 
 
   // 全路径由父子结构拼出，不是手写前缀表 —— 嵌套段与 index 路由都必须落到完整 hash 路径。
   assert.deepEqual(production.map((row) => `${row.path} ${row.component}`), [
-    '/add-account AddAccountLoginPage',
     '/apps/:ghostId GhostMainViewFeatureLayout',
     '/bots BotsHomeView',
     '/bots/:botId BotsHomeView',
@@ -132,7 +131,6 @@ test('extractRouterFacts: 真实 router.tsx 的三类去向逐条钉死', () => 
     '/cc-agent/orca/:sessionId OrcaWorkflowRoute',
     '/cc-agent/scheduled SchedulerPage',
     '/issues IssueTrackerFeatureLayout',
-    '/login LoginPage',
     '/maker-experimental MakerExperimentalView',
     '/plugins GhostPluginPage',
     '/settings SettingsView',
@@ -163,7 +161,6 @@ test('extractRouterFacts: 真实 router.tsx 的三类去向逐条钉死', () => 
     '/ ProtectedRoute',
     '/bots BotsFeatureLayout',
     '/cc-agent CCAgentFeatureLayout',
-    '/login GuestRoute',
     '/skillhub SkillhubFeatureLayout',
   ]);
 });
@@ -312,7 +309,6 @@ test('router.tsx 每条生产路由都能映射到 surface,布局壳在排除清
   );
   const mappedPaths = coverage.mapped.map((row) => row.path);
   assert.ok(mappedPaths.includes('/issues'));
-  assert.ok(mappedPaths.includes('/login'));
   // Unlike the pure feature shell, the retained layout renders the catalog itself.
   assert.ok(mappedPaths.includes('/skillhub'));
   assert.ok(mappedPaths.includes('/skillhub/market'));
@@ -322,7 +318,6 @@ test('router.tsx 每条生产路由都能映射到 surface,布局壳在排除清
 
   const layoutPaths = new Set(listLayoutExclusions(routerSource).map((row) => row.path));
   assert.ok(layoutPaths.has('/'));
-  assert.ok(layoutPaths.has('/login'));
   assert.ok(layoutPaths.has('/cc-agent'));
   assert.ok(layoutPaths.has('/skillhub'));
 
@@ -641,18 +636,6 @@ test('catalog 含 App 顶层非路由生产 UI(LegacyMigrationDialog)且统计�
   );
 });
 
-test('薄壳 surface 经 extraStyleRoots 继承被委托 surface 的样式事实', () => {
-  const { surfaces } = buildGeneratedSurfaces(ROOT, {});
-  const login = surfaces.find((surface) => surface.id === 'desktop.auth.login');
-  const addAccount = surfaces.find((surface) => surface.id === 'desktop.auth.add-account');
-  assert.ok(login && addAccount);
-  // AddAccountLoginPage 渲染即委托 LoginPage;统计必须与登录页同一组事实源,不再全 0。
-  assert.deepEqual(
-    { tokens: addAccount.tokenCount, colors: addAccount.bareColors, radii: addAccount.bareRadii },
-    { tokens: login.tokenCount, colors: login.bareColors, radii: login.bareRadii },
-  );
-});
-
 test('Orca 工作台继承会话视图样式事实,不再把聊天界面统计成全 0', () => {
   const { surfaces } = buildGeneratedSurfaces(ROOT, {});
   const session = surfaces.find((surface) => surface.id === 'desktop.chat.session');
@@ -681,11 +664,7 @@ test('inventory 与 audit 共用语义色、注释与 fallback 分类', () => {
   `;
   const hits = filterInventoryBareColors(matchBareColors(stripJsComments(withComments)));
   assert.deepEqual(hits, ['#ff0000']);
-  // 4) 真实台账上不再有注释伪色:登录页的 #EDEDED/#1F1F1E/#104 全在注释里,
-  //    过滤后裸色基线只反映代码真实消费。
   const { surfaces } = buildGeneratedSurfaces(ROOT, {});
-  const login = surfaces.find((surface) => surface.id === 'desktop.auth.login');
-  assert.ok(login.bareColors < 42, `注释剥离应移除登录页注释色(实际 ${login.bareColors})`);
   const market = surfaces.find((surface) => surface.id === 'desktop.skillhub.market');
   // market 的 2 个"裸颜色"全部是 hsl(var(--content-area)) → 归零。
   assert.equal(market.bareColors, 0);
@@ -1076,7 +1055,7 @@ test('defaultHumanSeed: 全量 legacy + unassigned,protected 与迁移状态正�
   const seed = defaultHumanSeed(catalogSurfaces());
   const ids = extractHumanSurfaceIds(seed);
   assert.deepEqual(ids, [...ids].sort((a, b) => a.localeCompare(b)));
-  assert.equal(ids.includes('desktop.auth.login'), true);
+  assert.equal(ids.includes('desktop.auth.legacy-migration'), true);
   assert.equal(seed.includes('|  |'), false, '不得有空 owner 单元格');
   assert.equal(seed.includes('unassigned'), true);
   assert.equal(seed.includes('| legacy |'), true);

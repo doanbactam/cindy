@@ -176,6 +176,16 @@ Claude.ai 登录，也不得收集、存储或中转订阅凭证。Cindy 因此�
 - 不要在启动路径主动调用 `safeStorage.isEncryptionAvailable()` 做探测——macOS 上探测
   本身可能触发钥匙串授权弹窗，把弹窗时机提前到与用户动作无关的启动期。
 
+### 免账号会话的数据所有者
+
+Desktop 已移除 Cindy 账号登录，进程恒以免账号会话（`local`）启动。上一轮以账号登录运行的
+profile，其任务、供应商密钥与 `owners/<owner-key>/` 都在原 membership id 下；`app-session.json`
+的可选 `accountFreeOwnerId` 记下这个 id，免账号会话沿用它作数据所有者，不复制、不搬移任何数据。
+只在上一轮持久化模式为 `cloud` 时从加密账号保险库读取当前账号的 membership id 一次，不刷新、
+不联网；上一轮为本地或已登出的 profile 继续用 `local-v1`。passive 共享实例只在内存中沿用、不写盘。
+保险库此时不可读则留在 `local-v1` 并记日志。见 `appSessionState.ts`、`authManager.ts` 的
+`adoptFormerCloudOwnerOnce` 与 `__tests__/appSessionBoundary.test.ts`。
+
 ### 登录凭证存储异常的恢复
 
 - `CREDENTIAL_STORE_UNAVAILABLE` 不能作为验证码错误继续展示原表单；登录页进入恢复说明，
@@ -191,6 +201,8 @@ Claude.ai 登录，也不得收集、存储或中转订阅凭证。Cindy 因此�
   不建议删除钥匙串、清空凭证或反复获取验证码。打开日志目录不等于上传日志。
 
 ### 登录限流指引
+
+> Desktop 登录已移除，本节仅剩限流帮助弹窗（`CredentialStoreHelpDialog`）的文案仍在使用。
 
 - HTTP 429 与本机凭证存储异常分别显示；限流不请求凭证恢复或自动重启。
 - 限流发生在已有登录步骤时，提示页的返回操作仅清除提示，保留原步骤、票据及输入，

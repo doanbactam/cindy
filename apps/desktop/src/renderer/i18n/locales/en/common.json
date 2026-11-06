@@ -8231,6 +8231,11 @@
     "description": "Retry, or return to the sign-in choices and select a mode again.",
     "retry": "Retry"
   },
+  "startupRecovery": {
+    "title": "{{appName}} couldn’t start",
+    "description": "Your local data couldn’t be opened. Try again.",
+    "retry": "Try Again"
+  },
   "login": {
     "title": "Welcome to {{appName}}",
     "subtitle": "Choose a secure way to sign in",

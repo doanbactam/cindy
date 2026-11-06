@@ -95,7 +95,9 @@ import {
   type DesktopAccountDeletionChallenge,
 } from '../shared/authIpc';
 import {
+  accountFreeDataOwnerId,
   activeOwnerScopeKey,
+  adoptAccountFreeDataOwner,
   beginAppSessionBoundary,
   commitActiveAppSession,
   commitVolatileAppSession,
@@ -103,6 +105,7 @@ import {
   getActiveDataOwnerPushStamp,
   isAppSessionBoundaryPending,
   LOCAL_DATA_OWNER_ID,
+  readPersistedAppSessionMode,
   type AppSessionMode,
 } from './appSessionState.js';
 import {
@@ -1974,7 +1977,7 @@ async function withAccountFreeOwnerCommit(opts: {
   try {
     await withGhostSkillProjectionOwnerCommit({
       previousOwnerId,
-      nextOwnerId: opts.nextMode === 'local' ? LOCAL_DATA_OWNER_ID : null,
+      nextOwnerId: opts.nextMode === 'local' ? accountFreeDataOwnerId() : null,
       prepareTransition: async ({ ownerChanged }) => {
         notifyRendererAuthBoundaryPending();
         enterOwnerChangeShellPending();
@@ -2072,8 +2075,11 @@ async function recoverAccountFreeOwnerAtStartup(
    */
   opts: { coldStartTimeoutRecovery?: boolean } = {},
 ): Promise<void> {
-  const ownerId = mode === 'local' ? LOCAL_DATA_OWNER_ID : null;
-  if (isGhostSkillProjectionBoundaryStableForOwner(ownerId)) {
+  const ownerId = mode === 'local' ? accountFreeDataOwnerId() : null;
+  // An adopted former cloud owner replaces the initial local-v1 projection;
+  // that owner change always takes the full teardown boundary below.
+  const adoptedOwnerPending = mode === 'local' && getActiveAppSession().dataOwnerId !== ownerId;
+  if (!adoptedOwnerPending && isGhostSkillProjectionBoundaryStableForOwner(ownerId)) {
     if (credentialStoreUnavailable) credentialStoreHealth.noteStartupFailure();
     if (getActiveAppSession().mode !== mode || getActiveAppSession().dataOwnerId !== ownerId) {
       if (isPassiveSharedUserDataInstance()) {
@@ -3536,6 +3542,30 @@ export async function updateServerProfile(
   };
 }
 
+/**
+ * Sign-in is removed, so a profile whose last run was signed in would reopen
+ * as an empty local-v1 owner while its tasks, provider keys and owner directory
+ * stay under the former membership id. Adopt that membership (read from the
+ * encrypted account vault, never refreshed or sent anywhere) as the account-free
+ * owner once. No data is moved; a profile that last ran local or signed out is
+ * left on local-v1.
+ */
+function adoptFormerCloudOwnerOnce(): void {
+  if (readPersistedAppSessionMode() !== 'cloud') return;
+  if (accountFreeDataOwnerId() !== LOCAL_DATA_OWNER_ID) return;
+  let vault: AuthAccountVault;
+  try {
+    vault = readAuthAccountVault();
+  } catch (error) {
+    log.warn('former cloud owner could not be read; staying on local-v1', requestErrorMessage(error));
+    return;
+  }
+  const key = vault.activeAccountKey;
+  const ownerId = key ? vault.resources[key]?.metadata.membershipId : undefined;
+  if (!ownerId) return;
+  adoptAccountFreeDataOwner(ownerId, { persist: !isPassiveSharedUserDataInstance() });
+}
+
 export async function initialize(options: AuthInitializeOptions = {}): Promise<AuthState> {
   const initializeStartEpoch = authStateEpoch;
   // A renderer can mount after the boundary-pending broadcast. Keep startup
@@ -3547,6 +3577,7 @@ export async function initialize(options: AuthInitializeOptions = {}): Promise<A
   // Local mode is a committed account-free session. It must win before any
   // persisted cloud refresh token is inspected or any auth network call runs.
   if (getActiveAppSession().mode === 'local') {
+    adoptFormerCloudOwnerOnce();
     await recoverAccountFreeOwnerAtStartup('local', 'cold-start-local-recovery');
     return snapshotAuthState();
   }

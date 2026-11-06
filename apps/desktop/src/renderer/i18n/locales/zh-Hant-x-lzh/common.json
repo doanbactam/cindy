@@ -8188,6 +8188,11 @@
     "description": "可再試，或歸登入方式，重擇使用之式。",
     "retry": "再試"
   },
+  "startupRecovery": {
+    "title": "{{appName}} 未能啟",
+    "description": "本地之數不能開，請復試之。",
+    "retry": "復試"
+  },
   "login": {
     "title": "{{appName}} 恭候多時矣",
     "subtitle": "擇一法，安然登門",

@@ -8188,6 +8188,11 @@
     "description": "再試行するか、ログイン方法に戻ってモードを選び直してください。",
     "retry": "再試行"
   },
+  "startupRecovery": {
+    "title": "{{appName}} を起動できませんでした",
+    "description": "ローカルデータを開けませんでした。もう一度お試しください。",
+    "retry": "再試行"
+  },
   "login": {
     "title": "{{appName}} へようこそ",
     "subtitle": "安全なログイン方法を選択してください",

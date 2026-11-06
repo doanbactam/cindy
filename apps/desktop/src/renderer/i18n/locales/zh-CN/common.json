@@ -8188,6 +8188,11 @@
     "description": "可以重试，或返回登录方式后重新选择使用模式。",
     "retry": "重试"
   },
+  "startupRecovery": {
+    "title": "{{appName}} 未能启动",
+    "description": "无法打开本地数据，请重试。",
+    "retry": "重试"
+  },
   "login": {
     "title": "欢迎使用 {{appName}}",
     "subtitle": "选择一种方式安全登录",

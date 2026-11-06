@@ -8298,6 +8298,11 @@
     "description": "Tente novamente ou volte às opções de login e selecione um modo novamente.",
     "retry": "Tentar novamente"
   },
+  "startupRecovery": {
+    "title": "Não foi possível iniciar o {{appName}}",
+    "description": "Não foi possível abrir seus dados locais. Tente novamente.",
+    "retry": "Tentar novamente"
+  },
   "login": {
     "title": "Boas-vindas ao {{appName}}",
     "subtitle": "Escolha uma forma segura de entrar",

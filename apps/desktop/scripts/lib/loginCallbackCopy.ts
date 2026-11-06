@@ -5,8 +5,7 @@
  * (运行期由 authManager 经 main 迷你 i18n 取用)。脚本跑在 Electron 之外,拿不到
  * 那套 i18n,只能直接读同一批 JSON 文件——所以这里刻意不另建文案表。
  *
- * preview-oauth-pages(本地预览)与 export-login-callback-template(交付服务端的
- * 托管回调模板)共用本模块:两个出口读同一份文案,避免任何一侧悄悄漂移。
+ * preview-oauth-pages(本地预览)读取本模块。
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';

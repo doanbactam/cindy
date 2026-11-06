@@ -72,6 +72,8 @@ export interface AuthContextValue {
    */
   dataOwnerGeneration: number;
   canEnterApp: boolean;
+  /** Re-run startup when the account-free session could not be opened. */
+  retryInitialize: () => Promise<void>;
   isAuthenticated: boolean;
   /** 当前账号是否加入 Canary 发布通道。 */
   isCanary: boolean;
@@ -330,18 +332,10 @@ export function AuthProvider({
     },
     [applyIncomingUser],
   );
-  useEffect(() => {
+  const runInitialize = useCallback(() => {
     const service = authServiceRef.current!;
     const initializeVersion = authStateVersionRef.current;
-
-    const unsubscribe = service.onAuthStateChange((state: AuthState) => {
-      authStateVersionRef.current += 1;
-      applyIncomingState(state);
-      setHasAccountDeletionReceipt(state.hasAccountDeletionReceipt);
-      setAccountDeletionRestored(state.accountDeletionRestored);
-    });
-
-    void service
+    return service
       .initialize()
       .then(async (state) => {
         // A pushed auth event is newer than this initialize response.
@@ -369,14 +363,25 @@ export function AuthProvider({
         clearWorkersCache();
         setUser(null);
         setCredentialStoreUnavailable(false);
-      })
-      .finally(() => setIsInitializing(false));
+      });
+  }, [applyIncomingState]);
+
+  useEffect(() => {
+    const service = authServiceRef.current!;
+    const unsubscribe = service.onAuthStateChange((state: AuthState) => {
+      authStateVersionRef.current += 1;
+      applyIncomingState(state);
+      setHasAccountDeletionReceipt(state.hasAccountDeletionReceipt);
+      setAccountDeletionRestored(state.accountDeletionRestored);
+    });
+
+    void runInitialize().finally(() => setIsInitializing(false));
 
     return () => {
       unsubscribe();
       service.dispose();
     };
-  }, [applyIncomingState]);
+  }, [applyIncomingState, runInitialize]);
 
   useEffect(() => {
     if (!isAuthenticated || !accountDeletionRestored) return;
@@ -477,6 +482,7 @@ export function AuthProvider({
       dataOwnerId,
       dataOwnerGeneration,
       canEnterApp,
+      retryInitialize: runInitialize,
       isAuthenticated,
       isCanary,
       isInitializing,
@@ -497,6 +503,7 @@ export function AuthProvider({
       dataOwnerId,
       dataOwnerGeneration,
       canEnterApp,
+      runInitialize,
       isAuthenticated,
       isCanary,
       isInitializing,

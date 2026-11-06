@@ -1,5 +1,7 @@
 # 登录链路
 
+> **2026-11 起 Desktop 已移除 Cindy 账号登录**：登录页、添加账号与托管/loopback 回调均已删除，进程恒以免账号会话启动（见 `apps/desktop/src/main/appSessionState.ts`）。下文保留为历史设计记录与移动端参考，不再约束 Desktop 实现。
+
 > 迁自 `DESIGN.md` §16，规范效力不变。文中 `§16.x` 指本文件，其余未注明文档的 `§N` 均指 [DESIGN.md](./DESIGN.md)。
 
 ## 16. Login Flow (登录链路)
@@ -157,7 +159,7 @@
 
 ### 16.4 登录链路逐屏
 
-验证码重发倒计时统一为 **60 秒**，与服务端单目标冷却一致；Figma 中的 42 秒仅是倒计时过程示例。只有发码请求成功才开始或重置倒计时，短信登录的 `429 / RATE_LIMITED` 显示「操作过于频繁」错误，不视为已发送。桌面端使用绝对截止时间，休眠恢复后按剩余时间校正。实现见[桌面倒计时](../../apps/desktop/src/renderer/components/login/useResendCountdown.ts)。
+验证码重发倒计时统一为 **60 秒**，与服务端单目标冷却一致；Figma 中的 42 秒仅是倒计时过程示例。只有发码请求成功才开始或重置倒计时，短信登录的 `429 / RATE_LIMITED` 显示「操作过于频繁」错误，不视为已发送。桌面端使用绝对截止时间，休眠恢复后按剩余时间校正。
 
 登录状态机权威 = `packages/auth-client` 源码（`AuthFlowState` / `LoginOutcome` 判别联合；`flow-map` 为辅助导航，个别 UI 段落滞后于区域定形态改版）。共享 step ∈ {`identifier`, `method-choice`, `verification-code`, `sso-verification`, `browser-redirect`, `account-selection`, `binding`, `completed`, `error`}（`sso-org` **不是**共享 step，是 `identifier` 下的页面局部 `ssoOrgMode` 子视图）；其中 `account-selection` / `binding` / `sso-verification` / `completed` 由服务端 `LoginOutcome.status`（`ok` / `select_account` / `binding_required` / `sso_verification_required`）分支决定，**不是固定步骤**——任意 outcome 调用都可能命中。逐屏职责与关键组件（逐屏坐标 / 文案见 `DESIGN-login §3` 国区 / `§4` 国际区 / `§5` 移动）：
 

@@ -1,5 +1,7 @@
 # Desktop 登录托管回调（跨仓契约）
 
+> **2026-11 起 Desktop 已移除 Cindy 账号登录**：登录页、添加账号与托管/loopback 回调均已删除，进程恒以免账号会话启动（见 `apps/desktop/src/main/appSessionState.ts`）。下文保留为历史设计记录与服务端参考，不再约束 Desktop 实现。
+
 > **状态**：两端均已实现，等待端点清单开启
 > **读取时机**：改动 auth-server 侧托管回调路由、结果展示页模板，或调整 desktop
 > 系统浏览器登录链路之前

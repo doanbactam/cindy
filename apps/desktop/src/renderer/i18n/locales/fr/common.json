@@ -8298,6 +8298,11 @@
     "description": "Réessayez, ou revenez aux options de connexion et choisissez à nouveau un mode.",
     "retry": "Réessayer"
   },
+  "startupRecovery": {
+    "title": "{{appName}} n’a pas pu démarrer",
+    "description": "Vos données locales n’ont pas pu être ouvertes. Réessayez.",
+    "retry": "Réessayer"
+  },
   "login": {
     "title": "Bienvenue dans {{appName}}",
     "subtitle": "Choisissez un moyen sécurisé de vous connecter",

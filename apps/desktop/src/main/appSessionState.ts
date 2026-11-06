@@ -1,9 +1,12 @@
 /**
  * Stable application-session identity shared by auth, local data and secret stores.
  *
- * Only the mode is persisted. A cloud owner is accepted only after auth has
- * verified a real membership for the current process; local mode always uses
- * the reserved owner below and never masquerades as a server user id.
+ * The mode and the account-free owner are persisted. Cindy account sign-in is
+ * removed, so every process runs account-free ('local'). Its owner is the
+ * reserved `local-v1`, unless this profile last ran signed in: then auth adopts
+ * that verified membership id once (see `adoptAccountFreeDataOwner`) so the
+ * user's existing per-owner database, secrets and owner directory stay
+ * reachable without moving any data.
  */
 import { app } from 'electron';
 import path from 'node:path';
@@ -48,6 +51,8 @@ export function ownerScopedUserDataPath(...parts: string[]): string {
 
 interface PersistedAppSessionSettings {
   activeMode: AppSessionMode;
+  /** Adopted former cloud owner that local mode keeps using; absent means local-v1. */
+  accountFreeOwnerId?: string;
 }
 
 const log = createLogger('appSessionState');
@@ -62,11 +67,18 @@ function normalize(raw: unknown): PersistedAppSessionSettings {
     raw && typeof raw === 'object'
       ? (raw as { activeMode?: unknown }).activeMode
       : undefined;
+  const accountFreeOwnerId =
+    raw && typeof raw === 'object'
+      ? (raw as { accountFreeOwnerId?: unknown }).accountFreeOwnerId
+      : undefined;
   return {
     activeMode:
       activeMode === 'local' || activeMode === 'cloud' || activeMode === 'signed-out'
         ? activeMode
         : 'signed-out',
+    ...(typeof accountFreeOwnerId === 'string' && accountFreeOwnerId.trim()
+      ? { accountFreeOwnerId: accountFreeOwnerId.trim() }
+      : {}),
   };
 }
 
@@ -79,6 +91,7 @@ const store = createOverrideSettingsFile<PersistedAppSessionSettings>({
 });
 
 let active: ActiveAppSession | null = null;
+let volatileAccountFreeOwnerId: string | null = null;
 let boundaryDepth = 0;
 let appSessionCommitBoundaryHook: (() => void) | null = null;
 const sessionInvalidationListeners = new Set<() => void>();
@@ -102,6 +115,33 @@ export function setAppSessionCommitBoundaryHook(hook: (() => void) | null): void
   appSessionCommitBoundaryHook = hook;
 }
 
+/** Owner of the account-free session: an adopted former cloud owner, else local-v1. */
+export function accountFreeDataOwnerId(): string {
+  return volatileAccountFreeOwnerId ?? store.read().accountFreeOwnerId ?? LOCAL_DATA_OWNER_ID;
+}
+
+/** The mode persisted by the previous run, before this process commits anything. */
+export function readPersistedAppSessionMode(): AppSessionMode {
+  return store.read().activeMode;
+}
+
+/**
+ * Keep a former cloud owner's data reachable after sign-in was removed. Only
+ * records the owner; the caller commits the session through the normal owner
+ * boundary so the change from the initial local-v1 projection is torn down.
+ * `persist: false` keeps a passive shared-userData instance from writing.
+ */
+export function adoptAccountFreeDataOwner(ownerId: string, opts: { persist: boolean }): void {
+  const normalized = ownerId.trim();
+  if (!normalized || normalized === LOCAL_DATA_OWNER_ID) return;
+  if (opts.persist) store.writePatch({ accountFreeOwnerId: normalized });
+  else volatileAccountFreeOwnerId = normalized;
+  log.info('adopted former cloud owner for the account-free session', {
+    dataOwnerId: normalized,
+    persisted: opts.persist,
+  });
+}
+
 function ensureLoaded(): ActiveAppSession {
   if (active) return active;
   // Cindy account sign-in is removed: every process starts in the account-free
@@ -109,7 +149,7 @@ function ensureLoaded(): ActiveAppSession {
   // commit persists 'local'.
   active = {
     mode: 'local',
-    dataOwnerId: LOCAL_DATA_OWNER_ID,
+    dataOwnerId: accountFreeDataOwnerId(),
     generation: 0,
   };
   return active;
@@ -173,7 +213,7 @@ export function isAppSessionBoundaryLocallyPending(): boolean {
 
 /**
  * Commit a stable session after its required runtime is ready.
- * Cloud commits require a verified membership id; local uses the reserved id.
+ * Cloud commits require a verified membership id; local uses the account-free owner.
  */
 export function commitActiveAppSession(
   mode: AppSessionMode,
@@ -183,7 +223,7 @@ export function commitActiveAppSession(
   const previous = ensureLoaded();
   let dataOwnerId: string | null = null;
   if (mode === 'local') {
-    dataOwnerId = LOCAL_DATA_OWNER_ID;
+    dataOwnerId = accountFreeDataOwnerId();
   } else if (mode === 'cloud') {
     const normalized = cloudOwnerId?.trim();
     if (!normalized) throw new Error('cloud app session requires a verified data owner');
@@ -220,7 +260,7 @@ export function commitVolatileAppSession(
   const previous = ensureLoaded();
   let dataOwnerId: string | null = null;
   if (mode === 'local') {
-    dataOwnerId = LOCAL_DATA_OWNER_ID;
+    dataOwnerId = accountFreeDataOwnerId();
   } else if (mode === 'cloud') {
     const normalized = cloudOwnerId?.trim();
     if (!normalized) throw new Error('cloud app session requires a verified data owner');

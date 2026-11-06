@@ -4,6 +4,9 @@ import { resolve } from 'node:path';
 import ts from 'typescript';
 
 const ghostBoundary = vi.hoisted(() => ({ stable: false }));
+const persistedSession = vi.hoisted(() => ({
+  value: { activeMode: 'signed-out' } as { activeMode: string; accountFreeOwnerId?: string },
+}));
 
 vi.mock('electron', () => ({
   app: {
@@ -17,8 +20,10 @@ vi.mock('../logger.js', () => ({
 
 vi.mock('../maker-host/override-settings-file.js', () => ({
   createOverrideSettingsFile: () => ({
-    read: () => ({ activeMode: 'signed-out' }),
-    writePatch: vi.fn(),
+    read: () => ({ ...persistedSession.value }),
+    writePatch: (patch: object) => {
+      persistedSession.value = { ...persistedSession.value, ...patch };
+    },
   }),
 }));
 
@@ -27,6 +32,8 @@ vi.mock('../authBoundaryQuarantine.js', () => ({
 }));
 
 import {
+  accountFreeDataOwnerId,
+  adoptAccountFreeDataOwner,
   beginAppSessionBoundary,
   onAppSessionInvalidated,
   commitActiveAppSession,
@@ -35,6 +42,8 @@ import {
   activeOwnerScopeKey,
   getActiveDataOwnerPushStamp,
   isAppSessionBoundaryPending,
+  LOCAL_DATA_OWNER_ID,
+  readPersistedAppSessionMode,
   setAppSessionCommitBoundaryHook,
 } from '../appSessionState.js';
 import {
@@ -209,4 +218,54 @@ describe('cloud session realm publication', () => {
     await transition;
   });
 
+});
+
+// Sign-in removal must not strand a signed-in user's data under an owner the
+// app can no longer reach. Runs the real adoption step from authManager with the
+// real session state; only the encrypted vault read is an in-memory double.
+// Minimal input: last run signed in (persisted 'cloud') with one active account.
+describe('account-free owner after Cindy sign-in removal', () => {
+  const adoptSource = authSource.slice(
+    authSource.indexOf('function adoptFormerCloudOwnerOnce('),
+    authSource.indexOf('\n}\n', authSource.indexOf('function adoptFormerCloudOwnerOnce(')) + 2,
+  );
+  const adopt = (vault: { activeAccountKey: string | null; resources: Record<string, unknown> }) =>
+    new Function(
+      'readPersistedAppSessionMode', 'accountFreeDataOwnerId', 'adoptAccountFreeDataOwner',
+      'LOCAL_DATA_OWNER_ID', 'readAuthAccountVault', 'isPassiveSharedUserDataInstance', 'log',
+      'requestErrorMessage',
+      `${ts.transpileModule(adoptSource, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText}
+return adoptFormerCloudOwnerOnce();`,
+    )(
+      readPersistedAppSessionMode, accountFreeDataOwnerId, adoptAccountFreeDataOwner,
+      LOCAL_DATA_OWNER_ID, () => vault, () => false, { warn: vi.fn() }, String,
+    );
+  const signedInVault = {
+    activeAccountKey: 'global:member-1',
+    resources: { 'global:member-1': { metadata: { membershipId: 'member-1' } } },
+  };
+
+  it('keeps a profile that last ran local on local-v1 even when a saved account remains', () => {
+    persistedSession.value = { activeMode: 'local' };
+    adopt(signedInVault);
+    expect(commitActiveAppSession('local').dataOwnerId).toBe(LOCAL_DATA_OWNER_ID);
+  });
+
+  it('reopens a profile that last ran signed in on its former owner and remembers it', () => {
+    persistedSession.value = { activeMode: 'cloud' };
+    try {
+      adopt(signedInVault);
+      expect(commitActiveAppSession('local')).toMatchObject({
+        mode: 'local',
+        dataOwnerId: 'member-1',
+      });
+      // The commit persists 'local'; later starts still resolve the adopted owner.
+      expect(persistedSession.value).toEqual({ activeMode: 'local', accountFreeOwnerId: 'member-1' });
+      adopt({ activeAccountKey: null, resources: {} });
+      expect(accountFreeDataOwnerId()).toBe('member-1');
+    } finally {
+      persistedSession.value = { activeMode: 'signed-out' };
+      commitActiveAppSession('local');
+    }
+  });
 });
