@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createGhostProductionCallbacks } from './ghostProductionCallbacksFixture.js';
 import { GhostCardActionDispatcher } from '../cardActionDispatch.js';
-import { GhostPreviewGate } from '../previewGate.js';
 import { prepareMailAttachmentUpload } from '../mailAttachmentUpload.js';
 import { ghostInstallApprovalToken, ghostWebviewEntryPaths, type InstalledGhost } from '../../../shared/ghost.js';
 import { findInstalledGhostByInstanceId, installedGhostLogicalIdentity, installedGhostPhysicalKeys, installedGhostStoragePart,
@@ -11,10 +10,9 @@ import { ownerScopedGhostPartitionForInstalledGhost, resolveGhostWebviewPartitio
 const load = createGhostProductionCallbacks<{
   resolveGhostWebviewAttach: (claim: string, src: string) => { ghost: InstalledGhost } | null;
   getGhostCardActionDispatcher: () => GhostCardActionDispatcher;
-  resolveMobilePluginMedia: (id: string, url: string, current: () => boolean) => Promise<unknown>;
   setGhostEnabledForUser: (id: string, enabled: boolean, expectedInstalledApproval?: string) => Promise<{ ok: true }>;
 }>({ functions: ['findGhostForInstanceId', 'findGhostForPhysicalStoragePart', 'resolveGhostWebviewAttach',
-  'getGhostCardActionDispatcher', 'resolveMobilePluginMedia', 'setGhostEnabledForUser'],
+  'getGhostCardActionDispatcher', 'setGhostEnabledForUser'],
   initialize: 'let cardActionDispatcherSingleton = null;' });
 
 const loadUsageBinding = createGhostProductionCallbacks<{
@@ -34,10 +32,6 @@ function harness() {
   const setEnabled = vi.fn(async () => ({}));
   const stop = vi.fn();
   const cancelModelPicker = vi.fn();
-  const ghostCanRead = vi.fn(async () => true);
-  const preview = new GhostPreviewGate({ ghostCanRead,
-    getBlobInfo: async () => ({ mimeType: 'image/png', ext: '.png' }),
-    blobUrl: (hash, ext) => 'cindy-media://blobs/' + hash + ext });
   const api = load({ availableGhosts: () => ghosts, findInstalledGhostByInstanceId, resolveInstalledGhost,
     installedGhostPhysicalKeys,
     modelPickerSingleton: { cancel: cancelModelPicker },
@@ -61,9 +55,9 @@ function harness() {
     sendToGhostLogic: send, getGhostAgentSlot: () => ({ issueUserActionToken: () => null, clearGhost: vi.fn() }),
     getGhostSessionActivityTracker: () => ({ begin: vi.fn() }), ghostOwnerScope: undefined,
     ghostInstallApprovalToken, log: { info: vi.fn(), warn: vi.fn() },
-    getGhostPreviewGate: () => preview, prepareMailAttachmentUpload, isPluginModelRouteAvailableNow: async () => false,
+    prepareMailAttachmentUpload, isPluginModelRouteAvailableNow: async () => false,
   });
-  return { ...api, root, organization, ghosts, send, setEnabled, stop, cancelModelPicker, ghostCanRead, setStoredId: (id: string) => { storedId = id; } };
+  return { ...api, root, organization, ghosts, send, setEnabled, stop, cancelModelPicker, setStoredId: (id: string) => { storedId = id; } };
 }
 
 describe('production plugin instance boundaries', () => {
@@ -96,20 +90,6 @@ describe('production plugin instance boundaries', () => {
     expect(fixture.setEnabled).not.toHaveBeenCalled();
     expect(fixture.stop).not.toHaveBeenCalled();
     expect(fixture.cancelModelPicker).not.toHaveBeenCalled();
-  });
-  it.each(['root', 'in-place', 'organization'])('opens Mobile media with the protocol host and %s physical authority', async (layout) => {
-    const fixture = harness();
-    const ghost = layout === 'root' ? fixture.root : fixture.organization;
-    if (layout === 'organization') ghost.dir = '/ghosts/_ns/acme/helper';
-    const id = installedGhostStoragePart(ghost), hash = 'a'.repeat(64);
-    await expect(fixture.resolveMobilePluginMedia(id, 'cindy-ghost://helper/preview/' + hash + '.jpg', () => true))
-      .resolves.toEqual({ path: '/media/' + hash + '.png', mediaKind: 'image' });
-    expect(fixture.ghostCanRead).toHaveBeenCalledWith(hash, id);
-    await expect(fixture.resolveMobilePluginMedia(id, 'cindy-ghost://other/preview/' + hash + '.png', () => true))
-      .resolves.toBeNull();
-    fixture.ghosts.splice(fixture.ghosts.indexOf(ghost), 1);
-    await expect(fixture.resolveMobilePluginMedia(id, 'cindy-ghost://helper/preview/' + hash + '.png', () => true))
-      .resolves.toBeNull();
   });
   it.each(['panel.html', 'settings.html'])('attaches the logical root %s beside an in-place enterprise twin', (entry) => {
     const fixture = harness();

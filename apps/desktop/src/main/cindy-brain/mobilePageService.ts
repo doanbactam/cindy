@@ -1,31 +1,20 @@
-import { MobilePluginPreview, type MobilePreviewReader } from './mobilePreview.js';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   PLUGIN_COLLECTION,
-  PLUGIN_PAGE_MAX_MESSAGE_BYTES,
-  isPluginPageSurface,
-  parsePluginMobileDeclaration,
-  type PluginPageDocument,
   type PluginPagePoll,
-  type PluginPageSurface,
   type PluginPageAsset,
   type PluginPageFile,
   PLUGIN_SETTINGS_ACTION,
   type PluginSettingsRequest,
   type PluginOauthAction,
   type RemoteCollectionItem,
-  type PluginConfigurationSummary,
 } from '@cindy/device-link';
-import { ghostContentKeys, ghostFallbackDisplayAuthor, ghostInstallApprovalToken, ghostPermissionItems, ghostTrustLabelKey, type GhostSetupAssessment, type InstalledGhost } from '../../shared/ghost.js';
+import { ghostContentKeys, ghostFallbackDisplayAuthor, ghostInstallApprovalToken, ghostPermissionItems, ghostTrustLabelKey, type InstalledGhost } from '../../shared/ghost.js';
 import { getRemoteOauthContext, notifyOauthCardClosed } from '../plugin-oauth/context.js';
 import type { OauthCardBinding } from '../plugin-oauth/transactions.js';
 import { installedGhostStoragePart } from '../../shared/pluginIdentity.js';
 import { resolvePreferredSystemLocale } from '../../shared/locale.js';
 import { t } from '../i18n.js';
-import { mobilePluginUsage } from './mobilePluginUsage.js';
-import { readGhostReadmeFromDir } from './ghostReadme.js';
-import type { GhostReadmeContent } from '@cindy/plugin-protocol';
-import { mobilePluginConfiguration } from './mobilePluginConfiguration.js';
 import type { GhostConfirmShowParams } from './confirmSlot.js';
 import type { PluginModelPickerTarget } from './ghostModelPicker.js';
 import {
@@ -45,13 +34,9 @@ interface Page {
   controller: string;
   plugin: string;
   revision: string;
-  surface: PluginPageSurface | 'interaction';
   currentOwner(): boolean;
   currentController(): boolean;
-  active: boolean;
-  sourceHidden?: boolean;
   touchedAt: number;
-  unreadAt?: number;
   files: PluginPageFile[];
   confirms: Map<
     string,
@@ -62,7 +47,6 @@ interface Page {
     }
   >;
   notices: PluginPagePoll['notifications'];
-  answered: Map<string, boolean>;
   directory?: {
     value: import('@cindy/device-link').PluginDirectoryRequest;
     answer(value: string | null): void;
@@ -71,75 +55,23 @@ interface Page {
   };
   directoryAnswers?: Map<string, string>;
   modelPicker?: { value: NonNullable<PluginPagePoll['modelPickers']>[number]; cancel(): void };
-  intents?: import('@cindy/device-link').PluginNativeIntent[];
-  previews?: Map<string, MobilePluginPreview>;
 }
 interface Dependencies {
   management?: import('./remotePluginManagement.js').RemotePluginManagement;
   list(): InstalledGhost[];
-  listOrder?(): ReadonlyMap<string, NonNullable<RemoteCollectionItem['pluginOrder']>>;
-  setupAssessment?(id: string): GhostSetupAssessment;
-  configuration?(id: string, assessment?: GhostSetupAssessment): PluginConfigurationSummary;
-  runtimeState?(id: string): string;
   revision(ghost: InstalledGhost): string;
   captureOwner(): () => boolean;
   captureController(controllerId: string): () => boolean;
-  unread(id: string): { at: number; summary?: string } | null;
-  clearUnread(id: string, seenAt: number): void;
-  setEnabled(id: string, enabled: boolean): Promise<void>;
   bundle(ghost: InstalledGhost, entry: string): Promise<PluginPageFile[]>;
   asset(ghost: InstalledGhost, file: PluginPageFile, offset: number): Promise<PluginPageAsset>;
   connect(ghost: InstalledGhost, pageId: string, channels: string[]): Promise<void>;
   post(ghost: InstalledGhost, pageId: string, channel: string, data: unknown, sourceId?: string): Promise<void>;
   poll(ghost: InstalledGhost, pageId: string, after: number): Promise<PluginPagePoll['events']>;
   disconnect(pluginId: string, pageId: string): Promise<void>;
-  fetch(
-    ghost: InstalledGhost,
-    pathname: string,
-    method: string,
-    body?: string,
-    offset?: number,
-    revision?: string,
-  ): Promise<import('@cindy/device-link').PluginPageFetchResult>;
-  fetchPreview?: MobilePreviewReader;
   settingsFetch?(ghost: InstalledGhost, path: string, method: string, body: string | undefined, current: () => boolean, confirmConnection?: (label: string, host: string) => Promise<boolean>): Promise<import('@cindy/device-link').PluginPageFetchResult>;
-  resolveMedia?(
-    ghostId: string,
-    url: string,
-    current: () => boolean,
-  ): Promise<{ path: string; mediaKind: 'image' | 'video' } | null>;
   validateDirectory?(path: string): Promise<string>;
-  taskSettings?: {
-    read(id: string, revision: string): import('@cindy/device-link').PluginTaskPreferences;
-    update(
-      id: string,
-      revision: string,
-      input: Record<string, unknown>,
-      assertCurrent: () => void,
-    ): Promise<import('@cindy/device-link').PluginTaskPreferences>;
-  };
   now?(): number;
-  /** Detailed introduction for the phone; defaults to reading the installed plugin directory. */
-  readme?(ghost: InstalledGhost, locale: string): Promise<GhostReadmeContent | null>;
   answerModelPicker?(pageId: string, requestId: string, route: unknown): Promise<{ handled: boolean; accepted: boolean }>;
-}
-/** Action that returns the detailed introduction; the detail resource only carries `readme: true`. */
-export const PLUGIN_README_ACTION = 'readme:get';
-/**
- * One invoke reply stays within a device-link logical message (4 MiB) with room for the
- * envelope and relay encoding. Images that would exceed it are dropped in document order.
- */
-const MOBILE_README_MAX_CHARS = 2 * 1024 * 1024;
-
-function fitMobileReadme(content: GhostReadmeContent): GhostReadmeContent {
-  let size = content.markdown.length + content.path.length;
-  const images: Record<string, string> = {};
-  for (const [path, uri] of Object.entries(content.images)) {
-    if (size + path.length + uri.length > MOBILE_README_MAX_CHARS) continue;
-    images[path] = uri;
-    size += path.length + uri.length;
-  }
-  return { path: content.path, markdown: content.markdown, images };
 }
 
 const fail = (message = 'Plugin page is no longer available'): never => {
@@ -148,8 +80,9 @@ const fail = (message = 'Plugin page is no longer available'): never => {
 const record = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
-/** A page lease belongs to one authenticated controller, account and installed revision.
- * Writes are never replayed after reconnect. Reading/polling does not acknowledge unread content. */
+/** Remote plugin settings pages opened by another desktop, plus the `plugins` collection.
+ * A page lease belongs to one authenticated controller, account and installed revision.
+ * Writes are never replayed after reconnect. */
 export class MobilePluginPages {
   private readonly pages = new Map<string, Page>();
   // Retired document IDs remain notice-only until the lease closes.
@@ -200,7 +133,6 @@ export class MobilePluginPages {
     for (const id of page.authorizations?.keys() ?? []) notifyOauthCardClosed(id);
     this.cancelDirectory(page);
     page.modelPicker?.cancel();
-    page.previews?.clear();
     for (const pending of page.confirms.values()) {
       clearTimeout(pending.timer);
       pending.answer(false);
@@ -451,7 +383,6 @@ export class MobilePluginPages {
     input: { requestId?: unknown; path?: unknown },
   ): Promise<void> {
     if (
-      !page.active ||
       typeof input.requestId !== 'string' ||
       !(
         input.path === null ||
@@ -478,7 +409,7 @@ export class MobilePluginPages {
       const path =
         input.path === null ? null : await this.deps.validateDirectory!(input.path as string);
       this.check(page);
-      if (!page.active || page.directory !== pending || pending.value.expiresAt <= this.now())
+      if (page.directory !== pending || pending.value.expiresAt <= this.now())
         return fail();
       clearTimeout(pending.timer);
       page.directory = undefined;
@@ -501,12 +432,12 @@ export class MobilePluginPages {
   captureSource(pageId: unknown, pluginId: string): () => boolean {
     if (typeof pageId !== 'string') return fail();
     const page = this.source(pageId);
-    if (!page || page.plugin !== pluginId || !page.active || page.sourceHidden) return fail();
+    if (!page || page.plugin !== pluginId) return fail();
     this.check(page);
     return () => {
       try {
         this.page(page.id, page.controller);
-        return this.source(pageId) === page && page.active && !page.sourceHidden;
+        return this.source(pageId) === page;
       } catch {
         return false;
       }
@@ -538,42 +469,10 @@ export class MobilePluginPages {
       };
     });
   }
-  present(
-    pageId: string,
-    pluginId: string,
-    intent:
-      | { kind: 'task'; taskId: string }
-      | { kind: 'preview'; url: string }
-      | { kind: 'schedule'; name: string; prompt: string; intervalMs?: number }
-      | { kind: 'media'; path: string; mediaKind: 'image' | 'video' },
-  ): boolean {
-    try {
-      if (!this.captureSource(pageId, pluginId)()) return false;
-      const page = this.source(pageId)!,
-        ghost = this.check(page);
-      if ((page.intents?.length ?? 0) >= 8) return false;
-      (page.intents ??= []).push({
-        ...intent,
-        id: randomUUID(),
-        pluginId,
-        ghostName: ghost.manifest.name,
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  }
   notify(pageId: string, pluginId: string, text: string): boolean {
     this.sweep();
     const page = this.pages.get(pageId) ?? this.documentSources.get(pageId);
-    if (
-      !page ||
-      !page.active ||
-      page.sourceHidden ||
-      page.plugin !== pluginId ||
-      !page.currentOwner()
-    )
-      return false;
+    if (!page || page.plugin !== pluginId || !page.currentOwner()) return false;
     try {
       this.check(page);
     } catch {
@@ -582,16 +481,6 @@ export class MobilePluginPages {
     page.notices.push({ id: randomUUID(), text });
     if (page.notices.length > 16) page.notices.shift();
     return true;
-  }
-  assertInteraction(pageId: unknown, pluginId: string, controllerId: string) {
-    const page = this.page(pageId, controllerId);
-    if (
-      page.plugin !== pluginId ||
-      page.surface !== 'interaction' ||
-      !page.active ||
-      page.sourceHidden
-    )
-      return fail();
   }
   private sweep() {
     for (const page of this.pages.values()) {
@@ -604,10 +493,10 @@ export class MobilePluginPages {
     }
   }
   /** Explicit page context supplied by a plugin handling that page's business request.
-   * A missing/invalid context never falls back to a different phone. */
+   * A missing/invalid context never falls back to a different controller. */
   async confirm(pageId: string, params: GhostConfirmShowParams): Promise<boolean> {
     const page = this.source(pageId);
-    if (!page || !page.active || page.sourceHidden || page.plugin !== params.ghostId) return fail();
+    if (!page || page.plugin !== params.ghostId) return fail();
     this.check(page);
     if (this.now() - page.touchedAt > 120_000 || page.confirms.size) return fail();
     const id = randomUUID();
@@ -634,7 +523,7 @@ export class MobilePluginPages {
   }
   modelPickerTarget(pageId: string, pluginId: string): PluginModelPickerTarget | null {
     const page = this.source(pageId);
-    if (!page || !page.active || page.sourceHidden || page.plugin !== pluginId) return null;
+    if (!page || page.plugin !== pluginId) return null;
     this.check(page);
     return {
       id: page.id,
@@ -642,12 +531,12 @@ export class MobilePluginPages {
       isCurrent: () => {
         try {
           this.check(page);
-          return this.source(pageId) === page && page.active && !page.sourceHidden;
+          return this.source(pageId) === page;
         } catch { return false; }
       },
       send: (value, cancel) => {
         this.check(page);
-        if (this.source(pageId) !== page || !page.active || page.sourceHidden || page.modelPicker) return false;
+        if (this.source(pageId) !== page || page.modelPicker) return false;
         page.modelPicker = { value, cancel };
         return true;
       },
@@ -656,54 +545,25 @@ export class MobilePluginPages {
       },
     };
   }
-  private item(
-    ghost: InstalledGhost,
-    order?: RemoteCollectionItem['pluginOrder'],
-  ): RemoteCollectionItem {
+  private item(ghost: InstalledGhost): RemoteCollectionItem {
     const m = ghost.manifest;
     const id = installedGhostStoragePart(ghost);
-    const mobile = parsePluginMobileDeclaration(m.mobile);
-    const unread = ghost.enabled ? this.deps.unread(id) : null;
     return {
       ref: { collectionId: PLUGIN_COLLECTION, kind: 'plugin', id },
       revision: this.deps.revision(ghost),
-      ...(order ? { pluginOrder: order } : {}),
       display: {
         title: m.name,
         subtitle: m.description ?? '',
-        preview: unread?.summary,
-        ...(unread
-          ? { timestamp: unread.at, badges: [{ accessibilityLabel: 'Unread', tone: 'positive' }] }
-          : {}),
         ...(ghost.iconDataUrl
           ? {
               avatar: { kind: 'asset', value: ghost.iconDataUrl, fallbackText: m.name.slice(0, 1) },
             }
           : {}),
+        // Desktop controllers read the enabled state from this label; toggling goes through management.
         status: { label: ghost.enabled ? 'enabled' : 'disabled', tone: 'neutral' },
       },
       links: [],
-      actions: [
-        ...(['panel', 'mainView', 'settings'] as const).flatMap((surface) => {
-          const declared =
-            surface === 'panel'
-              ? m.panel?.html
-              : surface === 'mainView'
-                ? m.mainView?.html
-                : m.settingsHtml;
-          const entry = declared ? (mobile?.[surface] ?? declared) : undefined;
-          return mobile && entry
-            ? [{ id: `open:${surface}`, label: surface, disabled: !ghost.enabled }]
-            : [];
-        }),
-        {
-          id: ghost.enabled ? 'disable' : 'enable',
-          label: ghost.enabled ? 'Disable' : 'Enable',
-          ...(!ghost.enabled && (ghost.approval.state !== 'approved' || ghost.retirement)
-            ? { disabled: true }
-            : {}),
-        },
-      ],
+      actions: [],
     };
   }
   provider(): RemoteResourceProvider {
@@ -722,12 +582,6 @@ export class MobilePluginPages {
       },
       list: async (_ctx, request) => {
         this.sweep();
-        let order: ReturnType<NonNullable<Dependencies['listOrder']>> | undefined;
-        try {
-          order = this.deps.listOrder?.();
-        } catch {
-          /* Optional ordering cannot block the list. */
-        }
         const q = request.query?.toLocaleLowerCase();
         const items = this.deps
           .list()
@@ -736,7 +590,7 @@ export class MobilePluginPages {
               !q ||
               `${g.manifest.name} ${g.manifest.description ?? ''}`.toLocaleLowerCase().includes(q),
           )
-          .map((g) => this.item(g, order?.get(installedGhostStoragePart(g))));
+          .map((g) => this.item(g));
         return {
           collectionId: PLUGIN_COLLECTION,
           revision: createHash('sha256').update(JSON.stringify(items)).digest('hex'),
@@ -747,7 +601,7 @@ export class MobilePluginPages {
         const ghost = this.ghost(request.ref.id);
         const item = this.item(ghost);
         const locale = resolvePreferredSystemLocale([request.client.locale ?? 'en']);
-        // Read-only declaration facts and copy shared with PC; no saved values leave Host.
+        // Read-only declaration facts and copy shared with the local plugin page; no saved values leave Host.
         const permissionText = (key: string, args?: Record<string, string>) =>
           t(`settings.ghosts.perm.${key}`, locale).replace(
             /\{\{(\w+)\}\}/g,
@@ -824,20 +678,6 @@ export class MobilePluginPages {
               ]
             : []),
         ];
-        let assessment: GhostSetupAssessment | undefined;
-        try {
-          assessment = this.deps.setupAssessment?.(installedGhostStoragePart(ghost));
-        } catch {
-          // A failed read is unknown, never a fabricated missing configuration.
-        }
-        let configuration = mobilePluginConfiguration(ghost.manifest, undefined, assessment);
-        try {
-          configuration =
-            this.deps.configuration?.(installedGhostStoragePart(ghost), assessment) ??
-            configuration;
-        } catch {
-          // A failed configuration read retains declarations with unknown status.
-        }
         return {
           ...item,
           blocks: [
@@ -859,16 +699,6 @@ export class MobilePluginPages {
                   })) ?? [],
                 permissions,
                 details: detailFacts,
-                tasks: ghost.manifest.showTaskPreferences !== false && Boolean(ghost.manifest.agent?.tasks || ghost.manifest.agent?.errand),
-                // Content is fetched on demand with PLUGIN_README_ACTION; older phones ignore the flag.
-                ...(ghost.manifest.readme ? { readme: true } : {}),
-                mobile: parsePluginMobileDeclaration(ghost.manifest.mobile) !== null,
-                usage: mobilePluginUsage(
-                  ghost,
-                  assessment,
-                  this.deps.runtimeState?.(installedGhostStoragePart(ghost)),
-                  configuration,
-                ),
               },
             },
           ],
@@ -886,408 +716,48 @@ export class MobilePluginPages {
         }
         const input = record(request.input);
         const id = request.resourceRef?.id;
-        if (!id) return fail();
-        if (request.actionId === PLUGIN_README_ACTION) {
-          const ghost = this.ghost(id);
-          if (!ghost.manifest.readme) return fail('Plugin has no introduction');
-          const owner = this.deps.captureOwner(),
-            peer = this.deps.captureController(context.controllerDeviceId);
-          const locale = resolvePreferredSystemLocale([request.client.locale ?? 'en']);
-          const content = await (this.deps.readme
-            ? this.deps.readme(ghost, locale)
-            : readGhostReadmeFromDir(ghost.dir, ghost.manifest, locale));
-          if (!owner() || !peer()) return fail();
-          return { effects: [], result: content ? fitMobileReadme(content) : null };
-        }
-        if (request.actionId === 'task-settings:get' || request.actionId === 'task-settings:set') {
-          const ghost = this.ghost(id),
-            settings = this.deps.taskSettings;
-          if (
-            !settings ||
-            !ghost.enabled ||
-            !(ghost.manifest.agent?.tasks || ghost.manifest.agent?.errand)
-          )
-            return fail();
-          const revision = this.deps.revision(ghost),
-            owner = this.deps.captureOwner(),
-            peer = this.deps.captureController(context.controllerDeviceId);
-          const assertCurrent = () => {
-            const current = this.ghost(id);
-            if (!owner() || !peer() || !current.enabled || this.deps.revision(current) !== revision)
-              return fail();
-          };
-          assertCurrent();
-          const result =
-            request.actionId === 'task-settings:get'
-              ? settings.read(id, revision)
-              : await settings.update(id, revision, input, assertCurrent);
-          assertCurrent();
-          return { effects: [], result };
-        }
-        if (request.actionId === 'open-interaction') {
-          const ghost = this.ghost(id);
-          if (!ghost.enabled || !ghost.manifest.card || this.pages.size >= 32) return fail();
-          const page: Page = {
-            id: randomUUID(),
-            plugin: id,
-            controller: context.controllerDeviceId,
-            revision: this.deps.revision(ghost),
-            currentOwner: this.deps.captureOwner(),
-            currentController: this.deps.captureController(context.controllerDeviceId),
-            surface: 'interaction',
-            active: true,
-            touchedAt: this.now(),
-            files: [],
-            confirms: new Map(),
-            notices: [],
-            answered: new Map(),
-          };
-          this.pages.set(page.id, page);
-          return { effects: [], result: { pageId: page.id } };
-        }
-        if (request.actionId === 'enable' || request.actionId === 'disable') {
-          const valid = this.deps.captureOwner();
-          this.ghost(id);
-          await this.deps.setEnabled(id, request.actionId === 'enable');
-          if (!valid()) return fail();
-          if (request.actionId === 'disable')
-            for (const page of this.pages.values()) if (page.plugin === id) this.close(page);
-          return { effects: [{ kind: 'refresh-collection', collectionId: PLUGIN_COLLECTION }] };
-        }
-        if (request.actionId === 'settings:open') {
-          const ghost = this.ghost(id);
-          if (
-            !this.deps.settingsFetch ||
-            !ghost.enabled ||
-            !ghost.manifest.settingsHtml ||
-            input.expectedInstalledApproval !== ghostInstallApprovalToken(ghost.approval) ||
-            this.pages.size >= 32
-          )
-            return fail();
-          const page: Page = {
-            id: randomUUID(),
-            plugin: id,
-            controller: context.controllerDeviceId,
-            modelPickerRemoteSources: input.modelPickerRemoteSources === true,
-            revision: this.deps.revision(ghost),
-            currentOwner: this.deps.captureOwner(),
-            currentController: this.deps.captureController(context.controllerDeviceId),
-            surface: 'settings',
-            desktopSettings: true,
-            active: true,
-            touchedAt: this.now(),
-            files: [],
-            confirms: new Map(),
-            notices: [],
-            answered: new Map(),
-          };
-          this.check(page);
-          page.files = await this.deps.bundle(ghost, ghost.manifest.settingsHtml);
-          this.check(page);
-          if (this.pages.size >= 32) return fail();
-          this.pages.set(page.id, page);
-          return {
-            effects: [],
-            result: {
-              pageId: page.id,
-              pluginId: id,
-              manifestId: ghost.manifest.id,
-              name: ghost.manifest.name,
-              controllerAuthorization: true,
-              documentIsolation: true,
-              entry: ghost.manifest.settingsHtml,
-              files: page.files,
-            },
-          };
-        }
-        if (request.actionId.startsWith('open:')) {
-          const surface = request.actionId.slice(5);
-          if (!isPluginPageSurface(surface)) return fail();
-          const ghost = this.ghost(id),
-            mobile = parsePluginMobileDeclaration(ghost.manifest.mobile);
-          const declared =
-            surface === 'panel'
-              ? ghost.manifest.panel?.html
-              : surface === 'mainView'
-                ? ghost.manifest.mainView?.html
-                : ghost.manifest.settingsHtml;
-          const entry = declared ? (mobile?.[surface] ?? declared) : undefined;
-          if (!ghost.enabled || !mobile || !entry) return fail('Plugin has no mobile page');
-          if (this.pages.size >= 32)
-            throw new RemoteResourceRegistryError('INTERNAL', 'Too many open plugin pages');
-          const page: Page = {
-            id: randomUUID(),
-            plugin: id,
-            controller: context.controllerDeviceId,
-            modelPickerRemoteSources: input.modelPickerRemoteSources === true,
-            revision: this.deps.revision(ghost),
-            currentOwner: this.deps.captureOwner(),
-            currentController: this.deps.captureController(context.controllerDeviceId),
-            surface,
-            active: true,
-            touchedAt: this.now(),
-            unreadAt: this.deps.unread(id)?.at,
-            files: [],
-            confirms: new Map(),
-            notices: [],
-            answered: new Map(),
-          };
-          const files = await this.deps.bundle(ghost, entry);
-          this.check(page);
-          page.files = files;
-          try {
-            await this.deps.connect(ghost, page.id, mobile.channels);
-            this.check(page);
-          } catch (error) {
-            this.close(page);
-            throw error;
-          }
-          this.pages.set(page.id, page);
-          const result: PluginPageDocument = {
+        if (!id || request.actionId !== 'settings:open') return fail();
+        const ghost = this.ghost(id);
+        if (
+          !this.deps.settingsFetch ||
+          !ghost.enabled ||
+          !ghost.manifest.settingsHtml ||
+          input.expectedInstalledApproval !== ghostInstallApprovalToken(ghost.approval) ||
+          this.pages.size >= 32
+        )
+          return fail();
+        const page: Page = {
+          id: randomUUID(),
+          plugin: id,
+          controller: context.controllerDeviceId,
+          modelPickerRemoteSources: input.modelPickerRemoteSources === true,
+          revision: this.deps.revision(ghost),
+          currentOwner: this.deps.captureOwner(),
+          currentController: this.deps.captureController(context.controllerDeviceId),
+          desktopSettings: true,
+          touchedAt: this.now(),
+          files: [],
+          confirms: new Map(),
+          notices: [],
+        };
+        this.check(page);
+        page.files = await this.deps.bundle(ghost, ghost.manifest.settingsHtml);
+        this.check(page);
+        if (this.pages.size >= 32) return fail();
+        this.pages.set(page.id, page);
+        return {
+          effects: [],
+          result: {
             pageId: page.id,
-            pluginId: installedGhostStoragePart(ghost),
-            title: ghost.manifest.name,
-            surface,
-            entry,
-            channels: mobile.channels,
-            files,
-            unreadAt: page.unreadAt,
-          };
-          return { effects: [], result };
-        }
-        const page = this.page(input.pageId, context.controllerDeviceId);
-        // Desktop configuration values only cross the authenticated encrypted bridge.
-        if (page.desktopSettings) return fail();
-        if (page.plugin !== id) return fail();
-        const ghost = this.check(page);
-        switch (request.actionId) {
-          case 'asset': {
-            const file = page.files.find((f) => f.path === input.path);
-            if (
-              !file ||
-              !Number.isSafeInteger(input.offset) ||
-              (input.offset as number) < 0 ||
-              (input.offset as number) > file.size
-            )
-              return fail();
-            const result = await this.deps.asset(ghost, file, input.offset as number);
-            this.check(page);
-            return { effects: [], result };
-          }
-          case 'suspend': {
-            page.active = false;
-            // Suspension removes native intents; their cover must not survive resume.
-            page.sourceHidden = false;
-            this.cancelDirectory(page);
-            page.modelPicker?.cancel();
-            page.intents = [];
-            page.previews?.clear();
-            for (const pending of page.confirms.values()) {
-              clearTimeout(pending.timer);
-              pending.answer(false);
-            }
-            page.confirms.clear();
-            page.notices.length = 0;
-            return { effects: [] };
-          }
-          case 'close':
-            this.close(page);
-            return { effects: [] };
-          case 'seen': {
-            if (!page.active || page.sourceHidden) return fail();
-            if (
-              !page.active ||
-              page.surface !== 'panel' ||
-              typeof input.seenAt !== 'number' ||
-              input.seenAt !== page.unreadAt
-            )
-              return fail();
-            this.deps.clearUnread(id, input.seenAt);
-            return { effects: [] };
-          }
-          case 'post': {
-            if (!page.active || page.sourceHidden) return fail();
-            if (page.surface === 'interaction') return fail();
-            const mobile = parsePluginMobileDeclaration(ghost.manifest.mobile);
-            if (
-              typeof input.channel !== 'string' ||
-              !mobile?.channels.includes(input.channel) ||
-              Buffer.byteLength(JSON.stringify(input.data) ?? '') > PLUGIN_PAGE_MAX_MESSAGE_BYTES
-            )
-              return fail();
-            await this.deps.post(ghost, page.id, input.channel, input.data);
-            this.check(page);
-            return { effects: [] };
-          }
-          case 'poll': {
-            page.active = true;
-            if (!Number.isSafeInteger(input.after) || (input.after as number) < 0) return fail();
-            const events =
-              page.surface === 'interaction'
-                ? []
-                : await this.deps.poll(ghost, page.id, input.after as number);
-            this.check(page);
-            page.unreadAt = this.deps.unread(id)?.at;
-            const result: PluginPagePoll = {
-              events,
-              confirms: [...page.confirms.values()].map((p) => p.value),
-              notifications: page.notices.splice(0),
-              unreadAt: page.unreadAt,
-              directories: page.directory ? [page.directory.value] : [],
-              modelPickers: page.modelPicker ? [page.modelPicker.value] : [],
-              intents: page.intents ?? [],
-            };
-            return { effects: [], result };
-          }
-          case 'cover': {
-            if (typeof input.hidden !== 'boolean' || !page.active) return fail();
-            page.sourceHidden = input.hidden;
-            if (input.hidden) {
-              page.modelPicker?.cancel();
-              for (const pending of page.confirms.values()) {
-                clearTimeout(pending.timer);
-                pending.answer(false);
-              }
-              page.confirms.clear();
-            }
-            return { effects: [] };
-          }
-          case 'media:open': {
-            if (
-              !page.active ||
-              page.sourceHidden ||
-              !this.deps.resolveMedia ||
-              typeof input.url !== 'string'
-            )
-              return fail();
-            const current = this.captureSource(page.id, id);
-            const media = await this.deps.resolveMedia(id, input.url, current);
-            if (!current() || !media) return fail();
-            this.present(page.id, id, { kind: 'media', ...media });
-            return { effects: [] };
-          }
-          case 'preview:fetch': {
-            if (!page.active || !this.deps.fetchPreview || typeof input.intentId !== 'string')
-              return fail();
-            const intent = page.intents?.find(
-              (item) => item.id === input.intentId && item.kind === 'preview',
-            );
-            if (!intent || intent.kind !== 'preview') return fail();
-            page.previews ??= new Map();
-            let preview = page.previews.get(intent.id);
-            if (!preview) {
-              preview = new MobilePluginPreview(intent.url, this.deps.fetchPreview);
-              page.previews.set(intent.id, preview);
-            }
-            const result = await preview.fetch(ghost, input, () => {
-              this.check(page);
-              if (!page.active || !page.intents?.some((item) => item.id === intent.id))
-                return fail();
-            });
-            return { effects: [], result };
-          }
-          case 'intent:ack': {
-            if (!page.active || typeof input.intentId !== 'string') return fail();
-            // Receipt acknowledgement only; it never claims that a task or automation was created.
-            page.intents = page.intents?.filter((intent) => intent.id !== input.intentId);
-            page.previews?.delete(input.intentId);
-            return { effects: [] };
-          }
-          case 'answer-model-picker': {
-            if (!page.active || page.sourceHidden || !page.modelPicker ||
-                input.requestId !== page.modelPicker.value.requestId || !this.deps.answerModelPicker) return fail();
-            const result = await this.deps.answerModelPicker(page.id, page.modelPicker.value.requestId, input.route);
-            this.check(page);
-            return { effects: [], result };
-          }
-          case 'answer-directory':
-            await this.answerDirectory(page, input);
-            return { effects: [] };
-          case 'answer': {
-            const pending =
-              typeof input.confirmId === 'string' ? page.confirms.get(input.confirmId) : null;
-            if (
-              !pending &&
-              typeof input.confirmId === 'string' &&
-              typeof input.confirmed === 'boolean' &&
-              page.answered.get(input.confirmId) === input.confirmed
-            )
-              return { effects: [] };
-            if (
-              !pending ||
-              typeof input.confirmed !== 'boolean' ||
-              pending.value.expiresAt <= this.now()
-            )
-              return fail();
-            page.confirms.delete(pending.value.id);
-            clearTimeout(pending.timer);
-            page.answered.set(pending.value.id, input.confirmed);
-            if (page.answered.size > 32) page.answered.delete(page.answered.keys().next().value!);
-            pending.answer(input.confirmed);
-            return { effects: [] };
-          }
-          case 'fetch': {
-            if (page.surface === 'interaction') return fail();
-            if (
-              typeof input.path !== 'string' ||
-              !input.path.startsWith('/') ||
-              input.path.startsWith('//') ||
-              input.path.length > 2048
-            )
-              return fail();
-            const url = new URL(input.path, 'https://plugin.invalid');
-            // Credentials/configuration executors use their dedicated trusted UI, never this page transport.
-            const method = input.method ?? 'GET';
-            if (method !== 'GET' && (!page.active || page.sourceHidden)) return fail();
-            if (
-              method !== 'GET' &&
-              !(url.pathname === '/kv' && (method === 'PUT' || method === 'POST'))
-            )
-              return fail();
-            const file = /^\/(?:library|media)\/[^/]/.test(url.pathname);
-            if (
-              !file &&
-              !/^\/(?:kv|app-context|agent-models|media-models|gallery)$/.test(url.pathname)
-            )
-              return fail();
-            if (
-              input.offset !== undefined &&
-              (!file ||
-                method !== 'GET' ||
-                !Number.isSafeInteger(input.offset) ||
-                (input.offset as number) < 0)
-            )
-              return fail();
-            if (
-              input.revision !== undefined &&
-              (typeof input.revision !== 'string' || input.revision.length > 128)
-            )
-              return fail();
-            if (
-              url.pathname.startsWith('/library/') &&
-              Number(input.offset) > 0 &&
-              typeof input.revision !== 'string'
-            )
-              return fail();
-            if (
-              input.body !== undefined &&
-              (typeof input.body !== 'string' || input.body.length > 32_000)
-            )
-              return fail();
-            const result = await this.deps.fetch(
-              ghost,
-              url.pathname + url.search,
-              method as string,
-              input.body as string | undefined,
-              input.offset as number | undefined,
-              input.revision as string | undefined,
-            );
-            this.check(page);
-            return { effects: [], result };
-          }
-          default:
-            return fail();
-        }
+            pluginId: id,
+            manifestId: ghost.manifest.id,
+            name: ghost.manifest.name,
+            controllerAuthorization: true,
+            documentIsolation: true,
+            entry: ghost.manifest.settingsHtml,
+            files: page.files,
+          },
+        };
       },
     };
   }

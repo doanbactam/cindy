@@ -17,7 +17,6 @@ import { takePeerAttachment } from '../device-link/peerAttachmentStore.js';
 import { parsePeerAttachmentRef } from '@cindy/device-link';
 import { capturePluginOauthPeer } from '../plugin-oauth/runtime.js';
 import { projectPluginPublishingSource } from './pluginPublishingSource.js';
-import { readMobilePreview } from './mobilePreview.js';
 import { createMailReader, mailReaderRemoteProvider } from './mailReader.js';
 import { resolveForgeInstallTarget, ghostInstallTargetContext } from './ghostInstallTarget.js';
 import { assertRemoteBotInvocationAllowed } from '../device-link/remoteBotSessionBoundary.js';
@@ -25,7 +24,7 @@ import { getDeviceLinkInvokeContext } from '../device-link/invoke-context.js';
 import { MobileTaskSettings } from './mobileTaskSettings.js';
 import { MobilePluginPages } from './mobilePageService.js';
 import { listMobilePageFiles, readMobilePageChunk } from './mobilePageAssets.js';
-import { invokeGhostMobileRelay, fetchGhostMobilePage, fetchGhostSettings } from './runtime/electronSandboxAdapter.js';
+import { invokeGhostMobileRelay, fetchGhostSettings } from './runtime/electronSandboxAdapter.js';
 import { remoteResourceRegistry } from '../device-link/remoteResourceRegistry.js';
 import { PluginUiService, PluginUiError, isLocalPluginUiSession, pluginCommandShortcuts, type PluginUiInstance } from './pluginUiService.js';
 import { createPluginUiRendererRecords } from './pluginUiRendererRecords.js';
@@ -93,15 +92,6 @@ function notifyMobilePluginsChanged(): void {
   mobilePluginPages?.invalidate();
   remotePluginManagement?.invalidate();
   tapWindowBroadcast(REMOTE_RESOURCE_CHANGED_CHANNEL, { collectionId: PLUGIN_COLLECTION }, getSafeDataOwnerPushStamp());
-}
-
-async function resolveMobilePluginMedia(instanceId: string, url: string, current: () => boolean) {
-  const ghost = findGhostForPhysicalStoragePart(instanceId);
-  if (!ghost?.enabled) return null;
-  const result = await getGhostPreviewGate().request({ ghostId: ghost.manifest.id, instanceId, url, isPanelFocused: current });
-  if (!result.ok || !current()) return null;
-  const file = result.src.split('/').pop();
-  return file && /^[a-f0-9]{64}\.[a-z0-9]+$/.test(file) ? { path: `/media/${file}`, mediaKind: result.kind } : null;
 }
 import { getModelVisibilityOverride, waitForModelVisibilityMirror } from '../maker-host/model-visibility-mirror.js';
 import { makerStartupGate } from '../maker-host/startup-gate.js';
@@ -393,7 +383,6 @@ import {
   parseOauthConnectSecretKey,
   type GhostSetupProbes,
 } from './ghostSetupStatus.js';
-import { mobilePluginConfiguration } from './mobilePluginConfiguration.js';
 import { getGhostSetupChangeBus } from './ghostSetupChangeBus.js';
 import { GhostSetupManifestTracker } from './ghostSetupManifestTracker.js';
 import {
@@ -4872,7 +4861,6 @@ export function getGhostPreviewSlot(): GhostPreviewSlot {
     previewSlotSingleton = new GhostPreviewSlot({
       getGhost: findGhostForInstanceId,
       focusedSessionId: () => ghostSessionFocusTracker.current(),
-      openMobile: (pageId, ghostId, url) => mobilePluginPages?.present(pageId, ghostId, { kind: 'preview', url }) ?? false,
       broadcast: (payload) => {
         const windows = BrowserWindow.getAllWindows().filter((window) => !window.isDestroyed());
         windows.forEach((window) => {
@@ -4935,9 +4923,6 @@ export function getGhostScheduleSlot(): GhostScheduleSlot {
   if (!scheduleSlotSingleton) {
     scheduleSlotSingleton = new GhostScheduleSlot({
       getGhost: findGhostForInstanceId,
-      sendToMobile: (pageId, payload) => mobilePluginPages?.present(pageId, payload.ghostId, {
-        kind: 'schedule', name: payload.name, prompt: payload.prompt, intervalMs: payload.intervalMs,
-      }) ?? false,
       sendToWindow: (payload) => {
         // 候选只取**挂了完整主壳**的窗口:独立的插件面板窗 / 右侧栏窗与 MainLayout
         // 平级,没有这个订阅也去不了自动化页(判据见 isMainShellWindowUrl)。
@@ -9170,14 +9155,7 @@ export function registerGhostIpc(): void {
   registerGhostCardRemoteProvider((id) => {
     const ghost = findGhostForRemotePluginIdentity(availableGhosts(), id);
     return ghost ? { name: ghost.manifest.name, iconDataUrl: ghost.iconDataUrl } : undefined;
-  }, {
-    externalLinks: id => findGhostForPhysicalStoragePart(id)?.manifest.card?.externalLinks === true,
-    dispatch: async (callId, actionId, prompt, pageId, ghostId, controllerId, formValues, formChange, mailUpload) => {
-      if (!mobilePluginPages) return false;
-      mobilePluginPages.assertInteraction(pageId, ghostId, controllerId);
-      return (await getGhostCardActionDispatcher().dispatch(callId, actionId, prompt, pageId, formValues, formChange, mailUpload)).ok;
-    },
-  }, async (sessionId, key) => (await import('../git-context/ipc.js')).readSessionPrStatus(sessionId, key));
+  }, undefined, async (sessionId, key) => (await import('../git-context/ipc.js')).readSessionPrStatus(sessionId, key));
   if (ipcRegistered) return;
   ipcRegistered = true;
   // 插件工具审批按真实已装实例与 receipt 判定，调用参数里的名字只用来定位。
@@ -9328,29 +9306,6 @@ export function registerGhostIpc(): void {
     answerModelPicker: (pageId, requestId, route) => getGhostModelPicker().resolve(pageId, requestId, route),
     management: remotePluginManagement,
     list: availableGhosts,
-    listOrder: () => {
-      const order = new Map<string, { addedAt?: number; recentIndex?: number }>();
-      try {
-        for (const entry of readGhostRecommendationEntries()) {
-          if (entry.addedAt !== undefined) order.set(entry.id, { addedAt: entry.addedAt });
-        }
-      } catch { log.warn('ghost addition history unavailable'); }
-      try {
-        loadGhostRecentIds().forEach((id, recentIndex) => order.set(id, { ...order.get(id), recentIndex }));
-      } catch { log.warn('ghost recent usage unavailable'); }
-      return order;
-    },
-    setupAssessment: getGhostSetupAssessment,
-    configuration: (id, assessment) => {
-      const ghost = findGhostForInstanceId(id);
-      if (!ghost) throw new Error('PLUGIN_UNAVAILABLE');
-      const storeId = installedGhostStoragePart(ghost);
-      return mobilePluginConfiguration(ghost.manifest, getGhostSetupProbes(storeId, ghost.manifest), assessment);
-    },
-    runtimeState: (id) => {
-      const ghost = findGhostForInstanceId(id);
-      return runtime.stateOf(ghost ? installedGhostStoragePart(ghost) : id);
-    },
     revision: ghost => JSON.stringify([ghost.manifest.version, ghostInstallApprovalToken(ghost.approval)]),
     captureOwner: () => { const scope = captureDataOwnerBroadcastScope(); return () => isDataOwnerBroadcastScopeCurrent(scope); },
     captureController: id => {
@@ -9363,9 +9318,6 @@ export function registerGhostIpc(): void {
           !settings.revokedControllers.includes(id);
       } catch { return false; } };
     },
-    unread: id => visibleGhostUnread().find(entry => entry.ghostId === id) ?? null,
-    clearUnread: extinguishGhostUnread,
-    setEnabled: async (id, enabled) => { await setGhostEnabledForUser(id, enabled); },
     settingsFetch: fetchGhostSettings,
     bundle: listMobilePageFiles,
     asset: readMobilePageChunk,
@@ -9379,16 +9331,12 @@ export function registerGhostIpc(): void {
       const ghost = findGhostForPhysicalStoragePart(id);
       if (ghost) await invokeGhostMobileRelay(ghost, { op: 'disconnect', pageId });
     },
-    fetch: fetchGhostMobilePage,
-    fetchPreview: readMobilePreview,
-    resolveMedia: resolveMobilePluginMedia,
     validateDirectory: async input => {
       if (!path.isAbsolute(input)) throw new Error('INVALID_DIRECTORY');
       const real = await fs.promises.realpath(input);
       if (!(await fs.promises.stat(real)).isDirectory()) throw new Error('INVALID_DIRECTORY');
       return real;
     },
-    taskSettings,
   });
   remoteResourceRegistry.register(mobilePluginPages.provider());
   // 启动即对账一次 skill 槽链接:上次会话崩溃/异常退出留下的悬空链接、
@@ -10162,7 +10110,6 @@ export function registerGhostIpc(): void {
       if (source !== undefined && !current) throw new Error('PLUGIN_PAGE_UNAVAILABLE');
       const request = payload as Record<string, unknown>;
       const result = await getGhostWorkspaceSlot().handleRequest(id, source === undefined ? payload : { ...request, focus: false }, current);
-      if (source !== undefined && request.focus === true && result.ok && current?.()) mobilePluginPages?.present(source as string, id, { kind: 'task', taskId: result.sessionId });
       return result;
     }
     // preview-request = 右侧栏开预览标签(preview 槽):URL 必须命中身份卡
@@ -11177,8 +11124,7 @@ export function registerGhostIpc(): void {
   /* ── Library(持久作品库)设置面 IPC ─────────────────────────────────
    * 目录选择永远由**宿主**弹(pick 同款),插件无权发起;装入确认与设置页
    * 共用同一裁决链(原生选择器 → 候选校验 → binding/迁移)。 */
-  // 详细介绍:详情页打开时按需读取,不随 ghosts:list 广播;不进 device-link 白名单
-  // (手机端经 mobilePageService 的插件详情资源单独投影)。
+  // 详细介绍:详情页打开时按需读取,不随 ghosts:list 广播;不进 device-link 白名单。
   // locale 由界面语言传入(主进程语言同步可能晚于界面切换);只用来在已声明的介绍文件里选择。
   ipcMain.handle('ghosts:readme', async (event, id: unknown, locale: unknown) => {
     assertTrustedAppRendererEvent(event);

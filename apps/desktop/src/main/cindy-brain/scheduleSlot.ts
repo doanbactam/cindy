@@ -57,7 +57,6 @@ export interface ScheduleSlotDeps {
    * 保存成多条自动化。装配处负责选窗(focused ?? 第一个),本槽只管投一次。
    */
   sendToWindow(payload: GhostScheduleDraftPush): boolean;
-  sendToMobile?(pageId: string, payload: GhostScheduleDraftPush): boolean;
   now?(): number;
   /** 仅测试注入;生产用 randomUUID。 */
   newRequestId?(): string;
@@ -224,8 +223,11 @@ export class GhostScheduleSlot {
       prompt: prompt + address,
       ...(intervalMs !== undefined ? { intervalMs } : {}),
     };
-    const delivered = typeof request.mobilePageId === 'string'
-      ? this.deps.sendToMobile?.(request.mobilePageId, draft) : this.deps.sendToWindow(draft);
+    // 远程设置页带 mobilePageId:草稿不能落到这台电脑的本机窗口,如实拒绝。
+    if (typeof request.mobilePageId === 'string') {
+      return fail('HOST_NOT_READY', 'Schedule drafts cannot be opened from a remote settings page');
+    }
+    const delivered = this.deps.sendToWindow(draft);
     if (!delivered) {
       return fail('HOST_NOT_READY', '当前没有可用的宿主窗口');
     }

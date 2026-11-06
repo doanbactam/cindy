@@ -54,7 +54,7 @@ Use when implementing plugin code, calling host APIs or declaring access to reso
 
 ### 插件界面与用户交互
 
-Use for the UI surfaces and interactions the plugin actually exposes; mobile pages are optional.
+Use for the UI surfaces and interactions the plugin actually exposes.
 
 - [插件交互页面：生成首屏、SDK 交互与完整示例（§4.23）](references/plugin-interactive-pages.md)
 - [插件原生界面扩展（开发中）](references/plugin-native-ui.md)
@@ -62,7 +62,7 @@ Use for the UI surfaces and interactions the plugin actually exposes; mobile pag
 - [插件面板与主题适配（§5）](references/plugin-panels.md)
 - [插件一级主视图 mainView（§4.20）](references/plugin-main-view.md)
 - [插件跟对话的任务页 taskView（§4.22）](references/plugin-task-view.md)
-- [插件移动端页面接入与操作来源（§5.1）](references/plugin-mobile-pages.md)
+- [远程设置页的操作来源与已停用的 `mobile` 声明（§5.1）](references/plugin-mobile-pages.md)
 - [插件聊天卡片 card（§4.5）](references/plugin-chat-cards.md)
 - [插件设置页与自定义参数 settingsHtml / kv（§4.8）](references/plugin-settings.md)
 - [插件轻提示与未读角标 notify / badge（§4.9）](references/plugin-notifications.md)

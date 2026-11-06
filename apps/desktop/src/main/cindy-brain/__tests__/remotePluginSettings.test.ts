@@ -139,9 +139,6 @@ function fixture(namespace: string | null = null,
       return () => owner === captured;
     },
     captureController: () => () => allowed,
-    unread: () => null,
-    clearUnread: vi.fn(),
-    setEnabled: vi.fn(),
     bundle: async () => [{ path: 'settings.html', mime: 'text/html', size: file.length }],
     asset: async (_ghost, _file, offset) => ({
       mime: 'text/html',
@@ -151,7 +148,6 @@ function fixture(namespace: string | null = null,
     post,
     poll,
     disconnect,
-    fetch: vi.fn(),
     settingsFetch,
     validateDirectory,
   });

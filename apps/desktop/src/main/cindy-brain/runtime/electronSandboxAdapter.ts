@@ -134,42 +134,15 @@ export async function invokeGhostMobileRelay(ghost: InstalledGhost, operation: M
   throw new Error('PLUGIN_PAGE_UNAVAILABLE');
 }
 
-export async function fetchGhostMobilePage(ghost: InstalledGhost, pathname: string, method: string, body?: string, offset = 0, expectedRevision?: string) {
+/** Remote settings reads of the plugin's own bounded JSON endpoints, in its owner partition. */
+export async function fetchGhostMobilePage(ghost: InstalledGhost, pathname: string, method: string) {
   const partition = ownerScopedGhostPartitionForInstalledGhost(ghost, getActiveAppSession());
   if (!partition) throw new Error('PLUGIN_PAGE_UNAVAILABLE');
   ensureGhostProtocolRegistered(ghost);
   const isCurrent = captureGhostProtocolTargetGuard(partition);
   if (!isCurrent()) throw new Error('PLUGIN_PAGE_UNAVAILABLE');
-  // Read only the requested immutable blob chunk. The desktop protocol buffers
-  // the whole file, which would repeat that work for every remote video chunk.
-  if (pathname.startsWith('/media/')) {
-    const match = /^\/media\/([a-f0-9]{64})(\.[a-z0-9]+)$/.exec(pathname);
-    const missing = { status: 404, mime: 'application/octet-stream', base64: '' };
-    if (!match || method !== 'GET' || !Number.isSafeInteger(offset) || offset < 0) return missing;
-    if (!(await ghostCanReadMedia(match[1], installedGhostStoragePart(ghost)))) return missing;
-    let resolved: { absPath: string; mimeType: string };
-    try { resolved = resolveBlobHashRef(match[1], match[2]); } catch { return missing; }
-    const handle = await fs.open(resolved.absPath, nodeFs.constants.O_RDONLY | nodeFs.constants.O_NOFOLLOW);
-    try {
-      const stat = await handle.stat();
-      if (!stat.isFile() || offset > stat.size) return missing;
-      const data = Buffer.alloc(Math.min(49_152, stat.size - offset));
-      const { bytesRead } = await handle.read(data, 0, data.length, offset);
-      if (bytesRead !== data.length) throw new Error('PLUGIN_MEDIA_CHANGED');
-      if (!isCurrent()) throw new Error('PLUGIN_PAGE_UNAVAILABLE');
-      return { status: 200, mime: resolved.mimeType, base64: data.toString('base64'), revision: match[1],
-        ...(offset + bytesRead < stat.size ? { nextOffset: offset + bytesRead } : {}),
-      };
-    } finally { await handle.close(); }
-  }
-  const file = /^\/(?:library|media)\//.test(pathname);
-  const response = await session.fromPartition(partition).fetch(`${GHOST_SCHEME}://${ghost.manifest.id}${pathname}`, { method, body,
-    ...(file && offset ? { headers: { Range: `bytes=${offset}-` } } : {}),
-  });
+  const response = await session.fromPartition(partition).fetch(`${GHOST_SCHEME}://${ghost.manifest.id}${pathname}`, { method });
   const revision = response.headers.get('etag') ?? undefined;
-  if (pathname.startsWith('/library/') && offset > 0 && (!expectedRevision || revision !== expectedRevision)) {
-    await response.body?.cancel(); throw new Error('PLUGIN_LIBRARY_CHANGED');
-  }
   // These JSON endpoints have bounded existing contracts; never expose an unbounded file here.
   const reader = response.body?.getReader();
   const chunks: Uint8Array[] = [];
@@ -179,22 +152,14 @@ export async function fetchGhostMobilePage(ghost: InstalledGhost, pathname: stri
       for (;;) {
         const part = await reader.read();
         if (part.done) break;
-        if (file) {
-          const chunk = part.value.subarray(0, 49_152 - total); chunks.push(chunk); total += chunk.length;
-          if (total >= 49_152) break;
-        } else {
-          total += part.value.length;
-          if (total > 1_048_576) throw new Error('PLUGIN_RESPONSE_TOO_LARGE');
-          chunks.push(part.value);
-        }
+        total += part.value.length;
+        if (total > 1_048_576) throw new Error('PLUGIN_RESPONSE_TOO_LARGE');
+        chunks.push(part.value);
       }
     } finally { await reader.cancel(); }
   }
-  const remaining = Number(response.headers.get('content-length'));
   if (!isCurrent()) throw new Error('PLUGIN_PAGE_UNAVAILABLE');
-  return { status: response.status === 206 ? 200 : response.status, mime: response.headers.get('content-type') ?? 'application/json', base64: Buffer.concat(chunks).toString('base64'), ...(revision ? { revision } : {}),
-    ...(file && remaining > total ? { nextOffset: offset + total } : {}),
-  };
+  return { status: response.status, mime: response.headers.get('content-type') ?? 'application/json', base64: Buffer.concat(chunks).toString('base64'), ...(revision ? { revision } : {}) };
 }
 
 /** Same configuration executors as local settings, with the remote lease checked at persistence. */

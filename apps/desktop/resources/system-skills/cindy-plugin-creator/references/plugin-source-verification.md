@@ -51,7 +51,7 @@ git -C <source-repo> show '<full-commit>:apps/desktop/src/preload/ghostPreload.t
 | 电子脑能调用的公开桥接方法 | `apps/desktop/src/preload/ghostPreload.ts` |
 | 管子请求的处理、资格与权限 | `apps/desktop/src/main/cindy-brain/index.ts` 及对应的 `*Slot.ts` / 服务实现 |
 | 设置页、panel、mainView 同源端点 | `apps/desktop/src/main/cindy-brain/runtime/electronSandboxAdapter.ts` |
-| 手机与远程页面 | `apps/desktop/src/main/cindy-brain/mobilePageService.ts`、`packages/device-link/src/pluginPages.ts` |
+| 远程设置页 | `apps/desktop/src/main/cindy-brain/mobilePageService.ts`、`packages/device-link/src/pluginPages.ts` |
 | 打包校验与产物 | `apps/desktop/src/main/cindy-brain/forge.ts` |
 
 对本次要依赖的 API，继续读宿主处理与相关测试，核对参数、返回值、能力声明、权限、

@@ -43,7 +43,6 @@ export interface PreviewSlotDeps {
   getGhost(id: string): InstalledGhost | null;
   /** 把开页请求推给宿主窗口;false = 一个窗口都不在(HOST_NOT_READY)。 */
   broadcast(payload: GhostPreviewOpenPush): boolean;
-  openMobile?(pageId: string, ghostId: string, url: string): boolean;
   /** 台前会话快照(请求缺省 sessionId 时的落点;非会话页为 null)。 */
   focusedSessionId(): string | null;
   now?(): number;
@@ -103,9 +102,9 @@ export class GhostPreviewSlot {
       return fail('RATE_LIMITED', '预览打开请求太频繁,稍后再试');
     }
 
+    // 远程设置页带 mobilePageId:这台电脑没有可开预览的发起页,如实拒绝,不落到本机窗口。
     if (typeof request.mobilePageId === 'string') {
-      return this.deps.openMobile?.(request.mobilePageId, ghostId, request.url)
-        ? { ok: true } : fail('HOST_NOT_READY', 'The originating mobile page is unavailable');
+      return fail('HOST_NOT_READY', 'Previews cannot be opened from a remote settings page');
     }
     // 落点会话:显式 sessionId 优先(通常来自 session-context 注入),缺省
     // 落台前会话;两者皆无(用户不在会话页)= 没有可开标签的家,如实拒。
