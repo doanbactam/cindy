@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { sharedTaskHostPeer, parseSharedTaskPeer, startSharedTaskListPoller, type SharedTaskListItem } from '@cindy/device-link';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDataOwnerGeneration, isDataOwnerGenerationCurrent } from '@/contexts/dataOwnerGeneration';
 import type { Session } from '@/lib/ccAgent.types';
@@ -46,7 +46,7 @@ export function useSharedTaskTasks(): void {
           const peer = sharedTaskHostPeer(sharedTask.sharedTaskId, sharedTask.hostDeviceId);
           try {
             const known = remoteProjectsStore.getDeviceSessions(peer).find(session => session.id === sharedTask.sessionId);
-            if (!CINDY_MAKE_ENABLED && isCindyMakeSource(known?.source)) {
+            if (isCindyMakeSource(known?.source)) {
               await leaveHiddenSharedTask(sharedTask, currentOwner);
               linked.delete(peer);
               continue;
@@ -62,7 +62,7 @@ export function useSharedTaskTasks(): void {
             const session = await window.electronAPI.deviceLink.invoke(peer, 'local-db:sessions:get', [sharedTask.sessionId]) as Session;
             if (!currentOwner()) return null;
             if (session?.id !== sharedTask.sessionId) throw new Error('SharedTask task mismatch');
-            if (!CINDY_MAKE_ENABLED && isCindyMakeSource(session.source)) {
+            if (isCindyMakeSource(session.source)) {
               await leaveHiddenSharedTask(sharedTask, currentOwner);
               linked.delete(peer);
               continue;

@@ -11,8 +11,6 @@ import { resolveCompanionRuntimeEnvironment } from '../bot-import/runtime.js';
 import { registerCodexTextOnlyPolicy } from './codex-text-only-policy.js';
 import { ensureCodexCliLauncher } from '../agent-binaries/codex-cli-launcher.js';
 import { readDisabledSkillPaths } from '../skillhub/activationPreferences';
-import { cindyMakeManager } from '../cindy-make/manager.js';
-import { makeSourceRoot } from '../cindy-make/sourcePaths.js';
 import { clearCodexAccountUsageSnapshot } from '../usageBroadcaster.js';
 /**
  * apps/desktop/src/main/maker-host
@@ -75,18 +73,6 @@ import { effectiveXdGatewayBaseUrl } from '../model-access/effectiveEndpoint.js'
 import { listCustomMcpRuntimeGenerations } from './custom-mcp-store.js';
 
 import { createMessage } from '../localDb/ipc/messages.js';
-import { createCindyMakeMcpProvider } from '../cindy-make/mcpProvider.js';
-import { captureMakeHistoryStore } from '../cindy-make/historyOwner.js';
-import { captureMakeHistoryCompletion } from '../cindy-make/historyCapture.js';
-import { broadcastMakeRemoteChanged } from '../cindy-make/remoteBroadcast.js';
-import { captureDataOwnerBroadcastScope, isDataOwnerBroadcastScopeCurrent } from '../device-link/broadcast-tap.js';
-import {
-  collectCindyMakeChanges,
-  createCindyMakeCompletionTracker,
-} from '../cindy-make/completion.js';
-import { isCindyMakeWorktreePath } from '../cindy-make/taskWorkspace.js';
-import { runSourceGit } from '../cindy-make/sourceGit.js';
-import { createMakeToolchainEnvironment } from '../cindy-make/toolchainEnvironment.js';
 import { getMessagesForHistory } from '../localDb/chatHistoryReader.js';
 import { getWorkerLink, updateWorkerStatus, getRemoteOrcaSession, listWorkersByLead, getActiveTeamByLead } from '../localDb/orcaTeamStore.js';
 import { createOrcaRemoteWorkerBridge } from '../maker-ipc/orcaRemoteWorkerBridge.js';
@@ -94,6 +80,7 @@ import { throwIpcError } from '../utils/ipcValidate.js';
 import { makerStartupGate } from './startup-gate.js';
 import { cleanupSessionTempAttachments } from '../maker-ipc/normalizeAttachments.js';
 import { resolveGhostFsSessionSnapshot } from '../maker-ipc/ghostFsSessionSnapshot.js';
+import { captureDataOwnerBroadcastScope, isDataOwnerBroadcastScopeCurrent } from '../device-link/broadcast-tap.js';
 import { HOST_CONFIRM_TIMEOUT_MS } from '../maker-ipc/hostConfirmTiming.js';
 import { getActiveInteractionRoute, requestHostInteraction } from '../maker-ipc/interactionRouter.js';
 import { setAgentAppUpdateSessionHost } from '../agent-app-update/index.js';
@@ -1342,54 +1329,6 @@ export function getMaker(): Maker {
       getAcceptedInputProvenance: sessionId => getSessionInputProvenance(sessionId).input,
       captureReportSettlement: captureRemoteWorkerReportSettlement,
     });
-    // Cindy Make 个人版任务专属工具:只有 sessions.source='cindy-make' 的任务在
-    // bootstrapSession 时拿到 vendorOptions 标记;Claude 据标记决定注册,Pi 按会话
-    // 剔出 server 列表,Codex 按线程下发 enabled=false,工具调用再按标记 fail-closed。
-    // 完成卡片在本轮 turn 结束后才落库,保证它排在模型最后一段回复之后。
-    const cindyMakeCompletionTracker = createCindyMakeCompletionTracker({
-      getSession: (sessionId) => _maker?.getSession(sessionId),
-      collectFacts: async (sessionId) => {
-        const userData = app.getPath('userData');
-        const meta = await _maker?.getSessionMeta(sessionId);
-        // Finalize only the managed task branch; official/personal integration is a separate action.
-        if (!meta?.workDir || !isCindyMakeWorktreePath(userData, meta.workDir)) {
-          throw new Error('session working directory is not a Cindy Make worktree');
-        }
-        const env = await createMakeToolchainEnvironment(userData);
-        return cindyMakeManager.withProject(makeSourceRoot(userData), () =>
-          collectCindyMakeChanges(
-            (args, cwd, indexFile) =>
-              runSourceGit(
-                { ...env.processEnvironment(), ...(indexFile ? { GIT_INDEX_FILE: indexFile } : {}) },
-                args, cwd, AbortSignal.timeout(60_000),
-              ),
-            userData,
-            meta.workDir,
-          ),
-        );
-      },
-      persist: async (sessionId, meta) => {
-        const scope = captureDataOwnerBroadcastScope();
-        const history = captureMakeHistoryStore();
-        const session = await _maker?.getSessionMeta(sessionId);
-        if (!isDataOwnerBroadcastScopeCurrent(scope)) return;
-        const clientId = randomUUID();
-        await createMessage(sessionId, {
-          clientId,
-          role: 'assistant',
-          content: '',
-          agentMeta: { cindyMakeCompletion: meta },
-        });
-        if (isDataOwnerBroadcastScopeCurrent(scope) && session?.workDir)
-          captureMakeHistoryCompletion(history, path.basename(session.workDir), clientId, meta);
-        broadcastMakeRemoteChanged(sessionId, scope);
-      },
-      logger: desktopMakerLogger,
-    });
-    const cindyMakeProvider = createCindyMakeMcpProvider({
-      reportCompletion: cindyMakeCompletionTracker.report,
-      logger: desktopMakerLogger,
-    });
 
     // logger 不 pre-child agent kind —— agent 内部会自己 child(this.kind),
     // host 这里再 child 一次会变成 maker/claude-code/claude-code。
@@ -1412,7 +1351,6 @@ export function getMaker(): Maker {
       createCompanionConnectionsProvider(),
       createCompanionImportProvider(),
       orcaWorkerBridgeProvider,
-      cindyMakeProvider,
     ];
     _mcpProviders['claude-code'] = claudeMcpProviders;
     // agent Bash 命令的全局并发闸门(跨所有本地 cc session / worker / subagent 共享)。
@@ -1735,7 +1673,6 @@ export function getMaker(): Maker {
       createCompanionConnectionsProvider(),
       createCompanionImportProvider(),
       orcaWorkerBridgeProvider,
-      cindyMakeProvider,
     ];
     _mcpProviders.codex = codexMcpProviders;
     const resolveDesiredCodexSubagentRoutingSignature = async (ctx: {
@@ -2542,7 +2479,6 @@ export function getMaker(): Maker {
       createCompanionConnectionsProvider(),
       createCompanionImportProvider(),
       orcaWorkerBridgeProvider,
-      cindyMakeProvider,
     ];
     _mcpProviders.pi = piMcpProviders;
     // 用户自定义 MCP:三个 agent 都必须注册其实际持有的数组引用，再统一做初始 refresh。

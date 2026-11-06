@@ -26,9 +26,6 @@ vi.mock('react-i18next', async (importOriginal) => ({
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ mode: 'local', dataOwnerId: null, user: null }),
 }));
-vi.mock('@/lib/useCindyVersions', () => ({
-  useCindyVersions: () => ({ state: 'idle' }),
-}));
 
 const { Stub } = vi.hoisted(() => ({ Stub: () => null }));
 vi.mock('@/cindy-brain/PluginUiControls', () => ({ PluginUiContributionControls: Stub }));

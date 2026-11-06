@@ -18,35 +18,6 @@ import { registerMenubarIpc } from './menubar/ipc.js';
 import { initMenubarService, stopMenubarService } from './menubar/service.js';
 import { refreshQuotaPanelsControlState } from './quota-overview/panelController.js';
 import { getQuotaOverviewService } from './quota-overview/service.js';
-import {
-  createLatestSourceVersionReader,
-  sourceChannel,
-} from './cindy-make/latestSourceVersion.js';
-import { refreshCindySourceStatus } from './cindy-make/sourceStatusRefresh.js';
-import {
-  configureUpstreamMerge,
-  actUpstreamMerge,
-  refreshUpstreamMergeProjection,
-} from './cindy-make/upstreamMergeRuntime.js';
-import {
-  configurePersonalRemote,
-  actPersonalRemote,
-  actCindyMakeContribution,
-} from './cindy-make/personalRemoteRuntime.js';
-import { configurePersonalSync, actPersonalSync } from './cindy-make/personalSyncRuntime.js';
-import {
-  configureMakeHistory,
-  getCindyMakeHistory,
-  actCindyMakeHistory,
-  generateHistoryPersonalVersion,
-  cancelHistoryPersonalVersion,
-  openHistoryPersonalBuild,
-  stopMakeHistoryBuild,
-} from './cindy-make/historyRuntime.js';
-import {
-  readCindyMakeSettings,
-  writeCindyMakeSyncLatestBeforeBuild,
-} from './cindy-make/settingsStore.js';
 import { retainProviderPresentationAfterAuthChange } from './maker-host/provider-presentation-store.js';
 import { codexAccountState } from './maker-host/codex-account-auth.js';
 import { syncSubscriptionAccountUsage } from './usage/subscriptionAccountUsage.js';
@@ -110,7 +81,6 @@ import { pipeline } from 'node:stream/promises';
 import { execFile, execFileSync, spawn } from 'node:child_process';
 import windowStateKeeper from 'electron-window-state';
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
-import { assertCindyMakeEnabled } from './cindy-make/featureGate.js';
 import {
   shouldRequestSingleInstanceLock,
   resolveSingleInstanceLockUserDataDir,
@@ -362,54 +332,6 @@ import {
 import * as cindyMediaBlobStore from './cindy-media/blobStore';
 import * as cindyChatAttachments from './cindy-media/chatAttachments';
 import { getFixedDirectoryStats, openOrCreateFixedDirectory } from './cindy-media/fixedDirectory';
-import { openMakeSourceDirectory, openMakeToolsDirectory } from './cindy-make/toolsDirectory';
-import {
-  cancelCindySourcePreparation,
-  makeSourceRoot,
-  readCurrentCindySourceStatus,
-  subscribeCindySourceStatus,
-} from './cindy-make/sourcePreparation.js';
-import { broadcastCindyMakeSourceStatus } from './cindy-make/sourceStatusBroadcast.js';
-import { broadcastCindyMakeHistoryChanged } from './cindy-make/historyBroadcast.js';
-import { cindyMakeManager } from './cindy-make/manager.js';
-import { broadcastCindyMakeState } from './cindy-make/stateBroadcast.js';
-import {
-  createMakeToolchainEnvironment,
-  resolveMakeToolEnvironment,
-} from './cindy-make/toolchainEnvironment.js';
-import {
-  CINDY_MAKE_RUN_ID_PATTERN,
-  isCindyMakeManagedWorktreePath,
-} from './cindy-make/sourcePaths.js';
-import { prepareCindyMakeWorkspace } from './cindy-make/taskWorkspace.js';
-import { restoreCindyMakeTaskState, startCindyMakeTask, configureCindyMakeEditingGuard } from './cindy-make/taskRuntime.js';
-import { registerMakeRemoteResources } from './cindy-make/remoteRuntime.js';
-import {
-  configureCindyMakeTaskManagement,
-  manageCindyMakeTask,
-  refreshCindyMakeTaskIntegration,
-} from './cindy-make/taskManagement.js';
-import {
-  actCindyMakeTest,
-  cindyMakeTestController,
-  configureCindyMakeTestRuntime,
-} from './cindy-make/testRuntime.js';
-import {
-  actCindyVersion,
-  configureCindyVersions,
-  getCindyVersions,
-} from './cindy-make/versionService.js';
-import {
-  deliverCindyVersionOpenEvents,
-  finishCindyVersionStartup,
-  isCindyVersionLaunchPending,
-  isCindyVersionSwitching,
-  watchCindyVersionStartupResult,
-} from './cindy-make/versionStartup.js';
-import {
-  getCindyVersionLockScope,
-  isCindyPersonalRuntime,
-} from './cindy-make/versionRuntimeIdentity.js';
 import { createStorageIpcHandlers } from './cindy-media/storageIpc';
 import { registerLocalAgentConfirmationIpc, cancelLocalAgentConfirmations } from './local-agent/confirmation.js';
 import { disposeLocalAgentHost, localAgentConnections, localAgentDeveloperConnection, revokeLocalAgentConnections, setLocalAgentCreateVisibleSessions } from './local-agent/service.js';
@@ -1023,7 +945,6 @@ import {
   focusMainWindow as activateMainWindow,
   takePendingDeepLinkFromRenderer,
 } from './deepLink.js';
-import { createMakeTestWindowBehavior } from './cindy-make/testWindowBehavior.js';
 import { registerFolderContextMenu } from './folderContextMenu.js';
 import { healWindowsShortcuts } from './windowsShortcutSelfHeal.js';
 import { CURRENT_APP_ID, CURRENT_CINDY_REGION } from '../shared/brandRegion.js';
@@ -3794,8 +3715,7 @@ function applyPageZoomLevel(mainWindow: BrowserWindow, nextFactor: number): numb
 //   - registerDeepLinkProtocol() 仅为 packaged client 注册 OS 协议，dev 不改变系统关联
 //   - app.on('open-url') 是 macOS-only 事件, 冷启动时也会在 ready 之前 fire,
 //     必须在 app.whenReady() 之前 attach；dev 仍接收显式投递的事件
-watchCindyVersionStartupResult();
-if (!isCindyPersonalRuntime()) registerDeepLinkProtocol();
+registerDeepLinkProtocol();
 app.on('open-url', (event, url) => {
   event.preventDefault();
   handleIncomingDeepLink(url, 'open-url');
@@ -3847,22 +3767,16 @@ app.on('open-file', (event, filePath) => {
 // reader lease 阻止之后的 primary 抢跑 migration。
 // 隔离数据实例走 `--isolated[=<名字>]`(独立 userData → 独立锁域,见 docs/dev-rules/desktop-development.md)。
 if (
-  getCindyVersionLockScope() !== null ||
   shouldRequestSingleInstanceLock({
     isPackaged: app.isPackaged,
     schedulerPassive: process.env.XDT_SCHEDULER_PASSIVE === '1',
   })
 ) {
   const realUserDataDir = app.getPath('userData');
-  const lockScopeDir =
-    getCindyVersionLockScope() === 'profile'
-      ? realUserDataDir
-      : getCindyVersionLockScope() === 'dev'
-        ? path.join(realUserDataDir, 'dev-single-instance-lock')
-        : resolveSingleInstanceLockUserDataDir({
-            isPackaged: app.isPackaged,
-            userDataDir: realUserDataDir,
-          });
+  const lockScopeDir = resolveSingleInstanceLockUserDataDir({
+    isPackaged: app.isPackaged,
+    userDataDir: realUserDataDir,
+  });
   let gotTheLock: boolean;
   if (lockScopeDir === realUserDataDir) {
     gotTheLock = app.requestSingleInstanceLock();
@@ -3886,7 +3800,6 @@ if (
     );
     app.quit();
   } else {
-    finishCindyVersionStartup();
     app.on('second-instance', (_event, argv) => {
       // Windows: 用户点 cindy://(或历史 xdt-maker://)链接 / 右键 "通过 Cindy 打开" 时,
       // OS 会再起一个本 app 实例; 单例锁把它 redirect 成 second-instance 事件,
@@ -3926,16 +3839,6 @@ if (
     });
   }
 }
-
-if (
-  app.hasSingleInstanceLock() ||
-  (getCindyVersionLockScope() === null &&
-    !shouldRequestSingleInstanceLock({
-      isPackaged: app.isPackaged,
-      schedulerPassive: process.env.XDT_SCHEDULER_PASSIVE === '1',
-    }))
-)
-  deliverCindyVersionOpenEvents();
 
 // 冷启动 argv 扫描 — Windows 上首次点链接 / 右键 "通过 Cindy 打开" 启动 app
 // 时, URL 或 --open-folder 在 process.argv 末尾。macOS deep link 走 open-url
@@ -4117,15 +4020,8 @@ const createWindow = () => {
   });
   // Main-window close policy is explicit because hidden utility windows can
   // keep the process alive.
-  const makeTestWindow = createMakeTestWindowBehavior({
-    isPackaged: app.isPackaged,
-    environment: process.env,
-    focus: () => activateMainWindow(),
-    quit: () => app.quit(),
-  });
   mainWindow.on('close', (event) => {
     if (isQuitting) return;
-    if (makeTestWindow.close(event)) return;
     // macOS: keep the window + renderer alive and hide only, so Dock activation
     // can restore it without remounting the renderer.
     if (process.platform === 'darwin') {
@@ -4233,9 +4129,8 @@ const createWindow = () => {
     showMainWindowAndRestoreFullscreen(mainWindow, {
       restoreFullscreen: shouldRestoreMacFullscreen,
     });
-    makeTestWindow.ready();
     refreshWindowsAppBadge();
-    if (!app.isPackaged || isCindyVersionLaunchPending())
+    if (!app.isPackaged)
       markDesktopDevWindowReady(mainWindow.webContents.getOSProcessId());
     worktreeMaintenanceReadyWindows.add(mainWindow);
     startReadyWorktreeMaintenance();
@@ -6189,7 +6084,7 @@ const registerIpcHandlers = () => {
       // Plugin downloads/reconciliation retain their owner-scoped retries, but
       // must not delay AuthContext starting the owner DB or showing the app.
       authManager.requestStableOwnerPostCommit('auth-initialize');
-      if (!app.isPackaged || isCindyVersionLaunchPending()) {
+      if (!app.isPackaged) {
         recordDesktopDevAuthStartupResult(state, pendingCompletion, () =>
           authManager.getAuthState(),
         );
@@ -7915,313 +7810,6 @@ const registerIpcHandlers = () => {
   ipcMain.handle('app:open-logs-dir', (event): Promise<{ success: boolean }> => {
     assertTrustedAppRendererEvent(event);
     return openLogsDirectory();
-  });
-
-  // Settings → Cindy Make: open Cindy's private managed-tool directory.
-  // The path is derived in main so the renderer cannot choose an arbitrary folder.
-  ipcMain.handle('app:open-cindy-make-tools-dir', async (event): Promise<{ success: boolean }> => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    return openMakeToolsDirectory(app.getPath('userData'), {
-      openPath: (directory) => shell.openPath(directory),
-    });
-  });
-
-  const readLatestSourceVersion = createLatestSourceVersionReader((url, init) =>
-    net.fetch(url, init),
-  );
-  configureUpstreamMerge((id) => getMakerIfReady()?.getSession(id)?.isTurnRunning() ?? false);
-  ipcMain.handle('app:cindy-make-merge', async (event, input: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    return actUpstreamMerge(input);
-  });
-  // Local Settings only: binding this machine's GitHub fork has no device-link grant.
-  // A failure here must not prevent the remaining IPC handlers from registering.
-  try {
-    configurePersonalRemote();
-  } catch (error) {
-    createLogger('cindy-make').warn('personal remote unavailable', {
-      error: error instanceof Error ? error.name : 'unknown',
-    });
-  }
-  ipcMain.handle('app:cindy-make-personal-remote', async (event, action: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    return actPersonalRemote(action);
-  });
-  // One Sync for every personal version; local Settings only, no device-link grant.
-  try {
-    configurePersonalSync();
-  } catch (error) {
-    createLogger('cindy-make').warn('personal sync unavailable', {
-      error: error instanceof Error ? error.name : 'unknown',
-    });
-  }
-  ipcMain.handle('app:cindy-make-sync', async (event, request: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    return actPersonalSync(request);
-  });
-  ipcMain.handle('app:cindy-make-contribution', async (event, request: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    return actCindyMakeContribution(request);
-  });
-  ipcMain.handle('app:get-cindy-make-source-status', async (event) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    const userData = app.getPath('userData');
-    const root = makeSourceRoot(userData);
-    const channel = !app.isPackaged
-      ? 'dev'
-      : /-beta(?:\.|$)/i.test(app.getVersion())
-        ? 'beta'
-        : 'release';
-    return refreshCindySourceStatus(cindyMakeManager, {
-      readSummary: () => readCurrentCindySourceStatus(root),
-      readLocal: async () => {
-        let env: Awaited<ReturnType<typeof createMakeToolchainEnvironment>> | undefined;
-        try {
-          env = await createMakeToolchainEnvironment(userData);
-        } catch {
-          // The persisted status remains usable when tool discovery is unavailable.
-        }
-        return readCurrentCindySourceStatus(root, env);
-      },
-      readLatest: (source) => readLatestSourceVersion(source, sourceChannel(source, channel)),
-    });
-  });
-  // 源码准备是全局单例:进度广播给所有窗口,任意窗口都能停止它。
-  subscribeCindySourceStatus(broadcastCindyMakeSourceStatus);
-  cindyMakeManager.subscribe(broadcastCindyMakeState);
-  configureCindyMakeTaskManagement({
-    isAlive: (id) => getMakerIfReady()?.isSessionAlive(id),
-    isRunning: (id) => getMakerIfReady()?.getSession(id)?.isTurnRunning() ?? false,
-    isWorkspaceBusy: (workingDir) => cindyMakeTestController.isUsingWorkspace(workingDir),
-    setStatus: patchSessionMetaInDb,
-    recycle: recycleSessionWorktreeForStatusChange,
-  });
-  configureCindyMakeTestRuntime(
-    (id) => getMakerIfReady()?.getSession(id)?.isTurnRunning() ?? false,
-    broadcastCindyMakeHistoryChanged,
-  );
-  configureCindyMakeEditingGuard((id) => cindyMakeTestController.isUsingSession(id));
-  registerMakeRemoteResources((id) => getMakerIfReady()?.getSession(id)?.isTurnRunning() ?? false);
-  configureMakeHistory(
-    (id) => getMakerIfReady()?.getSession(id)?.isTurnRunning() ?? false,
-    broadcastCindyMakeHistoryChanged,
-  );
-  ipcMain.handle('app:get-cindy-make-settings', (event) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    return readCindyMakeSettings();
-  });
-  ipcMain.handle(
-    'app:set-cindy-make-sync-latest-before-build',
-    (event, enabled: unknown) => {
-      assertTrustedAppRendererEvent(event);
-      assertCindyMakeEnabled();
-      if (typeof enabled !== 'boolean')
-        throwIpcError('INVALID_PARAMS', `Invalid ${BRAND_NAME} Make setting`);
-      return writeCindyMakeSyncLatestBeforeBuild(enabled);
-    },
-  );
-  ipcMain.handle('app:cindy-make-history', async (event, selected?: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    if (
-      selected !== undefined &&
-      (typeof selected !== 'string' || !/^[A-Za-z0-9-]{1,128}$/.test(selected))
-    )
-      throwIpcError('INVALID_PARAMS', 'Invalid history selection');
-    try {
-      return await getCindyMakeHistory(selected as string | undefined);
-    } catch (error) {
-      const details = error as { name?: unknown; code?: unknown; message?: unknown };
-      const message =
-        typeof details.message === 'string'
-          ? details.message
-              .replace(/[A-Za-z]:[\\/][^\r\n]{0,240}|\\\\[^\r\n]{0,240}/g, '<path>')
-              .slice(0, 240)
-          : String(error).slice(0, 240);
-      createLogger('cindy-make:history').warn('history read failed', {
-        errorName: typeof details.name === 'string' ? details.name : undefined,
-        errorCode: typeof details.code === 'string' ? details.code : undefined,
-        errorMessage: message,
-      });
-      throwIpcError('PRECONDITION_FAILED', 'unavailable');
-    }
-  });
-  ipcMain.handle(
-    'app:cindy-make-history-action',
-    async (event, runId: unknown, action: unknown) => {
-      assertTrustedAppRendererEvent(event);
-      assertCindyMakeEnabled();
-      try {
-        return await actCindyMakeHistory(runId, action);
-      } catch (error) {
-        const message = (error as { message?: unknown }).message;
-        const reason =
-          typeof message === 'string'
-            ? /^\[PRECONDITION_FAILED\]\s*(busy|dirty|conflict|cleanupFailed|directoryBusy|unavailable|stopFailed)$/.exec(
-                message,
-              )?.[1]
-            : undefined;
-        throwIpcError('PRECONDITION_FAILED', reason ?? 'unavailable');
-      }
-    },
-  );
-  ipcMain.handle('app:cindy-make-history-build', async (event, selection: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    try {
-      return await generateHistoryPersonalVersion(selection);
-    } catch {
-      throwIpcError('PRECONDITION_FAILED', 'unavailable');
-    }
-  });
-  app.once('will-quit', stopMakeHistoryBuild);
-  ipcMain.handle('app:cindy-make-history-cancel-build', async (event, buildId: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    try {
-      return await cancelHistoryPersonalVersion(buildId);
-    } catch {
-      throwIpcError('PRECONDITION_FAILED', 'unavailable');
-    }
-  });
-  ipcMain.handle('app:cindy-make-history-open-build', async (event) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    try {
-      await openHistoryPersonalBuild();
-    } catch {
-      throwIpcError('PRECONDITION_FAILED', 'unavailable');
-    }
-  });
-  cindyMakeManager.setVersionSwitchingProbe(isCindyVersionSwitching);
-  configureCindyVersions(
-    () => cindyMakeTestController.hasActiveJobs() || cindyMakeManager.hasActiveWork(),
-    () => cindyMakeManager.isPersonalBuildRunning(),
-  );
-  ipcMain.handle('app:cindy-versions-state', async (event) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    try {
-      return await getCindyVersions();
-    } catch {
-      throwIpcError('PRECONDITION_FAILED', 'unavailable');
-    }
-  });
-  ipcMain.handle('app:cindy-versions-action', async (event, action: unknown, id: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    return actCindyVersion(action, id);
-  });
-  onQuit('cindy-make-tests', () => cindyMakeTestController.stopAllAndWait(), 'async');
-  app.once('will-quit', () => cindyMakeTestController.stopAll());
-  ipcMain.handle(
-    'app:cindy-make-test',
-    async (event, sessionId: unknown, completionId: unknown, action: unknown) => {
-      assertTrustedAppRendererEvent(event);
-      assertCindyMakeEnabled();
-      return actCindyMakeTest(sessionId, completionId, action);
-    },
-  );
-  cindyMakeManager.setProjectBusyProbe(
-    (root) =>
-      getMakerIfReady()
-        ?.listActiveSessions()
-        .some((session) => {
-          return (
-            session.isTurnRunning() &&
-            root === makeSourceRoot(app.getPath('userData')) &&
-            isCindyMakeManagedWorktreePath(app.getPath('userData'), session.workDir)
-          );
-        }) ?? false,
-  );
-  ipcMain.handle('app:get-cindy-make-state', async (event) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    refreshUpstreamMergeProjection();
-    try {
-      await restoreCindyMakeTaskState();
-      for (const [runId, report] of Object.entries(cindyMakeManager.getState().tasks ?? {})) {
-        if (report.task)
-          cindyMakeManager.projectTaskSession(runId, {
-            executing:
-              getMakerIfReady()?.getSession(report.task.sessionId)?.isTurnRunning() ?? false,
-          });
-      }
-      void refreshCindyMakeTaskIntegration();
-    } catch {
-      throwIpcError('INTERNAL', `Could not restore ${BRAND_NAME} Make preparation state`);
-    }
-    return cindyMakeManager.getState();
-  });
-  ipcMain.handle(
-    'app:manage-cindy-make-task',
-    async (event, sessionId: unknown, action: unknown) => {
-      assertTrustedAppRendererEvent(event);
-      assertCindyMakeEnabled();
-      await manageCindyMakeTask(sessionId, action).catch((error) => {
-        if (error instanceof Error && error.message.startsWith('[')) throw error;
-        throwIpcError('INTERNAL', 'cleanupFailed');
-      });
-    },
-  );
-  ipcMain.handle('app:cancel-cindy-make-source', async (event): Promise<{ success: boolean }> => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    return { success: cancelCindySourcePreparation() };
-  });
-
-  ipcMain.handle('app:open-cindy-make-source-dir', async (event): Promise<{ success: boolean }> => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    return openMakeSourceDirectory(app.getPath('userData'), {
-      openPath: (directory) => shell.openPath(directory),
-    });
-  });
-
-  // 个人版制作任务的独立开发目录:先从个人版基线建任务分支 + worktree。
-  // 只认 runId 形状;路径全部由 main 从 userData 派生,renderer 只拿回结果。
-  ipcMain.handle('app:start-cindy-make-task', async (event, input: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    return startCindyMakeTask(input, event.sender.id).catch((error) => {
-      if (error instanceof Error && error.message.startsWith('[')) throw error;
-      throwIpcError('INTERNAL', `Could not start ${BRAND_NAME} Make preparation`);
-    });
-  });
-  ipcMain.handle('app:cancel-cindy-make-task', async (event, runId: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    if (typeof runId !== 'string' || !CINDY_MAKE_RUN_ID_PATTERN.test(runId))
-      throwIpcError('INVALID_PARAMS', `Invalid ${BRAND_NAME} Make run`);
-    return { success: cindyMakeManager.cancel(runId, event.sender.id) === 'cancelled' };
-  });
-  ipcMain.handle('app:prepare-cindy-make-workspace', async (event, runId: unknown) => {
-    assertTrustedAppRendererEvent(event);
-    assertCindyMakeEnabled();
-    if (typeof runId !== 'string' || !CINDY_MAKE_RUN_ID_PATTERN.test(runId))
-      throwIpcError('INVALID_PARAMS', `Invalid ${BRAND_NAME} Make run`);
-    const userData = app.getPath('userData');
-    try {
-      return await cindyMakeManager.withProject(makeSourceRoot(userData), async () => {
-        const signal = AbortSignal.timeout(20 * 60_000);
-        const env = await createMakeToolchainEnvironment(userData);
-        const processEnvironment = await resolveMakeToolEnvironment(
-          env,
-          ['git', 'node', 'pnpm', 'python'],
-          signal,
-        );
-        return prepareCindyMakeWorkspace(userData, runId, signal, { processEnvironment });
-      });
-    } catch {
-      throwIpcError('INTERNAL', `${BRAND_NAME} Make workspace preparation failed`);
-    }
   });
 
   // Local export bytes stay in memory; never route this to a remote host.

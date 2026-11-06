@@ -2,7 +2,7 @@ import {
   parseSharedTaskSnapshot, parseSharedTaskPeer, type SharedTaskApi, type SharedTaskCaller,
   type SharedTaskDetail, type SharedTaskIdentity, type SharedTaskQueueItem,
 } from '@cindy/device-link';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 import type { SharedTaskJournal } from '../localDb/sharedTasks.js';
 import { isIpcError } from '../../shared/ipc-errors.js';
 import { SharedTaskAccess } from './sharedTaskAccess.js';
@@ -99,7 +99,7 @@ export class SharedTaskHost {
     const session = await this.options.readSession(snapshot.sessionId);
     this.assertSessionOpen(snapshot.sessionId, generation);
     if (!session || session.id !== snapshot.sessionId || session.status !== 'active'
-        || !CINDY_MAKE_ENABLED && isCindyMakeSource(session.source)) throw new Error('SharedTask task is unavailable');
+        || isCindyMakeSource(session.source)) throw new Error('SharedTask task is unavailable');
     const persisted = (await this.options.journal.latest()).find((item) => item.sharedTaskId === snapshot.sharedTaskId);
     this.assertSessionOpen(snapshot.sessionId, generation);
     if (persisted?.terminal || this.closed.has(snapshot.sharedTaskId)) throw new Error('SharedTask is closed locally');
@@ -167,7 +167,7 @@ export class SharedTaskHost {
     const session = await this.options.readSession(sessionId);
     this.assertSessionGeneration(sessionId, generation);
     if (!session || session.id !== sessionId || session.status !== 'active'
-        || !CINDY_MAKE_ENABLED && isCindyMakeSource(session.source)) throw new Error('SharedTask task is unavailable');
+        || isCindyMakeSource(session.source)) throw new Error('SharedTask task is unavailable');
     const journal = await this.options.journal.latest();
     this.assertSessionGeneration(sessionId, generation);
     // Server create is idempotent for an active task: close the previous IDs
@@ -258,7 +258,7 @@ export class SharedTaskHost {
       const session = await this.options.readSession(sessionId);
       this.assertCurrent();
       if ((runtimeSessions.has(sessionId) && (!session || session.status !== 'active')
-          || !CINDY_MAKE_ENABLED && isCindyMakeSource(session?.source)) && !this.closedSessions.has(sessionId)) {
+          || isCindyMakeSource(session?.source)) && !this.closedSessions.has(sessionId)) {
         await this.closeLocallyForBoundary(sessionId);
         this.assertCurrent();
       }
@@ -292,7 +292,7 @@ export class SharedTaskHost {
       // here, and a terminal write made by a different process before startup.
       const session = await this.options.readSession(item.sessionId);
       this.assertCurrent();
-      if (!session || session.status !== 'active' || !CINDY_MAKE_ENABLED && isCindyMakeSource(session.source)) {
+      if (!session || session.status !== 'active' || isCindyMakeSource(session.source)) {
         this.revokeLocally(item.sharedTaskId, item.sessionId);
         await this.options.journal.close(item);
         this.assertCurrent();
@@ -328,7 +328,7 @@ export class SharedTaskHost {
     const session = await this.options.readSession(sessionId);
     this.assertSessionGeneration(sessionId, generation);
     if (!session || session.id !== sessionId || session.status !== 'active'
-        || !CINDY_MAKE_ENABLED && isCindyMakeSource(session.source)) throw new Error('SharedTask task is unavailable');
+        || isCindyMakeSource(session.source)) throw new Error('SharedTask task is unavailable');
     const owned = (await this.options.api.list()).filter(item => item.sessionId === sessionId &&
       item.ownerAccountId === this.options.ownerAccountId && item.hostDeviceId === this.options.hostDeviceId);
     this.assertSessionGeneration(sessionId, generation);

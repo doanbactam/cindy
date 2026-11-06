@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 
 import { makerChatStore } from '@/lib/makerChatStore';
 import { useCCSessions } from '@/hooks/useCCSessions';
@@ -51,7 +51,7 @@ export function AppBadgeAttentionSync() {
   const history = useCCSessions({ includeArchived: 'all' });
   const remoteSessions = useSyncExternalStore(remoteProjectsStore.subscribe, remoteProjectsStore.getMergedRemoteSessions);
   const allSessions = useMemo(
-    () => [...sessions, ...remoteSessions].filter(session => CINDY_MAKE_ENABLED || !isCindyMakeSource(session.source)),
+    () => [...sessions, ...remoteSessions].filter(session => !isCindyMakeSource(session.source)),
     [sessions, remoteSessions],
   );
   const catalogSessionIds = useMemo(

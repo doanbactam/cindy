@@ -140,8 +140,6 @@ import { quiesceSessionBeforeWorktreeRecycle } from './sessionRemovalOperations.
 import { withSessionRouteLock, withSessionRouteLocks } from '../sessionRouteLock.js';
 import { cleanupSessionRuntimeForTerminalStatus } from '../sessionRuntimeCleanup.js';
 import { requestSessionArchiveSync } from '../sessionArchiveSync.js';
-import { cindyMakeManager } from '../../cindy-make/manager.js';
-import { recycleCindyMakeTask } from '../../cindy-make/taskManagement.js';
 import { broadcastSubagentRunsInvalidated } from './subagentRuns.js';
 import { compactSessionToolResultsBestEffort } from '../toolResultCompaction.js';
 import { consumeWritableDirectoryPickerGrants, WritableDirectoryPickerGrantError } from '../../maker-ipc/writableDirectoryPickerGrant.js';
@@ -631,8 +629,6 @@ async function recycleSessionWorktreeInQueue(
       ownerIsCurrent() && recycle.isSessionStillRemovable(id, mediaDb);
     const closeAndRecycle = async (targetSessionId: string, scanOwners: boolean): Promise<void> => {
       if (!(await isStillRemovable(targetSessionId))) return;
-      // Settle preparation before taking the send route lock it may be waiting for.
-      await cindyMakeManager.settleTasksForSession(targetSessionId);
       await withSessionRouteLock(targetSessionId, async () => {
         const shouldRecycle = await quiesceSessionBeforeWorktreeRecycle(targetSessionId, {
           isOwnerCurrent: ownerIsCurrent,
@@ -645,8 +641,6 @@ async function recycleSessionWorktreeInQueue(
           },
         });
         if (!shouldRecycle || !ownerIsCurrent()) return;
-        await recycleCindyMakeTask(targetSessionId, mediaDb, ownerIsCurrent);
-
         // Keep irreversible cleanup under the same task route lock as the final
         // status check. A concurrent restore/start/send must not slip between
         // quiescence and ref/worktree deletion.
@@ -1756,12 +1750,7 @@ export function registerSessionIpc(
       normalizeWorkingDirForStorage(
         typeof createBody?.workingDir === 'string' ? createBody.workingDir : null,
       ) ?? undefined;
-    assertRendererSessionSourceAllowed({
-      source: bodyObj.source,
-      workingDir: explicitWorkingDir,
-      remoteHostId: createBody?.remoteHostId,
-      userData: app.getPath('userData'),
-    });
+    assertRendererSessionSourceAllowed({ source: bodyObj.source });
     const workingDir =
       workspaceKind === 'dialogue' && !explicitWorkingDir
         ? ensureDialogueWorkspaceDir(id, now)

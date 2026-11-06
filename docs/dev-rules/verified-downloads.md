@@ -2,7 +2,7 @@
 
 Desktop 下载已知大小／SHA-256 的发行资产，统一调用
 `apps/desktop/src/main/downloader/index.ts` 的 `download()`。
-Agent runtime、Cindy Make 工具、Ollama runtime、插件包、Skill 包及更新包共用该入口。
+Agent runtime、Ollama runtime、插件包、Skill 包及更新包共用该入口。
 业务模块保留来源选择、包格式、授权、安装和 UI 错误映射；不再复制 HTTP、写盘、哈希、
 进度、超时、重试或断点续传实现。
 
@@ -36,7 +36,7 @@ Agent runtime、Cindy Make 工具、Ollama runtime、插件包、Skill 包及更
 成功取得绝对执行路径，直接用它启动工具，不依赖系统 PATH 或 Homebrew。
 下载与解压共用 160 MiB 归档上限；下载时在写盘前截停超限内容。
 
-Cindy Make 保留旧导出和安装目录，旧 `current.json` 不需迁移。GitHub CLI 使用
+GitHub CLI 使用
 `git-context/ghArtifact.ts` 中固定版本的官方发行包和摘要，安装到
 `userData/managed-tools`。新工具应复用这里；发行版选择、登录和产品入口不进入下载器。
 Ollama 本次共用下载层，仍保留其现有 runtime 解压和启动布局。
@@ -83,4 +83,4 @@ Renderer 只接收阶段、进度、设备码和固定 GitHub 授权地址，不
 底层改动仍需覆盖更新包调用方式；更新器本体遵守 `cindy-updater.md`。
 
 回归入口：`main/downloader/__tests__`、`main/managed-tools/__tests__`，以及
-Ollama、plugin-market、SkillHub、Cindy Make 和 agent-binaries 的相关测试。
+Ollama、plugin-market、SkillHub 和 agent-binaries 的相关测试。

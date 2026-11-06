@@ -4,13 +4,15 @@ import path from 'node:path';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import JSZip from 'jszip';
 import * as tar from 'tar';
-import { extractMakeToolArchive, safeArchiveLink, safeArchivePath } from '../toolArchive.js';
-import { makeToolCatalog } from '../toolCatalog.js';
+import { extractToolArchive, safeArchiveLink, safeArchivePath } from '../archive.js';
+
+const ZIP_ARTIFACT = { format: 'zip' as const, executable: 'publisher/bin/tool.exe' };
+const TAR_ARTIFACT = { format: 'tar.gz' as const, executable: 'publisher/bin/node' };
 
 let temp: string;
 let sequence = 0;
 beforeAll(async () => {
-  temp = await mkdtemp(path.join(os.tmpdir(), 'cindy-make-archive-test-'));
+  temp = await mkdtemp(path.join(os.tmpdir(), 'managed-tools-archive-test-'));
 });
 afterAll(async () => {
   await rm(temp, { recursive: true, force: true });
@@ -41,10 +43,10 @@ describe('bounded publisher archive extraction', () => {
     const f = await fixture();
     const zip = new JSZip().file('publisher/bin/tool.exe', 'tool');
     await writeFile(f.archive, await zip.generateAsync({ type: 'nodebuffer' }));
-    await extractMakeToolArchive(
+    await extractToolArchive(
       f.archive,
       f.destination,
-      makeToolCatalog('win32', 'x64')[0],
+      ZIP_ARTIFACT,
       new AbortController().signal,
     );
     expect(await readFile(path.join(f.destination, 'publisher', 'bin', 'tool.exe'), 'utf8')).toBe(
@@ -60,10 +62,10 @@ describe('bounded publisher archive extraction', () => {
         .generateAsync({ type: 'nodebuffer' }),
     );
     await expect(
-      extractMakeToolArchive(
+      extractToolArchive(
         f.archive,
         f.destination,
-        makeToolCatalog('win32', 'x64')[0],
+        ZIP_ARTIFACT,
         new AbortController().signal,
       ),
     ).rejects.toThrow('Unsafe');
@@ -85,10 +87,10 @@ describe('bounded publisher archive extraction', () => {
       header.encode();
       await writeFile(f.archive, Buffer.concat([header.block!, Buffer.alloc(1024)]));
       await expect(
-        extractMakeToolArchive(
+        extractToolArchive(
           f.archive,
           f.destination,
-          makeToolCatalog('linux', 'x64')[0],
+          TAR_ARTIFACT,
           new AbortController().signal,
         ),
       ).rejects.toThrow('Unsafe');
@@ -103,12 +105,12 @@ describe('bounded publisher archive extraction', () => {
     await tar.c({ file: f.archive, gzip: true, cwd: source }, ['publisher']);
     const controller = new AbortController();
     controller.abort();
-    const artifact = makeToolCatalog('linux', 'x64')[0];
+    const artifact = TAR_ARTIFACT;
     await expect(
-      extractMakeToolArchive(f.archive, f.destination, artifact, controller.signal),
+      extractToolArchive(f.archive, f.destination, artifact, controller.signal),
     ).rejects.toBeDefined();
     expect(await readdir(f.destination)).toEqual([]);
-    await extractMakeToolArchive(f.archive, f.destination, artifact, new AbortController().signal);
+    await extractToolArchive(f.archive, f.destination, artifact, new AbortController().signal);
     expect(await readFile(path.join(f.destination, 'publisher', 'bin', 'node'), 'utf8')).toBe(
       'node',
     );

@@ -43,7 +43,7 @@ import {
   getProvisionalDraftTaskId,
   subscribeProvisionalDraftTaskId,
 } from './lib/provisionalDraftTaskId';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 import { CindyMakeSessionGate } from './CindyMakeSessionGate';
 import { SessionRouteOriginGate } from './SessionRouteOriginGate';
 import { usePluginSkillSetup } from './pluginSkillSetup';
@@ -88,19 +88,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { setRemoteReceiptDisplayReady } from '@/lib/sessionAttentionStore';
 import { shortSessionId } from '@/lib/sessionId';
 import { ChatInput } from '@/components/new-chat/ChatInput';
-import { CindyMakeComposerMask } from '@/components/cindy-make/CindyMakeComposerMask';
-import {
-  getCindyMakeTestRecovery,
-  getCindyMakeComposerPhase,
-  getCindyMakePendingTest,
-  getCindyMakePreparation,
-} from '@/lib/cindyMakeComposer';
-import { CindyMakeTestCard } from '@/components/cindy-make/CindyMakeTestCard';
-import { SessionResourceCards } from '@/features/device-link/SessionResourceCards';
-import { useSessionResourceCards } from '@/features/device-link/useSessionResourceCards';
-import { CindyMakeEditingActions } from '@/components/cindy-make/CindyMakeEditingActions';
-import { useCindyMakeEditing } from '@/components/cindy-make/useCindyMakeEditing';
-import { useCindyMakeState } from '@/lib/cindyMakeState';
 import { resolveLearnDesktopCommandFeedback } from '@/features/learn/desktopCommandFeedback';
 import { openSideChatTab, watchSideChatTabs } from '@/features/right-sidebar/lib/openSideChatTab';
 import { GoalIndicator } from '@/components/new-chat/GoalIndicator';
@@ -2008,63 +1995,6 @@ function CCAgentSessionContent({
     }
   }, [activeQueueComposerEdit, cancelQueueComposerEdit, pendingQueue]);
 
-  const remoteMakeCards = useSessionResourceCards({
-    deviceId: session?.source === 'cindy-make' && session.status === 'active' && !session.clearedAt
-      ? remoteDeviceId : undefined,
-    sessionId,
-    source: session?.source,
-    connected: remoteConn === 'connected',
-    active: chatRealtime,
-    readOnly,
-    running: isAgentBusy,
-  });
-  const makeState = useCindyMakeState();
-  const cindyMakePreparation = useMemo(
-    () =>
-      getCindyMakePreparation({
-        session,
-        report: remoteDeviceId
-          ? undefined
-          : Object.values(makeState.tasks ?? {}).find(
-              (report) => report.task?.sessionId === sessionId,
-            ),
-        messages,
-      }),
-    [session, sessionId, remoteDeviceId, makeState, messages],
-  );
-  const cindyMakeComposerPhase = useMemo(
-    () =>
-      remoteMakeCards.handlesSession ? null : getCindyMakeComposerPhase({
-        session,
-        report: cindyMakePreparation?.report,
-        messages,
-        historyLoaded,
-        busy: isAgentBusy,
-        error,
-      }),
-    [session, cindyMakePreparation, messages, historyLoaded, isAgentBusy, error, remoteMakeCards.handlesSession],
-  );
-  const cindyMakePendingTest = useMemo(
-    () => !remoteDeviceId && !readOnly && typeof window.electronAPI.cindyMakeTest === 'function'
-      ? getCindyMakePendingTest({ session, messages, busy: isAgentBusy }) : null,
-    [session, messages, isAgentBusy, remoteDeviceId, readOnly],
-  );
-  const cindyMakeEditing = useCindyMakeEditing(sessionId, !remoteDeviceId && !readOnly);
-  const cindyMakeRecoveryId =
-    !remoteDeviceId &&
-    !readOnly &&
-    !pendingQueue.length &&
-    typeof window.electronAPI.cindyMakeTest === 'function'
-      ? getCindyMakeTestRecovery({
-          session,
-          messages,
-          busy: isAgentBusy,
-          historyLoaded,
-        })
-      : null;
-  const cindyMakeInputLocked = Boolean(
-    cindyMakeComposerPhase || cindyMakePendingTest || remoteMakeCards.blocked,
-  );
   useEffect(() => {
     if (!sessionId || !isOrcaLeadSessionView || !historyLoaded) return;
     const recoveredAssignment = getRecoverableDeferredUiAssignment({
@@ -3555,9 +3485,6 @@ function CCAgentSessionContent({
         !slashMatch && agentKind === 'pi' ? leadingSlashInvocation(message) : undefined;
       if (!slashMatch && !leading) return { handled: false, accepted: false, message };
       const cmdName = (slashMatch?.[1] ?? leading!.name).toLowerCase();
-      if (!CINDY_MAKE_ENABLED && (cmdName === 'cindy-make' || cmdName === 'cindy-make-doctor')) {
-        return { handled: true, accepted: false, message };
-      }
       const args = slashMatch?.[2] ?? '';
       const allowDesktopDispatch = options?.allowDesktopDispatch ?? true;
       const workingDir = options?.workingDirOverride ?? session?.workingDir;
@@ -3981,7 +3908,7 @@ function CCAgentSessionContent({
 
   // 开始输入（打字、粘贴、开始语音输入）时提前启动 Agent，把冷启动藏进输入时间（本机与远程任务相同）。
   const handleComposerTyping = useCallback(() => {
-    if (readOnly || cindyMakeInputLocked || !sessionId || !session?.workingDir) return;
+    if (readOnly || !sessionId || !session?.workingDir) return;
     makerChatStore.prewarmSession(
       sessionId,
       session.model,
@@ -3989,7 +3916,7 @@ function CCAgentSessionContent({
       session.permissionMode,
       session.workingDir,
     );
-  }, [cindyMakeInputLocked, readOnly, session, sessionId]);
+  }, [readOnly, session, sessionId]);
 
   const handleSend = useCallback(
     async (
@@ -4018,7 +3945,6 @@ function CCAgentSessionContent({
       },
     ) => {
       if (readOnly) return false;
-      if (cindyMakeInputLocked) return false;
       invalidateHistoryRecoveryNavigation();
       const deliveryMode = opts?.deliveryMode ?? 'queue';
       const sendOwner = getDataOwnerGeneration();
@@ -4379,7 +4305,6 @@ function CCAgentSessionContent({
       confirmWithCheckbox,
       remoteDeviceId,
       sessionHandoffPreparing,
-      cindyMakeInputLocked,
       botChatIdentity,
     ],
   );
@@ -5140,7 +5065,7 @@ function CCAgentSessionContent({
   //   - /clear 之后留在空 ChatView 已经在用,体验没问题,本来就跟"空 session"等价
   // 现在所有空消息流/有消息流都走同一套布局(全高 scroll container + sticky bottom
   // overlay),自然消除 view 翻转带来的 layout shift。
-  if (!CINDY_MAKE_ENABLED && isCindyMakeSource(session?.source)) {
+  if (isCindyMakeSource(session?.source)) {
     return <Navigate to="/cc-agent" replace />;
   }
 
@@ -5181,7 +5106,6 @@ function CCAgentSessionContent({
   const shareSelectionBlocked =
     Boolean(sessionBinding.attached) ||
     worktreePreparing ||
-    cindyMakeInputLocked ||
     Boolean(
       pendingPlanReview ||
       pendingPermission ||
@@ -5270,8 +5194,6 @@ function CCAgentSessionContent({
       historyVisibleAfter={session?.source === 'side-chat' ? new Date(session.createdAt).getTime() : undefined}
       onAskInSideChat={!readOnly && canNavigateSession && sessionId && session?.source !== 'side-chat' && session?.source !== 'bot'
         ? (quote) => openSideChatTab(sessionId, { quote }) : undefined}
-      cindyMakeSessionId={session?.source === 'cindy-make' ? sessionId : undefined}
-      cindyMakeCompletionInComposer={session?.source === 'cindy-make' && (remoteMakeCards.supported || (!remoteDeviceId && !readOnly && typeof window.electronAPI.cindyMakeTest === 'function'))}
       historyLoaded={historyLoaded}
       historyCleared={Boolean(session?.clearedAt)}
       taskUpdates={taskUpdates}
@@ -5306,7 +5228,7 @@ function CCAgentSessionContent({
     },
   }), [handleSend, session]);
   const messageStreamWithQuickSend = (
-    <SessionQuickSendProvider value={readOnly || cindyMakeInputLocked ? null : quickSend}>{messageStreamEl}</SessionQuickSendProvider>
+    <SessionQuickSendProvider value={readOnly ? null : quickSend}>{messageStreamEl}</SessionQuickSendProvider>
   );
 
   const composerRuntimeVisible =
@@ -5394,7 +5316,6 @@ function CCAgentSessionContent({
           if (hasSplitGroupSessionType(e.dataTransfer.types)) return;
           e.preventDefault();
           e.stopPropagation();
-          if (cindyMakeInputLocked) return;
           dragCounterRef.current += 1;
           if (dragCounterRef.current === 1) setIsDragOver(true);
         }}
@@ -5402,7 +5323,7 @@ function CCAgentSessionContent({
           if (hasSplitGroupSessionType(e.dataTransfer.types)) return;
           e.preventDefault();
           e.stopPropagation();
-          e.dataTransfer.dropEffect = cindyMakeInputLocked ? 'none' : 'copy';
+          e.dataTransfer.dropEffect = 'copy';
         }}
         onDragLeave={(e) => {
           if (hasSplitGroupSessionType(e.dataTransfer.types)) return;
@@ -5417,7 +5338,6 @@ function CCAgentSessionContent({
           e.stopPropagation();
           dragCounterRef.current = 0;
           setIsDragOver(false);
-          if (cindyMakeInputLocked) return;
           // .cindy / .cshare 已被窗口级 capture 接管(装入 / 导入链路),
           // 只清理拖拽 UI 状态,不当附件消费。
           if (isGlobalDropIntercepted(e.nativeEvent)) return;
@@ -5993,11 +5913,9 @@ function CCAgentSessionContent({
                  既处理不了确认又无法继续发送或排队消息。
                  优先级 (高 → 低):
                    1. attached (远程接管中)  → TakeoverMask  (90px)
-                   2. Cindy Make 准备 → 完整准备卡；开始修改后恢复普通输入
-                   3. worktreePreparing      → WorktreeCreatingOverlay (90px, 视觉同款)
-                   4. 默认                    → ChatInput
-                 Cindy Make 沿用输入框的背景与边框，准备详情限高滚动；
-                 接管与 worktree 创建继续使用 90px 状态框。 */}
+                   2. worktreePreparing      → WorktreeCreatingOverlay (90px, 视觉同款)
+                   3. 默认                    → ChatInput
+                 接管与 worktree 创建使用 90px 状态框。 */}
               {!isSharedTaskPeer(remoteDeviceId ?? '') && (pendingPlanReview ||
               pendingPermission ||
               pendingAskUser ||
@@ -6010,25 +5928,6 @@ function CCAgentSessionContent({
                   channel={sessionBinding.identity?.channel ?? 'feishu'}
                   userId={sessionBinding.identity?.userId ?? null}
                   displayName={sessionBinding.displayName}
-                />
-              ) : remoteMakeCards.blocked ? (
-                <SessionResourceCards state={remoteMakeCards} />
-              ) : cindyMakeComposerPhase ? (
-                <CindyMakeComposerMask
-                  phase={cindyMakeComposerPhase}
-                  report={cindyMakePreparation?.report}
-                  request={cindyMakePreparation?.request}
-                  readOnly={readOnly || Boolean(remoteDeviceId)}
-                />
-              ) : cindyMakePendingTest && sessionId ? (
-                <CindyMakeTestCard
-                  key={cindyMakePendingTest.completionId}
-                  sessionId={sessionId}
-                  completionId={cindyMakePendingTest.completionId}
-                  meta={cindyMakePendingTest.meta}
-                  onContinue={() =>
-                    cindyMakeEditing.continueEditing(cindyMakePendingTest.completionId)
-                  }
                 />
               ) : worktreePreparing && smoothedBranchName ? (
                 <WorktreeCreatingOverlay branchName={smoothedBranchName} />
@@ -6051,16 +5950,10 @@ function CCAgentSessionContent({
                       active={chatRealtime && !!session && session.status === 'active'}
                       readOnly={readOnly} />
                   </> : undefined}
-                  topSlot={cindyMakeRecoveryId && session ? (
-                    <CindyMakeEditingActions
-                      key={`${session.id}:${cindyMakeRecoveryId}`}
-                      sessionId={session.id}
-                      messageId={cindyMakeRecoveryId}
-                    />
-                  ) : pendingReplyQuote && sessionId ? (
+                  topSlot={pendingReplyQuote && sessionId ? (
                     <BotChatQuoteComposerPreview sessionId={sessionId} quote={pendingReplyQuote}
                       getMessage={getQuoteMessage} names={botQuoteNames} />
-                  ) : remoteMakeCards.handlesSession ? <SessionResourceCards state={remoteMakeCards} /> : undefined}
+                  ) : undefined}
                   // Picking 「回复」 brings the caret here, ready to type the reply.
                   focusRequest={pendingReplyQuote}
                   onSend={handleSend}

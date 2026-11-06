@@ -56,7 +56,6 @@ import {
   makerChatStore,
   type HistoryChatMessage,
 } from '@/lib/makerChatStore';
-import { isCindyMakeCompletionMessage, isCindyMakePreparationMessage } from '@/lib/cindyMakeComposer';
 import { getDataOwnerGeneration } from '@/contexts/dataOwnerGeneration';
 import { createPortal, flushSync } from 'react-dom';
 import { GitFork } from 'lucide-react';
@@ -492,9 +491,6 @@ interface MessageStreamProps {
   messages: ChatMessage[];
   /** Persisted row already owned by the live error banner; keep its recovery state there. */
   activeErrorClientId?: string | null;
-  /** This task's preparation card is shown in the composer, including after history reload. */
-  cindyMakeSessionId?: string;
-  cindyMakeCompletionInComposer?: boolean;
   historyLoaded: boolean;
   /** The task shell remains, but all prior message content was intentionally cleared. */
   historyCleared?: boolean;
@@ -1502,9 +1498,7 @@ function isRenderTurnBoundary(message: ChatMessage): boolean {
   }
   return (
     message.role === 'assistant' &&
-    (message.systemCardType === 'cindy-make' ||
-      message.systemCardType === 'cindy-make-doctor' ||
-      message.systemCardType === 'review')
+    message.systemCardType === 'review'
   );
 }
 
@@ -1554,9 +1548,6 @@ export function buildRenderItems(
     botSessionId?: string;
     /** Reuse image Markdown extraction for completed assistant messages across stream batches. */
     markdownImageTargetCache?: MarkdownImageTargetCache;
-    /** Keep the stored preparation report out of its own task's visible timeline. */
-    cindyMakeSessionId?: string;
-    cindyMakeCompletionInComposer?: boolean;
     /** Durable Subagent status; a terminal record outranks the paired result text. */
     subagentRunStatuses?: SubagentRunStatusIndex;
   },
@@ -1564,16 +1555,15 @@ export function buildRenderItems(
   items: RenderItem[];
   singleResultMap: Map<string, string>;
 } {
-  // Modal-only Cindy Make cards are transient UI state. They stay in the
-  // shared store for the dialog to observe, but never enter the chat timeline.
+  // Modal-only cards are transient UI state and never enter the chat timeline.
   allMessages = allMessages.filter(
     (message) =>
       // Companion voice calls were retired; their saved transcript rows stay
       // stored but are hidden here, at the boundary shared by history views.
       message.systemCardType !== 'voice-call' &&
-      message.systemCardData?.modalOnly !== true &&
-      !(opts?.cindyMakeCompletionInComposer && isCindyMakeCompletionMessage(message)) &&
-      !isCindyMakePreparationMessage(message, opts?.cindyMakeSessionId),
+      // Rows left by the removed Cindy Make are hidden the same way.
+      message.systemCardType !== 'retired-cindy-make' &&
+      message.systemCardData?.modalOnly !== true,
   );
   if (opts?.botSessionId) {
     allMessages = placeBotTaskCardsAfterIntroduction(allMessages, (message) => {
@@ -2488,8 +2478,6 @@ export function buildCachedRenderItems(
     opts?.botSessionId,
     opts?.subagentRunStatuses,
     opts?.historyArtifacts,
-    opts?.cindyMakeSessionId,
-    opts?.cindyMakeCompletionInComposer,
   ];
   const index = recentRenderProjections.findIndex((entry) =>
     entry.dependencies.every((value, i) => Object.is(value, dependencies[i])),
@@ -2626,8 +2614,6 @@ export function buildMessageStreamRenderProjection({
         renderOptions?.workingDir,
         renderOptions?.botSessionId,
         renderOptions?.subagentRunStatuses,
-        renderOptions?.cindyMakeSessionId,
-        renderOptions?.cindyMakeCompletionInComposer,
         handoff?.pending.size,
         ...(handoff?.pending ?? []),
         handoff?.tail.size,
@@ -3041,8 +3027,6 @@ export function MessageStream({
   onBotReadThrough,
   messages,
   activeErrorClientId = null,
-  cindyMakeSessionId,
-  cindyMakeCompletionInComposer,
   historyLoaded,
   historyCleared = false,
   taskUpdates,
@@ -3331,7 +3315,7 @@ export function MessageStream({
       sessionId, turnChangeSets, workingDir,
       botSessionId: simplifiedBotConversation ? sessionId : undefined,
       markdownImageTargetCache: markdownImageTargetCacheRef.current,
-      cindyMakeSessionId, cindyMakeCompletionInComposer, subagentRunStatuses,
+      subagentRunStatuses,
     },
     buildRaw: () => streamProjection(
       displayMessages,
@@ -3347,8 +3331,6 @@ export function MessageStream({
         workingDir,
         simplifiedBotConversation,
         sessionId,
-        cindyMakeSessionId,
-        cindyMakeCompletionInComposer,
         subagentRunStatuses,
         historyView,
       ],
@@ -3361,16 +3343,12 @@ export function MessageStream({
           workingDir,
           botSessionId: simplifiedBotConversation ? sessionId : undefined,
           markdownImageTargetCache: markdownImageTargetCacheRef.current,
-          cindyMakeSessionId,
-          cindyMakeCompletionInComposer,
           subagentRunStatuses,
         }),
       !simplifiedBotConversation && !historyView,
     ),
   }), [
     displayMessages,
-    cindyMakeSessionId,
-    cindyMakeCompletionInComposer,
     historyView,
     historySnapshot,
     historyLiveMessages,

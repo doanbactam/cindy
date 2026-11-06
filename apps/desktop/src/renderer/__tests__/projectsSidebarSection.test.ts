@@ -143,13 +143,8 @@ describe('Projects sidebar section', () => {
     const start = projectsSectionSource.indexOf('const mixedUnclassified = useMemo(');
     const input = projectsSectionSource.slice(start, projectsSectionSource.indexOf('const mixedEntries', start));
     expect(start).toBeGreaterThan(-1);
-    expect(input).toContain('unclassifiedHidden');
-    expect(input).toContain('? []');
-    expect(input).toContain('deviceGroupingActive');
-    expect(input).toContain('? unclassified');
-    expect(input).toContain(
-      'unclassified.filter((session) => isCindyMakeFamilySource(session.source))',
-    );
+    expect(input).toContain('unclassifiedHidden || !deviceGroupingActive');
+    expect(input).toContain('unclassified.filter((session) => !isCindyMakeSource(session.source))');
     expect(input).toContain('[unclassified, unclassifiedHidden, deviceGroupingActive]');
     expect(projectsSectionSource).toContain('unclassified: mixedUnclassified,');
     // 每段独立折叠视图 + 段内作用域的「显示全部」(复核 P2:共用一个标志会让

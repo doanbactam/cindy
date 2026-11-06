@@ -171,6 +171,7 @@ function SettingsViewContent() {
     setSearchParams(next, { replace: true });
   }, [canAccessBilling, rawTab, searchParams, setSearchParams]);
 
+  // Legacy deep link: Cindy Make settings were removed; drop the stale tab param.
   useEffect(() => {
     if (rawTab !== 'cindy-make') return;
     const next = new URLSearchParams(searchParams);

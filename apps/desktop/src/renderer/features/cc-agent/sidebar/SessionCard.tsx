@@ -92,8 +92,6 @@ import { Tip } from '@/components/ui/tooltip';
 import { BotFollowMark, useSessionFollowers } from '@/features/bots/BotFollowMark';
 import { SidebarRightStatusIndicator } from './SidebarRightStatusIndicator';
 import { shouldPrefetchSessionOnPointerDown } from './sessionSwitchPrefetch';
-import { useCindyMakeActivity } from './useCindyMakeActivity';
-import { CINDY_MAKE_SESSION_SOURCE } from '../../../../shared/cindyMakeSession';
 import {
   finishSessionDrag,
   isSplitGroupDragSource,
@@ -167,8 +165,6 @@ export const SessionCard = withSidebarNavigation<SessionCardProps>(function Sess
   const followers = useSessionFollowers(session);
   // 标题后常显的标记:任务标签色球与「伙伴在跟进」头像。浮出操作钮与归档确认胶囊按它让位。
   const hasTitleMarks = !!session.tags?.length || followers.length > 0;
-  const cindyMakeActivity = useCindyMakeActivity(session);
-  const cindyMakePreparing = cindyMakeActivity === 'building' ? undefined : cindyMakeActivity;
   // mod+1..9 序号徽标:模块 store 按 sessionId 精准订阅,非按住态恒为 null。
   const ordinalBadge = useSessionOrdinalBadge(session.id);
   const ordinalBadgeLabel = navigationOnly ? null : ordinalBadge;
@@ -195,7 +191,7 @@ export const SessionCard = withSidebarNavigation<SessionCardProps>(function Sess
     isUrgentFromContext: isUrgentFromContext || remoteSchedule?.hasUnreadFailedRun === true,
     isRunning: session.deviceLinkDeviceId
       ? remoteActivity?.phase === 'running'
-      : isRunning || cindyMakeActivity != null,
+      : isRunning,
     hasAttentionNotification:
       hasAttentionNotification ||
       orcaWorkerAttentionKind !== undefined ||
@@ -229,16 +225,8 @@ export const SessionCard = withSidebarNavigation<SessionCardProps>(function Sess
   const boundSchedules = useSessionBoundSchedules(session.id, session.deviceLinkDeviceId);
   const showScheduleBindingBadge = boundSchedules.length > 0;
   const showAutomationTimer = !showScheduleBindingBadge && isAutomationGenerated;
-  const displayTitle = getSessionDisplayTitle(
-    session,
-    t(
-      session.source === CINDY_MAKE_SESSION_SOURCE
-        ? 'cindyMake.code.taskName'
-        : 'ccAgent.common.unnamedSession',
-    ),
-    t,
-  );
-  const canHighlightDisplayTitle = canHighlightSessionDisplayTitle(session, t);
+  const displayTitle = getSessionDisplayTitle(session, t('ccAgent.common.unnamedSession'));
+  const canHighlightDisplayTitle = canHighlightSessionDisplayTitle(session);
   const isArchived = session.status === 'archived';
   const canQuickArchive = !navigationOnly && !isArchived && !isEmpty && !remoteWritesBlocked;
   // 卡片/列表的正文固定给预览区域。list 保留实时执行文案,正文只用最近消息;
@@ -276,11 +264,8 @@ export const SessionCard = withSidebarNavigation<SessionCardProps>(function Sess
     islandActivity?.phase === 'running' && islandActivity.compactDetail
       ? islandActivity.compactDetail
       : null;
-  const preparationText = cindyMakePreparing
-    ? t('cindyMake.code.phases.' + cindyMakePreparing)
-    : null;
-  const listPreview = awaitingText ?? preparationText ?? runningDetail ?? bodyPreview;
-  const cardPreview = awaitingText ?? preparationText ?? bodyPreview;
+  const listPreview = awaitingText ?? runningDetail ?? bodyPreview;
+  const cardPreview = awaitingText ?? bodyPreview;
   const usesPinnedCardSummary = variant === 'card' && isPinned && Boolean(session.summary);
   const cardPreviewLineClamp = usesPinnedCardSummary
     ? 3

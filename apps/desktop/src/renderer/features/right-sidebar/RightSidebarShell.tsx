@@ -32,7 +32,6 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { createLogger } from '@/lib/logger';
-import { CINDY_MAKE_ENABLED } from '@cindy/maker-shared/cindy-make-feature';
 import { toast } from '@/lib/toast';
 import { mapIpcErrorToI18nKey } from '@/utils/ipcError';
 import { useAppShortcut } from '@/hooks/useAppShortcut';
@@ -529,8 +528,8 @@ export function RightSidebarShell({
   ]);
 
   // 面板收束后不再注册的历史页签在 hydration 后静默关闭，避免显示死页签。
-  // `ghost:*`、`bot-delegations`、`bot-artifacts` 和 `bot-workbench`(伙伴工作台已并入聊天头部
-  // 的近况浮层)只作为数据库历史值保留。
+  // `ghost:*`、`bot-delegations`、`bot-artifacts`、`bot-workbench`(伙伴工作台已并入聊天头部
+  // 的近况浮层)和 `cindy-make`(Cindy Make 已移除)只作为数据库历史值保留。
   // 这些 kind 已无渲染方,
   // 留着只会落到 PlaceholderBody 变成"敬请期待"的死页签。
   useEffect(() => {
@@ -539,7 +538,8 @@ export function RightSidebarShell({
       tab.kind.startsWith('ghost:') ||
       tab.kind === ('bot-delegations' as TabKindId) ||
       tab.kind === ('bot-artifacts' as TabKindId) ||
-      tab.kind === ('bot-workbench' as TabKindId),
+      tab.kind === ('bot-workbench' as TabKindId) ||
+      tab.kind === ('cindy-make' as TabKindId),
     );
     if (legacyGhostTabs.length === 0) return;
     void (async () => {
@@ -570,10 +570,6 @@ export function RightSidebarShell({
 
   const handleAdd = useCallback(
     (kind: TabKindId) => {
-      if (kind === 'cindy-make' && !CINDY_MAKE_ENABLED) {
-        log.warn('handleAdd ignored: Cindy Make is disabled');
-        return;
-      }
       if (!sessionId) {
         log.warn('handleAdd ignored: sessionId is null', { kind });
         return;

@@ -21,7 +21,6 @@ import {
   type LocalAgentInstanceInfo,
 } from '../../shared/localAgent.js';
 import { CURRENT_CINDY_REGION } from '../../shared/brandRegion.js';
-import { isCindyPersonalRuntime } from '../cindy-make/versionRuntimeIdentity.js';
 import { isTrustedAppRendererWindow } from '../security/trustedAppRenderer.js';
 import { localAgentModels } from './catalog.js';
 import { remoteLocalAgentModels } from './remoteCatalog.js';
@@ -45,7 +44,7 @@ let currentOwner: string | undefined;
 function instanceInfo(): LocalAgentInstanceInfo {
   return {
     kind:
-      !app.isPackaged || isCindyPersonalRuntime() || CURRENT_CINDY_REGION === 'dev'
+      !app.isPackaged || CURRENT_CINDY_REGION === 'dev'
         ? 'development'
         : 'installed',
     region: CURRENT_CINDY_REGION,

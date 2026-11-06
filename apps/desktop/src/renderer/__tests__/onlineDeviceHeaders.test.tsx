@@ -15,12 +15,6 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
   useTranslation: () => ({ t: (key: string) => key }),
 }));
-const feature = vi.hoisted(() => ({ enabled: true }));
-vi.mock('@cindy/maker-shared/cindy-make-feature', async (importOriginal) => ({
-  ...await importOriginal<typeof import('@cindy/maker-shared/cindy-make-feature')>(),
-  get CINDY_MAKE_ENABLED() { return feature.enabled; },
-}));
-beforeEach(() => { feature.enabled = true; });
 vi.mock('@/components/ui/tooltip', () => ({
   Tip: ({ children }: { children: ReactNode }) => children,
 }));
@@ -337,9 +331,8 @@ describe('Offline device header names', () => {
   });
 });
 
-describe('Cindy Make sidebar entry', () => {
-  it.each([false, true])('hides the label, old tasks and creation entry with device grouping %s when disabled', (groupDevice) => {
-    feature.enabled = false;
+describe('legacy Cindy Make tasks', () => {
+  it.each([false, true])('hides the label, old tasks and creation entry with device grouping %s', (groupDevice) => {
     render(<ProjectsSection {...makeProps(groupDevice, false)} />);
     expect(screen.queryByText('settings.cindyMake.title')).toBeNull();
     expect(screen.queryByText('Make task')).toBeNull();
@@ -385,69 +378,4 @@ describe('Cindy Make sidebar entry', () => {
     return p;
   }
 
-  it.each([false, true])(
-    'renders Make before projects and drafts with device grouping %s',
-    (groupDevice) => {
-      for (const custom of [false, true]) {
-        render(<ProjectsSection {...makeProps(groupDevice, custom)} />);
-        const make = screen.getByText('settings.cindyMake.title');
-        const project = screen.getByText('Ordinary project');
-        expect(
-          make.compareDocumentPosition(project) & Node.DOCUMENT_POSITION_FOLLOWING,
-        ).toBeTruthy();
-        if (!groupDevice) {
-          expect(
-            make.compareDocumentPosition(screen.getByText('Ordinary draft')) &
-              Node.DOCUMENT_POSITION_FOLLOWING,
-          ).toBeTruthy();
-        }
-        expect(screen.getAllByText('settings.cindyMake.title')).toHaveLength(1);
-        cleanup();
-      }
-    },
-  );
-
-  it('opens the settings creation dialog without toggling the group and resets it after cancel', async () => {
-    render(<ProjectsSection {...makeProps(false, false)} />);
-    const header = screen.getByText('settings.cindyMake.title').closest('[role="button"]')!;
-    fireEvent.click(header);
-    expect(header.getAttribute('aria-expanded')).toBe('false');
-    const create = within(header as HTMLElement).getByRole('button', {
-      name: 'settings.cindyMake.create.title',
-    });
-    fireEvent.click(create);
-    // 弹窗是 React.lazy 动态载入的(见 ProjectsSection 的 CindyMakeCreateDialog),
-    // 首次打开要等 import 落地;并行跑时这一步可能超过 findByRole 默认的 1s 上限,
-    // 表现为该用例偶发失败(上游既有 flaky,与业务断言无关)。给足等待窗口。
-    const dialog = await screen.findByRole(
-      'dialog',
-      { name: 'settings.cindyMake.create.title' },
-      { timeout: 5000 },
-    );
-    expect(header.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.change(within(dialog).getByRole('textbox'), {
-      target: { value: 'Change the sidebar' },
-    });
-    fireEvent.click(
-      within(dialog).getByRole('button', { name: 'settings.cindyMake.create.cancel' }),
-    );
-    expect(screen.queryByRole('dialog')).toBeNull();
-    fireEvent.click(create);
-    const reopened = await screen.findByRole('dialog', {}, { timeout: 5000 });
-    expect((within(reopened).getByRole('textbox') as HTMLTextAreaElement).value).toBe('');
-  });
-
-  it.each([false, true])(
-    'does not open a local creation dialog from remote-only Make with device grouping %s',
-    (groupDevice) => {
-      const p = makeProps(groupDevice, false);
-      p.projects = [];
-      p.unclassified = p.unclassified
-        .filter((session) => session.source === 'cindy-make')
-        .map((session) => ({ ...session, deviceLinkDeviceId: 'remote' }));
-      render(<ProjectsSection {...p} />);
-      expect(screen.getByText('settings.cindyMake.title')).toBeTruthy();
-      expect(screen.queryByRole('button', { name: 'settings.cindyMake.create.title' })).toBeNull();
-    },
-  );
 });

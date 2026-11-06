@@ -16,7 +16,6 @@ import { beginDesktopDevInstance, type DesktopDevMode } from './devStartupStatus
 import { ensureSystemBinPathForMachineId } from './deviceId.js';
 import { configureLinuxPasswordStore } from './linuxPasswordStore.js';
 import { recognizeLinuxUserInstallation, linuxUserDesktopName } from './linuxInstallation.js';
-import { prepareCindyVersionStartup, dispatchCindyVersionStartup } from './cindy-make/versionStartup.js';
 
 if (process.platform === 'linux' && app.isPackaged) {
   const installation = recognizeLinuxUserInstallation(app.getPath('exe'), os.homedir(), process.getuid?.() ?? -1);
@@ -44,9 +43,6 @@ const regionUserDataDirName = resolveRegionUserDataDirName({
 if (regionUserDataDirName) {
   app.setPath('userData', path.join(app.getPath('appData'), regionUserDataDirName));
 }
-// A verified version handoff retains the launching original's profile and keychain identity.
-prepareCindyVersionStartup();
-
 // Node happy-eyeballs(autoSelectFamily)默认每个地址只给 250ms 完成 TCP 握手,
 // VPN/高 RTT 链路上直连海外端点(platform.claude.com 换 token、订阅模式模型流量等)
 // 的合法握手常超过 250ms,所有地址族全被掐掉后 undici 只报一个裸 'fetch failed'。
@@ -300,7 +296,6 @@ if (!process.env.XDT_BROWSER_RUNTIME_DIR) {
 refreshBrowserRuntimeConfigDir();
 
 async function dispatch(): Promise<void> {
-  if (await dispatchCindyVersionStartup()) return;
   const cleanupDevInstance = await beginDesktopDevInstance(desktopDevInstanceOptions);
   // Windows updater forceQuit() ends in process.exit(0), which bypasses Electron will-quit.
   process.once('exit', cleanupDevInstance);

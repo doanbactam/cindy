@@ -2958,88 +2958,6 @@ interface ElectronAPI {
    */
   openLogsDir: () => Promise<{ success: boolean; error?: string }>;
 
-  /** Open Cindy's managed Make tools directory (`<userData>/cindy-make/tools`). */
-  openCindyMakeToolsDir: () => Promise<{ success: boolean }>;
-  getCindyMakeSourceStatus: () => Promise<import('../shared/cindyMakeDoctor').MakeSourceStatus>;
-  cindyMakeMerge: (
-    input: import('../shared/cindyMakeMerge').CindyMakeMergeRequest,
-  ) => Promise<import('../shared/cindyMakeMerge').CindyMakeMergeState | undefined>;
-  /** Settings → Cindy Make: bind the personal version to the user's GitHub fork. */
-  cindyMakePersonalRemote: (
-    action: import('../shared/cindyMakePersonalRemote').CindyMakePersonalRemoteAction,
-  ) => Promise<import('../shared/cindyMakePersonalRemote').CindyMakePersonalRemoteState>;
-  /** The single Sync of the personal version: GitHub steps run only when shared there. */
-  cindyMakeSync?: (
-    request: import('../shared/cindyMakeSync').CindyMakeSyncRequest,
-  ) => Promise<import('../shared/cindyMakeSync').CindyMakeSyncState>;
-  /** Submit one Cindy Make change to the official repository as a pull request. */
-  cindyMakeContribution: {
-    (request: { action: 'status' }): Promise<
-      import('../shared/cindyMakeContribution').CindyMakeContributionView[]
-    >;
-    (request: { action: 'draft'; runId: string }): Promise<
-      import('../shared/cindyMakeContribution').CindyMakeContributionDraft
-    >;
-    (
-      request: Extract<
-        import('../shared/cindyMakeContribution').CindyMakeContributionRequest,
-        { action: 'submit' }
-      >,
-    ): Promise<import('../shared/cindyMakeContribution').CindyMakeContributionView>;
-  };
-  getCindyMakeSettings: () => Promise<import('../shared/cindyMakeSettings').CindyMakeSettings>;
-  setCindyMakeSyncLatestBeforeBuild: (
-    enabled: boolean,
-  ) => Promise<import('../shared/cindyMakeSettings').CindyMakeSettings>;
-  getCindyMakeHistory: (
-    selected?: string,
-  ) => Promise<import('../shared/cindyMakeHistory').CindyMakeHistoryState>;
-  actCindyMakeHistory: (
-    runId: string,
-    action: import('../shared/cindyMakeHistory').MakeHistoryAction,
-  ) => Promise<import('../shared/cindyMakeHistory').CindyMakeHistoryState>;
-  generateCindyMakePersonal: (
-    selection?: import('../shared/cindyMakeHistory').MakeHistoryBuildSelection[],
-  ) => Promise<import('../shared/cindyMakeHistory').CindyMakeHistoryState>;
-  cancelCindyMakePersonal: (
-    buildId: string,
-  ) => Promise<import('../shared/cindyMakeHistory').CindyMakeHistoryState>;
-  openCindyMakeHistoryBuild: () => Promise<void>;
-  getCindyMakeState: () => Promise<import('../shared/cindyMakeDoctor').CindyMakeGlobalState>;
-  manageCindyMakeTask: (sessionId: string, action: 'end' | 'finish' | 'delete') => Promise<void>;
-  cindyMakeTest: (
-    sessionId: string,
-    completionId: string,
-    action: import('../shared/cindyMakeSession').CindyMakeTestAction,
-  ) => Promise<import('../shared/cindyMakeSession').CindyMakeCompletionMeta>;
-  getCindyVersions: () => Promise<import('../shared/cindyVersions').CindyVersionsState>;
-  actCindyVersion: (
-    action: import('../shared/cindyVersions').CindyVersionAction,
-    id: string,
-  ) => Promise<import('../shared/cindyVersions').CindyVersionsState>;
-  openCindyMakeSourceDir: () => Promise<{ success: boolean }>;
-  onCindyMakeState: (
-    listener: (state: import('../shared/cindyMakeDoctor').CindyMakeGlobalState) => void,
-  ) => () => void;
-  /** A local Cindy Make build finished; Settings should refresh history and versions. */
-  onCindyMakeHistoryChanged: (
-    listener: (ownerStamp?: import('../shared/dataOwnerPush').DataOwnerPushStamp) => void,
-  ) => () => void;
-  /** Live global source status (Settings and the workflow share one operation). */
-  onCindyMakeSourceStatus: (
-    listener: (status: import('../shared/cindyMakeDoctor').MakeSourceStatus) => void,
-  ) => () => void;
-  /** Stop the running source operation from any window. */
-  cancelCindyMakeSource: () => Promise<{ success: boolean }>;
-  /** Compatibility entry point: prepare a worktree and its dependencies. */
-  prepareCindyMakeWorkspace: (
-    runId: string,
-  ) => Promise<import('../shared/cindyMakeDoctor').MakeTaskWorkspace>;
-  startCindyMakeTask: (
-    input: import('../shared/cindyMakeDoctor').CindyMakeTaskStart,
-  ) => Promise<string>;
-  cancelCindyMakeTask: (runId: string) => Promise<{ success: boolean }>;
-
   /**
    * Reveal a file in the OS file manager (Explorer / Finder). Accepts either
    * an `xdt-image://` URL (resolved on the main side) or an absolute file
@@ -4698,8 +4616,6 @@ interface ElectronAPI {
         /** Agent 在同账号另一台电脑上运行(任务与文件在本机)；与 remoteHostId 互斥。 */
         agentDeviceId?: string;
         providerId?: string | null;
-        /** Only the Cindy Make purpose may be requested; Main validates the checkout. */
-        source?: 'cindy-make';
         provisional?: boolean;
       }) => Promise<import('@/lib/ccAgent.types').Session>;
       get: (id: string) => Promise<import('@/lib/ccAgent.types').Session>;
@@ -5841,11 +5757,10 @@ interface ElectronAPI {
         workingDir?: string;
         args?: string;
         deviceId?: string;
-      } & import('../shared/cindyMakeDoctor').MakeDoctorCommandContext,
+      },
     ) => Promise<{
       success: boolean;
       error?: string;
-      doctorReport?: import('../shared/cindyMakeDoctor').MakeDoctorReport;
     }>;
 
     startReview: (input: {
@@ -5899,7 +5814,6 @@ interface ElectronAPI {
     onDesktopCommandTriggered: (
       handler: (payload: {
         command: string;
-        doctorReport?: import('../shared/cindyMakeDoctor').MakeDoctorReport;
         sessionId?: string;
         workingDir?: string;
         args?: string;

@@ -17,7 +17,6 @@ import { createSessionBindingLifecycle, createSessionCloseTeardown } from '../se
 import { captureProductTurnFailureOwner, createDeferredProductTurnFailureGate } from '../productTurnFailureOwner.js';
 import { createProviderGroupHeldRecovery, createProviderGroupHeldTurnErrors } from '../../provider-group/heldTurnErrors.js';
 import { createProviderGroupHeldWorkerTerminals } from '../../provider-group/heldWorkerTerminals.js';
-import { UpstreamMergeController, type UpstreamMergeDependencies } from '../../cindy-make/upstreamMergeController.js';
 import { createProviderGroupService, type ProviderGroupServiceDeps } from '../../provider-group/service.js';
 import { createProviderGroupGuestSwitch } from '../../provider-group/guestSwitch.js';
 import { createProviderGroupRouter } from '../../provider-group/router.js';
@@ -15867,10 +15866,10 @@ describe('provider group computer switch hold', () => {
   // #6671/r4339380528, unit: queue acceptance releases the original hold, so a
   // runtime close after onPersisted used to erase the product owner before the
   // real coordinator's onDiscarded outcome. Prior tests manually cleared the
-  // gate and missed the upstream waiter. Import the close adapter used by register
-  // with the real lifecycle/coordinator/controller and a paused send transaction.
+  // gate and missed the product-turn interrupt. Import the close adapter used by register
+  // with the real lifecycle/coordinator and a paused send transaction.
   it.each(['failed', 'closed-failed', 'closed-dispatched'] as const)(
-    'finishes the upstream waiter after a queued group continuation: %s', async outcome => {
+    'settles the product failure owner after a queued group continuation: %s', async outcome => {
       const sid = 'group-close-upstream';
       const h = createHarness({ providerGroupSwitchCandidate: () => 'overload' });
       const gate = createDeferredProductTurnFailureGate();
@@ -15882,27 +15881,10 @@ describe('provider group computer switch hold', () => {
           close = () => listener('closed'); return () => {};
         },
       } as unknown as Session;
-      const upstream = new UpstreamMergeController({
-        read: () => ({ state: {
-          id: 'group-close-operation', status: 'conflict', ref: 'main',
-          upstreamCommit: 'a'.repeat(40), hasWorkspace: true, sessionId: sid,
-        }, sessionOwner: 'account' }),
-        write: vi.fn(), publish: vi.fn(), owner: () => 'account', hasWorkspace: () => true,
-        exclusive: async run => run(),
-        latest: async () => ({ ref: 'main', commit: 'a'.repeat(40) }),
-        prepare: async state => state, cancel: async () => {},
-        session: async (_state, _opts, bind) => { bind(sid); return sid; },
-        running: () => false, refresh: async () => {}, cleanup: async () => true,
-        apply: async state => ({ ...state, status: 'merged', commit: 'b'.repeat(40) }),
-      } satisfies UpstreamMergeDependencies);
-      await upstream.resolve(undefined, 'group-close-operation');
-      const abort = new AbortController();
-      let waiter: unknown = 'pending';
-      const completion = upstream.waitForCompletion('group-close-operation', abort.signal)
-        .then(state => { waiter = state.status; }, error => { waiter = error.code; });
+      const interrupted = vi.fn();
       const settleFailure = () => gate.settle(sid,
         owner => owner.session === session && owner.generation === session.getTurnGeneration(),
-        () => { void upstream.interrupt(sid); });
+        () => { interrupted(sid); });
       const errors = createProviderGroupHeldTurnErrors({
         capture: () => null, persist: vi.fn(), surface: vi.fn(), settleFailure,
         ownerKey: () => 'account',
@@ -15962,18 +15944,15 @@ describe('provider group computer switch hold', () => {
         finishSend.resolve();
         await flush();
         if (outcome === 'closed-dispatched') {
-          await upstream.finish(sid);
           expect(delivered).not.toHaveBeenCalled();
-          expect(upstream.status()?.status).toBe('merged');
+          expect(interrupted).not.toHaveBeenCalled();
         } else {
           expect(delivered).toHaveBeenCalledExactlyOnceWith(sid, 'held-terminal');
-          expect(upstream.status()).toMatchObject({ status: 'failed', error: 'interrupted' });
+          expect(interrupted).toHaveBeenCalledWith(sid);
         }
-        await completion;
-        expect(waiter).toBe(outcome === 'closed-dispatched' ? 'merged' : 'interrupted');
         expect(gate.pending(sid)).toBeUndefined();
       } finally {
-        finishSend.resolve(); abort.abort(); await completion;
+        finishSend.resolve();
         h.coordinator.onSessionClosed(sid);
       }
     },

@@ -13,8 +13,6 @@ import { describe, expect, it } from 'vitest';
 const RENDERER_ROOT = resolve(__dirname, '..');
 
 const EXEMPT_FILES = new Set([
-  // 点遮罩先弹二次确认(DESIGN.md「Cindy Make preflight exception」)。
-  'components/cindy-make/CindyMakePreflightDialog.tsx',
   // DESIGN.md §4 的侧边抽屉例外；真实点击和保存保护由 botSettingsDrawer.test.tsx 覆盖。
   'features/bots/BotSettingsDrawer.tsx',
 ]);
@@ -126,8 +124,8 @@ describe('dialog scrim dismissal', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('still recognizes the exempt preflight dialog as a Dialog.Content user', () => {
-    const exempt = resolve(RENDERER_ROOT, 'components/cindy-make/CindyMakePreflightDialog.tsx');
+  it('still recognizes the exempt drawer as a Dialog.Content user', () => {
+    const exempt = resolve(RENDERER_ROOT, 'features/bots/BotSettingsDrawer.tsx');
     expect(unguardedDialogContents('exempt', readFileSync(exempt, 'utf8')).length).toBeGreaterThan(
       0,
     );

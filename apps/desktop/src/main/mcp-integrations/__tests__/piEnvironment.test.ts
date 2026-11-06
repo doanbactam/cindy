@@ -32,7 +32,6 @@ import {
   CODEX_ALLOWED_BUILTIN_PLUGIN_IDS_KEY,
   CODEX_DISABLED_BUILTIN_PLUGIN_IDS_KEY,
 } from '../codexBuiltinToolPolicy.js';
-import { CINDY_MAKE_VENDOR_OPTION_KEY } from '../../../shared/cindyMakeSession.js';
 import { BOT_IM_CHANNELS_VENDOR_KEY } from '../../../shared/botImConnection.js';
 import {
   getPiExtraSpawnConfig,
@@ -355,7 +354,8 @@ describe('piEnvironment per-session identity', () => {
     const isEnabled = vi.spyOn(PluginRegistry.prototype, 'isEnabled')
       .mockImplementation((pluginId) => pluginId !== 'collab');
     const providers = ['cindy_helper', 'cindy_memory', 'cindy_docs', 'cindy_computer',
-      'cindy_make', 'cindy_orca', 'custom_probe'].map((name) => makeProvider(name));
+
+      'cindy_orca', 'custom_probe'].map((name) => makeProvider(name));
     const vendorOptions: Record<string, unknown> = {
       [RUNTIME_MCP_NAMES_KEY]: providers.map((provider) => provider.name),
       [CODEX_ALLOWED_BUILTIN_PLUGIN_IDS_KEY]: ['xdt_helper', 'memory', 'docs', 'collab'],
@@ -388,7 +388,7 @@ describe('piEnvironment per-session identity', () => {
         agentKind: 'pi', workingDir: '/repo', vendorOptions: runtimeOptions,
       }, {})).toMatchObject({ capabilities: [
         { server: 'cindy_helper', status: 'registered' },
-        ...['cindy_memory', 'cindy_docs', 'cindy_computer', 'cindy_make', 'cindy_orca'].map((server) => ({
+        ...['cindy_memory', 'cindy_docs', 'cindy_computer', 'cindy_orca'].map((server) => ({
           server, status: 'unavailable', reason: 'not-mounted-in-current-runtime',
         })),
         { server: 'custom_probe', status: 'registered' },
@@ -424,32 +424,6 @@ describe('piEnvironment per-session identity', () => {
 
     expect(config?.mcpBridge?.servers.map((server) => server.name)).toEqual(['custom_probe']);
     config?.disposeSessionCtx?.();
-  });
-
-  it('exposes cindy_make only to a Session carrying the Cindy Make marker', async () => {
-    const providers = [makeProvider('cindy_make'), makeProvider('custom_probe')];
-    const ordinary = await getPiExtraSpawnConfig(providers, noopLogger(), {
-      sessionId: 'pi-ordinary',
-      workingDir: '/repo',
-      vendorOptions: {},
-    });
-    expect(ordinary?.mcpBridge?.servers.map((server) => server.name)).toEqual(['custom_probe']);
-    ordinary?.disposeSessionCtx?.();
-
-    const anonymous = await getPiExtraSpawnConfig(providers, noopLogger());
-    expect(anonymous?.mcpBridge?.servers.map((server) => server.name)).toEqual(['custom_probe']);
-    anonymous?.disposeSessionCtx?.();
-
-    const make = await getPiExtraSpawnConfig(providers, noopLogger(), {
-      sessionId: 'pi-make',
-      workingDir: '/cindy-make/source',
-      vendorOptions: { [CINDY_MAKE_VENDOR_OPTION_KEY]: true },
-    });
-    expect(make?.mcpBridge?.servers.map((server) => server.name)).toEqual([
-      'cindy_make',
-      'custom_probe',
-    ]);
-    make?.disposeSessionCtx?.();
   });
 
   it('exposes cindy_telegram_bot only to a Session carrying a Telegram channel marker', async () => {

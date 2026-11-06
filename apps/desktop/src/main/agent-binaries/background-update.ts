@@ -1,5 +1,4 @@
 import { app } from 'electron';
-import { isCindyPersonalRuntime } from '../cindy-make/versionRuntimeIdentity.js';
 import { getCachedManifest, onManifestFetched, type Manifest } from '../manifestService.js';
 import { prefetch } from './index.js';
 import { createLogger } from '../logger.js';
@@ -13,7 +12,7 @@ let running = false;
 
 /** Start after environment readiness. The app's existing checks supply fresh metadata. */
 export function startBinaryBackgroundUpdates(): void {
-  if (unsubscribe || !app.isPackaged || isCindyPersonalRuntime()) return;
+  if (unsubscribe || !app.isPackaged) return;
   controller = new AbortController();
   const signal = controller.signal;
   const queue = (manifest: Manifest): void => {

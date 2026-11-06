@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 import { remoteProjectsStore } from '@/features/device-link/remoteProjectsStore';
 import { getSessionFor } from '@/lib/makerTransport';
 import { sessionsStore } from '@/lib/sessionsStore';
@@ -23,7 +23,7 @@ export function CindyMakeSessionGate({ sessionId, children }: {
   const [failure, setFailure] = useState<{ id: string; reason: ReturnType<typeof sessionEntryFailure> } | null>(null);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
-    if (CINDY_MAKE_ENABLED || !sessionId || knownSource !== undefined) return;
+    if (!sessionId || knownSource !== undefined) return;
     let cancelled = false;
     const owner = getDataOwnerGeneration();
     setFailure(null);
@@ -41,10 +41,10 @@ export function CindyMakeSessionGate({ sessionId, children }: {
   }, [sessionId, knownSource, retry]);
 
   const source = knownSource !== undefined ? knownSource : (loaded && loaded.id === sessionId ? loaded.source : undefined);
-  if (!CINDY_MAKE_ENABLED && isCindyMakeSource(source)) {
+  if (isCindyMakeSource(source)) {
     return <Navigate to="/cc-agent" replace />;
   }
-  if (!CINDY_MAKE_ENABLED && sessionId && source === undefined) {
+  if (sessionId && source === undefined) {
     return failure?.id === sessionId
       ? <SessionEntryError reason={failure.reason} onRetry={() => setRetry(value => value + 1)} />
       : null;

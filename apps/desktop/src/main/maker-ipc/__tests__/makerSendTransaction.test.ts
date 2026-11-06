@@ -40,7 +40,6 @@ import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 import { createWorkingDirectoryRecovery } from '../workingDirectoryRecovery';
 import { createPreflightHarness, filesystemError } from './helpers/workingDirectoryPreflightHarness';
-import { buildCindyMakeTaskNote } from '../../cindy-make/taskNote';
 import { getResolvedMainLocale } from '../../i18n';
 import { buildClientEnvironmentNote } from '../mobileClientPromptNote';
 import { buildUiLanguageErrorNote } from '../uiLanguageErrorNote';
@@ -3534,7 +3533,7 @@ describe('Cindy Make task note', () => {
     await transaction.sendToAgentAccepted('session-1', 'Continue');
     expect(vi.mocked(session.send).mock.calls[1][0]).not.toContain('[Side chat context]');
   });
-  it('annotates the wire message of a cindy-make task but persists the original text', async () => {
+  it('adds no task note for a legacy cindy-make source', async () => {
     const session = createSession({ agentKind: 'claude-code' });
     const { deps } = createDeps({
       getSession: vi.fn(() => session),
@@ -3547,7 +3546,7 @@ describe('Cindy Make task note', () => {
     });
 
     const sent = vi.mocked(session.send).mock.calls[0]?.[0];
-    expect(sent).toBe(`${uiLanguageNote()}\n\n${buildCindyMakeTaskNote()}\n\n修复消息流闪烁`);
+    expect(sent).toBe(withUiLanguageNote('修复消息流闪烁'));
     expect(vi.mocked(deps.createDbMessage).mock.calls[0]?.[1].content).toBe('修复消息流闪烁');
   });
 

@@ -3,7 +3,6 @@ import type { Manifest } from '../../manifestService';
 
 const mocks = vi.hoisted(() => ({
   packaged: true,
-  personal: false,
   observe: undefined as ((manifest: Manifest) => void) | undefined,
   unsubscribe: vi.fn(),
   prefetch: vi.fn(),
@@ -14,7 +13,6 @@ vi.mock('electron', () => ({ app: {
   once: mocks.once,
   removeListener: vi.fn(),
 } }));
-vi.mock('../../cindy-make/versionRuntimeIdentity.js', () => ({ isCindyPersonalRuntime: () => mocks.personal }));
 vi.mock('../../manifestService.js', () => ({
   getCachedManifest: () => ({ app: { version: '1.0.0' } }),
   onManifestFetched: (callback: (manifest: Manifest) => void) => {
@@ -37,7 +35,6 @@ describe('binary background update lifecycle', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mocks.packaged = true;
-    mocks.personal = false;
     mocks.observe = undefined;
     mocks.prefetch.mockReset().mockResolvedValue(true);
     mocks.unsubscribe.mockClear();
@@ -83,9 +80,8 @@ describe('binary background update lifecycle', () => {
     expect(mocks.prefetch).toHaveBeenCalledOnce();
   });
 
-  it.each(['development', 'personal'] as const)('leaves %s builds on their existing update policy', async mode => {
-    mocks.packaged = mode !== 'development';
-    mocks.personal = mode === 'personal';
+  it('leaves development builds on their existing update policy', async () => {
+    mocks.packaged = false;
     startBinaryBackgroundUpdates();
     await vi.advanceTimersByTimeAsync(30_000);
     expect(mocks.observe).toBeUndefined();

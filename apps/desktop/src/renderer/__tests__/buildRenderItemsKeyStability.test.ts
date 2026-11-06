@@ -57,74 +57,14 @@ const mkAssistant = (id: string, content = 'ok'): ChatMessage => ({
   content,
 });
 
-it('keeps persistent Cindy Make progress visible in the message timeline', () => {
+it('hides rows left by the removed Cindy Make', () => {
   const built = buildRenderItems([
     mkUser('u1', '之前的消息'),
-    {
-      ...mkAssistant('make-card'),
-      systemCardType: 'cindy-make',
-      systemCardData: { request: 'fix scrolling', report: { runId: 'run-1' } },
-    },
+    { ...mkAssistant('make-card'), systemCardType: 'retired-cindy-make' },
   ]).items;
-  expect(
-    built.some((item) => item.type === 'message' && item.message.clientId === 'make-card'),
-  ).toBe(true);
+  expect(built.some((item) => renderItemContainsClientId(item, 'make-card'))).toBe(false);
+  expect(built.some((item) => renderItemContainsClientId(item, 'u1'))).toBe(true);
 });
-
-it('keeps modal-only Cindy Make cards out of the message timeline', () => {
-  const built = buildRenderItems([
-    mkUser('u1', '之前的消息'),
-    {
-      ...mkAssistant('make-card'),
-      systemCardType: 'cindy-make',
-      systemCardData: { modalOnly: true, report: { runId: 'run-1' } },
-    },
-  ]).items;
-  expect(built.some((item) => item.type === 'message' && item.message.clientId === 'make-card')).toBe(
-    false,
-  );
-});
-
-it('shows completion history unless the local composer owns the testing handoff', () => {
-  const completion: ChatMessage = {
-    ...mkAssistant('completion'), systemCardType: 'cindy-make-complete',
-    systemCardData: { reportedAt: 123, commit: 'a'.repeat(40) },
-  };
-  expect(buildRenderItems([completion]).items.some((item) => renderItemContainsClientId(item, 'completion'))).toBe(true);
-  expect(buildRenderItems([completion], undefined, undefined, { cindyMakeCompletionInComposer: true }).items).toEqual([]);
-  expect(completion.systemCardData?.commit).toBe('a'.repeat(40));
-});
-
-it.each(['running', 'failed', 'cancelled', 'completed'])(
-  'moves its own %s preparation out of the timeline without deleting history or hiding other cards',
-  (status) => {
-    const preparation: ChatMessage = {
-      ...mkAssistant('make-card'),
-      systemCardType: 'cindy-make',
-      systemCardData: {
-        request: 'fix scrolling',
-        report: { runId: 'run-1', status, task: { sessionId: 'make-session' } },
-      },
-    };
-    const otherCard: ChatMessage = {
-      ...preparation,
-      clientId: 'other-card',
-      systemCardData: { report: { runId: 'run-2', task: { sessionId: 'other-session' } } },
-    };
-    const messages = [preparation, otherCard, mkUser('u1', 'original request')];
-    const built = buildRenderItems(messages, undefined, undefined, {
-      cindyMakeSessionId: 'make-session',
-    }).items;
-    expect(built.some((item) => renderItemContainsClientId(item, 'make-card'))).toBe(false);
-    expect(built.some((item) => renderItemContainsClientId(item, 'other-card'))).toBe(true);
-    expect(built.some((item) => renderItemContainsClientId(item, 'u1'))).toBe(true);
-    expect(messages).toHaveLength(3);
-    expect(messages[0]).toBe(preparation);
-    // A source task or standalone history view still offers its existing card.
-    const original = buildRenderItems(messages).items;
-    expect(original.some((item) => renderItemContainsClientId(item, 'make-card'))).toBe(true);
-  },
-);
 
 describe('Bot 流式正文呈现', () => {
   it('preserves Claude progress and folds it only after the turn seal', () => {
@@ -677,48 +617,6 @@ describe('buildRenderItems — key stability', () => {
     expect(cards.map((card) => card.key)).toEqual(['turnchanges-cs1', 'turnchanges-cs2']);
     expect(cards.map((card) => card.changeSet.id)).toEqual(['cs1', 'cs2']);
     expect(items.indexOf(cards[0])).toBeGreaterThan(items.findIndex((item) => item.key === 'msg-a1'));
-  });
-
-  it('places the preceding turn changes before an appended Cindy Make card', () => {
-    const firstUser = mkUser('u1');
-    const makeCard = {
-      ...mkAssistant('make-card', ''),
-      systemCardType: 'cindy-make' as const,
-    };
-    const changeSet: TurnChangeSetSummary = {
-      id: 'cs-before-make',
-      sessionId: 's1',
-      anchorClientId: 'u1',
-      provider: 'codex',
-      providerTurnId: 'turn-1',
-      cwd: 'C:/work',
-      state: 'complete',
-      workspaceState: 'applied',
-      isReversible: true,
-      incompleteReasons: [],
-      createdAt: 1,
-      completedAt: 2,
-      files: [{
-        id: 'turn-1:a.ts',
-        path: 'a.ts',
-        oldPath: null,
-        status: 'modified',
-        additions: 1,
-        deletions: 0,
-      }],
-      fileCount: 1,
-      additions: 1,
-      deletions: 0,
-    };
-
-    const { items } = buildRenderItems([firstUser, mkAssistant('a1'), makeCard], undefined, undefined, {
-      turnChangeSets: [changeSet],
-    });
-    const changeIndex = items.findIndex((item) => item.type === 'turn_changes');
-    const cardIndex = items.findIndex((item) => item.key === 'msg-make-card');
-
-    expect(changeIndex).toBeGreaterThanOrEqual(0);
-    expect(cardIndex).toBeGreaterThan(changeIndex);
   });
 
   it('hides all zero-file change cards because they have no reviewable content', () => {

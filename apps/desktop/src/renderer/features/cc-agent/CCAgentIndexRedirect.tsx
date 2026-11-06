@@ -18,7 +18,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 
 import { useCCSessions } from '@/hooks/useCCSessions';
 import {
@@ -53,7 +53,7 @@ export function CCAgentIndexRedirect() {
           session.status !== 'deleted' &&
           session.source !== 'bot' &&
           session.source !== 'side-chat' &&
-          (CINDY_MAKE_ENABLED || !isCindyMakeSource(session.source)),
+          (!isCindyMakeSource(session.source)),
       ),
     [allSessions],
   );

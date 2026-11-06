@@ -95,102 +95,6 @@
       "note": "存储设置名称（#8259）：在任务里「新建项目…」时项目文件夹的上级目录。未设置时按已登记项目最常见的父目录推荐，否则为 ~/Projects。与「对话工作区」（不绑项目任务的工作目录分配位置）是两个设置。"
     },
     {
-      "id": "cindy-make-history",
-      "status": "proposed",
-      "en": "Make history",
-      "translations": {
-        "zh-CN": "制作历史",
-        "zh-TW": "製作歷史",
-        "ja": "制作履歴",
-        "ko": "제작 기록"
-      },
-      "note": "Cindy Make 设置中保留全部制作、修改轮次与合入记录的列表；结束制作及清理工作目录后仍可回看。"
-    },
-    {
-      "id": "cindy-make-undo-integration",
-      "status": "proposed",
-      "en": "Remove from personal version",
-      "translations": {
-        "zh-CN": "从个人版移除",
-        "zh-TW": "從個人版移除",
-        "ja": "個人版から削除",
-        "ko": "개인 버전에서 제거"
-      },
-      "note": "从个人版移除单次制作已经加入的全部改动，保留其他制作与已有应用成品；底层通过新的反向提交实现，不改写 Git 历史。"
-    },
-    {
-      "id": "cindy-make-reapply-integration",
-      "status": "proposed",
-      "en": "Add back to personal version",
-      "translations": {
-        "zh-CN": "重新加入个人版",
-        "zh-TW": "重新加入個人版",
-        "ja": "個人版に再追加",
-        "ko": "개인 버전에 다시 추가"
-      },
-      "note": "重新应用之前明确撤销的制作改动，区别于把尚未合入的新修改首次加入个人源码。"
-    },
-    {
-      "id": "cindy-make-version-control",
-      "status": "proposed",
-      "en": "Version Control",
-      "translations": {
-        "zh-CN": "版本控制",
-        "zh-TW": "版本控制",
-        "ja": "バージョン管理",
-        "ko": "버전 관리"
-      },
-      "note": "Cindy Make 设置中用户指定的页签名称，汇总我的版本与制作历史，并提供本地合入、撤销和生成入口。"
-    },
-    {
-      "id": "cindy-original-version",
-      "status": "proposed",
-      "en": "Original Version",
-      "translations": {
-        "zh-CN": "原版",
-        "zh-TW": "原版",
-        "ja": "オリジナル版",
-        "ko": "기본 버전"
-      },
-      "note": "Cindy Make 中与个人版对应的来源应用。用户明确要求 Dev 和正式安装版属于同一个类型；Dev 只影响底层启动方式，不作为第三类版本。"
-    },
-    {
-      "id": "cindy-personal-version",
-      "status": "proposed",
-      "en": "Personal Version",
-      "translations": {
-        "zh-CN": "个人版",
-        "zh-TW": "個人版",
-        "ja": "個人版",
-        "ko": "개인 버전"
-      },
-      "note": "Cindy Make 生成的本机定制应用成品。可与原版切换并沿用同一份日常数据，与使用独立数据的隔离测试版区分。"
-    },
-    {
-      "id": "cindy-make-storage-location",
-      "status": "proposed",
-      "en": "Saved in",
-      "translations": {
-        "zh-CN": "保存位置",
-        "zh-TW": "儲存位置",
-        "ja": "保存先",
-        "ko": "저장 위치"
-      },
-      "note": "Cindy Make 版本控制概览中的一行，说明个人版保存在哪里：只在这台电脑，或用户自己 GitHub 上官方仓库的公开副本（fork）。面向普通用户不写 fork，写「你的 GitHub」。"
-    },
-    {
-      "id": "cindy-make-contribution",
-      "status": "proposed",
-      "en": "Submit to Cindy",
-      "translations": {
-        "zh-CN": "提交给官方",
-        "zh-TW": "提交給官方",
-        "ja": "公式に提出",
-        "ko": "공식에 제출"
-      },
-      "note": "把 Cindy Make 的一项修改整理成 Pull Request 提交到官方仓库。面向普通用户写「提交给官方」，对话框说明里才出现 Pull Request；状态写「等待审核 / 已被官方采纳 / 官方未采纳」，不写 open / merged / closed。"
-    },
-    {
       "id": "task-tag",
       "status": "proposed",
       "en": "Tag",
@@ -375,18 +279,6 @@
         "ko": "원격 데스크톱"
       },
       "note": "同账号手机查看和操作电脑真实桌面，独立于 Cindy 内部设备控制授权。"
-    },
-    {
-      "id": "cindy-make",
-      "status": "proposed",
-      "en": "Cindy Make",
-      "translations": {
-        "zh-CN": "Cindy Make",
-        "zh-TW": "Cindy Make",
-        "ja": "Cindy Make",
-        "ko": "Cindy Make"
-      },
-      "note": "用户通过 /cindy-make 显式开启的本机定制流程。输入区承接准备与每轮完成选择；修改时使用普通输入框。完成后可继续修改、启动隔离测试或生成个人版，版本切换由原生客户端处理。Doctor 自身只检查。"
     },
     {
       "id": "cindy-ai-free-tier",

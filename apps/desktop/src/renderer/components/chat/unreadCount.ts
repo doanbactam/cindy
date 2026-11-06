@@ -55,9 +55,7 @@ function isTurnBoundary(m: UnreadCountMessage): boolean {
   if (m.role === 'user') return m.delivery !== 'steer';
   return (
     m.role === 'assistant' &&
-    (m.systemCardType === 'cindy-make' ||
-      m.systemCardType === 'cindy-make-doctor' ||
-      m.systemCardType === 'review')
+    m.systemCardType === 'review'
   );
 }
 

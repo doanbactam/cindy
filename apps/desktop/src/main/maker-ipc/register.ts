@@ -903,18 +903,7 @@ import {
 } from '../maker-host/pi-package-mutation-grant.js';
 import { onCodexAutoResetRestored, readXaiSubscriptionUsageSnapshotForDeviceLink, readClaudeSubscriptionUsageSnapshotForDeviceLink, readCodexAccountUsageSnapshotWithWebRefresh, readCodexRateLimitsForHost } from './usage.js';
 import { requireEnum, requireObject, throwIpcError } from '../utils/ipcValidate.js';
-import { applyPersistedCindyMakeMarker } from './cindyMakeSessionStart.js';
-import { assertCindyMakeEnabled, assertCindyMakeSessionAvailable } from '../cindy-make/featureGate.js';
-import { CINDY_MAKE_SESSION_SOURCE } from '../../shared/cindyMakeSession.js';
-import { cindyMakeManager } from '../cindy-make/manager.js';
-import { assertCindyMakeWorkspace, withCindyMakeProjectUse } from '../cindy-make/projectAccess.js';
-import { isCindyMakeWorktreePath, isCindyMakeManagedWorktreePath } from '../cindy-make/sourcePaths.js';
-import { assertCindyMakeTaskReady, configureCindyMakeTaskSender, CINDY_MAKE_TASK_DISPATCH } from '../cindy-make/taskRuntime.js';
-import {
-  finishUpstreamMergeTurn,
-  interruptUpstreamMergeTurn,
-  prepareUpstreamMergeTurn,
-} from '../cindy-make/upstreamMergeRuntime.js';
+import { assertCindyMakeSessionAvailable, assertPersistedSessionAvailable } from './legacyCindyMakeSession.js';
 import { isIpcError, type IpcErrorCode } from '../../shared/ipc-errors.js';
 import { piPackageCommandDiagnostic } from '../maker-host/pi-package-diagnostic.js';
 import {
@@ -6289,14 +6278,10 @@ function isCurrentProductTurnFailureOwner(owner: ProductTurnFailureOwner): boole
 }
 
 async function finishProductTurn(
-  sessionId: string,
+  _sessionId: string,
   owner?: ProductTurnFailureOwner,
 ): Promise<void> {
-  if (owner) {
-    deferredProductTurnFailureGate.clear(owner);
-    if (!isCurrentProductTurnFailureOwner(owner)) return;
-  }
-  await finishUpstreamMergeTurn(sessionId);
+  if (owner) deferredProductTurnFailureGate.clear(owner);
 }
 
 const interruptProductTurn = createProductTurnFailureFinalizer({
@@ -6305,9 +6290,6 @@ const interruptProductTurn = createProductTurnFailureFinalizer({
   commitActivity: (sessionId) => sessionListActivityTracker.commit(sessionId),
   settlePluginTasks: (sessionId, execution, inputClientIds) =>
     settlePluginTaskTerminal(sessionId, execution, 'failed', undefined, inputClientIds),
-  interrupt: async (sessionId) => {
-    await interruptUpstreamMergeTurn(sessionId);
-  },
 });
 
 /** Remaining domain cleanup stays in its original order, after input coordination. */
@@ -6520,8 +6502,6 @@ const sessionEventDependencies: SessionEventDependencies = {
 };
 
 const sessionTurnObserverDependencies = {
-  beforeLocalProviderStart: (session: Session) =>
-    withCindyMakeProjectUse(app.getPath('userData'), session.workDir, async () => undefined),
   silentStopTurnLeaseGate,
   sessionTurnLeaseTracker,
   providerTurnLeaseId,
@@ -8312,12 +8292,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
   });
 
   ipcMain.handle(MAKER_INVOKE.EXECUTE_DESKTOP_COMMAND, async (e, name: unknown, ctx: unknown) => {
-    if (name === 'cindy-make-doctor' || name === 'cindy-make') {
-      assertTrustedAppRendererEvent(e);
-      assertCindyMakeEnabled();
-      if (ctx != null && (typeof ctx !== 'object' || Array.isArray(ctx)))
-        throwIpcError('INVALID_PARAMS', 'Invalid Make context');
-    }
     if (typeof name !== 'string' || name.length === 0) {
       throwIpcError('INVALID_PARAMS', 'name required');
     }
@@ -9285,7 +9259,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     creationSignal?.addEventListener('abort', closeCancelled, { once: true });
     try {
     assertAccess?.();
-    await applyPersistedCindyMakeMarker(o, readSessionSource);
+    await assertPersistedSessionAvailable(o, readSessionSource);
     assertAccess?.();
     // 协同远端 Worker 的代理任务行只承接计槽与回报，真实任务在运行设备上，绝不在本机起 Agent。
     if (o.id && await orcaRemoteWorkersForHost?.isRemoteWorker(o.id)) {
@@ -12374,12 +12348,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     source?: { origin?: unknown; sourcePlugin?: unknown; autoReviewUserText?: unknown; persistedText?: string },
   ): Promise<SessionSendResult> {
     assertCindyMakeSessionAvailable(await readSessionSource(session.id));
-    const dispatchMergeTurn = prepareUpstreamMergeTurn(session.id);
-    if (!session.remoteHostId && isCindyMakeWorktreePath(app.getPath('userData'), session.workDir)) {
-      if (cindyMakeManager.isTaskPreparing(session.id))
-        throwIpcError('PRECONDITION_FAILED', 'Cindy Make is still preparing this task');
-      await assertCindyMakeTaskReady(session.id);
-    }
     const dispatch = async (): Promise<SessionSendResult> => {
       let baselineStarted = false;
       let turnChangeSetStarted = false;
@@ -12427,7 +12395,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
             // previous recovery attempt. Clear only at this irreversible
             // boundary; preparation can still be rejected before dispatch.
             deferredProductTurnFailureGate.clearSession(session.id);
-            dispatchMergeTurn?.();
           },
         });
         if (turnChangeSetStarted && !sendResult.accepted) {
@@ -12456,9 +12423,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
         releaseTurnSource();
       }
     };
-    return session.remoteHostId
-      ? dispatch()
-      : withCindyMakeProjectUse(app.getPath('userData'), session.workDir, dispatch);
+    return dispatch();
   }
 
   /**
@@ -18596,16 +18561,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
   } = createMakerSendTransaction({
     prepareExternalInput: (sessionId) => takeOverLocalAgentVisibleSession(sessionId, true),
     restoreArchivedSessionForSend,
-    prepareProductTurn: (sessionId) => {
-      const dispatch = prepareUpstreamMergeTurn(sessionId);
-      return dispatch
-        ? () => {
-            // This is the transaction path's actual vendor-dispatch boundary.
-            deferredProductTurnFailureGate.clearSession(sessionId);
-            dispatch();
-          }
-        : undefined;
-    },
     readAutoReviewHistory,
     readScheduledPermissions: getSessionFsSnapshot,
     assertScheduledDispatchRoute: async (sessionId) => {
@@ -18888,7 +18843,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     start: (sessionId, createOpts) => withSendToSessionLock(sessionId, async () => {
       if (hasLocalAgentVisibleRuntime(sessionId)) return false;
       if (maker.getSession(sessionId)) return false;
-      if (agentSwitchPending.get(sessionId) || cindyMakeManager.isTaskPreparing(sessionId)) return false;
+      if (agentSwitchPending.get(sessionId)) return false;
       // Queued work starts the runtime itself through the normal drain.
       if (agentInputCoordinatorHolder?.hasPendingQueuedWork(sessionId)) return false;
       const [row] = await getDbClient().drizzle
@@ -18942,9 +18897,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     agentPrewarmer.markUsed(sessionId);
     // 新建页的未发送任务第一次发送：renderer 通常已先转正，这里兜底。
     if (isProvisionalSession(sessionId)) await commitProvisionalSession(sessionId);
-    if (cindyMakeManager.isTaskPreparing(sessionId) && (args[3] as Record<PropertyKey, unknown> | undefined)?.[CINDY_MAKE_TASK_DISPATCH] !== true) {
-      throwIpcError('PRECONDITION_FAILED', 'Cindy Make is still preparing this task');
-    }
     await assertReviewExternalInputAllowed(sessionId);
     await syncBotLanePermission(sessionId);
     await reconcileBotModelRoute(sessionId);
@@ -18980,9 +18932,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
           botFallbackInputs.delete(args[2]);
         }
       }
-      if (botInput?.source === CINDY_MAKE_SESSION_SOURCE && (args[3] as Record<PropertyKey, unknown> | undefined)?.[CINDY_MAKE_TASK_DISPATCH] !== true) {
-        await assertCindyMakeTaskReady(sessionId);
-      }
       if (isDeviceLinkInvoke() && botInput?.source === 'bot' && (botInput.hiddenAt || botInput.profileStatus === 'archived')) {
         throwIpcError('NOT_FOUND', 'Session does not exist');
       }
@@ -18994,8 +18943,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
         ?.persistUserMessage?.clientId;
       await runSchedulerQueuedPreparation(queuedClientId, schedulerQueuedPromptPreparations,
         () => { if (queuedClientId) schedulerQueuedPromptDiscardWatchers.delete(queuedClientId); });
-      return botInput?.remoteHostId ? sendToAgentAcceptedUnlocked(...args)
-        : withCindyMakeProjectUse(app.getPath('userData'), botInput?.workingDir, () => sendToAgentAcceptedUnlocked(...args));
+      return sendToAgentAcceptedUnlocked(...args);
     });
   };
   prepareBotSessionForImSendHolder = async (sessionId) => {
@@ -19267,8 +19215,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
             }
           : { signal: recovery?.signal },
       );
-      const result = row.remoteHostId ? await sendReplay()
-        : await withCindyMakeProjectUse(app.getPath('userData'), row.workingDir, sendReplay);
+      const result = await sendReplay();
       return { accepted: result.accepted === true };
     },
     withSessionLock: withSendToSessionLock,
@@ -19561,10 +19508,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     };
   };
   const revokeTrustedDesktopQueueOrigin = (item?: AgentInputQueuedMessage): void => { if (item?.origin) delete (item.origin as Record<PropertyKey, unknown>)[TRUSTED_DESKTOP_QUEUE_ORIGIN]; };
-  configureCindyMakeTaskSender((sessionId, message, createOpts, sendOpts) =>
-    sendToAgentAccepted(sessionId, message, createOpts, attachTrustedDesktopSendContext(message, sendOpts)),
-    (sessionId) => inputCoordinator.getClearBoundaryMs(sessionId),
-  );
   setPluginPageToolRunner(async (grant, args, signal) => {
     await grant.assertCurrent();
     const owner = getCurrentDbClientSnapshot();
@@ -22390,11 +22333,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     const sid = requireSessionId(sessionId);
     const remote = isDeviceLinkInvoke();
     await assertRemoteInputControlBoundary(sid, remote, opts, 'stop');
-    // Some providers acknowledge Stop without emitting another terminal event.
-    // Close the native build's wait at this authorized, shared Stop boundary.
-    const makeInterrupted = interruptUpstreamMergeTurn(sid).catch(() =>
-      log.warn('Could not interrupt merge task after explicit stop'),
-    );
     if (!remote) reviewRunControl.noteReviewerStopRequested(sid);
     // Main 是本机窗口与 Device Link 控制端的 Stop 汇合点；先记账再触发 abort，
     // 任何 renderer 后续请求推荐都会从同一 ledger fail-closed。
@@ -22422,7 +22360,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     if (!inputCoordinator.hasPendingQueuedWork(sid)) {
       getAgentIslandService()?.notifyQueueEmptied(sid);
     }
-    await Promise.all([goalPause, makeInterrupted]);
+    await goalPause;
     return result;
   });
 
@@ -22787,7 +22725,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
           isRemoteInvoke: remoteInvoke,
         });
         const projection = inputCoordinator.clearSession(sid, clearBoundary);
-        cindyMakeManager.cancelTasksForSession(sid);
         workingDirectoryRecovery.discard(sid);
         resetAutomaticRecoveryForExplicitStop(sid);
         // 丢弃缓存的待注入交接 / fork 来源标记:它们是按 clear 之前的历史算出来的,
@@ -26429,9 +26366,6 @@ const checkWorkDirExists = createWorkingDirectoryPreflight({
     const persistedWorkingDir = await readSessionWorkingDirFromDb(sessionId).catch(() => null);
     return [liveWorkingDir, persistedWorkingDir];
   },
-  getUserDataPath: () => app.getPath('userData'),
-  isCindyMakeWorktreePath: isCindyMakeManagedWorktreePath,
-  assertCindyMakeWorkspace,
   getManagedWorktreeBasePath,
   getManagedWorktreeReadinessForSession,
   findSimilarDirOnDisk,

@@ -51,7 +51,7 @@ import { resolveAgentIslandVisibleSessionIdForWorkdirBrowseRail } from '@/lib/ag
 import type { AgentKind } from '@/lib/ccAgent.types';
 import { CCAgentSessionView } from '../CCAgentSessionView';
 import { CindyMakeSessionGate } from '../CindyMakeSessionGate';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 import {
   comparePinnedByStatusThenPinnedDesc,
   compareSessionsByStatusThenSortTimeDesc,
@@ -174,7 +174,7 @@ function WorkdirBrowseContent() {
       (s) =>
         projectIdentityKeyForSession(s) === currentProjectKey &&
         s.status === 'active' &&
-        (CINDY_MAKE_ENABLED || !isCindyMakeSource(s.source)) &&
+        (!isCindyMakeSource(s.source)) &&
         !isOrcaWorkerSession(s),
     );
     return list.slice().sort((a, b) => {

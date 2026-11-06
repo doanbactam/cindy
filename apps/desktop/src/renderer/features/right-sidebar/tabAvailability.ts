@@ -1,5 +1,4 @@
 import type { InstalledGhost } from '../../../shared/ghost';
-import { CINDY_MAKE_ENABLED } from '@cindy/maker-shared/cindy-make-feature';
 import { FEATURE_RETIREMENTS } from '../../../shared/featureRetirements';
 import { installedGhostStoragePart } from '../../../shared/pluginIdentity';
 import { parseGhostNativeUi } from '@cindy/plugin-protocol';
@@ -86,7 +85,6 @@ function isUnavailableTab(tab: TabState, availability: RightSidebarTabAvailabili
     availability.hiddenTabIds?.has(tab.id) === true ||
     isUnavailablePluginView(tab, availability) ||
     isUnavailablePluginTask(tab, availability) ||
-    (!CINDY_MAKE_ENABLED && tab.kind === 'cindy-make') ||
     retiredTab(tab, availability) === null ||
     (tab.kind === 'subagents' && !availability.subagentsAvailable)
   );

@@ -17,7 +17,6 @@ import { buildLocalSkillPathRoute } from '@/features/skillhub/lib/localRoutes';
 import { Folder, MessageSquarePlus, TriangleAlert, X } from 'lucide-react';
 import { useStableTranslation as useTranslation } from '@/hooks/useStableTranslation';
 import type { AgentInputReference } from '@cindy/maker-shared/agent-input-projection';
-import { CINDY_MAKE_ENABLED } from '@cindy/maker-shared/cindy-make-feature';
 import { requiresFullAccessConfirmation } from '@cindy/maker-shared/permission-mode';
 import { isAnnotationBurnInError } from '@/lib/annotationBurnIn';
 import { AttachmentRejectionStrip, ThumbnailStrip } from './ComposerAttachments';
@@ -249,11 +248,6 @@ import { ToolPayloadLightbox } from '@/components/chat/ToolPayloadLightbox';
 import { Fragment, Slice, type Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Selection, TextSelection } from '@tiptap/pm/state';
 import * as sessionService from '@/lib/sessionService';
-import { classifyCindyMakeCommand, tryStartCindyMakeCommand } from '@/lib/cindyMakeCommand';
-import {
-  CindyMakePreflightDialog,
-  type CindyMakePreflightProps,
-} from '@/components/cindy-make/CindyMakePreflightDialog';
 import { getModelById, getModelsForVendor } from '@/lib/modelDefinitions';
 import {
   addPluginSkillSetupCommands,
@@ -1846,10 +1840,6 @@ export function ChatInput({
   // 这里用本地乐观态承接即时反馈:seed 自 initialProviderId,选择时乐观更新;
   // initialProviderId 变化(将来 session 回流)时跟随。null = 跟随默认路由。
   const currentSessionIdRef = useRef(sessionId);
-  const [makePreflight, setMakePreflight] = useState<
-    Omit<CindyMakePreflightProps, 'onOpenChange'> | null
-  >(null);
-  useEffect(() => setMakePreflight(null), [sessionId]);
   currentSessionIdRef.current = sessionId;
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
     initialProviderId ?? null,
@@ -4892,91 +4882,6 @@ export function ChatInput({
         const commentsForSend = optimisticallyClearRemoteComposer
           ? commentsBeforeOptimisticClear
           : sourceOwnedExtras.comments;
-        if (
-          CINDY_MAKE_ENABLED &&
-          classifyCindyMakeCommand(editorText, slashCommandsReady ? mergedCommands : null).kind !== 'none'
-        ) {
-          const isMakeSourceCurrent = () =>
-            isDataOwnerGenerationCurrent(dataOwnerAtOptimisticClear) &&
-            editorOwnsSourceDraft({
-              editorDestroyed: editor.isDestroyed,
-              editorStorageKey: storageKeyForDraftRef.current,
-              sourceStorageKey,
-            });
-          const makeResult = await tryStartCindyMakeCommand({
-            text: editorText,
-            commands: slashCommandsReady ? mergedCommands : null,
-            sessionId: sourceSessionId,
-            remoteHostId,
-            deviceId: deviceLinkDeviceId,
-            agentKind: currentModelAgentKind,
-            workingDir: workingDirRef.current,
-            hasUnsupportedContent:
-              attachmentsForSend.length > 0 || commentsForSend.length > 0 ||
-              hasQuotes || mentions.length > 0 || agentReferences.length > 0,
-            isCurrent: isMakeSourceCurrent,
-            createOptions: {
-              // Home needs only a chat container; a project task could bootstrap Git.
-              workspaceKind: 'dialogue',
-              agentKind: currentModelAgentKind === 'claude-code' ? 'cc' : currentModelAgentKind ?? undefined,
-              model: activeModel,
-              effort: selectedEffort,
-              permissionMode: activePermissionMode,
-              providerId: sendProviderId,
-              fastMode,
-              planModeEnabled: planModeEntry?.enabled ?? false,
-            },
-          });
-          if (!isMakeSourceCurrent() || makeResult.kind === 'stale') return;
-          if (makeResult.kind === 'blocked') {
-            toast.warning(t(makeResult.messageKey));
-            return;
-          }
-          if (makeResult.kind === 'failed') {
-            toast.error(t('cindyMakeDoctor.failed'));
-            return;
-          }
-          if (makeResult.kind === 'started' || makeResult.kind === 'preflight') {
-            // 程序性清空不刷新打字信号（isRestoringRef 守卫），与其它 clearContent 口径一致。
-            isRestoringRef.current = true;
-            try {
-              editor.commands.clearContent(true);
-            } finally {
-              isRestoringRef.current = false;
-            }
-            historyIndexRef.current = -1;
-            hydratedHistoryDocumentRef.current = null;
-            draftRef.current = null;
-            if (sourceStorageKey) clearComposerDraft(sourceStorageKey);
-            if (makeResult.kind === 'preflight') {
-              const {
-                agentKind,
-                model,
-                effort,
-                permissionMode,
-                providerId,
-                fastMode,
-                planModeEnabled,
-              } = makeResult.createOptions ?? {};
-              setMakePreflight({
-                request: makeResult.request,
-                sessionId: sourceSessionId,
-                createOptions: {
-                  agentKind,
-                  model,
-                  effort,
-                  permissionMode,
-                  providerId,
-                  fastMode,
-                  planModeEnabled,
-                },
-              });
-            } else if (makeResult.sessionId !== sourceSessionId) {
-              navigate('/cc-agent/' + makeResult.sessionId);
-            }
-            return;
-          }
-        }
         if (
           isPlanModeComposerCommandText(
             editorText,
@@ -8357,10 +8262,6 @@ export function ChatInput({
   }, [showPromptPreview]);
   // 可见推荐本身就是一次可发送输入：按钮点击时会先把它同步写入正文，再走现有发送链。
   const canSend = hasComposerPayload || showRecommendationOverlay;
-  const makeNeedsNoModel = CINDY_MAKE_ENABLED && (noConnectedSource || selectedSourceDisconnected) && !!editor &&
-    !hasPreparedOrPendingAttachments && classifyCindyMakeCommand(
-      serializeEditorContent(editor).text, slashCommandsReady ? mergedCommands : null,
-    ).kind === 'start';
   const sendButtonDisabled = queueEditActive
     ? Boolean(
         disabled || sendBlocked || waitingForFolders ||
@@ -8370,9 +8271,9 @@ export function ChatInput({
     : Boolean(
     disabled || sendBlocked || sessionModelLoading || waitingForFolders ||
     // 空態:当前 agent 无已连接来源 → Send 禁用(设计 Q7NYAD「send 置灰」),引导用户先去连接来源。
-    (!makeNeedsNoModel && !canAttemptBaselineRecovery && noConnectedSource) ||
+    (!canAttemptBaselineRecovery && noConnectedSource) ||
     // 会话显式选中的来源已断开 → Send 禁用(trigger 同步显示「已断开」错误态说明原因)。
-    (!makeNeedsNoModel && !canAttemptBaselineRecovery && selectedSourceDisconnected) ||
+    (!canAttemptBaselineRecovery && selectedSourceDisconnected) ||
     // device-link 模型目录仍在读取或真实失败 → 禁止旧快照继续发送；旧端明确
     // unsupported 已由 remoteModelListStatus 归并为 ready，不会误伤兼容回退。
     remoteModelListBlocked ||
@@ -8429,12 +8330,6 @@ export function ChatInput({
 
   return (
     <div className="relative flex w-full flex-col items-center gap-4" data-chat-input-root>
-      {makePreflight && makePreflight.sessionId === sessionId && (
-        <CindyMakePreflightDialog
-          {...makePreflight}
-          onOpenChange={(open) => !open && setMakePreflight(null)}
-        />
-      )}
       {/* 计划模式激活态 chip(输入框上方,与 GoalIndicator 同形)。-mb-2 抵一部分
           root gap-4,让 chip 与输入框间距接近 GoalIndicator 的节奏。 */}
       {planModeEntry && planModeEnabled && (

@@ -1,6 +1,6 @@
 import { projectDraftSessionTitle } from './sessionTitle.js';
 import { collapseWorktreeDirForGrouping } from './worktreePaths.js';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from './cindyMakeFeature.js';
+import { isCindyMakeSource } from './cindyMakeFeature.js';
 
 /**
  * 任务搜索的跨端契约与纯合并函数。
@@ -137,7 +137,7 @@ export function emptyConversationSearchResponse(query = ''): ConversationSearchR
 export function remoteConversationSearchRequest(
   request: ConversationSearchRequest,
 ): ConversationSearchRequest {
-  return CINDY_MAKE_ENABLED ? request : { ...request, limit: REMOTE_CONVERSATION_SEARCH_LIMIT };
+  return { ...request, limit: REMOTE_CONVERSATION_SEARCH_LIMIT };
 }
 
 export function stampRemoteSearchResponse(
@@ -171,7 +171,7 @@ export function remoteResultsFromFanoutPages(
   const byKey = new Map<string, ConversationSearchResultItem>();
   for (const page of pages) {
     for (const item of page.results) {
-      if (!CINDY_MAKE_ENABLED && isCindyMakeSource(item.session.source)) continue;
+      if (isCindyMakeSource(item.session.source)) continue;
       if (!item.session.deviceLinkDeviceId) continue;
       const key = conversationSearchResultKey(item);
       const existing = byKey.get(key);
@@ -191,7 +191,7 @@ export function mergeConversationSearchFanout(
   const byKey = new Map<string, ConversationSearchResultItem>();
   for (const page of pages) {
     for (const item of page.results) {
-      if (!CINDY_MAKE_ENABLED && isCindyMakeSource(item.session.source)) continue;
+      if (isCindyMakeSource(item.session.source)) continue;
       const key = conversationSearchResultKey(item);
       const existing = byKey.get(key);
       if (!existing || item.rankScore > existing.rankScore) {
@@ -242,7 +242,7 @@ export function filterResultsByRequestFilters(
   return {
     ...response,
     results: response.results.filter((item) => {
-      if (!CINDY_MAKE_ENABLED && isCindyMakeSource(item.session.source)) return false;
+      if (isCindyMakeSource(item.session.source)) return false;
       if (!matchesWorkingDirSet(item.session.projectDir ?? item.session.workingDir, allowedDirs)) return false;
       if (!matchesStatus(item.session.status, status)) return false;
       if (agentKind !== 'all' && item.session.agentKind !== agentKind) return false;

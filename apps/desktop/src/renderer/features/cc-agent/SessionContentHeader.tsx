@@ -230,7 +230,7 @@ export function SessionContentHeader({
   // heartbeat schedule 绑定标识,与 SessionItem 同源数据;删除/过期后自动消失。
   const boundSchedules = useSessionBoundSchedules(session.id, session.deviceLinkDeviceId);
   const displayTitle =
-    getSessionDisplayTitle(session, t('ccAgent.common.unnamedSession'), t)?.trim() ||
+    getSessionDisplayTitle(session, t('ccAgent.common.unnamedSession'))?.trim() ||
     t('ccAgent.sessionHeader.untitled');
   const remoteIconKind = session.deviceLinkDeviceId
     ? 'device-link'

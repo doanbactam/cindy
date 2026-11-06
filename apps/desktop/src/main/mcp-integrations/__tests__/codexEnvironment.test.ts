@@ -16,7 +16,6 @@ import {
 } from '../codexEnvironment.js';
 import { CODEX_ALLOWED_BUILTIN_PLUGIN_IDS_KEY, CODEX_DISABLED_BUILTIN_PLUGIN_IDS_KEY } from '../codexBuiltinToolPolicy.js';
 import { registerAppServer, clearAppServerConfigs } from '../../mcp-apps/runtime.js';
-import { CINDY_MAKE_VENDOR_OPTION_KEY } from '../../../shared/cindyMakeSession.js';
 import { BOT_IM_CHANNELS_VENDOR_KEY } from '../../../shared/botImConnection.js';
 import { CustomMcpProvider } from '../custom-mcp-provider.js';
 
@@ -176,33 +175,6 @@ describe('codexEnvironment', () => {
     }
     expect(appProxy).toHaveBeenCalledTimes(2);
     expect(instances[0]).not.toBe(instances[1]);
-  });
-
-  it('disables cindy_make per thread unless the Session carries the Cindy Make marker', async () => {
-    const cindyMake: McpProvider = {
-      name: 'cindy_make',
-      toClaudeSdkConfig: () => ({
-        type: 'sdk',
-        name: 'cindy_make',
-        instance: new McpServer({ name: 'cindy_make', version: '1.0.0' }),
-      }),
-    };
-    const config = await getCodexExtraSpawnConfig({
-      mcpProviders: [testProvider(), cindyMake],
-      logger: noopLogger(),
-    });
-    expect(config.extraArgs.some((arg) => arg.startsWith('mcp_servers.cindy_make.url='))).toBe(true);
-
-    const ordinary = config.buildSessionMcpConfig!('instance-plain', { vendorOptions: {} });
-    expect(ordinary['mcp_servers.cindy_make.enabled']).toBe(false);
-    expect(ordinary['mcp_servers.cindy_test.enabled']).toBeUndefined();
-    expect(config.buildSessionMcpConfig!('instance-legacy')['mcp_servers.cindy_make.enabled']).toBe(false);
-
-    const make = config.buildSessionMcpConfig!('instance-make', {
-      vendorOptions: { [CINDY_MAKE_VENDOR_OPTION_KEY]: true },
-    });
-    expect(make['mcp_servers.cindy_make.enabled']).toBeUndefined();
-    expect(make['mcp_servers.cindy_make.url']).toEqual(expect.stringContaining('/mcp/cindy_make'));
   });
 
   it('disables cindy_telegram_bot per thread unless the Session carries a Telegram channel marker', async () => {

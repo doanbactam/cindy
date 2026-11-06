@@ -40,7 +40,6 @@ import {
 } from '@/components/sidebar/VendorIcon';
 import { useDeviceLinkDeviceList } from '@/features/device-link/useDeviceLinkDeviceList';
 import { useProviderShareAgentDevices } from '@/features/provider-share/useProviderShareAgentDevices';
-import { useCindyMakeActivity } from './useCindyMakeActivity';
 
 /**
  * Agent 在另一台电脑运行的 Agent 图标:带信号波纹，悬停说明在哪台电脑、是否离线。
@@ -130,10 +129,7 @@ export function SessionStatusIcon({
   // fire-and-forget 任务期间用户也能看出"这个会话还有活在跑"。per-row
   // primitive 订阅(性能不变量同下方 attention hooks)。
   const isGhostBusy = useGhostSessionBusy(session.id);
-  // Native preparation/builds remain task activity outside an Agent turn,
-  // including pinned rail icons that have no row projection.
-  const cindyMakeActivity = useCindyMakeActivity(session);
-  const isRunning = isAgentRunning || isGhostBusy || cindyMakeActivity != null;
+  const isRunning = isAgentRunning || isGhostBusy;
   const vendor = agentKindToVendor(session.agentKind);
   // Agent 在另一台电脑:任务在本机,或在远程控制的被控电脑上(值由被控电脑投影,null = Agent 就在
   // 被控电脑)。两种都用同一个波纹标识(2026-10-09 用户裁决)。SSH 任务整件在远端，没有这一说。

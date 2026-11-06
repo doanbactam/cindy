@@ -119,7 +119,7 @@ export function createProductTurnFailureFinalizer(deps: {
   isCurrentOwner: (owner: ProductTurnFailureOwner) => boolean;
   commitActivity: (sessionId: string) => void;
   settlePluginTasks: (sessionId: string, execution: { instanceId: string; generation: number }, inputClientIds?: string[]) => void;
-  interrupt: (sessionId: string, owner?: ProductTurnFailureOwner) => Promise<void>;
+  interrupt?: (sessionId: string, owner?: ProductTurnFailureOwner) => Promise<void>;
 }): (sessionId: string, owner?: ProductTurnFailureOwner) => Promise<void> {
   return async (sessionId, owner) => {
     if (owner) {
@@ -128,7 +128,7 @@ export function createProductTurnFailureFinalizer(deps: {
     }
     deps.commitActivity(sessionId);
     if (owner) deps.settlePluginTasks(sessionId, owner.originalExecution ?? owner, owner.pluginTargetInputIds);
-    await deps.interrupt(sessionId, owner);
+    await deps.interrupt?.(sessionId, owner);
   };
 }
 

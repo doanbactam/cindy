@@ -127,11 +127,6 @@ export async function create(body?: {
    */
   providerId?: string | null;
   /**
-   * Cindy Make code task marker. Main only accepts it for the managed source
-   * checkout; the persisted source later drives the `cindy_make` tool injection.
-   */
-  source?: 'cindy-make';
-  /**
    * 新建页开始输入时先建出来的未发送任务：只在本机列表可见，清空输入就删掉，
    * 第一次发送前转为普通任务(见 main/localDb/provisionalSessions.ts)。
    */
