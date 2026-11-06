@@ -19,7 +19,7 @@ export function notifySharedTaskMembershipChanged(): void {
 
 /** SharedTask peers have their own authority list, independent of the user's device directory. */
 export function useSharedTaskTasks(): void {
-  const { isAuthenticated, dataOwnerId, dataOwnerRecoveryEpoch } = useAuth();
+  const { isAuthenticated, dataOwnerId } = useAuth();
   const ownerGeneration = getDataOwnerGeneration().generation;
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -100,5 +100,5 @@ export function useSharedTaskTasks(): void {
         resetRemoteDataOwnerPushFence(peer);
       }
     };
-  }, [dataOwnerId, ownerGeneration, dataOwnerRecoveryEpoch, isAuthenticated]);
+  }, [dataOwnerId, ownerGeneration, isAuthenticated]);
 }

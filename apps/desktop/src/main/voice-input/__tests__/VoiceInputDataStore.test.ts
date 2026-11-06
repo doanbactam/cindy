@@ -38,6 +38,7 @@ import {
   voiceInputDataStore,
   VoiceInputDataStore,
 } from '../VoiceInputDataStore.js';
+import { LOCAL_DATA_OWNER_ID, dataOwnerStorageKey } from '../../appSessionState.js';
 import { companionVoicePreference, updateCompanionVoicePreference, updateSentencePlaybackPreference } from '../../voice-conversation/preferences.js';
 import { createVoiceInputHistoryEntry, getDefaultVoiceInputSettings } from '../../../shared/voiceInputData.js';
 
@@ -121,7 +122,7 @@ describe('VoiceInputDataStore persistence', () => {
 
     const next = store.updateSettings({ language: 'en' });
     const persisted = JSON.parse(
-      fs.readFileSync(path.join(dataDir, 'voice-input-data.v1.json'), 'utf8'),
+      fs.readFileSync(path.join(dataDir, 'owners', dataOwnerStorageKey(LOCAL_DATA_OWNER_ID), 'voice-input-data.v1.json'), 'utf8'),
     ) as { settings: { language: string } };
 
     expect(next.language).toBe('en');
@@ -155,7 +156,7 @@ describe('VoiceInputDataStore persistence', () => {
     expect(store.getSnapshot()).toEqual(before);
     expect(mocks.window.webContents.send).not.toHaveBeenCalled();
     const persisted = JSON.parse(
-      fs.readFileSync(path.join(dataDir, 'voice-input-data.v1.json'), 'utf8'),
+      fs.readFileSync(path.join(dataDir, 'owners', dataOwnerStorageKey(LOCAL_DATA_OWNER_ID), 'voice-input-data.v1.json'), 'utf8'),
     ) as { settings: { language: string } };
     expect(persisted.settings.language).toBe('en');
   });

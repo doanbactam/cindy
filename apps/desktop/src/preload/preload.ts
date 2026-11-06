@@ -316,9 +316,6 @@ import type {
   DesktopAccountDeletionConfirmInput,
   DesktopAccountDeletionConfirmResult,
   DesktopAccountDeletionStatusResult,
-  DesktopAccountSwitcherSnapshot,
-  DesktopLoginAction,
-  DesktopLoginActionResult,
 } from '../shared/authIpc';
 import { BILLING_INVOKE, type BillingRendererApi } from '../shared/billing';
 import {
@@ -2441,25 +2438,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     hasAccountDeletionReceipt: boolean;
     accountDeletionRestored: boolean;
   }> => ipcRenderer.invoke('auth:initialize'),
-  authGetLoginState: (): Promise<DesktopLoginActionResult> =>
-    ipcRenderer.invoke('auth:get-login-state'),
-  authDispatchLoginAction: (action: DesktopLoginAction): Promise<DesktopLoginActionResult> =>
-    ipcRenderer.invoke('auth:dispatch-login-action', action),
-  // 登录 captcha 托管挑战页地址(不含 query);LoginCaptchaOverlay 装载 webview 用。
-  authGetCaptchaChallengeUrl: (): Promise<string> =>
-    ipcRenderer.invoke('auth:get-captcha-challenge-url'),
-  authLogout: (): Promise<void> => ipcRenderer.invoke('auth:logout'),
-  authListAccounts: (): Promise<DesktopAccountSwitcherSnapshot> =>
-    ipcRenderer.invoke('auth:accounts:list'),
-  authSyncAccounts: (): Promise<DesktopAccountSwitcherSnapshot> =>
-    ipcRenderer.invoke('auth:accounts:sync'),
-  authSwitchAccount: (accountKey: string): Promise<void> =>
-    ipcRenderer.invoke('auth:accounts:switch', accountKey),
-  authBeginAddAccount: (): Promise<DesktopLoginActionResult> =>
-    ipcRenderer.invoke('auth:accounts:begin-add'),
-  authCancelAddAccount: (): Promise<void> => ipcRenderer.invoke('auth:accounts:cancel-add'),
-  authEnterLocal: () => ipcRenderer.invoke('auth:enter-local'),
-  authExitLocal: () => ipcRenderer.invoke('auth:exit-local'),
   authRefresh: (): Promise<boolean> => ipcRenderer.invoke('auth:refresh'),
   authGetAccountDeletionAvailability: (): Promise<DesktopAccountDeletionAvailabilityResult> =>
     ipcRenderer.invoke('auth:account-deletion:get-availability'),

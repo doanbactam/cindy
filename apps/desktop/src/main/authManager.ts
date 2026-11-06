@@ -13,10 +13,7 @@
  * exposed by this module and receives state updates via 'auth:state-change'.
  */
 
-import { BrowserWindow, net, safeStorage, app, shell, powerMonitor } from 'electron';
-import crypto from 'node:crypto';
-import { createServer } from 'node:http';
-import type { AddressInfo } from 'node:net';
+import { BrowserWindow, net, safeStorage, app, powerMonitor } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import { machineIdSync } from 'node-machine-id';
@@ -24,26 +21,16 @@ import {
   AuthApiError,
   CindyAuthClient,
   retryAfterDeadline,
-  discoverEmailLogin,
-  discoverPersonalLoginOrganization,
-  discoverSsoOrgRealm,
   parseAccountDeletionReceiptRecord,
   parseAuthSessionRecord,
-  reduceAuthFlow,
   serializeAccountDeletionReceiptRecord,
-  ssoOrgDiscoveryToMethods,
   serializeAuthSessionRecord,
-  type AuthFlowState,
   type AuthMembership,
   type AuthRegion,
   type AuthTokenPair,
   type AccountMembership,
   type AccountDeletionAvailability,
   type AccountDeletionStatus,
-  type LoginMethod,
-  type LoginOutcome,
-  type ProviderConfig,
-  type SocialProvider,
 } from '@cindy/auth-client';
 import { readReloginFlag, clearReloginFlag, enableUncustomizedBetaChannel } from './updateService';
 import { linuxCredentialFailureFields } from './linuxPasswordStore.js';
@@ -63,9 +50,7 @@ import {
   type SessionExpiredReason,
 } from './authRefreshFailure';
 import {
-  awaitLoginProvidersWithPreparingGate,
   awaitWithStartupTimeout,
-  mapLoginProvidersLoadFailure,
   ColdStartAuthFallbackRegistry,
   commitColdStartRefreshIfCurrent,
   resolveColdStartTimeoutRecovery,
@@ -77,23 +62,10 @@ import {
   shouldAttemptOrgBetaDefault,
 } from './xdOrgBetaDefault';
 import { canRestoreAuthSessionForMembership } from './authRealmPolicy';
-import {
-  createAuthBrowserAuthorizationSlot,
-  createAuthLoopbackDevBridgeSlot,
-  parseAuthLoopbackCallback,
-  raceAuthBrowserCancellation,
-  renderAuthLoopbackPage,
-  type AuthLoopbackDevBridge,
-} from './authLoopbackCallback';
-import { createDesktopPollCredentials, runHostedCallbackPolling } from './authHostedCallback';
-import { launchAuthBrowser } from './authBrowserLaunch';
 import { reconcileSavedAccountMetadata, type StoredAccountMetadata } from './authAccountMetadata';
 import {
-  isLoggedOutVaultAccount,
   loggedOutAccountKeySet,
-  removeLoggedOutVaultAccount,
   restoreLoggedOutVaultAccount,
-  type LoggedOutAccountIdentity,
 } from './authAccountLogoutPolicy';
 // dev-only 登录 scenario harness(implementation-plan Step 0 WHAT4):静态 import
 // (main 禁运行时动态 import),生产构建由 vite alias 把整模块替换为空 stub
@@ -109,29 +81,19 @@ import {
   withGhostSkillProjectionReadOnlyOwner,
   withStableOwnerBoundaryMutation,
 } from './authBoundaryQuarantine.js';
-import { buildFocusDeepLink } from './deepLink';
-import { getResolvedMainLocale, t } from './i18n';
+import { getResolvedMainLocale } from './i18n';
 import { atomicWriteFileSync, readAtomicFileSync } from './utils/atomicWriteFile.js';
 import {
   activateClientEndpointRealm,
   getClientEndpoint,
   getClientEndpointForRealm,
-  getClientEndpointRealmConfig,
   loadClientEndpointsForRealm,
   resetClientEndpointRealm,
 } from './clientEndpointsService.js';
 import {
-  parseDesktopLoginAction,
-  loginPreparingErrorState,
   parseDesktopAccountKey,
   type DesktopAccountDeletionChallenge,
-  type DesktopAccountSwitcherSnapshot,
-  type DesktopSavedAccount,
-  type DesktopLoginAction,
-  type DesktopLoginActionResult,
-  type DesktopLoginState,
 } from '../shared/authIpc';
-import { LOGIN_CAPTCHA_PAGE_PATH } from '../shared/webviewPartition';
 import {
   activeOwnerScopeKey,
   beginAppSessionBoundary,
@@ -379,7 +341,6 @@ let activeAuthRealm: AuthRegion = AUTH_REGION;
  * 当前登录流使用的区域。个人登录固定为安装包区域，企业发现后改为组织区域；
  * 账号选择、绑定等后续步骤继续复用，reset/cancel/失败回收时清除。
  */
-let pendingAuthRealm: AuthRegion | null = null;
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshPromise: Promise<boolean> | null = null;
 const refreshBackoff = new AuthRefreshBackoff();
@@ -409,44 +370,6 @@ function isOwnerChangeShellPending(): boolean {
  */
 const deviceId = process.env.XDT_DEVICE_ID_OVERRIDE?.trim() || machineIdSync();
 
-// The offline entry is a renderer landing page, not an auth-server flow step.
-let loginFlowState: Exclude<DesktopLoginState, { step: 'entry' }> | null = null;
-let providerConfig: ProviderConfig | null = null;
-let discoveredMethods: LoginMethod[] = [];
-// These live only within the current fresh-login flow; no credentials reach Renderer.
-let handledLoginEmail: string | null = null;
-let pendingPersonalLogin: {
-  outcome: Extract<LoginOutcome, { status: 'ok' }>;
-  realm: AuthRegion;
-} | null = null;
-// Account token 仅在一次登录的 Membership 选择阶段存活；兑换 resource token
-// 后立即清空，不持久化、不续期，也不参与业务请求或正常登出。
-let pendingAccountToken: string | null = null;
-let pendingAccountRefreshToken: string | null = null;
-let pendingAccountMemberships: AuthMembership[] = [];
-let pendingLoginTicket: string | null = null;
-let pendingBindTicket: string | null = null;
-let pendingSsoVerificationTicket: string | null = null;
-let loginActionPromise: Promise<DesktopLoginActionResult> | null = null;
-let loginActionPromiseEpoch: number | null = null;
-// Separate from authStateEpoch: closing an add-account surface must invalidate
-// its requests without expiring the still-active account's runtime refresh.
-let loginFlowEpoch = 0;
-// Once an accepted login starts its durable owner transaction, renderer teardown
-// may unmount the add-account route as part of the boundary-pending projection.
-// That lifecycle cleanup must not supersede the transaction it just triggered.
-// A depth map keeps the guard correct even if two same-epoch commits briefly
-// overlap before authStateEpoch rejects the stale one.
-const sealedLoginFlowCommitDepths = new Map<number, number>();
-// Monotonic count of accepted login commits that have fully settled (including
-// the post-commit notifications in completeLogin). A sibling initialize()
-// snapshots this at entry: a startup timer firing after the snapshot must not
-// run signed-out recovery over a login that landed while it was pending, even
-// though the login reuses the epoch the sibling snapshotted at its entry.
-let settledLoginCommitCount = 0;
-// `accountDeletionRestored` may arrive before membership selection. Keep it
-// main-only until the final resource-token login commits.
-let pendingAccountDeletionRestored = false;
 let accountDeletionRestoredNoticePending = false;
 // Set only after auth-server has accepted deletion. The credential guard keeps a
 // late confirmation from tearing down another account or realm selected meanwhile.
@@ -456,7 +379,7 @@ let confirmedAccountDeletionCredential: {
 } | null = null;
 
 function createAuthClient(
-  realm: AuthRegion = pendingAuthRealm ?? activeAuthRealm,
+  realm: AuthRegion = activeAuthRealm,
 ): CindyAuthClient {
   // 登录 scenario harness 注入点(仅 client 构造参数,不替换 client、不 fake 方法;
   // zod schema/错误归一/REGION_MISMATCH 路径全真)。guard:!app.isPackaged +
@@ -606,11 +529,6 @@ export function needsCredentialProcessRecovery(): boolean {
     getActiveAppSession().mode === 'signed-out' &&
     !isPassiveSharedUserDataInstance()
   );
-}
-
-/** Prevent automatic process recovery from racing an explicit login action. */
-export function isAuthFlowBusy(): boolean {
-  return loginActionPromise !== null || loginFlowState?.step === 'browser-redirect';
 }
 
 function logSafeStorageIssueOnce(reason: string, key: string, err?: unknown): void {
@@ -828,73 +746,6 @@ function removeSafe(key: string): void {
     fs.unlinkSync(path.join(SAFE_STORAGE_DIR(), `${key}.enc`));
   } catch {
     // ENOENT is fine
-  }
-}
-
-/**
- * Delete the previous owner's account-deletion receipt as the final fallible
- * step of an account transition. The encrypted bytes are restored if the
- * synchronous owner publication throws, while an unlink failure prevents the
- * new owner from being published at all.
- */
-function commitWithClearedAccountDeletionReceipt(commit: () => void): void {
-  if (isPassiveSharedUserDataInstance()) return commit();
-  const filepath = path.join(SAFE_STORAGE_DIR(), `${ACCOUNT_DELETION_RECEIPT_KEY}.enc`);
-  let previousEncrypted: string | null;
-  try {
-    previousEncrypted = fs.readFileSync(filepath, 'utf8');
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') {
-      previousEncrypted = null;
-    } else {
-      logSafeStorageIssueOnce(
-        'account transition receipt snapshot failed',
-        ACCOUNT_DELETION_RECEIPT_KEY,
-        error,
-      );
-      throw new AuthApiError(
-        'CREDENTIAL_STORE_UNAVAILABLE',
-        503,
-        'Could not read the previous account deletion receipt',
-      );
-    }
-  }
-  try {
-    fs.unlinkSync(filepath);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') {
-      logSafeStorageIssueOnce(
-        'account transition receipt delete failed',
-        ACCOUNT_DELETION_RECEIPT_KEY,
-        error,
-      );
-      throw new AuthApiError(
-        'CREDENTIAL_STORE_UNAVAILABLE',
-        503,
-        'Could not clear the previous account deletion receipt',
-      );
-    }
-  }
-  try {
-    return commit();
-  } catch (error) {
-    if (previousEncrypted !== null) {
-      try {
-        atomicWriteFileSync(filepath, previousEncrypted);
-      } catch (restoreError) {
-        logSafeStorageIssueOnce(
-          'account transition receipt restore failed',
-          ACCOUNT_DELETION_RECEIPT_KEY,
-          restoreError,
-        );
-        throw new AuthApiError(
-          'CREDENTIAL_STORE_UNAVAILABLE',
-          503,
-          'Could not restore the previous account deletion receipt',
-        );
-      }
-    }
-    throw error;
   }
 }
 
@@ -1361,32 +1212,6 @@ async function clearAuthAccountVault(
   );
 }
 
-/**
- * Persist an explicit logout tombstone without replacing an aggregate vault
- * whose ciphertext cannot currently be decrypted. The opaque vault remains
- * available for a later retry or recovery, while the new client still fails
- * closed for the account being logged out.
- */
-async function persistLogoutTombstoneOnly(accountKey: string): Promise<void> {
-  await withCrossProcessLock(
-    authAccountVaultLockPath(),
-    { label: 'auth-account-logout-tombstone', waitMs: 5_000 },
-    async (status) => {
-      if (!status.held) throw accountVaultLockError(status.reason);
-      const existingKeys = readAuthAccountLogoutTombstones({ recoverInvalid: true });
-      const vault = emptyAuthAccountVault();
-      vault.loggedOutAccountKeys = [...new Set([...existingKeys, accountKey])];
-      if (!writeAuthAccountLogoutTombstones(vault)) {
-        throw new AuthApiError(
-          'CREDENTIAL_STORE_UNAVAILABLE',
-          503,
-          'Could not persist saved account logout state',
-        );
-      }
-    },
-  );
-}
-
 function metadataFromMembership(
   membership: AuthMembership | AccountMembership,
   passportId: string,
@@ -1405,74 +1230,7 @@ function metadataFromMembership(
   };
 }
 
-async function rememberResourceSession(
-  pair: AuthTokenPair,
-  realm: AuthRegion,
-  options: {
-    markActive?: boolean;
-    lastUsedAt?: number;
-    validateBeforeWrite?: () => void;
-  } = {},
-): Promise<void> {
-  const passportId = pair.membership.passportId;
-  if (!passportId) {
-    log.warn('resource session omitted passportId; keeping only the active compatibility record');
-    return;
-  }
-  await mutateAuthAccountVault(
-    (vault) => {
-      options.validateBeforeWrite?.();
-      writeResourceSessionToVault(vault, pair, realm, passportId, options);
-    },
-    { waitWhileBusyAfterRotation: true },
-  );
-}
 
-type ResourceSessionReplacementResult = 'stored' | 'stale' | 'missing';
-
-/** Persist a rotated Resource token only while the request still owns its consumed generation. */
-async function replaceResourceSessionIfCurrent(input: {
-  accountKey: string;
-  expectedRefreshToken: string;
-  pair: AuthTokenPair;
-  realm: AuthRegion;
-  passportId: string;
-  validateBeforeWrite?: () => void;
-}): Promise<ResourceSessionReplacementResult> {
-  return mutateAuthAccountVault(
-    (vault) => {
-      input.validateBeforeWrite?.();
-      const current = vault.resources[input.accountKey];
-      if (!current) return 'missing';
-      if (current.refreshToken !== input.expectedRefreshToken) return 'stale';
-      writeResourceSessionToVault(vault, input.pair, input.realm, input.passportId, {
-        markActive: false,
-      });
-      return 'stored';
-    },
-    { waitWhileBusyAfterRotation: true },
-  );
-}
-
-type RejectedResourceSessionRemovalResult = 'removed' | 'stale' | 'missing';
-
-/** Remove only a Resource generation that this refresh run actually proved unusable. */
-async function removeRejectedResourceSession(input: {
-  accountKey: string;
-  rejectedRefreshTokens: readonly string[];
-  validateBeforeWrite?: () => void;
-}): Promise<RejectedResourceSessionRemovalResult> {
-  const rejectedRefreshTokens = new Set(input.rejectedRefreshTokens);
-  return mutateAuthAccountVault((vault) => {
-    input.validateBeforeWrite?.();
-    const current = vault.resources[input.accountKey];
-    if (!current) return 'missing';
-    if (!rejectedRefreshTokens.has(current.refreshToken)) return 'stale';
-    delete vault.resources[input.accountKey];
-    if (vault.activeAccountKey === input.accountKey) vault.activeAccountKey = null;
-    return 'removed';
-  });
-}
 
 function writeResourceSessionToVault(
   vault: AuthAccountVault,
@@ -1499,186 +1257,8 @@ function writeResourceSessionToVault(
   }
 }
 
-async function rememberPassportSession(input: {
-  realm: AuthRegion;
-  passportId: string;
-  accountRefreshToken: string;
-  memberships?: readonly (AuthMembership | AccountMembership | StoredAccountMetadata)[];
-}): Promise<void> {
-  await mutateAuthAccountVault((vault) => {
-    writePassportSessionToVault(vault, input);
-  });
-}
-
-function writePassportSessionToVault(
-  vault: AuthAccountVault,
-  input: {
-    realm: AuthRegion;
-    passportId: string;
-    accountRefreshToken: string;
-    memberships?: readonly (AuthMembership | AccountMembership | StoredAccountMetadata)[];
-  },
-): void {
-  const key = passportVaultKey(input.realm, input.passportId);
-  const previous = vault.passports[key];
-  const loggedOutKeys = loggedOutAccountKeySet(vault);
-  const memberships = (input.memberships ?? previous?.memberships ?? [])
-    .map((membership) =>
-      isStoredAccountMetadata(membership)
-        ? membership
-        : metadataFromMembership(membership, input.passportId),
-    )
-    .filter(
-      (membership) => !loggedOutKeys.has(accountVaultKey(input.realm, membership.membershipId)),
-    );
-  vault.passports[key] = {
-    realm: input.realm,
-    passportId: input.passportId,
-    accountRefreshToken: input.accountRefreshToken,
-    memberships,
-  };
-  reconcileSavedAccountMetadata(vault, {
-    realm: input.realm,
-    passportId: input.passportId,
-    memberships,
-    passportMode: 'replace-passport',
-  });
-}
-
-async function commitDesktopLoginSessions(
-  input: {
-    pair: AuthTokenPair;
-    realm: AuthRegion;
-    passportId?: string;
-    accountRefreshToken?: string | null;
-    memberships: readonly (AuthMembership | AccountMembership | StoredAccountMetadata)[];
-    restoreLoggedOutAccount?: boolean;
-    accountToLogOut?: LoggedOutAccountIdentity;
-    onLoggedOutPassportRemoved?: (session: StoredPassportSession) => void;
-  },
-  transition: {
-    commit: () => void | Promise<void>;
-    rollback: () => void | Promise<void>;
-  },
-): Promise<void> {
-  await transactAuthAccountVault(
-    (vault) => {
-      const targetAccountKey = accountVaultKey(input.realm, input.pair.membership.id);
-      if (input.accountToLogOut?.accountKey === targetAccountKey) {
-        throw new AuthApiError(
-          'INVALID_AUTH_ACTION',
-          400,
-          'Cannot activate and log out the same saved account',
-        );
-      }
-      if (!input.passportId) {
-        // Legacy login responses may only be able to persist the compatibility
-        // session. They are still an explicit login and must supersede a prior
-        // signed-out marker so cold start can migrate the Resource later.
-        if (input.restoreLoggedOutAccount) {
-          restoreLoggedOutVaultAccount(vault, targetAccountKey);
-        }
-        delete vault.signedOutAt;
-        return;
-      }
-      writeResourceSessionToVault(vault, input.pair, input.realm, input.passportId, {
-        restoreLoggedOutAccount: input.restoreLoggedOutAccount,
-      });
-      if (input.accountRefreshToken) {
-        writePassportSessionToVault(vault, {
-          realm: input.realm,
-          passportId: input.passportId,
-          accountRefreshToken: input.accountRefreshToken,
-          memberships: input.memberships,
-        });
-      }
-      if (input.accountToLogOut) {
-        const removedPassport = removeLoggedOutVaultAccount(vault, input.accountToLogOut);
-        if (removedPassport) input.onLoggedOutPassportRemoved?.(removedPassport);
-      }
-    },
-    async () => {
-      try {
-        await transition.commit();
-      } catch (error) {
-        // `transactAuthAccountVault` still owns the cross-process lock here.
-        // Restore the compatibility session before the vault rollback can
-        // finish and release that lock, so a passive peer cannot consume the
-        // failed target account's token in the gap between the two restores.
-        await transition.rollback();
-        throw error;
-      }
-    },
-    {
-      recoverInvalidForExplicitLogin: true,
-      waitWhileBusyAfterRotation: true,
-    },
-  );
-}
-
 /** Persist a rotated Passport only while the request still owns the token it consumed. */
-type PassportSessionReplacementResult = 'stored' | 'stale' | 'write-failed';
 
-async function replacePassportSessionIfCurrent(input: {
-  realm: AuthRegion;
-  passportId: string;
-  expectedAccountRefreshToken: string;
-  accountRefreshToken: string;
-  memberships?: readonly (AuthMembership | AccountMembership | StoredAccountMetadata)[];
-}): Promise<PassportSessionReplacementResult> {
-  try {
-    return await mutateAuthAccountVault(
-      (vault) => {
-        const key = passportVaultKey(input.realm, input.passportId);
-        if (vault.passports[key]?.accountRefreshToken !== input.expectedAccountRefreshToken) {
-          return 'stale';
-        }
-        writePassportSessionToVault(vault, input);
-        return 'stored';
-      },
-      { waitWhileBusyAfterRotation: true },
-    );
-  } catch (error) {
-    if (error instanceof AuthApiError && error.code === 'CREDENTIAL_STORE_UNAVAILABLE') {
-      return 'write-failed';
-    }
-    throw error;
-  }
-}
-
-/** Delete a rejected Passport only if no concurrent refresh has replaced it. */
-async function removePassportSessionIfCurrent(
-  realm: AuthRegion,
-  passportId: string,
-  expectedAccountRefreshToken: string,
-): Promise<boolean> {
-  return mutateAuthAccountVault((vault) => {
-    const key = passportVaultKey(realm, passportId);
-    if (vault.passports[key]?.accountRefreshToken !== expectedAccountRefreshToken) return false;
-    delete vault.passports[key];
-    return true;
-  });
-}
-
-type PassportAccountRefreshPair = Awaited<ReturnType<CindyAuthClient['refreshAccount']>>;
-
-const passportAccountRefreshFlights = new Map<string, Promise<PassportAccountRefreshPair>>();
-
-function assertPassportReplacementStored(result: PassportSessionReplacementResult): void {
-  if (result === 'stored') return;
-  if (result === 'stale') {
-    throw new AuthApiError(
-      'AUTH_FLOW_SUPERSEDED',
-      409,
-      'Saved Passport session changed while it was being refreshed',
-    );
-  }
-  throw new AuthApiError(
-    'CREDENTIAL_STORE_UNAVAILABLE',
-    503,
-    'Could not persist the refreshed Passport session',
-  );
-}
 
 type ActiveRefreshCredentialCommit = 'active' | 'inactive' | 'discarded';
 
@@ -1738,63 +1318,6 @@ async function commitDesktopRefreshCredentials(
   });
 }
 
-/**
- * Account refresh tokens have no replay grace. Every consumer of one Passport
- * must share the same request until its rotated replacement is durable.
- */
-async function refreshPassportSessionSingleFlight(
-  client: CindyAuthClient,
-  realm: AuthRegion,
-  passportId: string,
-): Promise<PassportAccountRefreshPair> {
-  const key = passportVaultKey(realm, passportId);
-  const existing = passportAccountRefreshFlights.get(key);
-  if (existing) return existing;
-
-  const flight = (async () => {
-    const current = readAuthAccountVault().passports[key];
-    if (!current) {
-      throw new AuthApiError('ACCOUNT_REAUTH_REQUIRED', 401, 'Saved account requires login');
-    }
-    try {
-      const pair = await client.refreshAccount(current.accountRefreshToken);
-      assertPassportReplacementStored(
-        await replacePassportSessionIfCurrent({
-          realm,
-          passportId,
-          expectedAccountRefreshToken: current.accountRefreshToken,
-          accountRefreshToken: pair.accountRefreshToken,
-          memberships: current.memberships,
-        }),
-      );
-      return pair;
-    } catch (error) {
-      // A device mismatch only proves that this process is using a different
-      // device identity. The encrypted Passport can still be valid for the
-      // device that owns the shared vault, so it cannot authorize deletion.
-      if (error instanceof AuthApiError && error.code === 'DEVICE_MISMATCH') {
-        throw error;
-      }
-      if (isDefinitiveRefreshError(error)) {
-        try {
-          await removePassportSessionIfCurrent(realm, passportId, current.accountRefreshToken);
-        } catch (cleanupError) {
-          log.warn('failed to remove rejected Passport from saved-account vault', cleanupError);
-        }
-      }
-      throw error;
-    }
-  })();
-  passportAccountRefreshFlights.set(key, flight);
-  try {
-    return await flight;
-  } finally {
-    if (passportAccountRefreshFlights.get(key) === flight) {
-      passportAccountRefreshFlights.delete(key);
-    }
-  }
-}
-
 async function rememberUpdatedMembershipMetadata(
   membership: AuthMembership,
   realm: AuthRegion,
@@ -1816,143 +1339,6 @@ async function removeVaultAccount(accountKey: string): Promise<void> {
     delete vault.resources[accountKey];
     if (vault.activeAccountKey === accountKey) vault.activeAccountKey = null;
   });
-}
-
-function bindResourcePairToSavedAccount(
-  pair: AuthTokenPair,
-  realm: AuthRegion,
-  metadata: StoredAccountMetadata,
-): AuthTokenPair {
-  if (
-    accountVaultKey(realm, pair.membership.id) !== accountVaultKey(realm, metadata.membershipId) ||
-    (pair.membership.passportId !== undefined && pair.membership.passportId !== metadata.passportId)
-  ) {
-    throw new AuthApiError(
-      'INVALID_RESPONSE',
-      502,
-      'Refreshed resource session does not match the selected saved account',
-    );
-  }
-  return pair.membership.passportId
-    ? pair
-    : {
-        ...pair,
-        membership: { ...pair.membership, passportId: metadata.passportId },
-      };
-}
-
-function isDefinitiveRefreshError(error: unknown): boolean {
-  return (
-    error instanceof AuthApiError &&
-    [
-      'INVALID_REFRESH_TOKEN',
-      'REFRESH_TOKEN_EXPIRED',
-      'DEVICE_MISMATCH',
-      'ACCOUNT_UNAVAILABLE',
-      'MEMBERSHIP_DISABLED',
-    ].includes(error.code)
-  );
-}
-
-/**
- * Refresh a saved Resource session across shared-userData app instances.
- *
- * The network request deliberately runs outside the vault lock. A losing
- * process catches up to a winner's disk generation after INVALID_REFRESH_TOKEN,
- * while success and cleanup both use compare-and-swap under that lock.
- */
-async function refreshSavedResourceSession(input: {
-  client: CindyAuthClient;
-  accountKey: string;
-  realm: AuthRegion;
-  metadata: StoredAccountMetadata;
-  initialRefreshToken: string;
-  expectedLoginFlowEpoch: number;
-}): Promise<AuthTokenPair | null> {
-  type RefreshAttemptData = AuthTokenPair | { error: { code: string } };
-  const refreshError: { value: AuthApiError | null } = { value: null };
-  const run = await runRefreshWithReplacementRetry<RefreshAttemptData>(input.initialRefreshToken, {
-    doRefresh: async (refreshToken) => {
-      assertLoginFlowCurrent(input.expectedLoginFlowEpoch);
-      try {
-        const pair = await input.client.refresh(refreshToken);
-        return { ok: true, status: 200, data: pair };
-      } catch (error) {
-        if (!(error instanceof AuthApiError)) throw error;
-        refreshError.value = error;
-        return {
-          ok: false,
-          status: error.statusCode,
-          data: { error: { code: error.code } },
-        };
-      }
-    },
-    readLatestStoredTokens: () => [
-      readAuthAccountVault().resources[input.accountKey]?.refreshToken,
-    ],
-    maxReplacementRetries: REFRESH_TOKEN_REPLACEMENT_RETRY_LIMIT,
-    replacementRecheck: {
-      delaysMs: COLD_START_REFRESH_TOKEN_REPLACEMENT_RECHECK_DELAYS_MS,
-      onBeforeRecheck: ({ delayMs }) =>
-        log.warn(
-          `saved Resource refresh lost a token rotation race — re-reading the vault after ${delayMs}ms`,
-        ),
-    },
-    onReplacementRetry: () =>
-      log.warn(
-        'saved Resource refresh is retrying the replacement written by another app instance',
-      ),
-  });
-  assertLoginFlowCurrent(input.expectedLoginFlowEpoch);
-
-  if (run.result.ok) {
-    const pair = bindResourcePairToSavedAccount(
-      run.result.data as AuthTokenPair,
-      input.realm,
-      input.metadata,
-    );
-    const replacement = await replaceResourceSessionIfCurrent({
-      accountKey: input.accountKey,
-      expectedRefreshToken: run.requestedToken,
-      pair,
-      realm: input.realm,
-      passportId: input.metadata.passportId,
-      validateBeforeWrite: () => assertLoginFlowCurrent(input.expectedLoginFlowEpoch),
-    });
-    if (replacement === 'stored') return pair;
-    throw new AuthApiError(
-      'AUTH_FLOW_SUPERSEDED',
-      409,
-      'Saved Resource session changed while it was being refreshed',
-    );
-  }
-
-  const lastRefreshError = refreshError.value;
-  if (!lastRefreshError) {
-    throw new AuthApiError(
-      'INVALID_RESPONSE',
-      502,
-      'Saved Resource refresh failed without an error',
-    );
-  }
-  if (!isDefinitiveRefreshError(lastRefreshError)) throw lastRefreshError;
-  // A device mismatch says nothing about whether the shared on-disk token is
-  // valid for its owning device, so it must never authorize credential deletion.
-  if (lastRefreshError.code === 'DEVICE_MISMATCH') throw lastRefreshError;
-
-  const removal = await removeRejectedResourceSession({
-    accountKey: input.accountKey,
-    rejectedRefreshTokens: run.rejectedTokens,
-    validateBeforeWrite: () => assertLoginFlowCurrent(input.expectedLoginFlowEpoch),
-  });
-  if (removal === 'stale') {
-    throw new AuthApiError(
-      'AUTH_FLOW_SUPERSEDED',
-      409,
-      'Saved Resource session was replaced by another app instance',
-    );
-  }
-  return null;
 }
 
 function readPersistedAuthSession() {
@@ -2024,25 +1410,6 @@ function writePersistedAuthSessionOrThrow(refreshToken: string, realm = activeAu
     503,
     'Could not persist the active account session',
   );
-}
-
-function restorePersistedAuthSessionIfCurrent(
-  expectedRefreshToken: string,
-  expectedRealm: AuthRegion,
-  previousSession: ReturnType<typeof readPersistedAuthSession>,
-): void {
-  const expected = serializeAuthSessionRecord(expectedRealm, expectedRefreshToken);
-  if (readSafe(AUTH_SESSION_KEY) !== expected) return;
-  if (previousSession) {
-    if (!writePersistedAuthSession(previousSession.refreshToken, previousSession.realm)) {
-      log.warn('failed to restore the previous persisted auth session after login rollback');
-    }
-    return;
-  }
-  const removed = removeSafeIfUnchanged(AUTH_SESSION_KEY, expected);
-  if (removed === 'deleted' && expectedRealm === AUTH_REGION) {
-    removeSafeIfUnchanged(LEGACY_RESOURCE_REFRESH_TOKEN_KEY, expectedRefreshToken);
-  }
 }
 
 /**
@@ -2322,12 +1689,6 @@ function removeSafeIfUnchanged(key: string, expected: string): RemoveIfUnchanged
 }
 
 // ── PKCE (Node.js native crypto) ────────────────────────────────────────────
-
-function generatePKCE(): { codeVerifier: string; codeChallenge: string } {
-  const codeVerifier = crypto.randomBytes(32).toString('base64url');
-  const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
-  return { codeVerifier, codeChallenge };
-}
 
 // ── net.fetch helper ────────────────────────────────────────────────────────
 
@@ -2970,220 +2331,6 @@ export function setStableOwnerPostCommitTask(task: StableOwnerPostCommitTask | n
 // 从不同步到服务器,因此登录 / 冷启动不再从服务器拉 key 写本地。新设备 / 新登录
 // 需用户在本机重新填入 key。renderer 侧 useApiKey / useMivoApiKey 同为本地 only。
 
-// ── System-browser OAuth / SSO ─────────────────────────────────────────────
-//
-// 两条回调链路,由端点清单的 authDesktopCallbackUrl 决定走哪条:
-//  - 非空 → 托管回调(hosted):redirect_uri 指向 auth-server 自有域名下的固定
-//    地址,服务端暂存授权码、客户端轮询取回。浏览器全程停在自有域名上,地址栏
-//    与浏览历史里不再出现 127.0.0.1 和授权码,唤起 app 的系统弹框显示的也是域名。
-//  - 空 → RFC 8252 loopback(现状):本机起随机端口 HTTP server 接回调。
-//
-// 清单字段同时充当灰度与回滚开关:服务端侧出问题时清空该字段即可回到 loopback,
-// 客户端不必发版。两条链路共用同一套取消 / 超时预算与返回契约。
-
-const BROWSER_AUTH_TIMEOUT_MS = 5 * 60_000;
-const browserAuthorizationSlot = createAuthBrowserAuthorizationSlot();
-
-// Dev-only loopback bridge seam(v6.13,PR3):可注入纯 helper 形态,slot 逻辑在
-// authLoopbackCallback.ts(可单测),此处静态注入 app.isPackaged——packaged 构建
-// register 拒绝、attach/notify 全 no-op,整条路径不可达。fixture 经 register
-// 注入后只拿得到 ①进程内 error 触发入口 ②渲染完成的 HTML;state/授权码不经
-// bridge 落盘(state 仅进程内内存传递)。
-const authLoopbackDevBridgeSlot = createAuthLoopbackDevBridgeSlot(() => app.isPackaged);
-
-/** 附录 A browser-callback bridge fixture 的唯一注入入口(dev-only)。 */
-export function registerAuthLoopbackDevBridge(bridge: AuthLoopbackDevBridge): boolean {
-  return authLoopbackDevBridgeSlot.register(bridge);
-}
-
-interface BrowserAuthorizationInput {
-  kind: 'social' | 'sso';
-  providerOrConnectionId: string;
-  codeChallenge: string;
-  state: string;
-}
-
-/** 可被 abort 提前唤醒的等待(轮询间隔用;取消后立即 resolve,不 reject)。 */
-function sleepUnlessAborted(ms: number, signal: AbortSignal): Promise<void> {
-  if (signal.aborted) return Promise.resolve();
-  return new Promise((resolve) => {
-    // finish 幂等:abort 与 timeout 都可能触发它,重复 resolve 无副作用但仍显式挡掉。
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      signal.removeEventListener('abort', finish);
-      resolve();
-    };
-    const timer = setTimeout(finish, ms);
-    signal.addEventListener('abort', finish, { once: true });
-    // 注册后再查一次。当前 executor 全程同步、abort 插不进来,但这层防御让「将来有人
-    // 在中间加了 await」不会静默退化成「取消要等满一个轮询间隔」。
-    if (signal.aborted) finish();
-  });
-}
-
-/**
- * 托管回调链路:打开系统浏览器后轮询 auth-server 取回授权码。
- *
- * 这里不起本地监听、也不渲染回调页——结果页由服务端在自有域名下托管。
- * redirect_uri 原样使用清单值(必须与服务端 allowlist 逐字符一致,不做拼接)。
- *
- * 注意本链路**不复用**调用方传进来的 `state`:那个值会进浏览器地址栏与导航历史,
- * 拿它当取回凭据就能被旁观者抢先消费(见 createDesktopPollCredentials 的说明)。
- * 这里另生成一对凭据,只把哈希后的 clientState 交给 authorize。
- */
-async function openHostedBrowserAuthorization(
-  client: CindyAuthClient,
-  input: BrowserAuthorizationInput,
-  redirectUri: string,
-  signal: AbortSignal,
-): Promise<{ code: string } | { error: string }> {
-  if (signal.aborted) return { error: 'USER_CANCELLED' };
-
-  const { clientState, pollSecret } = createDesktopPollCredentials();
-  const authUrl = client.buildAuthorizeUrl({ ...input, state: clientState, redirectUri });
-
-  // 整次尝试共用一个截止时间:唤起浏览器与随后的轮询都从这份预算里花,和 loopback
-  // 分支「先起 timer 再 openExternal」的语义对齐。
-  const deadline = Date.now() + BROWSER_AUTH_TIMEOUT_MS;
-
-  // Opening the OS handler gets its own short budget; it is not the time the
-  // user spends authorizing. Do not hide a stuck launch as USER_CANCELLED.
-  const launched = await launchAuthBrowser(() => shell.openExternal(authUrl), signal);
-  if (!launched.opened) return { error: launched.error };
-
-  return runHostedCallbackPolling({
-    poll: async () => {
-      try {
-        return await client.pollDesktopAuthorization(pollSecret, { signal });
-      } catch (error) {
-        // 单次失败不等于登录失败(轮询本身有连续失败预算),但静默会让线上登录
-        // 问题无从排查。取消引发的中断不是故障,不记。错误对象只含固定文案与
-        // 错误码,不含 state / 授权码。
-        if (!signal.aborted) log.warn('hosted auth callback poll failed', error);
-        throw error;
-      }
-    },
-    sleep: (ms) => sleepUnlessAborted(ms, signal),
-    now: () => Date.now(),
-    signal,
-    // 扣掉唤起浏览器已经花掉的时间,整次尝试仍只有一个五分钟预算。
-    timeoutMs: Math.max(0, deadline - Date.now()),
-  });
-}
-
-/** 按端点清单分流到托管回调或 loopback(语义见本节顶部注释)。 */
-async function openSystemBrowserAuthorization(
-  client: CindyAuthClient,
-  loginRealm: AuthRegion,
-  input: BrowserAuthorizationInput,
-  signal: AbortSignal,
-): Promise<{ code: string } | { error: string }> {
-  const hostedCallbackUrl = getClientEndpointForRealm(loginRealm, 'authDesktopCallbackUrl');
-  return hostedCallbackUrl
-    ? openHostedBrowserAuthorization(client, input, hostedCallbackUrl, signal)
-    : openLoopbackBrowserAuthorization(client, input, signal);
-}
-
-async function openLoopbackBrowserAuthorization(
-  client: CindyAuthClient,
-  input: BrowserAuthorizationInput,
-  signal: AbortSignal,
-): Promise<{ code: string } | { error: string }> {
-  return new Promise((resolve) => {
-    let settled = false;
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-    const launchCancellation = new AbortController();
-    // 回调页语言跟随 app 当前 UI 语言(main 迷你 i18n 复用 renderer 五语文案,
-    // {{appName}} 由 t() 注入品牌名);成功 / 失败分别渲染,失败附原始错误码。
-    // 抽成局部渲染器供真实 HTTP 回调与 dev bridge 触发路径共用(同一 HTML)。
-    const renderCallbackPage = (result: { code: string } | { error: string }): string => {
-      const isError = 'error' in result;
-      return renderAuthLoopbackPage({
-        htmlLang: getResolvedMainLocale(),
-        variant: isError ? 'error' : 'success',
-        title: t(
-          isError ? 'login.browserCallback.errorTitle' : 'login.browserCallback.successTitle',
-        ),
-        body: t(isError ? 'login.browserCallback.errorBody' : 'login.browserCallback.successBody'),
-        detail: isError ? result.error : undefined,
-        closeCountdown: isError ? undefined : t('login.browserCallback.closeCountdown'),
-        // The success page is self-closing when the browser permits it, so it
-        // only needs the return CTA on error pages where the user must retry.
-        action: isError
-          ? {
-              href: buildFocusDeepLink('desktop-login'),
-              label: t('login.browserCallback.returnButton'),
-            }
-          : undefined,
-      });
-    };
-    const server = createServer((req, res) => {
-      if (settled || !req.url) {
-        res.writeHead(404).end();
-        return;
-      }
-      const result = parseAuthLoopbackCallback(req.url, input.state);
-      if (!result) {
-        res.writeHead(404).end();
-        return;
-      }
-      const html = renderCallbackPage(result);
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(html);
-      authLoopbackDevBridgeSlot.notifyHtml(html);
-      finish(result);
-    });
-
-    const finish = (result: { code: string } | { error: string }) => {
-      if (settled) return;
-      settled = true;
-      launchCancellation.abort();
-      signal.removeEventListener('abort', cancel);
-      if (timeout !== null) clearTimeout(timeout);
-      if (server.listening) {
-        // The browser may keep the callback connection alive briefly after
-        // rendering "return to Cindy". Closing belongs to cleanup; do not hold
-        // authorization-code exchange or cancellation behind its callback.
-        server.close();
-      }
-      resolve(result);
-    };
-
-    const cancel = () => finish({ error: 'USER_CANCELLED' });
-    signal.addEventListener('abort', cancel, { once: true });
-
-    server.once('error', (error) => {
-      log.warn('auth loopback listener failed', error);
-      finish({ error: 'CALLBACK_LISTENER_FAILED' });
-    });
-    if (signal.aborted) {
-      cancel();
-      return;
-    }
-    timeout = setTimeout(() => finish({ error: 'REQUEST_TIMEOUT' }), BROWSER_AUTH_TIMEOUT_MS);
-    server.listen(0, '127.0.0.1', () => {
-      if (settled) {
-        server.close();
-        return;
-      }
-      const address = server.address() as AddressInfo;
-      const redirectUri = `http://127.0.0.1:${address.port}/auth/callback`;
-      const authUrl = client.buildAuthorizeUrl({ ...input, redirectUri });
-      // dev bridge 挂接(packaged no-op):fixture 触发与真实回调走同一渲染/finish。
-      authLoopbackDevBridgeSlot.attach(finish, renderCallbackPage);
-      if (settled) return;
-      void launchAuthBrowser(() => shell.openExternal(authUrl), launchCancellation.signal).then(
-        (launched) => {
-          if (!launched.opened) finish({ error: launched.error });
-        },
-      );
-    });
-  });
-}
-
 // ── Refresh scheduling ──────────────────────────────────────────────────────
 
 function scheduleRefresh(token: string): void {
@@ -3746,50 +2893,6 @@ function clearPerAccountIntegrationsInBackground(): void {
 }
 
 /** Clear renderer-safe login progress and all main-only login tickets. */
-function resetLoginFlowState(): void {
-  handledLoginEmail = null;
-  pendingPersonalLogin = null;
-  loginFlowState = null;
-  providerConfig = null;
-  discoveredMethods = [];
-  pendingAccountToken = null;
-  pendingAccountRefreshToken = null;
-  pendingAccountMemberships = [];
-  pendingLoginTicket = null;
-  pendingBindTicket = null;
-  pendingSsoVerificationTicket = null;
-  pendingAuthRealm = null;
-  pendingAccountDeletionRestored = false;
-}
-
-function assertLoginFlowCurrent(expectedEpoch: number): void {
-  if (loginFlowEpoch === expectedEpoch) return;
-  throw new AuthApiError(
-    'AUTH_FLOW_SUPERSEDED',
-    409,
-    'Login was cancelled or superseded by a newer flow',
-  );
-}
-
-function sealLoginFlowCommit(expectedEpoch: number): () => void {
-  sealedLoginFlowCommitDepths.set(
-    expectedEpoch,
-    (sealedLoginFlowCommitDepths.get(expectedEpoch) ?? 0) + 1,
-  );
-  return () => {
-    const depth = sealedLoginFlowCommitDepths.get(expectedEpoch) ?? 0;
-    if (depth <= 1) {
-      sealedLoginFlowCommitDepths.delete(expectedEpoch);
-      return;
-    }
-    sealedLoginFlowCommitDepths.set(expectedEpoch, depth - 1);
-  };
-}
-
-function isLoginFlowCommitSealed(expectedEpoch: number): boolean {
-  return (sealedLoginFlowCommitDepths.get(expectedEpoch) ?? 0) > 0;
-}
-
 function resetActiveAuthRealmToBuild(): void {
   activeAuthRealm = AUTH_REGION;
   resetClientEndpointRealm();
@@ -3869,19 +2972,14 @@ function clearAuth(
     coldStartRetryWait?.(true);
   }
   refreshBackoff.clear();
-  loginFlowEpoch += 1;
   // Explicit logout clears health. Failed startup keeps its recovery reason
   // in the same synchronous commit, so owner cleanup cannot erase the error.
   credentialStoreHealth.reset();
   if (opts.credentialStoreUnavailable) credentialStoreHealth.noteStartupFailure();
   accessToken = null;
-  pendingAccountToken = null;
-  pendingAccountRefreshToken = null;
-  pendingAccountMemberships = [];
   currentUser = null;
   accountDeletionRestoredNoticePending = false;
   confirmedAccountDeletionCredential = null;
-  resetLoginFlowState();
   persistedRefreshTokenNeedsIdentityCheck = false;
   lastAcceptedRefreshToken = null;
   clearReplacementIntegrationReloadTimers();
@@ -4061,15 +3159,6 @@ export function getActiveAuthRealm(): AuthRegion {
   return activeAuthRealm;
 }
 
-/**
- * 登录页人机验证托管挑战页地址(不含 query)。邮箱发码固定走构建区域的 auth
- * 部署(与 runLoginAction 的 startsBuildRealmFlow 口径一致),不看 activeAuthRealm。
- * 惰性求值:端点清单可能在 app.ready 后被远程 manifest 回填,不得固化。
- */
-export function getLoginCaptchaChallengeUrl(): string {
-  return authServerUrl(AUTH_REGION) + LOGIN_CAPTCHA_PAGE_PATH;
-}
-
 /** SkillHub v0.2.1: 返回当前登录用户 id（cuid），未登录时返回 null */
 export function getCurrentUserId(): string | null {
   return currentUser?.id ?? null;
@@ -4091,225 +3180,6 @@ export function getDeviceId(): string {
 
 export function getAuthState(): AuthState {
   return snapshotAuthState();
-}
-
-function accountSummaryFromMetadata(
-  accountKey: string,
-  metadata: StoredAccountMetadata,
-  activeAccountKey: string | null,
-): DesktopSavedAccount {
-  return {
-    accountKey,
-    displayName: metadata.displayName || metadata.email || 'Cindy',
-    email: metadata.email,
-    avatarUrl: metadata.avatarUrl,
-    kind: metadata.kind,
-    orgName: metadata.orgName,
-    orgLogoUrl: metadata.orgLogoUrl,
-    isCurrent: accountKey === activeAccountKey,
-  };
-}
-
-function savedAccountSummaries(
-  vault: AuthAccountVault,
-  activeAccountKey: string | null,
-): DesktopSavedAccount[] {
-  const loggedOutKeys = loggedOutAccountKeySet(vault);
-  const byKey = new Map<string, StoredAccountMetadata>();
-  for (const [key, resource] of Object.entries(vault.resources)) {
-    if (!loggedOutKeys.has(key)) byKey.set(key, resource.metadata);
-  }
-  for (const passport of Object.values(vault.passports)) {
-    for (const membership of passport.memberships) {
-      const key = accountVaultKey(passport.realm, membership.membershipId);
-      if (!loggedOutKeys.has(key) && !byKey.has(key)) byKey.set(key, membership);
-    }
-  }
-  return [...byKey.entries()]
-    .map(([key, metadata]) => accountSummaryFromMetadata(key, metadata, activeAccountKey))
-    .sort((left, right) => {
-      if (left.isCurrent !== right.isCurrent) return left.isCurrent ? -1 : 1;
-      const leftUsed = vault.resources[left.accountKey]?.lastUsedAt ?? 0;
-      const rightUsed = vault.resources[right.accountKey]?.lastUsedAt ?? 0;
-      return rightUsed - leftUsed || left.displayName.localeCompare(right.displayName);
-    });
-}
-
-export function listSavedAccounts(): DesktopAccountSwitcherSnapshot {
-  const vault = readAuthAccountVault({ allowUnreadable: true });
-  const activeKey = currentUser ? accountVaultKey(activeAuthRealm, currentUser.id) : null;
-  return {
-    accounts: savedAccountSummaries(vault, activeKey),
-    mutationAllowed: !isPassiveSharedUserDataInstance(),
-  };
-}
-
-export async function syncSavedAccounts(): Promise<DesktopAccountSwitcherSnapshot> {
-  if (isPassiveSharedUserDataInstance()) return listSavedAccounts();
-  const initial = readAuthAccountVault();
-  for (const passport of Object.values(initial.passports)) {
-    try {
-      await loadClientEndpointsForRealm(passport.realm);
-      const client = createAuthClient(passport.realm);
-      const pair = await refreshPassportSessionSingleFlight(
-        client,
-        passport.realm,
-        passport.passportId,
-      );
-      const memberships = await client.getAccountMemberships(pair.accountToken);
-      assertPassportReplacementStored(
-        await replacePassportSessionIfCurrent({
-          realm: passport.realm,
-          passportId: passport.passportId,
-          expectedAccountRefreshToken: pair.accountRefreshToken,
-          accountRefreshToken: pair.accountRefreshToken,
-          memberships,
-        }),
-      );
-    } catch (error) {
-      if (!isDefinitiveRefreshError(error)) {
-        log.warn('saved account membership sync failed transiently', error);
-      }
-    }
-  }
-  return listSavedAccounts();
-}
-
-export async function switchSavedAccount(
-  rawAccountKey: unknown,
-  options: {
-    accountToLogOut?: LoggedOutAccountIdentity;
-    onLoggedOutPassportRemoved?: (session: StoredPassportSession) => void;
-    validateBeforeCommit?: (loginEpoch: number) => void;
-  } = {},
-): Promise<void> {
-  const switchLoginFlowEpoch = loginFlowEpoch;
-  const parsedKey = parseDesktopAccountKey(rawAccountKey);
-  if (!parsedKey) throw new AuthApiError('INVALID_AUTH_ACTION', 400, 'Invalid account key');
-  if (isPassiveSharedUserDataInstance()) {
-    throw new AuthApiError(
-      'PASSIVE_AUTH_MUTATION_BLOCKED',
-      409,
-      'This shared-data instance cannot switch accounts',
-    );
-  }
-  if (currentUser && parsedKey === accountVaultKey(activeAuthRealm, currentUser.id)) return;
-
-  let vault = readAuthAccountVault();
-  if (isLoggedOutVaultAccount(vault, parsedKey)) {
-    throw new AuthApiError('ACCOUNT_NOT_FOUND', 404, 'Saved account was logged out');
-  }
-  let resource: StoredResourceSession | undefined = vault.resources[parsedKey];
-  let metadata = resource?.metadata;
-  if (!metadata) {
-    for (const passport of Object.values(vault.passports)) {
-      const candidate = passport.memberships.find(
-        (membership) => accountVaultKey(passport.realm, membership.membershipId) === parsedKey,
-      );
-      if (candidate) {
-        metadata = candidate;
-        break;
-      }
-    }
-  }
-  if (!metadata) throw new AuthApiError('ACCOUNT_NOT_FOUND', 404, 'Saved account not found');
-
-  const realm =
-    resource?.realm ??
-    Object.values(vault.passports).find((passport) =>
-      passport.memberships.some(
-        (membership) => accountVaultKey(passport.realm, membership.membershipId) === parsedKey,
-      ),
-    )?.realm;
-  if (!realm) throw new AuthApiError('ACCOUNT_NOT_FOUND', 404, 'Saved account realm missing');
-  stopColdStartRecovery();
-  await loadClientEndpointsForRealm(realm);
-  assertLoginFlowCurrent(switchLoginFlowEpoch);
-  const client = createAuthClient(realm);
-  let pair: AuthTokenPair | null = null;
-
-  if (resource) {
-    pair = await refreshSavedResourceSession({
-      client,
-      accountKey: parsedKey,
-      realm,
-      metadata,
-      initialRefreshToken: resource.refreshToken,
-      expectedLoginFlowEpoch: switchLoginFlowEpoch,
-    });
-    if (!pair) {
-      resource = undefined;
-      vault = readAuthAccountVault();
-    }
-  }
-
-  if (!pair) {
-    const passport = vault.passports[passportVaultKey(realm, metadata.passportId)];
-    if (!passport) {
-      throw new AuthApiError('ACCOUNT_REAUTH_REQUIRED', 401, 'Saved account requires login');
-    }
-    const accountPair = await refreshPassportSessionSingleFlight(
-      client,
-      realm,
-      passport.passportId,
-    );
-    assertLoginFlowCurrent(switchLoginFlowEpoch);
-    pair = await client.exchangeAccountMembership(accountPair.accountToken, metadata.membershipId);
-    assertLoginFlowCurrent(switchLoginFlowEpoch);
-    pair = bindResourcePairToSavedAccount(pair, realm, metadata);
-    await rememberResourceSession(pair, realm, {
-      markActive: false,
-      validateBeforeWrite: () => assertLoginFlowCurrent(switchLoginFlowEpoch),
-    });
-  }
-
-  if (!canRestoreAuthSessionForMembership(AUTH_REGION, realm, pair.membership.kind)) {
-    throw new AuthApiError(
-      'REGION_MISMATCH',
-      409,
-      'Personal accounts must match the installed build region',
-    );
-  }
-
-  pendingAuthRealm = realm;
-  pendingAccountRefreshToken = null;
-  pendingAccountMemberships = [];
-  try {
-    await completeLogin({ status: 'ok', ...pair }, switchLoginFlowEpoch, {
-      restoreLoggedOutAccount: false,
-      accountToLogOut: options.accountToLogOut,
-      onLoggedOutPassportRemoved: options.onLoggedOutPassportRemoved,
-      validateBeforeCommit: options.validateBeforeCommit,
-    });
-  } catch (error) {
-    pendingAuthRealm = null;
-    throw error;
-  }
-}
-
-export async function beginAddAccountLogin(): Promise<DesktopLoginActionResult> {
-  if (isPassiveSharedUserDataInstance()) {
-    throw new AuthApiError(
-      'PASSIVE_AUTH_MUTATION_BLOCKED',
-      409,
-      'This shared-data instance cannot add accounts',
-    );
-  }
-  stopColdStartRecovery();
-  loginFlowEpoch += 1;
-  browserAuthorizationSlot.cancelActive();
-  resetLoginFlowState();
-  return getLoginState();
-}
-
-export function cancelAddAccountLogin(): void {
-  if (isLoginFlowCommitSealed(loginFlowEpoch)) {
-    log.info('add-account close ignored after accepted login commit began');
-    return;
-  }
-  loginFlowEpoch += 1;
-  browserAuthorizationSlot.cancelActive();
-  resetLoginFlowState();
 }
 
 export function getCurrentDataOwnerId(): string | null {
@@ -4342,31 +3212,6 @@ export function hasNoPersistedAuthCredentials(): boolean {
     isPersistedSecretAbsent(LEGACY_RESOURCE_REFRESH_TOKEN_KEY) &&
     isPersistedSecretAbsent(AUTH_ACCOUNT_VAULT_KEY)
   );
-}
-
-/** Enter the account-free local session through the shared projection boundary. */
-export async function enterLocalMode(): Promise<AuthState> {
-  stopColdStartRecovery();
-  browserAuthorizationSlot.cancelActive();
-  // Local mode has a different data owner. Drop process-local generic OAuth
-  // tokens before switching the committed owner so cloud credentials cannot
-  // be reused by the account-free session.
-  getProviderSecretStore().invalidateCaches();
-  await withAccountFreeOwnerCommit({
-    reason: 'enter-local-mode',
-    nextMode: 'local',
-  });
-  return snapshotAuthState();
-}
-
-/** Leave local mode without deleting its owner-scoped data. */
-export async function exitLocalMode(): Promise<AuthState> {
-  if (getActiveAppSession().mode !== 'local') return snapshotAuthState();
-  await withAccountFreeOwnerCommit({
-    reason: 'exit-local-mode',
-    nextMode: 'signed-out',
-  });
-  return snapshotAuthState();
 }
 
 function requireAccountDeletionAccessToken(): string {
@@ -4695,7 +3540,6 @@ export async function updateServerProfile(
 
 export async function initialize(options: AuthInitializeOptions = {}): Promise<AuthState> {
   const initializeStartEpoch = authStateEpoch;
-  const settledLoginsAtInitialize = settledLoginCommitCount;
   // A renderer can mount after the boundary-pending broadcast. Keep startup
   // fail-closed until the serialized owner transition settles instead of
   // restoring the outgoing owner's credentials and turns from disk.
@@ -4790,7 +3634,6 @@ export async function initialize(options: AuthInitializeOptions = {}): Promise<A
     removeSafe(AUTH_SESSION_KEY);
     await clearAuthAccountVault();
     removeSafe(LEGACY_RESOURCE_REFRESH_TOKEN_KEY);
-    pendingAccountToken = null;
     removeSafe(LEGACY_ACCOUNT_REFRESH_TOKEN_KEY);
     removeSafe(LEGACY_REFRESH_TOKEN_KEY);
     clearReloginFlag();
@@ -4889,14 +3732,7 @@ export async function initialize(options: AuthInitializeOptions = {}): Promise<A
       // the transition's own commit/rollback broadcast publish the settled state.
       const recovery = await resolveColdStartTimeoutRecovery({
         ownerTransitionPending: ownerChangeShellGate.isPending(),
-        loginCommitPending: sealedLoginFlowCommitDepths.size > 0,
         authChangedSinceInitialize: authStateEpoch !== initializeStartEpoch,
-        // A login that committed after this initialize() entered reuses the
-        // epoch snapshotted at entry (completeLogin increments before awaiting
-        // the durable commit), so the epoch guards above cannot see it. Treat a
-        // settled login as an auth change that must never be cleared by the
-        // startup deadline; its own commit already published the settled state.
-        loginCommittedSinceInitialize: settledLoginCommitCount !== settledLoginsAtInitialize,
         isStartupFallbackEpoch: (epoch) =>
           epoch > initializeStartEpoch &&
           coldStartTimeoutFallbacks.containsOnlyFallbacks(initializeStartEpoch, epoch),
@@ -5216,7 +4052,6 @@ async function runColdStartRefreshFlow(
         }
         accessToken = refreshData.accessToken;
         currentUser = mapMembershipToAuthUser(refreshData.membership);
-        loginFlowState = { step: 'completed', membership: refreshData.membership };
         commitCloudAppSession(currentUser.id, authRealmChanged);
         persistedRefreshTokenNeedsIdentityCheck = false;
         clearReplacementIntegrationReloadTimers();
@@ -5269,807 +4104,6 @@ async function runColdStartRefreshFlow(
     if (epochChanged('catch-return')) return snapshotAuthState();
     await finishColdStartSignedOut('cold-start-local-state-sync-failed');
     return snapshotLoggedOutAuthState();
-  }
-}
-
-async function loadLoginProviders(expectedLoginFlowEpoch = loginFlowEpoch): Promise<AuthFlowState> {
-  handledLoginEmail = null;
-  pendingPersonalLogin = null;
-  discoveredMethods = [];
-  pendingAccountToken = null;
-  pendingAccountRefreshToken = null;
-  pendingAccountMemberships = [];
-  pendingLoginTicket = null;
-  pendingBindTicket = null;
-  pendingSsoVerificationTicket = null;
-  pendingAccountDeletionRestored = false;
-  pendingAuthRealm = null;
-  // 与冷启动 splash 同一把闸:限时等待,超时先以 AUTH_SERVICE_UNAVAILABLE 解锁
-  // preparing UI,getProviders 继续后台跑;不 abort(net.fetch 本就可能无视 abort)。
-  const providers = await awaitLoginProvidersWithPreparingGate(
-    createAuthClient(AUTH_REGION).getProviders(),
-    log,
-  );
-  assertLoginFlowCurrent(expectedLoginFlowEpoch);
-  providerConfig = providers;
-  loginFlowState = reduceAuthFlow(loginFlowState, {
-    type: 'providers-loaded',
-    providers: providerConfig,
-  });
-  return loginFlowState;
-}
-
-async function discoverOrganizationRealm(org: string, expectedLoginFlowEpoch = loginFlowEpoch) {
-  // 新的一次组织发现不得复用上一轮成功结果；只有本轮双区判定成功后才重新冻结。
-  pendingAuthRealm = null;
-  const discovery = await lookupOrganizationRealm(org, expectedLoginFlowEpoch);
-  assertLoginFlowCurrent(expectedLoginFlowEpoch);
-  pendingAuthRealm = discovery.region;
-  return discovery;
-}
-
-/** Read-only realm lookup also serves optional hints after successful personal authentication. */
-async function lookupOrganizationRealm(org: string, expectedLoginFlowEpoch: number) {
-  const realmConfig = getClientEndpointRealmConfig();
-  if (!realmConfig.crossRealmOrgLoginEnabled || !realmConfig.realmManifestBaseUrls) {
-    const discovery = await createAuthClient(AUTH_REGION).discoverSsoOrg(org);
-    assertLoginFlowCurrent(expectedLoginFlowEpoch);
-    return discovery;
-  }
-
-  // 先并行加载/校验两区清单，再并行做 home-realm discovery。任一清单或请求
-  // 不可用都 fail closed，不凭另一侧成功结果猜区域；只有发现结果跨出安装包
-  // 区域时，后续状态机才要求用户确认。
-  try {
-    await Promise.all([loadClientEndpointsForRealm('cn'), loadClientEndpointsForRealm('global')]);
-    assertLoginFlowCurrent(expectedLoginFlowEpoch);
-  } catch {
-    throw new AuthApiError(
-      'ORG_REALM_UNAVAILABLE',
-      503,
-      'Unable to load both enterprise auth region manifests',
-    );
-  }
-  const selected = await discoverSsoOrgRealm(org, {
-    cn: createAuthClient('cn'),
-    global: createAuthClient('global'),
-  });
-  assertLoginFlowCurrent(expectedLoginFlowEpoch);
-  return selected.discovery;
-}
-
-export async function getLoginState(): Promise<DesktopLoginActionResult> {
-  // A logout publishes the signed-out shell before its owner transition has
-  // finished. Start provider discovery only after that transition settles so
-  // this request captures the post-logout login epoch instead of reporting a
-  // recoverable supersession as a terminal login-page error.
-  while (isOwnerChangeShellPending()) {
-    await ownerChangeShellGate.waitForSettled();
-  }
-  const expectedLoginFlowEpoch = loginFlowEpoch;
-  try {
-    if (!accessToken && credentialStoreHealth.unavailable) {
-      return {
-        success: false,
-        code: 'CREDENTIAL_STORE_UNAVAILABLE',
-        state: { step: 'error', code: 'CREDENTIAL_STORE_UNAVAILABLE', recoverTo: 'identifier' },
-      };
-    }
-    if (loginFlowState) return { success: true, state: loginFlowState };
-    return { success: true, state: await loadLoginProviders(expectedLoginFlowEpoch) };
-  } catch (error) {
-    if (loginFlowEpoch !== expectedLoginFlowEpoch) {
-      return { success: false, code: 'AUTH_FLOW_SUPERSEDED', state: loginFlowState };
-    }
-    const failure = mapLoginProvidersLoadFailure(error);
-    log.warn(`load login providers failed code=${failure.code}`);
-    loginFlowState = failure.state;
-    return failure;
-  }
-}
-
-async function completeLogin(
-  outcome: Extract<LoginOutcome, { status: 'ok' }>,
-  expectedLoginFlowEpoch = loginFlowEpoch,
-  options: {
-    restoreLoggedOutAccount?: boolean;
-    accountToLogOut?: LoggedOutAccountIdentity;
-    onLoggedOutPassportRemoved?: (session: StoredPassportSession) => void;
-    validateBeforeCommit?: (loginEpoch: number) => void;
-  } = {},
-): Promise<AuthFlowState> {
-  assertLoginFlowCurrent(expectedLoginFlowEpoch);
-  const loginEpoch = ++authStateEpoch;
-  const deletionWasRestored =
-    outcome.accountDeletionRestored === true || pendingAccountDeletionRestored;
-  const nextUser = mapMembershipToAuthUser(outcome.membership);
-  const previousSession = getActiveAppSession();
-  const assertTransitionCurrent = (): void => {
-    if (authStateEpoch !== loginEpoch || loginFlowEpoch !== expectedLoginFlowEpoch) {
-      throw new AuthApiError(
-        'AUTH_FLOW_SUPERSEDED',
-        409,
-        'Login was superseded by a newer auth action',
-      );
-    }
-  };
-  assertTransitionCurrent();
-  const releaseLoginFlowCommit = sealLoginFlowCommit(expectedLoginFlowEpoch);
-
-  try {
-    const committedRealm = pendingAuthRealm ?? AUTH_REGION;
-    const accountRefreshToken = outcome.accountRefreshToken ?? pendingAccountRefreshToken;
-    let previousPersistedSession: ReturnType<typeof readPersistedAuthSession> = null;
-    let activeSessionWritten = false;
-    await commitDesktopLoginSessions(
-      {
-        pair: outcome,
-        realm: committedRealm,
-        passportId: nextUser.passportId || undefined,
-        accountRefreshToken,
-        memberships:
-          pendingAccountMemberships.length > 0 ? pendingAccountMemberships : [outcome.membership],
-        restoreLoggedOutAccount: options.restoreLoggedOutAccount ?? true,
-        accountToLogOut: options.accountToLogOut,
-        onLoggedOutPassportRemoved: options.onLoggedOutPassportRemoved,
-      },
-      {
-        commit: async () => {
-          // The aggregate account vault, compatibility active session, old-owner
-          // teardown and final owner publication are one epoch-owned transaction.
-          // Any cancellation before commit restores both durable records while
-          // the cross-process vault lock is still held.
-          assertTransitionCurrent();
-          options.validateBeforeCommit?.(loginEpoch);
-          // Capture the compatibility session only after entering the same
-          // cross-process ownership window as the vault write. A concurrent
-          // passive refresh may have rotated it while this login waited on the
-          // lock; rollback must restore that latest generation, not a stale one.
-          previousPersistedSession = readPersistedAuthSession();
-          writePersistedAuthSessionOrThrow(outcome.refreshToken, committedRealm);
-          activeSessionWritten = true;
-          assertTransitionCurrent();
-          await withCloudOwnerCommit({
-            previousOwnerId: previousSession.dataOwnerId,
-            nextOwnerId: nextUser.id,
-            prepareTransition: async () => {
-              assertTransitionCurrent();
-              if (!accountSwitchTeardown) {
-                throw new Error('login cloud owner transition requires a teardown hook');
-              }
-              await accountSwitchTeardown({
-                previousUserId: previousSession.dataOwnerId ?? previousSession.mode,
-                nextUserId: nextUser.id,
-              });
-              assertTransitionCurrent();
-            },
-            prepareCommit: async () => {
-              assertTransitionCurrent();
-              await claimLegacyNamespaceForVerifiedUser(nextUser.id);
-              assertTransitionCurrent();
-            },
-            commit: () =>
-              commitWithClearedAccountDeletionReceipt(() => {
-                assertTransitionCurrent();
-                pendingAccountToken = null;
-                pendingAccountRefreshToken = null;
-                pendingAccountMemberships = [];
-                pendingAccountDeletionRestored = false;
-                accessToken = outcome.accessToken;
-                persistedRefreshTokenNeedsIdentityCheck = false;
-                clearReplacementIntegrationReloadTimers();
-                const authRealmChanged = committedRealm !== activeAuthRealm;
-                activateClientEndpointRealm(committedRealm);
-                activeAuthRealm = committedRealm;
-                if (!isPassiveSharedUserDataInstance()) {
-                  removeSafe(LEGACY_REFRESH_TOKEN_KEY);
-                }
-                lastAcceptedRefreshToken = outcome.refreshToken;
-                if (!isPassiveSharedUserDataInstance()) {
-                  clearReloginFlag();
-                }
-                accountDeletionRestoredNoticePending = deletionWasRestored;
-                // 显式登录解除本进程登出墓碑(passive / foreign-device)。
-                passiveLocalSignOut = false;
-                foreignDeviceLocalSignOut = false;
-                currentUser = nextUser;
-                credentialStoreHealth.noteRecovered();
-                if (!isPassiveSharedUserDataInstance()) {
-                  canaryFlagStore.clear();
-                }
-                commitCloudAppSession(currentUser.id, authRealmChanged);
-                pendingAuthRealm = null;
-              }),
-          });
-        },
-        rollback: () => {
-          if (!activeSessionWritten) return;
-          restorePersistedAuthSessionIfCurrent(
-            outcome.refreshToken,
-            committedRealm,
-            previousPersistedSession,
-          );
-        },
-      },
-    );
-    await migrateLocalProviderBindingsAfterCloudCommit(nextUser.id);
-    scheduleCanaryFlagSync({
-      token: outcome.accessToken,
-      expectedAuthEpoch: loginEpoch,
-      expectedUserId: nextUser.id,
-    });
-    scheduleXdOrgBetaDefault({
-      expectedAuthEpoch: loginEpoch,
-      expectedUserId: nextUser.id,
-    });
-    scheduleRefresh(outcome.accessToken);
-    getProviderSecretStore().reconcileOwner(outcome.membership.id);
-    pendingLoginTicket = null;
-    pendingBindTicket = null;
-    pendingSsoVerificationTicket = null;
-    pendingPersonalLogin = null;
-    handledLoginEmail = null;
-    loginFlowState = reduceAuthFlow(loginFlowState, { type: 'outcome', outcome });
-    notifyRenderer();
-    notifyAuthListeners();
-    settledLoginCommitCount += 1;
-    return loginFlowState;
-  } finally {
-    releaseLoginFlowCommit();
-  }
-}
-
-async function acceptLoginOutcome(
-  outcome: LoginOutcome,
-  expectedLoginFlowEpoch = loginFlowEpoch,
-): Promise<AuthFlowState> {
-  assertLoginFlowCurrent(expectedLoginFlowEpoch);
-  if (
-    (outcome.status === 'ok' || outcome.status === 'select_account') &&
-    outcome.accountDeletionRestored === true
-  ) {
-    pendingAccountDeletionRestored = true;
-  }
-  pendingAccountToken = outcome.status === 'select_account' ? (outcome.accountToken ?? null) : null;
-  pendingAccountRefreshToken =
-    outcome.status === 'ok' || outcome.status === 'select_account'
-      ? (outcome.accountRefreshToken ?? null)
-      : null;
-  pendingAccountMemberships =
-    outcome.status === 'select_account'
-      ? outcome.accounts
-      : outcome.status === 'ok'
-        ? [outcome.membership]
-        : [];
-
-  if (outcome.status === 'ok') return finishFreshLogin(outcome, expectedLoginFlowEpoch);
-  if (outcome.status === 'select_account') {
-    pendingLoginTicket = outcome.loginTicket;
-    pendingBindTicket = null;
-    pendingSsoVerificationTicket = null;
-  } else if (outcome.status === 'binding_required') {
-    pendingBindTicket = outcome.bindTicket;
-    pendingLoginTicket = null;
-    pendingSsoVerificationTicket = null;
-  } else {
-    pendingSsoVerificationTicket = outcome.verificationTicket;
-    pendingLoginTicket = null;
-    pendingBindTicket = null;
-  }
-  loginFlowState = reduceAuthFlow(loginFlowState, { type: 'outcome', outcome });
-  return loginFlowState;
-}
-
-/** Offer enterprise login before committing a fresh personal identity, never during refresh/switch. */
-async function finishFreshLogin(
-  outcome: Extract<LoginOutcome, { status: 'ok' }>,
-  expectedLoginFlowEpoch: number,
-): Promise<AuthFlowState> {
-  const personalRealm = pendingAuthRealm ?? AUTH_REGION;
-  const discovery = await discoverPersonalLoginOrganization(outcome.membership, {
-    handledEmail: handledLoginEmail,
-    discoverOrganization: (domain) => lookupOrganizationRealm(domain, expectedLoginFlowEpoch),
-  });
-  assertLoginFlowCurrent(expectedLoginFlowEpoch);
-  if (discovery && providerConfig) {
-    pendingPersonalLogin = { outcome, realm: personalRealm };
-    discoveredMethods = [];
-    loginFlowState = reduceAuthFlow(loginFlowState, {
-      type: 'realm-switch-required',
-      targetRegion: discovery.region,
-      personalLoginAvailable: true,
-      providers: providerConfig,
-      methods: ssoOrgDiscoveryToMethods(discovery),
-    });
-    return loginFlowState;
-  }
-  return completeLogin(outcome, expectedLoginFlowEpoch);
-}
-
-async function runLoginAction(
-  action: Exclude<DesktopLoginAction, { type: 'back' }>,
-): Promise<DesktopLoginActionResult> {
-  if (action.type !== 'reset') stopColdStartRecovery();
-  const actionLoginFlowEpoch = loginFlowEpoch;
-  const startsBuildRealmFlow =
-    action.type === 'discover' ||
-    action.type === 'request-code' ||
-    action.type === 'verify-code' ||
-    (action.type === 'start-browser' && action.kind === 'social');
-  const loginRealm = startsBuildRealmFlow ? AUTH_REGION : (pendingAuthRealm ?? activeAuthRealm);
-  const client = createAuthClient(loginRealm);
-  const stateBeforeAction = loginFlowState?.step === 'error' ? null : loginFlowState;
-  // User-triggered check of the already selected backend. Empty desktop identity
-  // is not itself a reason to refuse a code request or browser login.
-  const assertLoginCredentialStoreReady = (): void => {
-    if (isCredentialEncryptionAvailable()) return;
-    throw new AuthApiError(
-      'CREDENTIAL_STORE_UNAVAILABLE',
-      503,
-      'Saved account credentials are temporarily unavailable',
-    );
-  };
-  try {
-    // Cancellation is intercepted by dispatchLoginAction so it can settle the
-    // already-running browser action instead of starting a second action.
-    if (action.type === 'cancel-browser') {
-      throw new AuthApiError('INVALID_AUTH_ACTION', 400, 'Unexpected browser cancellation');
-    }
-    if (action.type === 'reset') {
-      // Retry restoration before offering a new login. A temporary credential
-      // failure must never make the user replace their still-saved session.
-      if (
-        !accessToken &&
-        (coldStartAuthInFlight || credentialStoreHealth.unavailable || readPersistedAuthSession())
-      ) {
-        coldStartRecoveryStopped = false;
-        // Only a deliberate retry of a transport failure can release a deadline;
-        // returning to the page must never erase server cooldown or failure count.
-        if (
-          coldStartRetryState?.failure?.status === 0 &&
-          !Number.isFinite(coldStartRetryState.failure.retryAt)
-        ) {
-          coldStartRetryState.backoff.release(0);
-        }
-        coldStartRetryWait?.();
-        await initialize();
-        // Startup may itself clear an obsolete owner generation. Its current
-        // recovery error is still safe to return, even when that cleared the
-        // original login flow; successful/newer auth keeps the epoch guard.
-        if (!accessToken && credentialStoreHealth.unavailable) return getLoginState();
-        if (!accessToken && coldStartAuthInFlight) {
-          return {
-            success: false,
-            code: 'AUTH_SERVICE_UNAVAILABLE',
-            state: loginPreparingErrorState(),
-          };
-        }
-        assertLoginFlowCurrent(actionLoginFlowEpoch);
-        if (accessToken && loginFlowState?.step === 'completed') {
-          return { success: true, state: loginFlowState };
-        }
-      }
-      return { success: true, state: await loadLoginProviders(actionLoginFlowEpoch) };
-    }
-    if (!accessToken && credentialStoreHealth.unavailable) return getLoginState();
-    if (action.type === 'confirm-sso-realm') {
-      const confirmation = loginFlowState;
-      if (
-        confirmation?.step !== 'realm-confirmation' ||
-        (confirmation.personalLoginAvailable
-          ? !pendingPersonalLogin
-          : pendingAuthRealm !== confirmation.targetRegion)
-      ) {
-        throw new AuthApiError(
-          'INVALID_AUTH_ACTION',
-          400,
-          'No enterprise region switch is waiting for confirmation',
-        );
-      }
-      if (confirmation.personalLoginAvailable) {
-        // The user chose a fresh enterprise authentication, not reuse of the personal token.
-        pendingPersonalLogin = null;
-        pendingAccountToken = null;
-        pendingAccountRefreshToken = null;
-        pendingAccountMemberships = [];
-        pendingLoginTicket = null;
-        pendingBindTicket = null;
-        pendingSsoVerificationTicket = null;
-        pendingAccountDeletionRestored = false;
-        pendingAuthRealm = confirmation.targetRegion;
-      }
-      discoveredMethods = confirmation.methods;
-      loginFlowState = reduceAuthFlow(loginFlowState, {
-        type: 'discovery-loaded',
-        email: confirmation.email ?? '',
-        methods: confirmation.methods,
-      });
-      return { success: true, state: loginFlowState };
-    }
-    if (action.type === 'cancel-sso-realm') {
-      const confirmation = loginFlowState;
-      if (confirmation?.step !== 'realm-confirmation') {
-        throw new AuthApiError(
-          'INVALID_AUTH_ACTION',
-          400,
-          'No enterprise region switch is waiting for cancellation',
-        );
-      }
-      if (confirmation.personalLoginAvailable) {
-        const personal = pendingPersonalLogin;
-        if (!personal)
-          throw new AuthApiError('INVALID_AUTH_ACTION', 400, 'Personal login unavailable');
-        pendingAuthRealm = personal.realm;
-        const state = await completeLogin(personal.outcome, actionLoginFlowEpoch);
-        pendingPersonalLogin = null;
-        return { success: true, state };
-      }
-      pendingAuthRealm = null;
-      discoveredMethods = [];
-      loginFlowState = reduceAuthFlow(loginFlowState, {
-        type: 'providers-loaded',
-        providers: confirmation.providers,
-      });
-      return { success: true, state: loginFlowState };
-    }
-    if (!providerConfig) await loadLoginProviders(actionLoginFlowEpoch);
-    // loadLoginProviders clears transient login state. Pin a new personal login
-    // afterwards so account selection and binding cannot inherit the active
-    // organization's realm. The active account remains untouched until commit.
-    // Keep the confirmed SSO realm if a personal code request fails and returns to method choice.
-    if (startsBuildRealmFlow && action.type !== 'request-code') pendingAuthRealm = loginRealm;
-    if (action.type === 'start-browser' && action.kind === 'social') handledLoginEmail = null;
-
-    if (action.type === 'discover') {
-      discoveredMethods = [];
-      const { email, methods, region } = await discoverEmailLogin(action.email, {
-        buildRegion: AUTH_REGION,
-        discoverOrganization: (domain) => discoverOrganizationRealm(domain, actionLoginFlowEpoch),
-        discoverPersonal: (email) => client.discover(email),
-      });
-      assertLoginFlowCurrent(actionLoginFlowEpoch);
-      handledLoginEmail = email;
-      pendingAuthRealm = region;
-      if (region !== AUTH_REGION) {
-        if (!providerConfig) {
-          throw new AuthApiError('AUTH_SERVICE_UNAVAILABLE', 503, 'Login providers unavailable');
-        }
-        loginFlowState = reduceAuthFlow(loginFlowState, {
-          type: 'realm-switch-required',
-          targetRegion: region,
-          email,
-          providers: providerConfig,
-          methods,
-        });
-        return { success: true, state: loginFlowState };
-      }
-      discoveredMethods = methods;
-      loginFlowState = reduceAuthFlow(loginFlowState, {
-        type: 'discovery-loaded',
-        email,
-        methods: discoveredMethods,
-      });
-      return { success: true, state: loginFlowState };
-    }
-
-    // 企业 SSO 入口（按组织 ID/slug/已验证域名）：同区域进入连接选择；
-    // 跨区域先进入确认状态，确认后才把连接写入 start-browser 白名单。
-    // 唯一 SSO 由 renderer 接到 method-choice 后直接派发 start-browser，
-    // 以便立刻投影 browser-redirect（确认框消失、露出取消）。
-    if (action.type === 'discover-sso-org') {
-      const discovery = await discoverOrganizationRealm(
-        action.org.trim().toLowerCase(),
-        actionLoginFlowEpoch,
-      );
-      const methods = ssoOrgDiscoveryToMethods(discovery);
-      if (discovery.region !== AUTH_REGION) {
-        if (!providerConfig) {
-          throw new AuthApiError(
-            'AUTH_SERVICE_UNAVAILABLE',
-            503,
-            'Login provider configuration is unavailable',
-          );
-        }
-        discoveredMethods = [];
-        loginFlowState = reduceAuthFlow(loginFlowState, {
-          type: 'realm-switch-required',
-          targetRegion: discovery.region,
-          providers: providerConfig,
-          methods,
-        });
-        return { success: true, state: loginFlowState };
-      }
-      discoveredMethods = methods;
-      loginFlowState = reduceAuthFlow(loginFlowState, {
-        type: 'discovery-loaded',
-        email: '',
-        methods: discoveredMethods,
-      });
-      return { success: true, state: loginFlowState };
-    }
-
-    if (action.type === 'request-code') {
-      if (action.kind === 'phone' && !providerConfig?.phone) {
-        throw new AuthApiError('PHONE_LOGIN_DISABLED', 400, 'Phone login is disabled');
-      }
-      assertLoginCredentialStoreReady();
-      await client.requestCode(action.kind, action.identifier, {
-        captchaToken: action.captchaToken,
-      });
-      assertLoginFlowCurrent(actionLoginFlowEpoch);
-      pendingAuthRealm = AUTH_REGION;
-      discoveredMethods = [];
-      loginFlowState = reduceAuthFlow(loginFlowState, {
-        type: 'code-requested',
-        kind: action.kind,
-        identifier: action.identifier,
-      });
-      return { success: true, state: loginFlowState };
-    }
-
-    if (action.type === 'verify-code') {
-      assertLoginCredentialStoreReady();
-      return {
-        success: true,
-        state: await acceptLoginOutcome(
-          await client.verifyCode(action.kind, action.identifier, action.code),
-          actionLoginFlowEpoch,
-        ),
-      };
-    }
-
-    if (action.type === 'start-browser') {
-      assertLoginCredentialStoreReady();
-      if (action.kind === 'social') {
-        const provider = action.providerOrConnectionId as SocialProvider;
-        if (!providerConfig?.social.includes(provider)) {
-          throw new AuthApiError('SOCIAL_PROVIDER_DISABLED', 400, 'Provider is disabled');
-        }
-      } else if (
-        !discoveredMethods.some(
-          (method) =>
-            method.type === 'sso' && method.connectionId === action.providerOrConnectionId,
-        )
-      ) {
-        throw new AuthApiError('CONNECTION_NOT_FOUND', 404, 'SSO connection is unavailable');
-      }
-      const { codeVerifier, codeChallenge } = generatePKCE();
-      // 这个 state 只服务 loopback 链路:纯 CSRF 校验值,回调回来比对一次即弃。
-      // randomUUID 的 122 bit 随机量对该用途足够,也不动存量 client_state 的格式。
-      //
-      // 托管回调链路**不用它** —— openHostedBrowserAuthorization 会另生成一对
-      // (pollSecret, clientState = base64url(sha256(pollSecret))),把哈希交给
-      // authorize、原像留作取回凭据。原因是这里的值会进浏览器地址栏与导航历史,
-      // 拿它取回就能被旁观者抢先消费(见 createDesktopPollCredentials 的说明)。
-      // 两条链路的值都只存在于本进程内存中,不落盘、不进日志。
-      const state = crypto.randomUUID();
-      loginFlowState = reduceAuthFlow(loginFlowState, {
-        type: 'browser-started',
-        label: action.label,
-      });
-      const cancellation = new AbortController();
-      const deactivateCancellation = browserAuthorizationSlot.activate(() => cancellation.abort());
-      try {
-        const callback = await openSystemBrowserAuthorization(
-          client,
-          loginRealm,
-          {
-            kind: action.kind,
-            providerOrConnectionId: action.providerOrConnectionId,
-            codeChallenge,
-            state,
-          },
-          cancellation.signal,
-        );
-        assertLoginFlowCurrent(actionLoginFlowEpoch);
-        if ('error' in callback) {
-          throw new AuthApiError(callback.error, 0, 'Browser authorization did not complete');
-        }
-        const exchange = await raceAuthBrowserCancellation(
-          client.exchangeAuthorizationCode(callback.code, codeVerifier),
-          cancellation.signal,
-        );
-        if (exchange.cancelled) {
-          throw new AuthApiError('USER_CANCELLED', 0, 'Browser authorization was cancelled');
-        }
-        return {
-          success: true,
-          state: await acceptLoginOutcome(exchange.value, actionLoginFlowEpoch),
-        };
-      } finally {
-        deactivateCancellation();
-      }
-    }
-
-    if (action.type === 'select-account') {
-      const accountToken = pendingAccountToken;
-      if (accountToken) {
-        const pair = await client.exchangeAccountMembership(accountToken, action.accountId);
-        assertLoginFlowCurrent(actionLoginFlowEpoch);
-        pendingAccountToken = null;
-        return {
-          success: true,
-          state: await finishFreshLogin({ status: 'ok', ...pair }, actionLoginFlowEpoch),
-        };
-      }
-      // 纯社交/SSO 等没有 account 会话的历史路径仍用一次性 loginTicket。
-      if (!pendingLoginTicket) {
-        throw new AuthApiError('INVALID_LOGIN_TICKET', 401, 'Missing login ticket');
-      }
-      return {
-        success: true,
-        state: await acceptLoginOutcome(
-          await client.selectAccount(pendingLoginTicket, action.accountId),
-          actionLoginFlowEpoch,
-        ),
-      };
-    }
-
-    if (action.type === 'request-sso-verification-code') {
-      if (!pendingSsoVerificationTicket || loginFlowState?.step !== 'sso-verification') {
-        throw new AuthApiError(
-          'INVALID_SSO_VERIFICATION_TICKET',
-          401,
-          'Missing SSO verification ticket',
-        );
-      }
-      await client.requestSsoVerificationCode(pendingSsoVerificationTicket);
-      assertLoginFlowCurrent(actionLoginFlowEpoch);
-      loginFlowState = reduceAuthFlow(loginFlowState, {
-        type: 'sso-verification-code-requested',
-        channel: loginFlowState.channel,
-        targetMasked: loginFlowState.targetMasked,
-      });
-      return { success: true, state: loginFlowState };
-    }
-
-    if (action.type === 'verify-sso-verification') {
-      if (!pendingSsoVerificationTicket || loginFlowState?.step !== 'sso-verification') {
-        throw new AuthApiError(
-          'INVALID_SSO_VERIFICATION_TICKET',
-          401,
-          'Missing SSO verification ticket',
-        );
-      }
-      return {
-        success: true,
-        state: await acceptLoginOutcome(
-          await client.verifySsoVerification(pendingSsoVerificationTicket, action.code),
-          actionLoginFlowEpoch,
-        ),
-      };
-    }
-
-    if (action.type === 'request-binding-code') {
-      if (!pendingBindTicket || loginFlowState?.step !== 'binding') {
-        throw new AuthApiError('INVALID_BIND_TICKET', 401, 'Missing binding ticket');
-      }
-      await client.requestBindingCode(pendingBindTicket, loginFlowState.bindType, action.contact);
-      assertLoginFlowCurrent(actionLoginFlowEpoch);
-      loginFlowState = reduceAuthFlow(loginFlowState, {
-        type: 'binding-code-requested',
-        bindType: loginFlowState.bindType,
-        contact: action.contact,
-      });
-      return { success: true, state: loginFlowState };
-    }
-
-    if (!pendingBindTicket || loginFlowState?.step !== 'binding') {
-      throw new AuthApiError('INVALID_BIND_TICKET', 401, 'Missing binding ticket');
-    }
-    return {
-      success: true,
-      state: await acceptLoginOutcome(
-        await client.verifyBinding(
-          pendingBindTicket,
-          loginFlowState.bindType,
-          action.contact,
-          action.code,
-        ),
-        actionLoginFlowEpoch,
-      ),
-    };
-  } catch (error) {
-    if (loginFlowEpoch !== actionLoginFlowEpoch) {
-      return { success: false, code: 'AUTH_FLOW_SUPERSEDED', state: loginFlowState };
-    }
-    const code = error instanceof AuthApiError ? error.code : 'AUTH_REQUEST_FAILED';
-    const status = error instanceof AuthApiError ? error.statusCode : 0;
-    log.warn(`login action failed action=${action.type} status=${status} code=${code}`);
-    const flowCannotRetry = [
-      'INVALID_LOGIN_TICKET',
-      'INVALID_BIND_TICKET',
-      'INVALID_SSO_VERIFICATION_TICKET',
-      'INVALID_AUTH_CODE',
-      'INVALID_TOKEN',
-      'TOKEN_EXPIRED',
-      'USER_CANCELLED',
-    ].includes(code);
-    if (flowCannotRetry) {
-      pendingPersonalLogin = null;
-      handledLoginEmail = null;
-      pendingAccountToken = null;
-      pendingLoginTicket = null;
-      pendingBindTicket = null;
-      pendingSsoVerificationTicket = null;
-      pendingAuthRealm = null;
-    }
-    // Storage failures need recovery guidance, not another verification-code
-    // submission. Preserve private tickets and saved credentials; only change
-    // the presentation. Ordinary validation/network failures keep their form.
-    const errorState = loginPreparingErrorState(
-      code,
-      error instanceof AuthApiError ? error.retryAt : undefined,
-    );
-    loginFlowState =
-      flowCannotRetry || code === 'CREDENTIAL_STORE_UNAVAILABLE'
-        ? errorState
-        : (stateBeforeAction ?? errorState);
-    return {
-      success: false,
-      code,
-      state: loginFlowState,
-      ...(errorState.retryAt !== undefined ? { retryAt: errorState.retryAt } : {}),
-    };
-  }
-}
-
-export async function dispatchLoginAction(action: unknown): Promise<DesktopLoginActionResult> {
-  const dispatchLoginFlowEpoch = loginFlowEpoch;
-  // Terminal logout clears credentials synchronously, then tears down the old
-  // account boundary in the background so the rejecting request can unwind.
-  // Do not let a fast re-login open a new account DB that the old teardown
-  // would subsequently close.
-  if (sessionInvalidationPromise) await sessionInvalidationPromise;
-  if (loginFlowEpoch !== dispatchLoginFlowEpoch) {
-    return { success: false, code: 'AUTH_FLOW_SUPERSEDED', state: loginFlowState };
-  }
-  const parsedAction = parseDesktopLoginAction(action);
-  if (!parsedAction) {
-    return { success: false, code: 'INVALID_AUTH_ACTION', state: loginFlowState };
-  }
-  if (parsedAction.type === 'back') {
-    // Navigation must not wait for the provider request it is abandoning.
-    // Keep an accepted credential commit atomic, just like cancelAddAccountLogin.
-    if (isLoginFlowCommitSealed(loginFlowEpoch)) {
-      return { success: false, code: 'LOGIN_BUSY', state: loginFlowState };
-    }
-    stopColdStartRecovery();
-    if (!accessToken && credentialStoreHealth.unavailable) return getLoginState();
-    const providers = providerConfig;
-    loginFlowEpoch += 1;
-    browserAuthorizationSlot.cancelActive();
-    resetLoginFlowState();
-    if (providers) {
-      providerConfig = providers;
-      loginFlowState = reduceAuthFlow(null, { type: 'providers-loaded', providers });
-      return { success: true, state: loginFlowState };
-    }
-    return { success: true, state: { step: 'entry' } };
-  }
-  if (parsedAction.type === 'cancel-browser') {
-    const pendingAction = loginActionPromiseEpoch === loginFlowEpoch ? loginActionPromise : null;
-    const cancelled = browserAuthorizationSlot.cancelActive();
-    if (!cancelled && !pendingAction) {
-      return { success: false, code: 'NO_BROWSER_AUTH_IN_PROGRESS', state: loginFlowState };
-    }
-    const settled = pendingAction ? await pendingAction : null;
-    const state = settled?.state ?? loginFlowState ?? (await loadLoginProviders());
-    return { success: true, state };
-  }
-  if (loginActionPromise && loginActionPromiseEpoch === loginFlowEpoch) {
-    return { success: false, code: 'LOGIN_BUSY', state: loginFlowState };
-  }
-  const run = runLoginAction(parsedAction);
-  loginActionPromise = run;
-  loginActionPromiseEpoch = loginFlowEpoch;
-  try {
-    return await run;
-  } finally {
-    if (loginActionPromise === run) {
-      loginActionPromise = null;
-      loginActionPromiseEpoch = null;
-    }
   }
 }
 
@@ -6392,234 +4426,6 @@ export async function refresh(options?: { serverRejectedToken?: boolean }): Prom
   }
 }
 
-function isUnavailableSavedAccountError(error: unknown): boolean {
-  return (
-    error instanceof AuthApiError &&
-    (isDefinitiveRefreshError(error) ||
-      ['ACCOUNT_NOT_FOUND', 'ACCOUNT_REAUTH_REQUIRED', 'REGION_MISMATCH'].includes(error.code))
-  );
-}
-
-function isRetryableSavedAccountSwitchError(error: unknown): boolean {
-  if (!(error instanceof AuthApiError)) return false;
-  if (error.code === 'CREDENTIAL_STORE_UNAVAILABLE' || error.code === 'AUTH_FLOW_SUPERSEDED') {
-    return false;
-  }
-  return (
-    error.statusCode >= 500 ||
-    error.statusCode === 429 ||
-    [
-      'NETWORK_ERROR',
-      'REQUEST_TIMEOUT',
-      'INVALID_RESPONSE',
-      'ORG_REALM_UNAVAILABLE',
-      'RATE_LIMITED',
-    ].includes(error.code)
-  );
-}
-
-function revokeLoggedOutAccountBestEffort(input: {
-  accessToken: string | null;
-  authBaseUrl: string;
-  passport: StoredPassportSession | null;
-}): void {
-  void (async () => {
-    if (input.accessToken) {
-      apiFetch('/api/auth/logout', {
-        method: 'POST',
-        body: { deviceId },
-        token: input.accessToken,
-        baseUrl: input.authBaseUrl,
-      }).catch(() => {});
-    }
-    if (input.passport) {
-      try {
-        await loadClientEndpointsForRealm(input.passport.realm);
-        const client = createAuthClient(input.passport.realm);
-        const pair = await client.refreshAccount(input.passport.accountRefreshToken);
-        await client.logoutAccount(pair.accountToken);
-      } catch {
-        // Logout is local-first. Offline/expired remote sessions age out normally.
-      }
-    }
-  })();
-}
-
-export async function logout(): Promise<void> {
-  if (isPassiveSharedUserDataInstance()) {
-    throw new AuthApiError(
-      'PASSIVE_AUTH_MUTATION_BLOCKED',
-      409,
-      'This shared-data instance cannot log out the current account',
-    );
-  }
-  const currentAccessToken = accessToken;
-  const currentAuthRealm = activeAuthRealm;
-  const currentAuthBaseUrl = authServerUrl(currentAuthRealm);
-  const activeUser = currentUser;
-  if (!activeUser) {
-    throw new AuthApiError('UNAUTHENTICATED', 401, 'No current account to log out');
-  }
-  stopColdStartRecovery();
-  const logoutAuthEpoch = authStateEpoch;
-  const isLogoutStillCurrent = (expectedAuthEpoch = logoutAuthEpoch): boolean =>
-    authStateEpoch === expectedAuthEpoch &&
-    currentUser?.id === activeUser.id &&
-    activeAuthRealm === currentAuthRealm;
-  const assertLogoutStillCurrent = (expectedAuthEpoch = logoutAuthEpoch): void => {
-    if (isLogoutStillCurrent(expectedAuthEpoch)) return;
-    throw new AuthApiError(
-      'AUTH_FLOW_SUPERSEDED',
-      409,
-      'Logout was superseded by a newer auth action',
-    );
-  };
-  const assertLogoutTransitionStillCurrent = (expectedAuthEpoch: number): void => {
-    if (authStateEpoch === expectedAuthEpoch) return;
-    throw new AuthApiError(
-      'AUTH_FLOW_SUPERSEDED',
-      409,
-      'Logout was superseded by a newer auth action',
-    );
-  };
-
-  let savedVault: AuthAccountVault;
-  let savedVaultWasUnreadable = false;
-  let savedVaultHasUnreadableLogoutTombstones = false;
-  try {
-    savedVault = readAuthAccountVault();
-  } catch (error) {
-    if (!(error instanceof AuthApiError && error.code === 'CREDENTIAL_STORE_UNAVAILABLE')) {
-      throw error;
-    }
-    try {
-      // A damaged tombstone must not make logout discard an otherwise readable
-      // aggregate vault. The explicit action below replaces that tombstone
-      // while retaining every other saved account.
-      savedVault = readAuthAccountVault({ allowUnreadableLogoutTombstones: true });
-      savedVaultHasUnreadableLogoutTombstones = true;
-    } catch {
-      // The active in-memory session is still authoritative for this explicit
-      // user action. Replace an unreadable vault with a fresh fail-closed record
-      // below instead of making logout depend on decrypting stale saved accounts.
-      savedVault = emptyAuthAccountVault();
-      savedVaultWasUnreadable = true;
-    }
-  }
-  const currentAccountKey = accountVaultKey(currentAuthRealm, activeUser.id);
-  const currentIdentity: LoggedOutAccountIdentity = {
-    accountKey: currentAccountKey,
-    realm: currentAuthRealm,
-    passportId:
-      activeUser.passportId || savedVault.resources[currentAccountKey]?.metadata.passportId || '',
-  };
-  const candidateAccountKeys = savedVaultHasUnreadableLogoutTombstones
-    ? []
-    : savedAccountSummaries(savedVault, currentAccountKey)
-        .filter((account) => account.accountKey !== currentAccountKey)
-        .map((account) => account.accountKey);
-  let removedPassport: StoredPassportSession | null = null;
-
-  for (const candidateAccountKey of candidateAccountKeys) {
-    assertLogoutStillCurrent();
-    let candidateRemovedPassport: StoredPassportSession | null = null;
-    let candidateTransitionEpoch: number | null = null;
-    try {
-      await switchSavedAccount(candidateAccountKey, {
-        accountToLogOut: currentIdentity,
-        onLoggedOutPassportRemoved: (session) => {
-          candidateRemovedPassport = session;
-        },
-        validateBeforeCommit: (loginEpoch) => {
-          assertLogoutStillCurrent(loginEpoch);
-          candidateTransitionEpoch = loginEpoch;
-        },
-      });
-      if (candidateTransitionEpoch === null) {
-        throw new AuthApiError(
-          'AUTH_FLOW_SUPERSEDED',
-          409,
-          'Logout was superseded by a newer auth action',
-        );
-      }
-      assertLogoutTransitionStillCurrent(candidateTransitionEpoch);
-      removedPassport = candidateRemovedPassport;
-      revokeLoggedOutAccountBestEffort({
-        accessToken: currentAccessToken,
-        authBaseUrl: currentAuthBaseUrl,
-        passport: removedPassport,
-      });
-      return;
-    } catch (error) {
-      if (isUnavailableSavedAccountError(error)) continue;
-      if (isRetryableSavedAccountSwitchError(error)) continue;
-      throw error;
-    }
-  }
-
-  // A concurrent renderer may have completed an account switch while the
-  // candidate refreshes above were in flight. Never let this stale logout
-  // continue into the terminal local-sign-out path and clear the new owner.
-  assertLogoutStillCurrent();
-
-  if (savedVaultWasUnreadable) {
-    // The aggregate vault may contain other accounts whose ciphertext is still
-    // recoverable later. Never replace that opaque payload with an empty vault;
-    // persist only the independent tombstone and then clear local sessions.
-    await persistLogoutTombstoneOnly(currentIdentity.accountKey);
-  } else {
-    await mutateAuthAccountVault(
-      (vault) => {
-        assertLogoutStillCurrent();
-        removedPassport = removeLoggedOutVaultAccount(vault, currentIdentity);
-        // Commit the signed-out owner before clearing compatibility records. If the
-        // process stops between the writes, cold start must not restore this account.
-        vault.signedOutAt = Date.now();
-      },
-      {
-        allowUnreadableLogoutTombstones: savedVaultHasUnreadableLogoutTombstones,
-        replaceUnreadableLogoutTombstones: savedVaultHasUnreadableLogoutTombstones,
-      },
-    );
-  }
-  assertLogoutStillCurrent();
-  removeSafe(AUTH_SESSION_KEY);
-  removeSafe(LEGACY_RESOURCE_REFRESH_TOKEN_KEY);
-  removeSafe(LEGACY_ACCOUNT_REFRESH_TOKEN_KEY);
-  removeSafe(LEGACY_REFRESH_TOKEN_KEY);
-  // The shared projection state machine owns the full teardown and only then
-  // publishes the signed-out owner. The bootstrap IPC handler must not wrap a
-  // second independent boundary around this transition.
-  // Ordinary logout abandons an unconfirmed challenge. Confirmed deletion uses
-  // clearLocalSessionAfterAccountDeletion() and intentionally preserves receipt.
-  //
-  // receipt 也是整机一份:primary 发起账号删除挑战后,passive 一次本地登出就会删掉
-  // 它,primary 随后 confirmAccountDeletion() 直接 ACCOUNT_DELETION_RECEIPT_MISSING。
-  // 闸门只加在这条隐式路径上——renderer 主动调的显式清理仍照常生效(见
-  // clearAccountDeletionReceipt 的注释)。
-  clearAccountDeletionReceipt();
-  let localTransitionError: unknown = null;
-  try {
-    await withAccountFreeOwnerCommit({
-      reason: 'logout',
-      nextMode: 'signed-out',
-      clearOnFailure: true,
-      preservePersistedRefreshToken: true,
-      validateBeforeCommit: isLogoutStillCurrent,
-      shouldClearOnFailure: isLogoutStillCurrent,
-    });
-  } catch (error) {
-    localTransitionError = error;
-  }
-
-  revokeLoggedOutAccountBestEffort({
-    accessToken: currentAccessToken,
-    authBaseUrl: currentAuthBaseUrl,
-    passport: removedPassport,
-  });
-  if (localTransitionError) throw localTransitionError;
-}
-
 /**
  * Called on system resume (powerMonitor 'resume' event).
  * If the app JWT is expired or expiring within 5 minutes, trigger a refresh.
@@ -6638,7 +4444,6 @@ export function handleResume(): void {
 
 export function dispose(): void {
   stopColdStartRecovery();
-  browserAuthorizationSlot.cancelActive();
   if (refreshTimer !== null) {
     clearTimeout(refreshTimer);
     refreshTimer = null;

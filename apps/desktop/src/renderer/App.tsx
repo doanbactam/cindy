@@ -192,14 +192,14 @@ function syncNewMakerPrefs(appDefaultModelRequestId?: string) {
 }
 
 function MakerBootstrap() {
-  const { isAuthenticated, dataOwnerId, dataOwnerRecoveryEpoch } = useAuth();
+  const { isAuthenticated, dataOwnerId } = useAuth();
 
   useResyncAgentIslandSettingsAfterLogin(isAuthenticated);
 
   useEffect(() => {
-    setPromptRecommendationOwner(`${dataOwnerId ?? 'signed-out'}:${dataOwnerRecoveryEpoch}`);
+    setPromptRecommendationOwner(dataOwnerId ?? 'signed-out');
     initializePromptRecommendationStore();
-  }, [dataOwnerId, dataOwnerRecoveryEpoch]);
+  }, [dataOwnerId]);
 
   useEffect(() => {
     const stopCatalogRecovery = startLocalCatalogRecovery();
@@ -222,7 +222,7 @@ function MakerBootstrap() {
   // 保证 provider 快照与 capabilities 不会沿用或提交前一个 owner 的在途结果。
   useEffect(() => {
     void preloadLocalCatalogSnapshot();
-  }, [dataOwnerId, dataOwnerRecoveryEpoch]);
+  }, [dataOwnerId]);
   // Early fire-and-forget sends can precede maker IPC registration. Repeat after
   // the ready/owner boundary and after every owner generation change (same-owner
   // repairs included, #4469), using the same persisted preference snapshot.
@@ -231,8 +231,8 @@ function MakerBootstrap() {
 }
 
 function OwnerScopedRouter() {
-  const { dataOwnerId, dataOwnerRecoveryEpoch } = useAuth();
-  const ownerKey = `${dataOwnerId ?? 'signed-out'}:${dataOwnerRecoveryEpoch}`;
+  const { dataOwnerId } = useAuth();
+  const ownerKey = dataOwnerId ?? 'signed-out';
   return (
     <MainViewHistoryProvider ownerKey={ownerKey} locationKey={router.state.location.key}>
       <RouterProvider key={ownerKey} router={router} />

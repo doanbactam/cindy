@@ -5,14 +5,8 @@ import React from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const signInMock = vi.fn();
-
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock('@/hooks/useSignInToCindy', () => ({
-  useSignInToCindy: () => signInMock,
 }));
 
 import { HomeZeroModelAction } from '../HomeZeroModelAction';
@@ -43,14 +37,13 @@ function renderCard(authMode: 'signed-out' | 'local' | 'cloud') {
 
 afterEach(() => {
   cleanup();
-  signInMock.mockReset();
 });
 
 describe('HomeZeroModelAction', () => {
-  it('signed-out: login copy and CTA calls sign-in', () => {
-    renderCard('signed-out');
-    expect(screen.getByText('onboarding.homeZeroModel.title')).toBeTruthy();
-    expect(screen.queryByText('onboarding.connectProvider.title')).toBeNull();
+  it('local: connect-provider copy and CTA opens the provider wizard', () => {
+    renderCard('local');
+    expect(screen.getByText('onboarding.connectProvider.title')).toBeTruthy();
+    expect(screen.queryByText('onboarding.homeZeroModel.title')).toBeNull();
     expect(screen.getByTestId('home-zero-model-cta').className).toContain(
       '[--button-face-bg:var(--accent-cta-bg-pure)]',
     );
@@ -59,13 +52,12 @@ describe('HomeZeroModelAction', () => {
     );
     expect(screen.getByTestId('home-zero-model-cta').className).not.toContain('send-btn-fg');
     fireEvent.click(screen.getByTestId('home-zero-model-cta'));
-    expect(signInMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('loc').textContent).toBe('/settings?tab=providers&wizard=1');
   });
 
   it('cloud: opens Cindy AI provider connect, not the provider list', () => {
     renderCard('cloud');
     fireEvent.click(screen.getByTestId('home-zero-model-cta'));
-    expect(signInMock).not.toHaveBeenCalled();
     expect(screen.getByTestId('loc').textContent).toBe('/settings?tab=providers&connect=xd');
   });
 

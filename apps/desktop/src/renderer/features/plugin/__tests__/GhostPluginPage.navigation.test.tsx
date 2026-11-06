@@ -146,7 +146,7 @@ beforeEach(() => {
 it('opens a shared package before the selected remote plugin catalogue', async () => {
   catalog.device = { deviceId: 'remote-computer', name: 'Remote Computer' };
   render(<MemoryRouter initialEntries={['/plugins?share=' + 's'.repeat(32)]}><GhostPluginPage /></MemoryRouter>);
-  expect(await screen.findByRole('button', { name: 'sharing.localSignIn' })).toBeTruthy();
+  expect(await screen.findByText('sharing.localOpenHint')).toBeTruthy();
   expect(loadDetail).not.toHaveBeenCalled();
 });
 

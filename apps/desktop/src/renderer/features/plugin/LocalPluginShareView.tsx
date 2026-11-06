@@ -8,7 +8,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getDataOwnerGeneration, isDataOwnerGenerationCurrent } from '@/contexts/dataOwnerGeneration';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog-provider';
 import { GhostInstallConsentContent, ghostInstallConsentSourceLabel } from '@/cindy-brain/GhostInstallConsentHost';
-import { useSignInToCindy } from '@/hooks/useSignInToCindy';
 import { extractIpcError } from '@/utils/ipcError';
 import type { InstalledGhost } from '../../../shared/ghost';
 import type { PluginManagementReceipt } from '../../../shared/pluginManagement';
@@ -25,7 +24,6 @@ export function LocalPluginShareView({ snapshotId, onBack, onInstalled, deviceCo
 }) {
   const { t } = useTranslation();
   const { isAuthenticated, dataOwnerId, dataOwnerGeneration } = useAuth();
-  const signIn = useSignInToCindy(`/plugins?share=${encodeURIComponent(snapshotId)}`);
   const { scrolled, onScroll } = usePluginDetailScrolled();
   const [snapshot, setSnapshot] = useState<LocalPluginShareSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +60,6 @@ export function LocalPluginShareView({ snapshotId, onBack, onInstalled, deviceCo
     <article className="plugin-detail-frame mx-auto w-full max-w-[824px] px-6 pb-16 pt-5">
       {!isAuthenticated ? <div className="space-y-4 text-14 text-[var(--text-secondary)]">
         <p>{t('sharing.localOpenHint')}</p>
-        <Button variant="cta" onClick={() => void signIn()}>{t('sharing.localSignIn')}</Button>
       </div> : snapshot ? <>
         <header className="flex flex-wrap items-center gap-4">
           <GhostPluginIcon iconDataUrl={snapshot.icon ?? undefined} iconId={snapshot.ghostId} iconName={snapshot.name} size="detail" />

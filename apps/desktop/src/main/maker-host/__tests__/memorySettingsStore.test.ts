@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import { LOCAL_DATA_OWNER_ID, dataOwnerStorageKey } from '../../appSessionState.js';
+
 let userDataDir = '';
 
 vi.mock('electron', () => ({
@@ -13,6 +15,13 @@ vi.mock('electron', () => ({
     },
   },
 }));
+
+/** The app always runs in the account-free local session, so settings live under its owner root. */
+function settingsFile(): string {
+  const dir = path.join(userDataDir, 'owners', dataOwnerStorageKey(LOCAL_DATA_OWNER_ID));
+  fs.mkdirSync(dir, { recursive: true });
+  return path.join(dir, 'memory-settings.json');
+}
 
 describe('memory-settings-store', () => {
   beforeEach(() => {
@@ -47,7 +56,7 @@ describe('memory-settings-store', () => {
 
   it('does not overwrite an existing maker override during legacy migration', async () => {
     fs.writeFileSync(
-      path.join(userDataDir, 'memory-settings.json'),
+      settingsFile(),
       JSON.stringify({ maker: true }),
       'utf-8',
     );
@@ -58,7 +67,7 @@ describe('memory-settings-store', () => {
 
   it('keeps native opt-outs independent when the legacy renderer marker is absent', async () => {
     fs.writeFileSync(
-      path.join(userDataDir, 'memory-settings.json'),
+      settingsFile(),
       JSON.stringify({ claudeCode: false, codex: false }),
       'utf-8',
     );
@@ -75,7 +84,7 @@ describe('memory-settings-store', () => {
 
   it('keeps a single native opt-out independent when the legacy renderer marker is absent', async () => {
     fs.writeFileSync(
-      path.join(userDataDir, 'memory-settings.json'),
+      settingsFile(),
       JSON.stringify({ claudeCode: false }),
       'utf-8',
     );
@@ -92,7 +101,7 @@ describe('memory-settings-store', () => {
 
   it('does not treat native memories as legacy opt-out after Maker was enabled', async () => {
     fs.writeFileSync(
-      path.join(userDataDir, 'memory-settings.json'),
+      settingsFile(),
       JSON.stringify({ claudeCode: false, codex: false }),
       'utf-8',
     );
@@ -114,7 +123,7 @@ describe('memory-settings-store', () => {
       value: { maker: true, claudeCode: true, codex: true, pi: true },
       customizedKeys: ['maker'],
     });
-    expect(JSON.parse(fs.readFileSync(path.join(userDataDir, 'memory-settings.json'), 'utf8'))).toEqual({
+    expect(JSON.parse(fs.readFileSync(settingsFile(), 'utf8'))).toEqual({
       maker: true,
     });
   });
@@ -129,14 +138,14 @@ describe('memory-settings-store', () => {
     const restored = writeMemorySetting('maker', true);
     expect(restored.isCustomized).toBe(false);
     expect(restored.customizedKeys).toEqual([]);
-    expect(fs.existsSync(path.join(userDataDir, 'memory-settings.json'))).toBe(false);
+    expect(fs.existsSync(settingsFile())).toBe(false);
   });
 
   it('persists the Pi auto-memory override independently', async () => {
     const { readMemorySettings, writeMemorySetting } = await import('../memory-settings-store.js');
     expect(writeMemorySetting('pi', false).value.pi).toBe(false);
     expect(readMemorySettings().pi).toBe(false);
-    expect(JSON.parse(fs.readFileSync(path.join(userDataDir, 'memory-settings.json'), 'utf8')))
+    expect(JSON.parse(fs.readFileSync(settingsFile(), 'utf8')))
       .toEqual({ pi: false });
   });
 });

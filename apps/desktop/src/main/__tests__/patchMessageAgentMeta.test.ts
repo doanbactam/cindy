@@ -166,6 +166,7 @@ describe('patchMessageAgentMeta', () => {
           agentMeta: expect.objectContaining({ turnCompleted: true }),
         }),
       }),
+      { dataOwnerId: 'local-v1', ownerGeneration: 0 },
     );
   });
 });

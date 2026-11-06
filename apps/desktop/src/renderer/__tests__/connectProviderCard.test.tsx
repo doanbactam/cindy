@@ -2,9 +2,9 @@
 
 /**
  * ConnectProviderCard — 零可用模型首屏引导卡关键不变量:
- *   1. 零已连接来源 → 渲染:Cindy AI 推荐行置顶 + 内置 OAuth 行(目录序);
+ *   1. 零已连接来源 → 渲染:内置 OAuth 行(目录序),没有 Cindy AI 推荐行;
  *      任一来源已连接 / loading 中 → 渲染 null,且连接后自动清 dismiss key。
- *   2. local(跳过登录)模式 → 推荐行变「登录 Cindy」,点击落 /login。
+ *   2. Cindy 账号登录已移除:local 模式不出现「登录 Cindy」行。
  *   3. 点 OAuth 行落 /settings?tab=providers&connect=<id>;「我有 API key」落 wizard=1;
  *      「其他供应商」展开后点预设行落 connect=<presetId>。
  *   4. dismiss → 卡片消失且 localStorage key 写入(与 banner 共享)。
@@ -17,13 +17,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ProviderView } from '@cindy/model-providers';
 
-const { providersState, authState, regionState, detectState, exitLocalModeMock } = vi.hoisted(
+const { providersState, authState, regionState, detectState } = vi.hoisted(
   () => ({
     providersState: { providers: [] as unknown[], loading: false },
     authState: { mode: 'cloud' as string },
     regionState: { value: 'global' as string },
     detectState: { detections: [] as unknown[] },
-    exitLocalModeMock: vi.fn(async () => undefined),
   }),
 );
 
@@ -43,7 +42,7 @@ vi.mock('@/hooks/useProviders', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ ...authState, exitLocalMode: exitLocalModeMock }),
+  useAuth: () => authState,
 }));
 
 vi.mock('@/lib/providerModels', () => ({
@@ -155,12 +154,11 @@ afterEach(() => {
 });
 
 describe('ConnectProviderCard', () => {
-  it('global 区零连接 → 推荐行(Cindy AI)+ 三条 OAuth 主列;点 Anthropic 落 connect=anthropic', async () => {
+  it('global 区零连接 → 三条 OAuth 主列,无 Cindy AI 推荐行;点 Anthropic 落 connect=anthropic', async () => {
     await renderCardSettled();
 
     expect(screen.getByTestId('connect-provider-card')).not.toBeNull();
-    expect(screen.getByText('Cindy AI')).not.toBeNull();
-    expect(screen.getByText('onboarding.connectProvider.recommendedLabel')).not.toBeNull();
+    expect(screen.queryByText('Cindy AI')).toBeNull();
     expect(screen.getByText('Anthropic')).not.toBeNull();
     expect(screen.getByText('OpenAI')).not.toBeNull();
     expect(screen.getByText('xAI')).not.toBeNull();
@@ -189,11 +187,11 @@ describe('ConnectProviderCard', () => {
       'onboarding.connectProvider.detectedLabel',
     );
 
-    // 检测行在推荐行(Cindy AI)之前。
+    // 检测行在普通 OAuth 行之前。
     const card = screen.getByTestId('connect-provider-card');
     const labels = Array.from(card.querySelectorAll('button')).map((b) => b.textContent ?? '');
     expect(labels.findIndex((x) => x.includes('Anthropic'))).toBeLessThan(
-      labels.findIndex((x) => x.includes('Cindy AI')),
+      labels.findIndex((x) => x.includes('OpenAI')),
     );
 
     fireEvent.click(screen.getByText('Anthropic').closest('button')!);
@@ -227,27 +225,10 @@ describe('ConnectProviderCard', () => {
     expect(screen.getByText('DeepSeek')).not.toBeNull();
   });
 
-  it('cloud 模式点推荐行 → connect=xd;「我有 API key」→ wizard=1', async () => {
-    await renderCardSettled();
-
-    fireEvent.click(screen.getByText('Cindy AI').closest('button')!);
-    expect(screen.getByTestId('location').textContent).toBe('/settings?tab=providers&connect=xd');
-
-    cleanup();
+  it('「我有 API key」→ wizard=1', async () => {
     await renderCardSettled();
     fireEvent.click(screen.getByText('onboarding.connectProvider.haveApiKey').closest('button')!);
     expect(screen.getByTestId('location').textContent).toBe('/settings?tab=providers&wizard=1');
-  });
-
-  it('local(跳过登录)模式 → 推荐行为「登录 Cindy」,点击落 /login', async () => {
-    authState.mode = 'local';
-    await renderCardSettled();
-
-    const loginRow = screen.getByText('onboarding.connectProvider.cindy.loginTitle');
-    fireEvent.click(loginRow.closest('button')!);
-    // local 模式登录必须先 exitLocalMode(GuestRoute 对 local 一律弹回首页)再进 /login。
-    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/login'));
-    expect(exitLocalModeMock).toHaveBeenCalledTimes(1);
   });
 
   it('「其他供应商」懒加载预设,展开后点预设行落 connect=<presetId>', async () => {

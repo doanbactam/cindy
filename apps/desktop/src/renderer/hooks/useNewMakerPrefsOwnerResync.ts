@@ -8,8 +8,8 @@ import { useAuth } from '@/contexts/AuthContext';
  *
  * Main keeps that mirror keyed by `mode:dataOwnerId:generation` and refuses a
  * push stamped with any other generation. A same-owner repair (Ghost projection
- * recovery) bumps the generation without changing `dataOwnerId` or the recovery
- * epoch, so nothing used to re-push: the mirror stayed fenced on the old scope,
+ * recovery) bumps the generation without changing `dataOwnerId`,
+ * so nothing used to re-push: the mirror stayed fenced on the old scope,
  * Bots that follow the app default read no preferred route, and every send hit
  * "请先选择已开启的伙伴模型" until the user touched the model picker (#4469).
  *
@@ -17,8 +17,8 @@ import { useAuth } from '@/contexts/AuthContext';
  * loaded, so a re-push never overwrites a configured mirror with an empty one.
  */
 export function useNewMakerPrefsOwnerResync(sync: () => void): void {
-  const { dataOwnerId, dataOwnerRecoveryEpoch, dataOwnerGeneration } = useAuth();
+  const { dataOwnerId, dataOwnerGeneration } = useAuth();
   useEffect(() => {
     sync();
-  }, [sync, dataOwnerId, dataOwnerRecoveryEpoch, dataOwnerGeneration]);
+  }, [sync, dataOwnerId, dataOwnerGeneration]);
 }

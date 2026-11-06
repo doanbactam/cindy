@@ -9,26 +9,15 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AuthApiError } from '@cindy/auth-client';
 
 import {
-  LOGIN_PREPARING_GATE_TIMEOUT_MS,
-  awaitLoginProvidersWithPreparingGate,
   awaitWithStartupTimeout,
   ColdStartAuthFallbackRegistry,
   commitColdStartRefreshIfCurrent,
   resolveColdStartTimeoutRecovery,
-  mapLoginProvidersLoadFailure,
 } from '../authStartupGate';
 
 describe('awaitWithStartupTimeout', () => {
-  it('preserves rate-limit deadlines during provider discovery', () => {
-    expect(
-      mapLoginProvidersLoadFailure(
-        new AuthApiError('RATE_LIMITED', 429, 'limited', 1_800_000_000_000),
-      ),
-    ).toMatchObject({ code: 'RATE_LIMITED', retryAt: 1_800_000_000_000 });
-  });
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -193,8 +182,6 @@ describe('ColdStartAuthFallbackRegistry', () => {
     const result = await resolveColdStartTimeoutRecovery({
       ownerTransitionPending: true,
       authChangedSinceInitialize: false,
-      loginCommitPending: false,
-      loginCommittedSinceInitialize: false,
       isStartupFallbackEpoch: () => false,
       timeoutStartEpoch: 7,
       currentEpoch: 7,
@@ -214,8 +201,6 @@ describe('ColdStartAuthFallbackRegistry', () => {
     await expect(resolveColdStartTimeoutRecovery({
       ownerTransitionPending: false,
       authChangedSinceInitialize: false,
-      loginCommitPending: false,
-      loginCommittedSinceInitialize: false,
       isStartupFallbackEpoch: () => false,
       timeoutStartEpoch: 7,
       currentEpoch: 7,
@@ -226,24 +211,6 @@ describe('ColdStartAuthFallbackRegistry', () => {
     expect(recover).toHaveBeenCalledOnce();
   });
 
-  it('returns a pending boundary while an explicit login transaction is committing', async () => {
-    const pendingState = { mode: 'signed-out', ownerBoundaryPending: true } as const;
-    const recover = vi.fn(async () => ({ mode: 'signed-out' as const }));
-    await expect(resolveColdStartTimeoutRecovery({
-      ownerTransitionPending: false,
-      authChangedSinceInitialize: false,
-      loginCommitPending: true,
-      loginCommittedSinceInitialize: false,
-      isStartupFallbackEpoch: () => false,
-      timeoutStartEpoch: 7,
-      currentEpoch: 8,
-      currentState: { mode: 'cloud', userId: 'login-committing' },
-      pendingState,
-      recover,
-    })).resolves.toEqual(pendingState);
-    expect(recover).not.toHaveBeenCalled();
-  });
-
   it('preserves an explicit login completed before a sibling startup timeout', async () => {
     const loggedInState = { mode: 'cloud', userId: 'new-owner' } as const;
     const recover = vi.fn(async () => ({ mode: 'signed-out' as const }));
@@ -251,8 +218,6 @@ describe('ColdStartAuthFallbackRegistry', () => {
     await expect(resolveColdStartTimeoutRecovery({
       ownerTransitionPending: false,
       authChangedSinceInitialize: false,
-      loginCommitPending: false,
-      loginCommittedSinceInitialize: false,
       isStartupFallbackEpoch: () => false,
       timeoutStartEpoch: 7,
       currentEpoch: 8,
@@ -276,35 +241,9 @@ describe('ColdStartAuthFallbackRegistry', () => {
     await expect(resolveColdStartTimeoutRecovery({
       ownerTransitionPending: false,
       authChangedSinceInitialize: authStateEpoch !== initializeStartEpoch,
-      loginCommitPending: false,
-      loginCommittedSinceInitialize: false,
       isStartupFallbackEpoch: () => false,
       timeoutStartEpoch: initializeStartEpoch,
       currentEpoch: authStateEpoch,
-      currentState: loggedInState,
-      pendingState: { mode: 'signed-out', ownerBoundaryPending: true },
-      recover,
-    })).resolves.toBe(loggedInState);
-
-    expect(recover).not.toHaveBeenCalled();
-  });
-
-  it('preserves a login whose commit settled after the sibling initialize entered', async () => {
-    // completeLogin increments authStateEpoch before awaiting the durable
-    // commit, so a sibling initialize entering inside that interval snapshots
-    // the in-progress epoch; when the commit finishes before the sibling timer
-    // fires, every epoch guard compares equal and recovery would clear the new
-    // login. Only the settled-login counter distinguishes this case.
-    const loggedInState = { mode: 'cloud', userId: 'new-owner' } as const;
-    const recover = vi.fn(async () => ({ mode: 'signed-out' as const }));
-    await expect(resolveColdStartTimeoutRecovery({
-      ownerTransitionPending: false,
-      authChangedSinceInitialize: false,
-      loginCommitPending: false,
-      loginCommittedSinceInitialize: true,
-      isStartupFallbackEpoch: () => false,
-      timeoutStartEpoch: 7,
-      currentEpoch: 7,
       currentState: loggedInState,
       pendingState: { mode: 'signed-out', ownerBoundaryPending: true },
       recover,
@@ -369,8 +308,6 @@ describe('ColdStartAuthFallbackRegistry', () => {
     await expect(resolveColdStartTimeoutRecovery({
       ownerTransitionPending: false,
       authChangedSinceInitialize: false,
-      loginCommitPending: false,
-      loginCommittedSinceInitialize: false,
       isStartupFallbackEpoch: (epoch) => registry.containsOnlyFallbacks(flowEpoch, epoch),
       timeoutStartEpoch: flowEpoch,
       currentEpoch,
@@ -381,8 +318,6 @@ describe('ColdStartAuthFallbackRegistry', () => {
     await expect(resolveColdStartTimeoutRecovery({
       ownerTransitionPending: false,
       authChangedSinceInitialize: false,
-      loginCommitPending: false,
-      loginCommittedSinceInitialize: false,
       isStartupFallbackEpoch: (epoch) => registry.containsOnlyFallbacks(flowEpoch, epoch),
       timeoutStartEpoch: flowEpoch,
       currentEpoch,
@@ -426,65 +361,5 @@ describe('ColdStartAuthFallbackRegistry', () => {
   it('accepts the unchanged generation without fallback records', () => {
     const registry = new ColdStartAuthFallbackRegistry();
     expect(registry.containsOnlyFallbacks(7, 7)).toBe(true);
-  });
-});
-
-describe('awaitLoginProvidersWithPreparingGate', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('stalled getProviders becomes retryable AUTH_SERVICE_UNAVAILABLE after 30s', async () => {
-    const hung = new Promise<string>(() => undefined);
-    const log = { info: vi.fn(), warn: vi.fn() };
-    const p = awaitLoginProvidersWithPreparingGate(hung, log);
-    const rejected = expect(p).rejects.toMatchObject({
-      name: 'AuthApiError',
-      code: 'AUTH_SERVICE_UNAVAILABLE',
-    });
-
-    await vi.advanceTimersByTimeAsync(LOGIN_PREPARING_GATE_TIMEOUT_MS - 1);
-    expect(log.warn).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
-    const error = await p.catch((err: unknown) => err);
-    await rejected;
-
-    expect(error).toBeInstanceOf(AuthApiError);
-    expect(mapLoginProvidersLoadFailure(error)).toEqual({
-      success: false,
-      code: 'AUTH_SERVICE_UNAVAILABLE',
-      state: { step: 'error', code: 'AUTH_SERVICE_UNAVAILABLE', recoverTo: 'identifier' },
-    });
-
-    const hungRetry = new Promise<string>(() => undefined);
-    const retry = awaitLoginProvidersWithPreparingGate(hungRetry, log);
-    const retryRejected = expect(retry).rejects.toMatchObject({
-      code: 'AUTH_SERVICE_UNAVAILABLE',
-    });
-    await vi.advanceTimersByTimeAsync(LOGIN_PREPARING_GATE_TIMEOUT_MS);
-    await retryRejected;
-  });
-
-  it('does not abort a late getProviders; only logs the late settle', async () => {
-    let resolveFlow!: (v: string) => void;
-    const flow = new Promise<string>((resolve) => {
-      resolveFlow = resolve;
-    });
-    const log = { info: vi.fn(), warn: vi.fn() };
-    const p = awaitLoginProvidersWithPreparingGate(flow, log);
-    const rejected = expect(p).rejects.toMatchObject({ code: 'AUTH_SERVICE_UNAVAILABLE' });
-    await vi.advanceTimersByTimeAsync(LOGIN_PREPARING_GATE_TIMEOUT_MS);
-    await rejected;
-
-    resolveFlow('late-providers');
-    await vi.advanceTimersByTimeAsync(0);
-    expect(log.info).toHaveBeenCalledWith('login providers settled after preparing gate timeout');
-    expect(log.warn).not.toHaveBeenCalledWith(
-      'login providers request failed after preparing gate timeout',
-      expect.anything(),
-    );
   });
 });

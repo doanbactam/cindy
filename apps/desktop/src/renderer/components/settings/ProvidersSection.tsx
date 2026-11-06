@@ -31,7 +31,6 @@ import { useTranslation } from 'react-i18next';
 import {
   Check,
   Copy,
-  Gift,
   GripVertical,
   KeyRound,
   LogOut,
@@ -58,7 +57,6 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tip } from '@/components/ui/tooltip';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog-provider';
-import { useSignInToCindy } from '@/hooks/useSignInToCindy';
 import { useProviderOAuthDeviceCode } from '@/hooks/useProviderOAuthDeviceCode';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/lib/toast';
@@ -117,7 +115,6 @@ import { SettingsTextInput } from './SettingsTextInput';
 import { buildUnionRows, UnifiedModelList } from './UnifiedModelList';
 import { AnthropicMark } from '@/components/icons/AnthropicMark';
 import { OpenAIMark } from '@/components/icons/OpenAIMark';
-import { CindyMark } from '@/components/icons/CindyMark';
 import { hasProviderLogo, ProviderLogoMark } from '@/components/icons/ProviderLogoMark';
 import { SortableList } from '@/components/sidebar/SortableList';
 import { ProviderShareEntryButton } from '@/features/provider-share/ProviderShareEntryButton';
@@ -2206,55 +2203,6 @@ function CustomProviderHeader({
 // 左栏列表
 // ---------------------------------------------------------------------------
 
-/**
- * Cindy AI 登录引导行:无账号会话(local/signed-out)的目录被
- * getDesktopSelectableCatalog 过滤掉 xd 供应商,设置页会完全丢失官方服务的
- * 发现/购买入口(2026-07-24 用户反馈)。此行在 xd 缺席时置顶出现,点击右栏
- * 展示登录引导;不触碰 main 的目录过滤(无账号确实不可路由 xd)。
- */
-const CINDY_SIGNIN_ID = 'xd-signin';
-
-function CindySigninRow({ selected, onSelect }: { selected: boolean; onSelect: () => void }) {
-  const { t } = useTranslation();
-  return (
-    <button data-settings-search-action="Select the provider whose details are displayed"
-      type="button"
-      onClick={onSelect}
-      aria-current={selected}
-      className={cn(
-        'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors',
-        selected
-          ? 'bg-[var(--settings-menu-bg-selected)]'
-          : 'hover:bg-[var(--settings-menu-bg-hover)]',
-      )}
-    >
-      <div
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-        style={{
-          backgroundColor: 'var(--settings-integration-avatar-bg)',
-          border: '1px solid var(--settings-integration-avatar-border)',
-          color: 'var(--settings-integration-avatar-icon)',
-        }}
-      >
-        <CindyMark size={14} />
-      </div>
-      <span
-        className="min-w-0 flex-1 truncate text-13 font-medium"
-        style={{ color: 'var(--settings-section-title)' }}
-      >
-        {t('settings.providers.xd.title')}
-      </span>
-      {/* 徽标不大写不加字距:224px 窄栏里 en「RECOMMENDED」会把行名挤成「Cin…」。 */}
-      <span
-        className="shrink-0 rounded-full border px-1.5 py-px text-10 font-medium"
-        style={{ borderColor: 'var(--border-default)', color: 'var(--text-tertiary)' }}
-      >
-        {t('settings.providers.xdSignin.badge')}
-      </span>
-    </button>
-  );
-}
-
 function ListRow({
   provider,
   selected,
@@ -2441,7 +2389,6 @@ function SuggestionRow({
 export function ProvidersSection() {
   const { t } = useTranslation();
   const reducedMotion = useReducedMotion();
-  const signInToCindy = useSignInToCindy();
   const { dataOwnerId } = useAuth();
   const { confirm } = useConfirmDialog();
   const confirmProviderChange = useProviderChangeConfirmation();
@@ -2708,7 +2655,6 @@ export function ProvidersSection() {
       if (reorderedVisibleIds.every((id, index) => id === currentIds[index])) return;
       if (ownerGeneration === null) return;
       if (
-        selectedId !== CINDY_SIGNIN_ID &&
         !listProviders.some((provider) => provider.id === selectedId) &&
         listProviders[0]
       ) {
@@ -2853,8 +2799,8 @@ export function ProvidersSection() {
           model ? { providerId: connect, modelId: model, ...(agent ? { agent } : {}) } : null,
         );
       } else if (connect === 'xd') {
-        // 无账号会话目录不含 xd → 落到登录引导行(不能当 preset 交给向导)。
-        selectProvider(CINDY_SIGNIN_ID);
+        // Cindy 账号登录已移除,目录里没有 xd:落到添加供应商向导(不能当 preset 交给向导)。
+        setWizard({});
       } else if (connect === MANAGED_OLLAMA_PROVIDER_ID) {
         setWizard({});
       } else if (target && target.source === 'builtin') {
@@ -2873,13 +2819,6 @@ export function ProvidersSection() {
     next.delete('import');
     setSearchParams(next, { replace: true });
   }, [loading, searchParams, setSearchParams, byId, listProviders, selectProvider]);
-
-  // Cindy AI 登录引导:无账号会话目录不含 xd(见 CindySigninRow 头注释),置顶
-  // 引导行;列表为空时默认选中它(右栏直接展示登录引导,不留「点击添加」空态)。
-  const showCindySignin = !byId.has('xd');
-  const cindySigninActive =
-    showCindySignin &&
-    (selectedId === CINDY_SIGNIN_ID || (selectedId == null && listProviders.length === 0));
 
   // 选中项:默认第一行;所选供应商被删除/消失时回退第一行(不留空详情)。
   const effectiveSelected = useMemo(() => {
@@ -3152,7 +3091,7 @@ export function ProvidersSection() {
       renderItem={(provider, index) => (
         <ListRow
           provider={provider}
-          selected={!otherDeviceSelected && !cindySigninActive && effectiveSelected?.id === provider.id}
+          selected={!otherDeviceSelected && effectiveSelected?.id === provider.id}
           reconnectRequired={
             (provider.id === 'openai' && openaiReconnectRequired) ||
             provider.openAiAccount?.reconnectRequired === true
@@ -3222,14 +3161,6 @@ export function ProvidersSection() {
             style={{ borderColor: 'var(--settings-theme-card-border)' }}
           >
             <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-2">
-              {showCindySignin && (
-                <CindySigninRow
-                  selected={cindySigninActive && !otherDeviceSelected}
-                  onSelect={() => {
-                    selectProvider(CINDY_SIGNIN_ID);
-                  }}
-                />
-              )}
               {(ordinaryLocalProviders.length > 1 || sharedLocalProviders.length > 1) && (
                 <div className="select-none px-1.5 pb-1 pt-1">
                   <span className="text-11" style={{ color: 'var(--text-tertiary)' }}>
@@ -3332,52 +3263,6 @@ export function ProvidersSection() {
                   setShareManageProviderId(selectedRemote.provider.id);
                 }}
               />
-            ) : cindySigninActive ? (
-              /* 登录引导是 brand-scale surface(DESIGN §3):48px 标识 → 24px 名字 →
-                 一行价值主张 → 赠送余额徽标 → 黑 CTA,间距走 8px 系统。底部留白比
-                 顶部多,视觉重心才落在上三分之一。 */
-              <div className="flex flex-1 flex-col items-center justify-center px-10 pb-14 pt-8 text-center">
-                <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-                  style={{
-                    backgroundColor: 'var(--settings-integration-avatar-bg)',
-                    border: '1px solid var(--settings-integration-avatar-border)',
-                    color: 'var(--settings-integration-avatar-icon)',
-                  }}
-                >
-                  <CindyMark size={24} />
-                </div>
-                <span
-                  className="mt-4 text-24 font-medium leading-[1.2]"
-                  style={{ color: 'var(--settings-section-title)' }}
-                >
-                  {t('settings.providers.xd.title')}
-                </span>
-                <span
-                  className="mt-3 max-w-[380px] text-14 leading-[1.5]"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  {t('settings.providers.xdSignin.desc')}
-                </span>
-                {/* 赠送余额是一个安静的事实标签,不是促销文案:灰阶 chip、不写金额
-                    (CN / Global 金额不同且服务端可调,数字只在计费页出现)。 */}
-                <span
-                  className="mt-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-12 font-medium"
-                  style={{
-                    backgroundColor: 'var(--surface-chip)',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  <Gift size={13} />
-                  {t('settings.providers.xdSignin.grantBadge')}
-                </span>
-                <CtaPillButton
-                  size="lg"
-                  className="mt-6"
-                  label={t('settings.providers.xdSignin.cta')}
-                  onClick={() => void signInToCindy()}
-                />
-              </div>
             ) : effectiveSelected ? (
               renderDetailHeader(
                 effectiveSelected,

@@ -2489,8 +2489,8 @@
       "avatarAlt": "Avatar von {{name}}",
       "local": {
         "exitFailed": "Der Status „Nicht angemeldet“ konnte nicht verlassen werden. Bitte versuche es erneut.",
-        "name": "Nicht angemeldet",
-        "description": "Daten bleiben auf diesem Gerät, ohne {{appName}}-Kontodienste",
+        "name": "Lokaler Benutzer",
+        "description": "Daten bleiben auf diesem Gerät",
         "signIn": "Bei {{appName}} anmelden",
         "exit": "Status „Nicht angemeldet“ verlassen"
       },
@@ -2858,7 +2858,7 @@
       "serviceSource": {
         "label": "Sprachdienst",
         "hint": "Verwendet standardmäßig den Sprachdienst von {{appName}}. Du kannst stattdessen einen Echtzeit-ASR-Dienst mit separaten Zugangsdaten für die Spracheingabe verbinden.",
-        "localHint": "Ohne Anmeldung sind die {{appName}}-Kontodienste nicht verfügbar. Verbinde einen Echtzeit-ASR-Dienst mit separaten Zugangsdaten für die Spracheingabe.",
+        "localHint": "Diese Version von {{appName}} enthält keinen eigenen Sprachdienst. Verbinde einen Echtzeit-ASR-Dienst mit eigenen Sprachzugangsdaten.",
         "ariaLabel": "Quelle des Sprachdienstes",
         "options": {
           "cindy": "Offizieller {{appName}}-Dienst",
@@ -4446,8 +4446,7 @@
     },
     "experimental": {
       "title": "Experimentell",
-      "toggleAria": "Experimentelle Funktion umschalten: {{title}}",
-      "features": {}
+      "toggleAria": "Experimentelle Funktion umschalten: {{title}}"
     },
     "lspMode": {
       "cell": {
@@ -5099,7 +5098,7 @@
       },
       "emptySlot": "Nicht ausgewählt",
       "customHint": "Die Modelle werden in deiner gewählten Reihenfolge ausprobiert und dienen auch als Ersatz für die automatische Überprüfung, wenn deren integrierte Modelle nicht verfügbar sind. Ausgewählte Anbieter erhalten den Überprüfungskontext: Nachrichten und Referenzen, Aufgaben- und Aktionsdetails (einschließlich blockierter Aktionen), Identität und Berechtigungen, Dateipfade und Betriebssystem.",
-      "signInHint": "Melde dich bei {{appName}} an, um die automatischen Empfehlungen zu nutzen. Wenn du nicht angemeldet bist, wähle unter „Benutzerdefiniert“ ein konfiguriertes Modell eines anderen Anbieters aus.",
+      "signInHint": "Automatische Empfehlungen sind in dieser Version nicht verfügbar. Wähle unter „Benutzerdefiniert“ ein konfiguriertes Modell eines anderen Anbieters.",
       "chooseAgent": "Agent auswählen",
       "backToAgents": "Zurück zur Agent-Auswahl",
       "searchPlaceholder": "Modelle oder Anbieter suchen",
@@ -8630,40 +8629,23 @@
   "localDbGate": {
     "title": "Lokale Daten konnten nicht geöffnet werden",
     "description": "Versuche es erneut oder kehre zu den Anmeldeoptionen zurück und wähle erneut einen Modus.",
-    "retry": "Erneut versuchen",
-    "backToLogin": "Zurück zur Anmeldung"
+    "retry": "Erneut versuchen"
   },
   "login": {
     "title": "Willkommen bei {{appName}}",
     "subtitle": "Wähle eine sichere Anmeldemethode",
-    "savedLoginPreserved": "Bei der Wiederherstellung bleiben deine gespeicherten Anmeldedaten erhalten",
-    "phonePlaceholder": "Gib deine Telefonnummer ein",
     "emailPlaceholder": "Gib deine E-Mail-Adresse ein",
-    "invalidEmail": "Gib eine gültige E-Mail-Adresse ein",
-    "invalidPhone": "Gib eine gültige Telefonnummer ein",
     "working": "Bitte warten…",
     "continue": "Weiter",
-    "or": "oder",
-    "socialButton": "Weiter mit {{provider}}",
     "social": {
-      "apple": "Apple",
-      "google": "Google",
       "wechat": "WeChat"
     },
     "back": "Zurück",
-    "cancel": "Abbrechen",
     "chooseMethod": "Wähle deine Anmeldemethode",
-    "emailCode": "Mit E-Mail-Code anmelden",
-    "orgDetected": "{{email}} gehört zu „{{org}}“",
     "enterpriseLogin": "Mit Firmenkonto",
-    "enterpriseVia": "Single Sign-on über {{name}}",
     "personalLogin": "Mit persönlichem Konto",
     "personalDesc": "Code per E-Mail erhalten",
-    "ssoRequired": "Diese Organisation erfordert eine SSO-Anmeldung",
-    "ssoEntry": "Mit Unternehmens-SSO anmelden",
     "localModeEntry": "Anmeldung überspringen",
-    "localModeOpening": "Anmeldung wird übersprungen…",
-    "localModeDescription": "Kein {{appName}}-Konto erforderlich. Die Daten bleiben auf diesem Gerät; Cloud-Modelle, geräteübergreifender Zugriff und Marketplace-Dienste sind nicht verfügbar.",
     "consentStatement": "Ich akzeptiere <terms>Nutzungsbedingungen</terms> und <privacy>Datenschutzerklärung</privacy>",
     "consentDialog": {
       "title": "Bedingungen & Datenschutzerklärung",
@@ -8674,44 +8656,11 @@
     "ssoOrgTitle": "Unternehmens-SSO",
     "ssoOrgSubtitle": "Gib eine Unternehmens-ID, einen Organisations-Slug oder eine verifizierte Domain ein, um mit Single Sign-on fortzufahren",
     "ssoOrgPlaceholder": "Unternehmens-ID, Kennung oder Domain",
-    "ssoOrgHint": "Du kennst deine Unternehmens-Anmeldekennung nicht? Frag deinen Admin",
-    "ssoOrgDetected": "Wähle eine Single-Sign-on-Verbindung für „{{org}}“",
-    "realmConsent": {
-      "personalTitle": "Unternehmensanmeldung verfügbar",
-      "personalBodyCn": "Unternehmen in Festlandchina gefunden.\nNutze SSO oder fahre mit deinem Konto fort.",
-      "personalBodyGlobal": "Unternehmen in der Region Global gefunden.\nNutze SSO oder fahre mit deinem Konto fort.",
-      "enterpriseLogin": "Unternehmens-SSO",
-      "continuePersonal": "Mit persönlichem Konto fortfahren",
-      "title": "Mit der Region deines Unternehmens verbinden",
-      "bodyCn": "Dein Unternehmen befindet sich in Festlandchina.\nFahre fort, um {{appName}} mit dieser Region zu verbinden.",
-      "bodyGlobal": "Dein Unternehmen befindet sich in der Region Global.\nFahre fort, um {{appName}} mit dieser Region zu verbinden.",
-      "agree": "Anmeldung fortsetzen",
-      "disagree": "Abbrechen"
-    },
-    "ssoVerificationTitle": "Geschäftliche Identität bestätigen",
-    "ssoVerificationSubtitle": "Bei der ersten Anmeldung musst du die von deinem Identitätsanbieter übermittelte Kontaktadresse bestätigen: {{target}}",
     "enterCode": "Bestätigungscode eingeben",
     "codeSentTo": "Wir haben einen Code an {{identifier}} gesendet",
     "codePlaceholder": "6-stelliger Code",
-    "verifying": "Wird überprüft…",
     "signIn": "Anmelden",
     "resendCode": "Code erneut senden",
-    "resendCountdown": "Erneut senden in {{n}} Sekunden",
-    "chooseAccount": "Identität auswählen",
-    "chooseAccountSubtitle": "Wähle die persönliche oder Organisationsidentität aus, die du verwenden möchtest",
-    "personalAccount": "Persönliche Identität",
-    "binding": {
-      "phoneTitle": "Telefonnummer bestätigen",
-      "phoneSubtitle": "Zum Abschließen der Anmeldung ist eine bestätigte Telefonnummer erforderlich",
-      "emailTitle": "E-Mail-Adresse bestätigen",
-      "emailSubtitle": "Zum Abschließen der Anmeldung ist eine bestätigte echte E-Mail-Adresse erforderlich"
-    },
-    "sendCode": "Code senden",
-    "completeSignIn": "Anmeldung abschließen",
-    "preparing": "Anmeldung wird vorbereitet",
-    "preparingSubtitle": "Verfügbare Methoden für diese Region werden geladen",
-    "unavailable": "Anmeldung derzeit nicht möglich",
-    "retry": "Erneut versuchen",
     "browserWaiting": "Bestätigung im Browser abschließen",
     "browserCallback": {
       "successTitle": "Angemeldet",
@@ -8725,47 +8674,11 @@
       "cn": "CN",
       "dev": "Dev"
     },
-    "captcha": {
-      "title": "Sicherheitsprüfung",
-      "loading": "Sicherheitsprüfung wird geladen…",
-      "failed": "Sicherheitsprüfung konnte nicht geladen werden.",
-      "retry": "Erneut versuchen",
-      "cancel": "Abbrechen"
-    },
     "errors": {
-      "fallback": "Anmeldung fehlgeschlagen. Versuch es erneut.",
-      "AUTH_SERVICE_UNAVAILABLE": "Der Anmeldedienst ist vorübergehend nicht verfügbar.",
-      "AUTH_REQUEST_FAILED": "Die Anmeldeanfrage ist fehlgeschlagen. Versuch es erneut.",
-      "CREDENTIAL_STORE_UNAVAILABLE": "Der Anmeldespeicher ist nicht verfügbar. Lösungen anzeigen.",
-      "BROWSER_OPEN_FAILED": "Der Browser konnte nicht geöffnet werden. Versuch es erneut.",
-      "BROWSER_OPEN_TIMEOUT": "Der Browser wurde nicht rechtzeitig gestartet. Versuch es erneut.",
-      "NETWORK_ERROR": "Die Verbindung konnte nicht hergestellt werden. Prüfe deine Netzwerkverbindung und versuche es erneut.",
-      "REQUEST_TIMEOUT": "Zeitüberschreitung bei der Anfrage. Versuch es erneut.",
-      "INVALID_PARAMS": "Prüfe den eingegebenen Wert.",
       "INVALID_CODE": "Der Bestätigungscode ist falsch oder abgelaufen.",
-      "CODE_ATTEMPTS_EXCEEDED": "Zu viele Fehlversuche. Fordere einen neuen Code an.",
-      "RATE_LIMITED": "Zu viele Versuche. Warte kurz und versuche es erneut.",
-      "CAPTCHA_REQUIRED": "Schließe zuerst die Sicherheitsprüfung ab.",
-      "CAPTCHA_INVALID": "Sicherheitsprüfung fehlgeschlagen. Versuche es erneut.",
-      "CAPTCHA_UNAVAILABLE": "Die Sicherheitsprüfung ist vorübergehend nicht verfügbar. Versuche es später erneut.",
-      "SSO_LOGIN_REQUIRED": "Diese Organisation erfordert eine SSO-Anmeldung.",
-      "ORG_SSO_NOT_FOUND": "Unternehmen nicht gefunden oder keine SSO-Verbindung aktiviert",
-      "ORG_REALM_AMBIGUOUS": "Diese Unternehmenskennung ist in beiden Regionen vorhanden. Wende dich an deinen Administrator.",
-      "ORG_REALM_UNAVAILABLE": "{{appName}} kann die Unternehmensregion gerade nicht prüfen. Prüfe deine Verbindung und versuche es erneut.",
-      "SSO_EMAIL_REQUIRED": "Deine Firmenidentität hat keine gültige E-Mail-Adresse übermittelt. Bitte deinen Administrator, die IdP-Konfiguration zu prüfen.",
-      "INVALID_SSO_VERIFICATION_TICKET": "Die Bestätigung deiner Firmenidentität ist abgelaufen. Starte die SSO-Anmeldung erneut.",
-      "SOCIAL_TOKEN_INVALID": "Die Autorisierung des Anbieters ist abgelaufen. Versuch es erneut.",
-      "SOCIAL_PROVIDER_DISABLED": "Diese Anmeldemethode ist derzeit nicht verfügbar.",
-      "USER_CANCELLED": "Die Anmeldung wurde abgebrochen.",
-      "STATE_MISMATCH": "Sicherheitsüberprüfung fehlgeschlagen. Versuch es erneut.",
-      "INVALID_AUTH_CODE": "Autorisierung abgelaufen. Starte die Anmeldung erneut.",
-      "INVALID_LOGIN_TICKET": "Die Anmeldesitzung ist abgelaufen. Starte erneut.",
-      "INVALID_BIND_TICKET": "Die Bestätigungssitzung ist abgelaufen. Starte erneut.",
-      "REGION_MISMATCH": "Die Region des Anmeldedienstes stimmt nicht mit dieser App überein."
+      "RATE_LIMITED": "Zu viele Versuche. Warte kurz und versuche es erneut."
     },
     "rateLimit": {
-      "retryAt": "Versuche es nach {{time}} (Ortszeit) erneut.",
-      "unknownWait": "Der Server hat keine Wartezeit angegeben. Warte bitte, bevor du es erneut versuchst.",
       "intro": "Der Anmeldedienst begrenzt vorübergehend die Anfragen. Dies ist unabhängig von einem lokalen Fehler beim Speichern der Zugangsdaten.",
       "guidance": "Warte, bevor du einen weiteren Code anforderst. Ein Neustart, eine Neuinstallation oder ein Netzwerkwechsel garantiert nicht, dass die Begrenzung aufgehoben wird.",
       "support": "Wenn das Problem nach dem Warten weiterhin besteht, sende die Protokolle vertraulich an feedback@cindy.app und gib dein Betriebssystem, die {{appName}}-Version, den Fehlerzeitpunkt und den unten stehenden Code an. Veröffentliche die Protokolle nicht."
@@ -9974,24 +9887,6 @@
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "Versionshinweise ansehen",
       "reopenUpdateBanner": "Update bereit — zum Prüfen klicken"
-    },
-    "accountSwitcher": {
-      "current": "Aktuelles Konto",
-      "switching": "Konto wird gewechselt…",
-      "adding": "Anmeldung wird vorbereitet…",
-      "sharedDataRestriction": "Dieses Entwicklungsfenster teilt Kontodaten mit einer anderen {{appName}}-Instanz und kann daher keine Konten wechseln oder hinzufügen. Nutze das ursprüngliche {{appName}}-Fenster oder starte die Entwicklungs-App mit separaten Daten.",
-      "title": "Konto wechseln",
-      "description": "Wähle ein auf diesem Gerät verwendetes Konto",
-      "syncing": "Anmeldestatus wird geprüft…",
-      "syncFailed": "Einige Kontostatus konnten nicht aktualisiert werden",
-      "switchFailed": "Konto konnte nicht gewechselt werden. Melde dich erneut bei diesem Konto an",
-      "runningTaskTitle": "Laufende Aufgaben stoppen und Konto wechseln?",
-      "runningTaskDescription": "Es laufen gerade Aufgaben. Beim Kontowechsel werden sie zuerst gestoppt. Unfertige Arbeit wird nicht fortgesetzt.",
-      "runningTaskConfirm": "Aufgaben stoppen und wechseln",
-      "startFailed": "Die Anmeldeseite konnte nicht geöffnet werden. Versuche es später erneut",
-      "addAccount": "Bei einem anderen Konto anmelden",
-      "back": "Zurück",
-      "close": "Schließen"
     }
   },
   "bots": {
@@ -11733,7 +11628,6 @@
     "outboundAttachmentsIncomplete": "⚠️ Anhänge nicht vollständig zugestellt: {{count}} nicht gesendet ({{names}}).",
     "unnamedAttachment": "Unbenannter Anhang"
   },
-  "markdown": {},
   "diffPanel": {
     "shell": {
       "resizeHandleAria": "Bereichsbreite ändern",
@@ -12673,8 +12567,6 @@
   "onboarding": {
     "homeZeroModel": {
       "title": "Melde dich bei {{appName}} an, um fortzufahren",
-      "desc": "Du hast noch keine Modelle. Melde dich bei {{appName}} an, um Dutzende erstklassige Modelle zu nutzen.",
-      "cta": "Bei {{appName}} anmelden",
       "cloudTitle": "Mit {{appName}} fortfahren",
       "cloudDesc": "Du hast noch keine Modelle. Aktiviere den offiziellen Dienst, um Dutzende erstklassige Modelle zu nutzen.",
       "cloudCta": "Loslegen",
@@ -12684,12 +12576,6 @@
       "title": "Verbinde einen Modellanbieter, um loszulegen",
       "desc": "Noch keine Modelle verfügbar. Verbinde einen Anbieter, um zu chatten.",
       "recommendedLabel": "Empfohlen",
-      "cindy": {
-        "title": "{{appName}} AI",
-        "desc": "Offizieller Dienst · alle Modelle · funktioniert mit Claude Code und Codex",
-        "loginTitle": "Bei {{appName}} anmelden",
-        "loginDesc": "Melde dich an, um den offiziellen {{appName}}-KI-Dienst mit Zugriff auf alle Modelle zu aktivieren — neue Nutzer erhalten ein Aktionsguthaben"
-      },
       "othersToggle": "Weitere Anbieter ({{count}})",
       "presetSub": "API-Schlüssel zum Verbinden einfügen",
       "dismiss": "Vielleicht später",
@@ -12697,7 +12583,6 @@
       "banner": {
         "text": "Keine Modelle verfügbar — verbinde einen Anbieter, um zu chatten.",
         "connectCta": "Anbieter verbinden",
-        "loginCta": "Bei {{appName}} anmelden",
         "dismissAria": "Schließen"
       },
       "detectedLabel": "Erkannt",
@@ -19264,7 +19149,7 @@
     "localInstalling": "Plugin wird installiert…",
     "localVersionNotice": "Dieser Link behält die Version bei, die beim Teilen gespeichert wurde. Prüfe vor der Installation die Berechtigungen des Plugins.",
     "localSignIn": "Zum Ansehen anmelden",
-    "localOpenHint": "Melde dich bei {{appName}} an, um dieses geteilte Plugin anzusehen und zu installieren.",
+    "localOpenHint": "Geteilte Plugins können in dieser Version von {{appName}} nicht geöffnet werden.",
     "localReadFailed": "Dieses geteilte Plugin konnte nicht gelesen werden",
     "localChanged": "Das Plugin hat sich geändert. Schließe dieses Fenster und teile es erneut.",
     "includeAttribution": "Meinen Namen und Avatar einbeziehen",

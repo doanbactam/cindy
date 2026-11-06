@@ -88,7 +88,7 @@ describe('authentication does not wait for optional plugin provisioning', () => 
     const run = setup('cloud');
     const bootstrap = readFileSync(new URL('../bootstrap-electron.ts', import.meta.url), 'utf8');
     const start = bootstrap.indexOf("ipcMain.handle('auth:initialize',");
-    const end = bootstrap.indexOf("ipcMain.handle('auth:get-login-state',", start);
+    const end = bootstrap.indexOf("ipcMain.handle('auth:refresh',", start);
     const compiled = transpileModule(bootstrap.slice(start, end), {
       compilerOptions: { target: ScriptTarget.ES2022 },
     }).outputText;

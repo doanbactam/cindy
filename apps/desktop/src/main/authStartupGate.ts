@@ -1,10 +1,6 @@
-import { AuthApiError } from '@cindy/auth-client';
-
-import { LOGIN_PREPARING_UNLOCK_TIMEOUT_MS, loginPreparingErrorState } from '../shared/authIpc';
-
 /**
  * 冷启动 auth 流程的「限时等待」编排 —— 与 Electron / 网络层解耦的纯逻辑,
- * 供 authManager 的 `initialize()`(splash)与 `loadLoginProviders()`(登录准备态)
+ * 供 authManager 的 `initialize()`(splash)
  * 使用,并可独立单测(authManager 本身依赖 Electron,无法在 node 测试环境直接
  * import,同 authRefreshFailure.ts 的拆分理由)。
  *
@@ -80,8 +76,6 @@ export async function awaitWithStartupTimeout<T>(
 export async function resolveColdStartTimeoutRecovery<TCurrent, TPending, TRecovered>(input: {
   ownerTransitionPending: boolean;
   authChangedSinceInitialize: boolean;
-  loginCommitPending: boolean;
-  loginCommittedSinceInitialize: boolean;
   isStartupFallbackEpoch: (epoch: number) => boolean;
   timeoutStartEpoch: number;
   currentEpoch: number;
@@ -89,14 +83,9 @@ export async function resolveColdStartTimeoutRecovery<TCurrent, TPending, TRecov
   pendingState: TPending;
   recover: () => Promise<TRecovered>;
 }): Promise<TCurrent | TPending | TRecovered> {
-  // A pending owner transition owns the user-data boundary. A login also reserves
-  // the auth epoch before its async vault/owner transaction commits. Neither may
-  // race a timeout recovery; their own commit/rollback publishes the settled state.
-  if (input.ownerTransitionPending || input.loginCommitPending) return input.pendingState;
-  // A login transaction that settled after this initialize() entered reuses the
-  // epoch snapshotted at entry, so it is invisible to the epoch guards below.
-  // Preserve the authenticated state it published instead of recovering.
-  if (input.loginCommittedSinceInitialize) return input.currentState;
+  // A pending owner transition owns the user-data boundary and must not race a
+  // timeout recovery; its own commit/rollback publishes the settled state.
+  if (input.ownerTransitionPending) return input.pendingState;
   // Sibling renderers share one refresh but own independent startup timers. A
   // user may complete login after one timeout exposes the login page and before
   // another timer fires; that later timeout must preserve the authenticated state.
@@ -178,67 +167,4 @@ export function commitColdStartRefreshIfCurrent<T>(input: {
   });
   if (!result.committed) return { superseded: true };
   return { superseded: false, flowEpoch: input.currentEpoch, value: result.value };
-}
-
-/**
- * 登录准备态(「正在连接登录服务」)最多阻塞 UI 的时长。getProviders 走
- * CindyAuthClient 默认 15s AbortController,但黑洞 / captive-portal 下 Electron
- * `net.fetch` 可能无视 abort,请求永不 settle → renderer 的 preparing 转圈永不
- * 结束。冷启动 splash 的 `awaitWithStartupTimeout` 闸只包 initialize();登录页是
- * initialize 完成、GuestRoute 放行之后才出现的。这里复用同一把闸,时限更保守
- * (30s),超时后走既有 error 步(「暂时无法登录」+ 重试);不 abort 在途 getProviders。
- */
-export const LOGIN_PREPARING_GATE_TIMEOUT_MS = LOGIN_PREPARING_UNLOCK_TIMEOUT_MS;
-
-export interface PreparingGateLog {
-  info: (...args: unknown[]) => void;
-  warn: (...args: unknown[]) => void;
-}
-
-export type LoginProvidersLoadFailure = {
-  success: false;
-  code: string;
-  retryAt?: number;
-  state: ReturnType<typeof loginPreparingErrorState>;
-};
-
-/** 把 getProviders 失败(含准备态超时)映射成既有可重试错误步。 */
-export function mapLoginProvidersLoadFailure(error: unknown): LoginProvidersLoadFailure {
-  const code = error instanceof AuthApiError ? error.code : 'AUTH_SERVICE_UNAVAILABLE';
-  const state = loginPreparingErrorState(
-    code,
-    error instanceof AuthApiError ? error.retryAt : undefined,
-  );
-  return {
-    success: false,
-    code,
-    state,
-    ...(state.retryAt !== undefined ? { retryAt: state.retryAt } : {}),
-  };
-}
-
-/**
- * 限时等待登录 providers。超时抛 AUTH_SERVICE_UNAVAILABLE,不 abort 在途请求;
- * 迟到 settle 只打日志。`getProviders` 由调用方注入,单测可挂起 Promise + 假计时器。
- */
-export async function awaitLoginProvidersWithPreparingGate<T>(
-  getProviders: Promise<T>,
-  log: PreparingGateLog,
-): Promise<T> {
-  return awaitWithStartupTimeout(getProviders, {
-    timeoutMs: LOGIN_PREPARING_GATE_TIMEOUT_MS,
-    onTimeout: () => {
-      log.warn(
-        `login providers still pending after ${LOGIN_PREPARING_GATE_TIMEOUT_MS}ms — unlocking the preparing UI`,
-      );
-      throw new AuthApiError(
-        'AUTH_SERVICE_UNAVAILABLE',
-        0,
-        'Authentication server did not respond in time',
-      );
-    },
-    onLateResult: () => log.info('login providers settled after preparing gate timeout'),
-    onLateError: (err) =>
-      log.warn('login providers request failed after preparing gate timeout', err),
-  });
 }

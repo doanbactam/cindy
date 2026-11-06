@@ -90,21 +90,6 @@ describe('passive shared-userData instance auth isolation', () => {
     expect(body.indexOf('removeSafe(LEGACY_REFRESH_TOKEN_KEY);')).toBeGreaterThan(passiveIdx);
   });
 
-  it('logout:passive 共享实例不切号或调服务端登出(会连坐作废 primary 的 device token)', () => {
-    const body = sliceBody('export async function logout(): Promise<void> {', '\n}\n');
-
-    // refresh token 服务端按 (user, device) 一对一存,passive 与 primary 共用 deviceId:
-    // guard 必须在任何账号切换、凭证写入和服务端撤销之前直接拒绝。
-    const guardIdx = body.indexOf('if (isPassiveSharedUserDataInstance()) {');
-    expect(guardIdx).toBeGreaterThan(-1);
-    expect(body.indexOf('await switchSavedAccount(')).toBeGreaterThan(guardIdx);
-    expect(body.indexOf('await mutateAuthAccountVault(')).toBeGreaterThan(guardIdx);
-    expect(body.indexOf('revokeLoggedOutAccountBestEffort({')).toBeGreaterThan(guardIdx);
-
-    const revokeBody = sliceBody('function revokeLoggedOutAccountBestEffort(', '\n}\n');
-    expect(revokeBody).toContain("apiFetch('/api/auth/logout'");
-  });
-
   it('续期节奏不设闸门:passive 照常排 timer,否则 access token 过期后无自愈路径', () => {
     // 本 PR 的契约是「不写/不删共享的 auth 持久状态」;「谁负责续期」是正交问题。
     // 曾经让 passive 停止续期，被两个 reviewer 从相反方向指出问题：停掉之后
@@ -307,19 +292,12 @@ describe('passive shared-userData instance auth isolation', () => {
     );
   });
 
-  it('其余整机一份的账号派生状态:canary flag 与账号删除 receipt 都不被 passive 清掉', () => {
+  it('其余整机一份的账号派生状态:canary flag 不被 passive 清掉', () => {
     const clearBody = sliceBody('function clearAuth(', 'clearPerAccountIntegrationsInBackground');
     // canary-flag.json 被清 → packaged primary 下次更新轮询按 stable 拉 manifest。
     expect(clearBody).toContain('if (!isPassiveSharedUserDataInstance()) {');
     const canaryGuardIdx = clearBody.indexOf('if (!isPassiveSharedUserDataInstance()) {');
     expect(clearBody.indexOf('canaryFlagStore.clear();')).toBeGreaterThan(canaryGuardIdx);
-
-    // receipt 被清 → primary 的 confirmAccountDeletion() 拿 RECEIPT_MISSING。
-    // 闸门必须加在 logout 这条隐式路径上，而不是函数体里。
-    const logoutBody = sliceBody('export async function logout(): Promise<void> {', '\n}\n');
-    const receiptGuardIdx = logoutBody.indexOf('if (isPassiveSharedUserDataInstance()) {');
-    expect(receiptGuardIdx).toBeGreaterThan(-1);
-    expect(logoutBody.indexOf('clearAccountDeletionReceipt();')).toBeGreaterThan(receiptGuardIdx);
   });
 
   it('receipt 的显式清理不被闸门波及:renderer 主动 dismiss 在 passive 上必须照常生效', () => {
@@ -329,34 +307,6 @@ describe('passive shared-userData instance auth isolation', () => {
     const body = sliceBody('export function clearAccountDeletionReceipt(): void {', '\n}\n');
     expect(body).not.toContain('isPassiveSharedUserDataInstance');
     expect(body).toContain('removeSafe(ACCOUNT_DELETION_RECEIPT_KEY);');
-  });
-
-  it('passive 登录不得在 owner gate 前消费共享 receipt 或 relogin marker', () => {
-    const acceptStart = authSource.indexOf('async function acceptLoginOutcome(');
-    const acceptEnd = authSource.indexOf('\n}\n\nasync function runLoginAction', acceptStart);
-    const acceptBody = authSource.slice(acceptStart, acceptEnd);
-    expect(acceptBody).not.toContain('removeSafe(ACCOUNT_DELETION_RECEIPT_KEY);');
-    expect(acceptBody).not.toContain('commitWithClearedAccountDeletionReceipt(');
-
-    const completeStart = authSource.indexOf('async function completeLogin(');
-    const completeEnd = authSource.indexOf(
-      '\n}\n\nasync function acceptLoginOutcome',
-      completeStart,
-    );
-    const completeBody = authSource.slice(completeStart, completeEnd);
-    const completeGuard = completeBody.indexOf('if (!isPassiveSharedUserDataInstance()) {');
-    expect(completeGuard).toBeGreaterThan(-1);
-    expect(completeBody.indexOf('removeSafe(LEGACY_REFRESH_TOKEN_KEY);')).toBeGreaterThan(
-      completeGuard,
-    );
-    expect(completeBody).toContain('commitWithClearedAccountDeletionReceipt(() => {');
-    expect(completeBody.indexOf('clearReloginFlag();')).toBeGreaterThan(completeGuard);
-
-    const receiptCommit = sliceBody(
-      'function commitWithClearedAccountDeletionReceipt(commit: () => void): void {',
-      '\n}\n',
-    );
-    expect(receiptCommit).toContain('if (isPassiveSharedUserDataInstance()) return commit();');
   });
 
   it('冷启动确定性失效:passive 不删盘,非 passive 也只做 compare-and-delete', () => {

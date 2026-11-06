@@ -2524,8 +2524,8 @@
       "avatarAlt": "Avatar de {{name}}",
       "local": {
         "exitFailed": "Não foi possível sair do estado sem sessão iniciada. Tente novamente.",
-        "name": "Sessão não iniciada",
-        "description": "Os dados permanecem neste dispositivo sem os serviços de conta {{appName}}",
+        "name": "Utilizador local",
+        "description": "Os dados permanecem neste dispositivo",
         "signIn": "Iniciar sessão na {{appName}}",
         "exit": "Sair do estado sem sessão iniciada"
       },
@@ -2893,7 +2893,7 @@
       "serviceSource": {
         "label": "Serviço de voz",
         "hint": "Usa o serviço de voz do {{appName}} por predefinição. Em alternativa, pode ligar um serviço ASR em tempo real com credenciais de voz separadas.",
-        "localHint": "Os serviços da conta {{appName}} estão indisponíveis sem sessão iniciada; ligue um serviço ASR em tempo real com credenciais de voz separadas.",
+        "localHint": "Esta versão do {{appName}} não inclui o serviço de voz. Ligue um serviço de ASR em tempo real com credenciais de voz próprias.",
         "ariaLabel": "Origem do serviço de voz",
         "options": {
           "cindy": "Serviço oficial do {{appName}}",
@@ -4499,8 +4499,7 @@
     },
     "experimental": {
       "title": "Experimental",
-      "toggleAria": "Ativar/desativar funcionalidade experimental: {{title}}",
-      "features": {}
+      "toggleAria": "Ativar/desativar funcionalidade experimental: {{title}}"
     },
     "lspMode": {
       "cell": {
@@ -5154,7 +5153,7 @@
       },
       "emptySlot": "Não selecionado",
       "customHint": "Os modelos são experimentados pela ordem escolhida e também servem de alternativa à revisão automática quando os modelos integrados estão indisponíveis. Os fornecedores selecionados recebem o contexto da revisão: mensagens e referências, detalhes das tarefas e ações (incluindo ações bloqueadas), identidade e permissões, caminhos de ficheiros e sistema operativo.",
-      "signInHint": "Inicie sessão na {{appName}} para utilizar as recomendações automáticas. Sem sessão iniciada, escolha um modelo configurado de outro fornecedor em Personalizado.",
+      "signInHint": "As recomendações automáticas não estão disponíveis nesta versão. Escolha em Personalizado um modelo configurado de outro fornecedor.",
       "chooseAgent": "Escolher um Agent",
       "backToAgents": "Voltar à seleção de Agent",
       "searchPlaceholder": "Pesquisar modelos ou fornecedores",
@@ -8697,40 +8696,23 @@
   "localDbGate": {
     "title": "Não foi possível abrir os dados locais",
     "description": "Tente novamente ou volte às opções de início de sessão e selecione um modo novamente.",
-    "retry": "Tentar novamente",
-    "backToLogin": "Voltar ao início de sessão"
+    "retry": "Tentar novamente"
   },
   "login": {
     "title": "Boas-vindas a {{appName}}",
     "subtitle": "Escolher uma forma segura de iniciar sessão",
-    "savedLoginPreserved": "A recuperação mantém os seus dados de acesso guardados",
-    "phonePlaceholder": "Introduzir o seu número de telemóvel",
     "emailPlaceholder": "Introduzir o seu email",
-    "invalidEmail": "Introduza um endereço de e-mail válido",
-    "invalidPhone": "Introduza um número de telemóvel válido",
     "working": "Aguarde…",
     "continue": "Continuar",
-    "or": "ou",
-    "socialButton": "Continuar com {{provider}}",
     "social": {
-      "apple": "Apple",
-      "google": "Google",
       "wechat": "WeChat"
     },
     "back": "Voltar",
-    "cancel": "Cancelar",
     "chooseMethod": "Escolher como iniciar sessão",
-    "emailCode": "Iniciar sessão com um código por email",
-    "orgDetected": "{{email}} pertence a \"{{org}}\"",
     "enterpriseLogin": "Com a identidade profissional",
-    "enterpriseVia": "SSO através de {{name}}",
     "personalLogin": "Com uma conta pessoal",
     "personalDesc": "Receber um código por email",
-    "ssoRequired": "Esta organização exige início de sessão por SSO",
-    "ssoEntry": "Iniciar sessão com SSO empresarial",
     "localModeEntry": "Ignorar início de sessão",
-    "localModeOpening": "A ignorar o início de sessão…",
-    "localModeDescription": "Não é necessária uma conta {{appName}}. Os dados ficam neste dispositivo; os modelos na nuvem, o acesso entre dispositivos e os serviços do marketplace ficam indisponíveis.",
     "consentStatement": "Li e aceito os <terms>Termos de Serviço</terms> e a <privacy>Política de Privacidade</privacy>",
     "consentDialog": {
       "title": "Termos e Política de Privacidade",
@@ -8741,44 +8723,11 @@
     "ssoOrgTitle": "SSO empresarial",
     "ssoOrgSubtitle": "Introduzir um ID de empresa, identificador de organização ou domínio verificado para continuar com o início de sessão único",
     "ssoOrgPlaceholder": "ID da empresa, identificador ou domínio",
-    "ssoOrgHint": "Não sabe o seu identificador de acesso empresarial? Contacte o administrador",
-    "ssoOrgDetected": "Escolher uma ligação de início de sessão único para \"{{org}}\"",
-    "realmConsent": {
-      "personalTitle": "Início de sessão empresarial disponível",
-      "personalBodyCn": "Empresa encontrada na China Continental.\nUtilize SSO ou continue com a sua conta.",
-      "personalBodyGlobal": "Empresa encontrada na região Global.\nUtilize SSO ou continue com a sua conta.",
-      "enterpriseLogin": "SSO empresarial",
-      "continuePersonal": "Continuar com conta pessoal",
-      "title": "Ligue-se à região da sua empresa",
-      "bodyCn": "A sua empresa está na China continental.\nContinue para ligar a {{appName}} a esta região.",
-      "bodyGlobal": "A sua empresa está na região Global.\nContinue para ligar a {{appName}} a esta região.",
-      "agree": "Continuar a iniciar sessão",
-      "disagree": "Cancelar"
-    },
-    "ssoVerificationTitle": "Verificar a sua identidade profissional",
-    "ssoVerificationSubtitle": "O primeiro início de sessão exige a verificação do contacto devolvido pelo seu fornecedor de identidade: {{target}}",
     "enterCode": "Introduza o código de verificação",
     "codeSentTo": "Enviámos um código para {{identifier}}",
     "codePlaceholder": "Código de 6 dígitos",
-    "verifying": "A verificar…",
     "signIn": "Iniciar sessão",
     "resendCode": "Reenviar código",
-    "resendCountdown": "{{n}} segundos até poder reenviar",
-    "chooseAccount": "Escolher uma identidade",
-    "chooseAccountSubtitle": "Selecionar a identidade pessoal ou da organização a utilizar",
-    "personalAccount": "Identidade pessoal",
-    "binding": {
-      "phoneTitle": "Verificar um número de telemóvel",
-      "phoneSubtitle": "É necessário um número de telemóvel verificado para concluir o início de sessão",
-      "emailTitle": "Verificar um email",
-      "emailSubtitle": "É necessário um email real verificado para concluir o início de sessão"
-    },
-    "sendCode": "Enviar código",
-    "completeSignIn": "Concluir início de sessão",
-    "preparing": "A preparar o início de sessão",
-    "preparingSubtitle": "A carregar os métodos disponíveis para esta região",
-    "unavailable": "Início de sessão indisponível agora",
-    "retry": "Tentar novamente",
     "browserWaiting": "Concluir a verificação no navegador",
     "browserCallback": {
       "successTitle": "Sessão iniciada",
@@ -8792,47 +8741,11 @@
       "cn": "CN",
       "dev": "Dev"
     },
-    "captcha": {
-      "title": "Verificação de segurança",
-      "loading": "A carregar a verificação de segurança…",
-      "failed": "Não foi possível carregar a verificação de segurança.",
-      "retry": "Tentar novamente",
-      "cancel": "Cancelar"
-    },
     "errors": {
-      "fallback": "Falha ao iniciar sessão. Tente novamente.",
-      "AUTH_SERVICE_UNAVAILABLE": "O serviço de início de sessão está temporariamente indisponível.",
-      "AUTH_REQUEST_FAILED": "O pedido de início de sessão falhou. Tente novamente.",
-      "CREDENTIAL_STORE_UNAVAILABLE": "O armazenamento de acesso está indisponível. Consulte as soluções.",
-      "BROWSER_OPEN_FAILED": "Não foi possível abrir o navegador. Tente novamente.",
-      "BROWSER_OPEN_TIMEOUT": "O navegador não iniciou a tempo. Tente novamente.",
-      "NETWORK_ERROR": "Não foi possível ligar. Verifique a sua rede e tente novamente.",
-      "REQUEST_TIMEOUT": "O pedido excedeu o tempo limite. Tente novamente.",
-      "INVALID_PARAMS": "Verifique o valor introduzido.",
       "INVALID_CODE": "O código de verificação está incorreto ou expirou.",
-      "CODE_ATTEMPTS_EXCEEDED": "Demasiadas tentativas incorretas. Peça um novo código.",
-      "RATE_LIMITED": "Demasiadas tentativas. Aguarde e tente novamente.",
-      "CAPTCHA_REQUIRED": "Conclua primeiro a verificação de segurança.",
-      "CAPTCHA_INVALID": "A verificação de segurança falhou. Tente novamente.",
-      "CAPTCHA_UNAVAILABLE": "A verificação de segurança está temporariamente indisponível. Tente novamente mais tarde.",
-      "SSO_LOGIN_REQUIRED": "Esta organização exige início de sessão com SSO.",
-      "ORG_SSO_NOT_FOUND": "Empresa não encontrada ou sem ligação SSO ativada",
-      "ORG_REALM_AMBIGUOUS": "Este identificador empresarial existe em ambas as regiões. Entre em contacto com o seu administrador.",
-      "ORG_REALM_UNAVAILABLE": "De momento, a {{appName}} não consegue verificar a região da empresa. Verifique a ligação e tente novamente.",
-      "SSO_EMAIL_REQUIRED": "O fornecedor de identidade profissional não indicou um e-mail válido. Peça ao administrador para verificar a configuração do IdP.",
-      "INVALID_SSO_VERIFICATION_TICKET": "A verificação da identidade profissional expirou. Inicie novamente a sessão com SSO.",
-      "SOCIAL_TOKEN_INVALID": "A autorização do fornecedor expirou. Tente novamente.",
-      "SOCIAL_PROVIDER_DISABLED": "Este método de início de sessão não está disponível de momento.",
-      "USER_CANCELLED": "O início de sessão foi cancelado.",
-      "STATE_MISMATCH": "A verificação de segurança falhou. Tente novamente.",
-      "INVALID_AUTH_CODE": "A autorização expirou. Reinicie o início de sessão.",
-      "INVALID_LOGIN_TICKET": "A sessão de autenticação expirou. Recomece.",
-      "INVALID_BIND_TICKET": "A sessão de verificação expirou. Recomece.",
-      "REGION_MISMATCH": "A região do serviço de início de sessão não corresponde à desta aplicação."
+      "RATE_LIMITED": "Demasiadas tentativas. Aguarde e tente novamente."
     },
     "rateLimit": {
-      "retryAt": "Tente novamente após as {{time}} (hora local).",
-      "unknownWait": "O servidor não indicou um tempo de espera. Aguarde antes de tentar novamente.",
       "intro": "O serviço de início de sessão está a limitar temporariamente os pedidos. Isto é independente de um erro local de armazenamento de credenciais.",
       "guidance": "Aguarde antes de pedir outro código. Reiniciar, reinstalar ou mudar de rede não garante que o limite seja levantado.",
       "support": "Se o problema continuar após aguardar, envie os registos em privado para feedback@cindy.app com o seu sistema operativo, a versão de {{appName}}, a hora do erro e o código abaixo. Não publique registos."
@@ -10051,24 +9964,6 @@
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "Ver notas de lançamento",
       "reopenUpdateBanner": "Atualização pronta — clique para rever"
-    },
-    "accountSwitcher": {
-      "current": "Conta atual",
-      "switching": "A mudar de conta…",
-      "adding": "A preparar o início de sessão…",
-      "sharedDataRestriction": "Esta janela de desenvolvimento partilha dados de conta com outra instância de {{appName}}, pelo que não pode mudar nem adicionar contas. Utilize a janela original de {{appName}} ou inicie a aplicação de desenvolvimento com dados separados.",
-      "title": "Mudar de conta",
-      "description": "Escolher uma conta utilizada neste dispositivo",
-      "syncing": "A verificar o estado da sessão…",
-      "syncFailed": "Não foi possível atualizar o estado de algumas contas",
-      "switchFailed": "Não foi possível mudar de conta. Inicie sessão nessa conta novamente",
-      "runningTaskTitle": "Parar as tarefas em execução e mudar de conta?",
-      "runningTaskDescription": "Há tarefas em execução. Mudar de conta irá pará-las primeiro e o trabalho inacabado não continuará.",
-      "runningTaskConfirm": "Parar tarefas e mudar",
-      "startFailed": "Não foi possível abrir a página de início de sessão. Tente novamente mais tarde",
-      "addAccount": "Iniciar sessão noutra conta",
-      "back": "Voltar",
-      "close": "Fechar"
     }
   },
   "bots": {
@@ -11828,7 +11723,6 @@
     "outboundAttachmentsIncomplete": "⚠️ Entrega de anexos incompleta: {{count}} não enviados ({{names}}).",
     "unnamedAttachment": "Anexo sem título"
   },
-  "markdown": {},
   "diffPanel": {
     "shell": {
       "resizeHandleAria": "Redimensionar largura do painel",
@@ -12775,8 +12669,6 @@
   "onboarding": {
     "homeZeroModel": {
       "title": "Iniciar sessão no {{appName}} para continuar",
-      "desc": "Ainda não tem modelos. Inicie sessão no {{appName}} para utilizar dezenas de modelos de topo.",
-      "cta": "Iniciar sessão na {{appName}}",
       "cloudTitle": "Continuar com o {{appName}}",
       "cloudDesc": "Ainda não tem modelos. Ative o serviço oficial para utilizar dezenas de modelos de topo.",
       "cloudCta": "Começar",
@@ -12786,12 +12678,6 @@
       "title": "Ligar um fornecedor de modelos para começar",
       "desc": "Ainda não há modelos disponíveis. Ligue um fornecedor para começar a conversar.",
       "recommendedLabel": "Recomendado",
-      "cindy": {
-        "title": "{{appName}} AI",
-        "desc": "Serviço oficial · todos os modelos · compatível com Claude Code e Codex",
-        "loginTitle": "Iniciar sessão na {{appName}}",
-        "loginDesc": "Inicie sessão para ativar o serviço oficial {{appName}} AI com acesso a todos os modelos — os novos utilizadores recebem um saldo promocional"
-      },
       "othersToggle": "Outros fornecedores ({{count}})",
       "presetSub": "Colar uma chave de API para ligar",
       "dismiss": "Talvez mais tarde",
@@ -12799,7 +12685,6 @@
       "banner": {
         "text": "Nenhum modelo disponível — ligue um fornecedor para começar a conversar.",
         "connectCta": "Ligar um fornecedor",
-        "loginCta": "Iniciar sessão na {{appName}}",
         "dismissAria": "Fechar"
       },
       "detectedLabel": "Detetado",
@@ -19448,7 +19333,7 @@
     "localInstalling": "A instalar o plugin…",
     "localVersionNotice": "Esta ligação mantém a versão guardada no momento da partilha. Reveja as permissões do plugin antes da instalação.",
     "localSignIn": "Iniciar sessão para ver",
-    "localOpenHint": "Inicie sessão no {{appName}} para ver e instalar este plugin partilhado.",
+    "localOpenHint": "Os plugins partilhados não podem ser abertos nesta versão do {{appName}}.",
     "localReadFailed": "Não foi possível ler este plugin partilhado",
     "localChanged": "O plugin mudou. Feche esta janela e volte a partilhá-lo.",
     "includeAttribution": "Incluir o meu nome e avatar",

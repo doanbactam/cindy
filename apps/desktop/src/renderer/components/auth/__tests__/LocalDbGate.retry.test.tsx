@@ -29,8 +29,6 @@ const authState = vi.hoisted(() => ({
     user: { id: 'user-1' },
     dataOwnerId: 'user-1',
     mode: 'cloud',
-    logout: vi.fn().mockResolvedValue(undefined),
-    exitLocalMode: vi.fn().mockResolvedValue(undefined),
   },
 }));
 

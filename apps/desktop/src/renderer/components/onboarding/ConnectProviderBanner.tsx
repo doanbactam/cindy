@@ -13,7 +13,6 @@ import type { CSSProperties } from 'react';
 
 import { cn } from '@/lib/utils';
 import { useProviderOnboarding } from '@/hooks/useProviderOnboarding';
-import { useSignInToCindy } from '@/hooks/useSignInToCindy';
 
 export function ConnectProviderBanner({
   className,
@@ -26,12 +25,9 @@ export function ConnectProviderBanner({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const signInToCindy = useSignInToCindy();
   const onboarding = useProviderOnboarding({ remote });
 
   if (!onboarding.visible) return null;
-
-  const cloudMode = onboarding.authMode === 'cloud';
 
   return (
     <div
@@ -49,12 +45,10 @@ export function ConnectProviderBanner({
       </span>
       <button
         type="button"
-        onClick={() => (cloudMode ? navigate('/settings?tab=providers') : void signInToCindy())}
+        onClick={() => navigate('/settings?tab=providers')}
         className="shrink-0 text-xs font-medium text-[var(--text-primary)] transition-opacity hover:opacity-70"
       >
-        {cloudMode
-          ? t('onboarding.connectProvider.banner.connectCta')
-          : t('onboarding.connectProvider.banner.loginCta')}
+        {t('onboarding.connectProvider.banner.connectCta')}
       </button>
       <button
         type="button"

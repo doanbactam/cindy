@@ -33,10 +33,11 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const view = (onInstalled = vi.fn(), deviceControl?: CatalogDeviceControl) => <MemoryRouter><LocalPluginShareView snapshotId={snapshotId} deviceControl={deviceControl} onBack={vi.fn()} onInstalled={onInstalled} /></MemoryRouter>;
 
-it('does not read a local share before login', () => {
+it('does not read a local share without a Cindy account', () => {
   io.auth.isAuthenticated = false;
   render(view());
-  expect(screen.getByRole('button', { name: 'sharing.localSignIn' })).toBeTruthy();
+  expect(screen.getByText('sharing.localOpenHint')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'sharing.localSignIn' })).toBeNull();
   expect(io.read).not.toHaveBeenCalled(); expect(io.install).not.toHaveBeenCalled();
 });
 it('only installs the visible fixed version after an explicit click', async () => {

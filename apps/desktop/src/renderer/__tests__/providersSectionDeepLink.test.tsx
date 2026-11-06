@@ -63,7 +63,7 @@ vi.mock('@/hooks/useProviders', () => ({
 
 vi.mock('@/contexts/AuthContext', () => ({
   useOptionalAuthUser: () => null,
-  useAuth: () => ({ mode: 'local', exitLocalMode: vi.fn(async () => undefined) }),
+  useAuth: () => ({ mode: 'local' }),
 }));
 
 vi.mock('@/hooks/useCodexAuth', () => ({
@@ -888,28 +888,13 @@ describe('ProvidersSection — 深链定位', () => {
     expect(wizardSpy).toHaveBeenCalledWith({ kind: 'preset', presetId: 'deepseek' });
   });
 
-  it('目录无 xd(无账号会话)→ 左栏置顶 Cindy 登录引导行,connect=xd 落到该行,CTA 跳 /login', async () => {
-    const { fireEvent } = await import('@testing-library/react');
+  it('目录无 xd → 不出现 Cindy 登录引导行,connect=xd 落到添加供应商向导', async () => {
     providersState.providers = [makeProvider('anthropic', { name: 'Anthropic' })];
-    render(
-      <MemoryRouter initialEntries={['/settings?tab=providers&connect=xd']}>
-        <Routes>
-          <Route path="/settings" element={<ProvidersSection />} />
-          <Route path="/login" element={<div data-testid="login-page" />} />
-        </Routes>
-      </MemoryRouter>,
-    );
+    renderAt('?tab=providers&connect=xd');
 
-    // 引导行 + 右栏登录引导(connect=xd 深链选中;列表为空时它也是默认选中)。
-    expect(await screen.findByText('settings.providers.xdSignin.badge')).not.toBeNull();
-    await waitFor(() =>
-      expect(screen.getByText('settings.providers.xdSignin.desc')).not.toBeNull(),
-    );
-    expect(screen.queryByTestId('wizard-stub')).toBeNull();
-
-    fireEvent.click(screen.getByText('settings.providers.xdSignin.cta'));
-    // local 模式:先 exitLocalMode 再进 /login(直跳会被 GuestRoute 弹回)。
-    await waitFor(() => expect(screen.getByTestId('login-page')).not.toBeNull());
+    await waitFor(() => expect(screen.queryByTestId('wizard-stub')).not.toBeNull());
+    expect(wizardSpy).toHaveBeenCalledWith(undefined);
+    expect(screen.queryByText('settings.providers.xdSignin.badge')).toBeNull();
   });
 
   it('wizard=1 → 向导目录第一步(无 entry);参数清除', async () => {

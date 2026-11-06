@@ -2,7 +2,6 @@ import { CatalogDeviceScope, type CatalogDeviceControl } from './useCatalogDevic
 import { RemotePluginPage } from './RemotePluginPage';
 import { LocalPluginShareView } from './LocalPluginShareView';
 import { PluginVersionFacts } from './PluginVersionFacts';
-import { useSignInToCindy } from '@/hooks/useSignInToCindy';
 import { rememberContributionIntent, consumeContributionIntent, matchesContributionIntent } from './lib/contributionIntent';
 import { MyPluginsPage, contributionErrorKey, type MyPluginsPageCache, type PluginSubmitOptions } from './MyPluginsPage';
 import { localPublishingUnavailableKey } from './lib/ghostPluginDetailModel';
@@ -477,7 +476,6 @@ function LocalGhostPluginPage({
   );
   const { user, mode, dataOwnerId, dataOwnerGeneration } = useAuth();
   const reviewUnread = usePluginReviewUpdates().updates.filter(item => item.unread);
-  const signInForContribution = useSignInToCindy('/plugins?myPlugins=1');
   const contributionOwner = JSON.stringify([dataOwnerId, dataOwnerGeneration, user?.id, mode]);
   const contributionOwnerRef = useRef(contributionOwner);
   contributionOwnerRef.current = contributionOwner;
@@ -1776,10 +1774,6 @@ function LocalGhostPluginPage({
       const nonce = rememberContributionIntent(ghost);
       const next = new URLSearchParams(searchParams); next.set('myPlugins', '1'); next.set('contributionIntent', nonce);
       setSearchParams(next);
-      if (mode !== 'cloud') {
-        await signInForContribution();
-        navigate('/login', { replace: true, state: { returnTo: `/plugins?${next}` } });
-      }
       return false;
     }
     const owner = contributionOwner;

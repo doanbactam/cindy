@@ -4,9 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
-import { useSignInToCindy } from '@/hooks/useSignInToCindy';
 
-/** 首页零模型单行动卡:未登录走 states.html B,已登录无来源走开通官方服务。 */
+/** 首页零模型单行动卡:无账号会话引导连接供应商,已登录无来源走开通官方服务。 */
 export function HomeZeroModelAction({
   authMode,
   narrow,
@@ -16,7 +15,6 @@ export function HomeZeroModelAction({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const signInToCindy = useSignInToCindy();
   const cloud = authMode === 'cloud';
 
   return (
@@ -29,10 +27,10 @@ export function HomeZeroModelAction({
       >
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <p className="text-15 font-medium leading-snug text-[var(--text-primary)]">
-            {t(cloud ? 'onboarding.homeZeroModel.cloudTitle' : 'onboarding.homeZeroModel.title')}
+            {t(cloud ? 'onboarding.homeZeroModel.cloudTitle' : 'onboarding.connectProvider.title')}
           </p>
           <p className="text-13 leading-relaxed text-[var(--text-secondary)]">
-            {t(cloud ? 'onboarding.homeZeroModel.cloudDesc' : 'onboarding.homeZeroModel.desc')}
+            {t(cloud ? 'onboarding.homeZeroModel.cloudDesc' : 'onboarding.connectProvider.desc')}
           </p>
         </div>
         <Button
@@ -42,15 +40,11 @@ export function HomeZeroModelAction({
           type="button"
           data-testid="home-zero-model-cta"
           onClick={() => {
-            if (cloud) {
-              navigate('/settings?tab=providers&connect=xd');
-              return;
-            }
-            void signInToCindy();
+            navigate(cloud ? '/settings?tab=providers&connect=xd' : '/settings?tab=providers&wizard=1');
           }}
           className={cn(narrow && 'self-end')}
         >
-          {t(cloud ? 'onboarding.homeZeroModel.cloudCta' : 'onboarding.homeZeroModel.cta')}
+          {t(cloud ? 'onboarding.homeZeroModel.cloudCta' : 'onboarding.connectProvider.banner.connectCta')}
         </Button>
       </div>
       <button

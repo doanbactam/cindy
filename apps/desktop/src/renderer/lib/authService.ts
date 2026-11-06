@@ -1,4 +1,3 @@
-import type { AuthFlowState } from '@cindy/auth-client';
 import type {
   DesktopAccountDeletionAvailabilityResult,
   DesktopAccountDeletionChallenge,
@@ -6,11 +5,7 @@ import type {
   DesktopAccountDeletionConfirmInput,
   DesktopAccountDeletionConfirmResult,
   DesktopAccountDeletionStatusResult,
-  DesktopAccountSwitcherSnapshot,
-  DesktopLoginAction,
-  DesktopLoginActionResult,
 } from '../../shared/authIpc';
-export type { DesktopSavedAccount } from '../../shared/authIpc';
 import type { Effort } from '@/lib/userPreferences.types';
 
 /** Renderer-safe projection of the authenticated auth-server membership. */
@@ -53,16 +48,6 @@ export interface AuthState {
 
 export interface AuthService {
   initialize(): Promise<AuthState>;
-  getLoginState(): Promise<DesktopLoginActionResult>;
-  dispatchLoginAction(action: DesktopLoginAction): Promise<DesktopLoginActionResult>;
-  logout(): Promise<void>;
-  listAccounts(): Promise<DesktopAccountSwitcherSnapshot>;
-  syncAccounts(): Promise<DesktopAccountSwitcherSnapshot>;
-  switchAccount(accountKey: string): Promise<void>;
-  beginAddAccount(): Promise<DesktopLoginActionResult>;
-  cancelAddAccount(): Promise<void>;
-  enterLocalMode(): Promise<AuthState>;
-  exitLocalMode(): Promise<AuthState>;
   getAccountDeletionAvailability(): Promise<DesktopAccountDeletionAvailabilityResult>;
   requestAccountDeletionChallenge(): Promise<DesktopAccountDeletionChallengeResult>;
   confirmAccountDeletion(input: DesktopAccountDeletionConfirmInput): Promise<DesktopAccountDeletionConfirmResult>;
@@ -113,46 +98,6 @@ export function createAuthService(): AuthService {
       };
     },
 
-    getLoginState(): Promise<DesktopLoginActionResult> {
-      return window.electronAPI.authGetLoginState();
-    },
-
-    dispatchLoginAction(action: DesktopLoginAction): Promise<DesktopLoginActionResult> {
-      return window.electronAPI.authDispatchLoginAction(action);
-    },
-
-    async logout(): Promise<void> {
-      await window.electronAPI.authLogout();
-    },
-
-    listAccounts() {
-      return window.electronAPI.authListAccounts();
-    },
-
-    syncAccounts() {
-      return window.electronAPI.authSyncAccounts();
-    },
-
-    switchAccount(accountKey) {
-      return window.electronAPI.authSwitchAccount(accountKey);
-    },
-
-    beginAddAccount() {
-      return window.electronAPI.authBeginAddAccount();
-    },
-
-    cancelAddAccount() {
-      return window.electronAPI.authCancelAddAccount();
-    },
-
-    async enterLocalMode(): Promise<AuthState> {
-      return window.electronAPI.authEnterLocal() as Promise<AuthState>;
-    },
-
-    async exitLocalMode(): Promise<AuthState> {
-      return window.electronAPI.authExitLocal() as Promise<AuthState>;
-    },
-
     getAccountDeletionAvailability() {
       return window.electronAPI.authGetAccountDeletionAvailability();
     },
@@ -184,10 +129,4 @@ export function createAuthService(): AuthService {
   };
 }
 
-export type {
-  AuthFlowState,
-  DesktopAccountDeletionChallenge,
-  DesktopAccountSwitcherSnapshot,
-  DesktopLoginAction,
-  DesktopLoginActionResult,
-};
+export type { DesktopAccountDeletionChallenge };

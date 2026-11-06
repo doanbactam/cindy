@@ -29,8 +29,6 @@ type VoiceInputPowerStatePayload =
   import('../shared/voiceInputPowerIpc').VoiceInputPowerStatePayload;
 type VoiceInputConnectionTestResult =
   import('../shared/voiceInputConnectionTest').VoiceInputConnectionTestResult;
-type DesktopLoginAction = import('../shared/authIpc').DesktopLoginAction;
-type DesktopLoginActionResult = import('../shared/authIpc').DesktopLoginActionResult;
 type UtilityTextFailure = import('../shared/utilityTextResult').UtilityTextFailure;
 type ProviderRoutingPayload = import('@cindy/model-providers').Provider['routing'];
 type MakerSessionTreeSnapshot = import('@cindy/maker-core').SessionTreeSnapshot;
@@ -48,7 +46,6 @@ type DesktopAccountDeletionConfirmResult =
   import('../shared/authIpc').DesktopAccountDeletionConfirmResult;
 type DesktopAccountDeletionStatusResult =
   import('../shared/authIpc').DesktopAccountDeletionStatusResult;
-type DesktopAccountSwitcherSnapshot = import('../shared/authIpc').DesktopAccountSwitcherSnapshot;
 type PendingRemotePrecreatedWorktree =
   import('../shared/remotePrecreatedWorktreeLedger').PendingRemotePrecreatedWorktree;
 type PendingRemotePrecreatedWorktreeTarget =
@@ -2270,18 +2267,6 @@ interface ElectronAPI {
     /** 持久凭证库(safeStorage)连续多个刷新周期不可用(#1687)。 */
     credentialStoreUnavailable?: boolean;
   }>;
-  authGetLoginState: () => Promise<DesktopLoginActionResult>;
-  authDispatchLoginAction: (action: DesktopLoginAction) => Promise<DesktopLoginActionResult>;
-  /** 登录 captcha 托管挑战页地址(不含 query);LoginCaptchaOverlay 装载 webview 用。 */
-  authGetCaptchaChallengeUrl: () => Promise<string>;
-  authLogout: () => Promise<void>;
-  authListAccounts: () => Promise<DesktopAccountSwitcherSnapshot>;
-  authSyncAccounts: () => Promise<DesktopAccountSwitcherSnapshot>;
-  authSwitchAccount: (accountKey: string) => Promise<void>;
-  authBeginAddAccount: () => Promise<DesktopLoginActionResult>;
-  authCancelAddAccount: () => Promise<void>;
-  authEnterLocal: () => Promise<AuthStateChangePayload>;
-  authExitLocal: () => Promise<AuthStateChangePayload>;
   authRefresh: () => Promise<boolean>;
   authGetAccountDeletionAvailability: () => Promise<DesktopAccountDeletionAvailabilityResult>;
   authRequestAccountDeletionChallenge: () => Promise<DesktopAccountDeletionChallengeResult>;

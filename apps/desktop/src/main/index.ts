@@ -306,10 +306,6 @@ async function dispatch(): Promise<void> {
   // Windows updater forceQuit() ends in process.exit(0), which bypasses Electron will-quit.
   process.once('exit', cleanupDevInstance);
   app.once('will-quit', cleanupDevInstance);
-  if (uiMockData) {
-    const { startFreshProfileInLocalMode } = await import('./appSessionState.js');
-    startFreshProfileInLocalMode();
-  }
   const mod = await import('./bootstrap-electron.js');
   await mod.bootstrapElectron();
 }

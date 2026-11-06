@@ -2459,8 +2459,8 @@
       "avatarAlt": "{{name}} のアバター",
       "local": {
         "exitFailed": "未ログイン状態の終了に失敗しました。もう一度お試しください",
-        "name": "未ログイン",
-        "description": "データはこの端末だけに保存され、{{appName}} アカウントサービスは使用しません",
+        "name": "ローカルユーザー",
+        "description": "データはこの端末だけに保存されます",
         "signIn": "{{appName}} にログイン",
         "exit": "未ログイン状態を終了"
       },
@@ -2828,7 +2828,7 @@
       "serviceSource": {
         "label": "音声サービス",
         "hint": "既定では {{appName}} 音声サービスを使用します。リアルタイム ASR 対応サービスと専用の音声認証情報に切り替えることもできます。",
-        "localHint": "未ログイン状態では {{appName}} アカウントサービスを使用しません。リアルタイム ASR 対応サービスと専用の音声認証情報を設定してください。",
+        "localHint": "このバージョンの {{appName}} には音声サービスが含まれていません。リアルタイム ASR 対応サービスと専用の音声認証情報を設定してください。",
         "ariaLabel": "音声サービスソースの選択",
         "options": {
           "cindy": "{{appName}} 公式サービス",
@@ -4403,8 +4403,7 @@
     },
     "experimental": {
       "title": "実験的機能",
-      "toggleAria": "実験的機能を切り替え: {{title}}",
-      "features": {}
+      "toggleAria": "実験的機能を切り替え: {{title}}"
     },
     "lspMode": {
       "cell": {
@@ -5056,7 +5055,7 @@
       },
       "emptySlot": "未選択",
       "customHint": "選んだ順に試し、内蔵モデルが使えない場合は自動レビューにも使います。選択したプロバイダーに送るレビュー情報には、メッセージと引用内容、タスク・操作の詳細（ブロック済みの操作を含む）、依頼者の識別・権限情報、ファイルパス、OS が含まれます。",
-      "signInHint": "{{appName}} にログインすると自動おすすめを使えます。未ログイン時は「カスタム」で設定済みの他のプロバイダーのモデルを選択してください。",
+      "signInHint": "このバージョンでは自動おすすめを使えません。「カスタム」で設定済みの他のプロバイダーのモデルを選択してください。",
       "chooseAgent": "Agent を選択",
       "backToAgents": "Agent の選択に戻る",
       "searchPlaceholder": "モデルまたはプロバイダーを検索",
@@ -8587,40 +8586,23 @@
   "localDbGate": {
     "title": "ローカルデータを開けませんでした",
     "description": "再試行するか、ログイン方法に戻ってモードを選び直してください。",
-    "retry": "再試行",
-    "backToLogin": "ログイン方法に戻る"
+    "retry": "再試行"
   },
   "login": {
     "title": "{{appName}} へようこそ",
     "subtitle": "安全なログイン方法を選択してください",
-    "savedLoginPreserved": "復旧操作で保存済みのログイン情報は削除しません",
-    "phonePlaceholder": "電話番号を入力",
     "emailPlaceholder": "メールアドレスを入力",
-    "invalidEmail": "正しいメールアドレスを入力してください",
-    "invalidPhone": "正しい電話番号を入力してください",
     "working": "お待ちください…",
     "continue": "続行",
-    "or": "または",
-    "socialButton": "{{provider}} で続行",
     "social": {
-      "apple": "Apple",
-      "google": "Google",
       "wechat": "WeChat"
     },
     "back": "戻る",
-    "cancel": "キャンセル",
     "chooseMethod": "ログイン方法を選択",
-    "emailCode": "メール認証コードでログイン",
-    "orgDetected": "{{email}} は企業「{{org}}」に所属しています",
     "enterpriseLogin": "企業アカウントでログイン",
-    "enterpriseVia": "{{name}} でシングルサインオン",
     "personalLogin": "個人アカウントでログイン",
     "personalDesc": "メールアドレスに認証コードを送信",
-    "ssoRequired": "この組織は SSO ログインが必要です",
-    "ssoEntry": "企業 SSO でサインイン",
     "localModeEntry": "ログインをスキップ",
-    "localModeOpening": "ログインをスキップしています…",
-    "localModeDescription": "{{appName}} アカウントは不要です。データはこのデバイスに保存され、クラウドモデル、デバイス間アクセス、マーケットサービスは利用できません。",
     "consentStatement": "<terms>利用規約</terms>と<privacy>プライバシーポリシー</privacy>を読み、同意します",
     "consentDialog": {
       "title": "利用規約とプライバシーポリシー",
@@ -8631,44 +8613,11 @@
     "ssoOrgTitle": "企業 SSO サインイン",
     "ssoOrgSubtitle": "企業 ID、組織 slug、または確認済みドメインを入力してシングルサインオンに進みます",
     "ssoOrgPlaceholder": "企業 ID、slug、またはドメイン",
-    "ssoOrgHint": "企業のログイン識別子が不明な場合は、管理者にお問い合わせください",
-    "ssoOrgDetected": "「{{org}}」のシングルサインオン方法を選択してください",
-    "realmConsent": {
-      "personalTitle": "企業ログインが見つかりました",
-      "personalBodyCn": "メールに対応する企業は中国本土です。\n企業 SSO または個人ログインを選べます。",
-      "personalBodyGlobal": "メールに対応する企業は国際地域です。\n企業 SSO または個人ログインを選べます。",
-      "enterpriseLogin": "企業 SSO",
-      "continuePersonal": "個人で続ける",
-      "title": "企業のリージョンに接続",
-      "bodyCn": "この企業は中国本土リージョンにあります。\n続行すると {{appName}} はこの地域に接続します。",
-      "bodyGlobal": "この企業はグローバルリージョンにあります。\n続行すると {{appName}} はこの地域に接続します。",
-      "agree": "ログインを続ける",
-      "disagree": "キャンセル"
-    },
-    "ssoVerificationTitle": "企業 ID を確認",
-    "ssoVerificationSubtitle": "初回ログインでは ID プロバイダーから返された連絡先 {{target}} の確認が必要です",
     "enterCode": "認証コードを入力",
     "codeSentTo": "{{identifier}} にコードを送信しました",
     "codePlaceholder": "6 桁のコード",
-    "verifying": "確認中…",
     "signIn": "ログイン",
     "resendCode": "コードを再送信",
-    "resendCountdown": "{{n}} 秒後に再送信できます",
-    "chooseAccount": "ID を選択",
-    "chooseAccountSubtitle": "使用する個人または組織 ID を選択",
-    "personalAccount": "個人 ID",
-    "binding": {
-      "phoneTitle": "電話番号を確認",
-      "phoneSubtitle": "ログインを完了するには電話番号の確認が必要です",
-      "emailTitle": "メールを確認",
-      "emailSubtitle": "ログインを完了するにはメールの確認が必要です"
-    },
-    "sendCode": "コードを送信",
-    "completeSignIn": "ログインを完了",
-    "preparing": "ログインに接続中",
-    "preparingSubtitle": "この地域で利用可能な方法を読み込んでいます",
-    "unavailable": "現在ログインできません",
-    "retry": "再試行",
     "browserWaiting": "ブラウザで認証を完了してください",
     "browserCallback": {
       "successTitle": "ログイン完了",
@@ -8682,47 +8631,11 @@
       "cn": "CN",
       "dev": "Dev"
     },
-    "captcha": {
-      "title": "セキュリティチェック",
-      "loading": "セキュリティチェックを読み込んでいます…",
-      "failed": "セキュリティチェックを読み込めませんでした。",
-      "retry": "再試行",
-      "cancel": "キャンセル"
-    },
     "errors": {
-      "fallback": "ログインに失敗しました。再試行してください。",
-      "AUTH_SERVICE_UNAVAILABLE": "ログインサービスは一時的に利用できません。",
-      "AUTH_REQUEST_FAILED": "ログインリクエストに失敗しました。",
-      "CREDENTIAL_STORE_UNAVAILABLE": "ログイン情報を読み書きできません。解決方法をご確認ください。",
-      "BROWSER_OPEN_FAILED": "ブラウザを開けませんでした。再試行してください。",
-      "BROWSER_OPEN_TIMEOUT": "ブラウザの起動がタイムアウトしました。再試行してください。",
-      "NETWORK_ERROR": "ネットワーク接続を確認してください。",
-      "REQUEST_TIMEOUT": "リクエストがタイムアウトしました。",
-      "INVALID_PARAMS": "入力内容を確認してください。",
       "INVALID_CODE": "認証コードが間違っているか期限切れです。",
-      "CODE_ATTEMPTS_EXCEEDED": "試行回数を超えました。新しいコードを取得してください。",
-      "RATE_LIMITED": "試行が多すぎます。少し待ってから再試行してください。",
-      "CAPTCHA_REQUIRED": "先にセキュリティチェックを完了してください。",
-      "CAPTCHA_INVALID": "セキュリティチェックに失敗しました。もう一度お試しください。",
-      "CAPTCHA_UNAVAILABLE": "セキュリティチェックは一時的に利用できません。しばらくしてから再試行してください。",
-      "SSO_LOGIN_REQUIRED": "この組織は SSO ログインが必要です。",
-      "ORG_SSO_NOT_FOUND": "該当する企業が見つからないか、SSO サインインが有効になっていません",
-      "ORG_REALM_AMBIGUOUS": "この企業識別子は両方の地域に存在します。管理者にお問い合わせください。",
-      "ORG_REALM_UNAVAILABLE": "企業の地域を現在確認できません。ネットワークを確認して再試行してください。",
-      "SSO_EMAIL_REQUIRED": "企業 ID から有効なメールアドレスを取得できません。IdP の設定を管理者に確認してください。",
-      "INVALID_SSO_VERIFICATION_TICKET": "企業 ID の確認期限が切れました。SSO サインインをやり直してください。",
-      "SOCIAL_TOKEN_INVALID": "プロバイダー認証の期限が切れました。",
-      "SOCIAL_PROVIDER_DISABLED": "このログイン方法は現在利用できません。",
-      "USER_CANCELLED": "ログインをキャンセルしました。",
-      "STATE_MISMATCH": "セキュリティ検証に失敗しました。",
-      "INVALID_AUTH_CODE": "認証の期限が切れました。",
-      "INVALID_LOGIN_TICKET": "ログインセッションの期限が切れました。",
-      "INVALID_BIND_TICKET": "確認セッションの期限が切れました。",
-      "REGION_MISMATCH": "ログインサービスの地域がこのアプリと一致しません。"
+      "RATE_LIMITED": "試行が多すぎます。少し待ってから再試行してください。"
     },
     "rateLimit": {
-      "retryAt": "{{time}}（現地時間）以降に再試行してください。",
-      "unknownWait": "サーバーから待機時間が指定されていません。認証コードを続けて取得せず、しばらくお待ちください。",
       "intro": "ログインサービスがリクエストを一時的に制限しています。パソコンの認証情報ストレージの問題とは異なります。",
       "guidance": "しばらく待ってから認証コードを取得してください。再起動、再インストール、ネットワークの変更で制限が解除されるとは限りません。",
       "support": "待ってもログインできない場合は、OS、{{appName}} のバージョン、発生時刻、下のエラーコードとログを feedback@cindy.app に非公開で送ってください。ログを公開しないでください。"
@@ -9931,24 +9844,6 @@
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "リリースノートを表示",
       "reopenUpdateBanner": "更新の準備完了 — クリックして確認"
-    },
-    "accountSwitcher": {
-      "current": "現在のアカウント",
-      "switching": "アカウントを切り替え中…",
-      "adding": "ログインを準備中…",
-      "sharedDataRestriction": "この開発用ウィンドウは別の {{appName}} インスタンスとアカウントデータを共有しているため、アカウントの切り替えや追加はできません。元の {{appName}} ウィンドウで操作するか、独立したデータで開発版を起動してください。",
-      "title": "アカウントを切り替え",
-      "description": "このデバイスでログインしたアカウントを選択します",
-      "syncing": "ログイン状態を確認中…",
-      "syncFailed": "一部のアカウント状態を更新できませんでした",
-      "switchFailed": "切り替えに失敗しました。このアカウントに再度ログインしてください",
-      "runningTaskTitle": "実行中のタスクを停止してアカウントを切り替えますか？",
-      "runningTaskDescription": "現在実行中のタスクがあります。アカウントを切り替えると先に停止され、未完了の処理は続行されません。",
-      "runningTaskConfirm": "停止して切り替え",
-      "startFailed": "ログイン画面を開けませんでした。しばらくしてからお試しください",
-      "addAccount": "別のアカウントでログイン",
-      "back": "戻る",
-      "close": "閉じる"
     }
   },
   "bots": {
@@ -11687,7 +11582,6 @@
     "outboundAttachmentsIncomplete": "⚠️ {{count}} 件の添付ファイルを送信できませんでした：{{names}}",
     "unnamedAttachment": "名前のない添付ファイル"
   },
-  "markdown": {},
   "diffPanel": {
     "shell": {
       "resizeHandleAria": "パネル幅を調整",
@@ -12621,8 +12515,6 @@
   "onboarding": {
     "homeZeroModel": {
       "title": "{{appName}} にログインして続ける",
-      "desc": "モデルがまだありません。{{appName}} にログインすると、数十種類の最先端モデルを使えます。",
-      "cta": "{{appName}} にログイン",
       "cloudTitle": "{{appName}} で続ける",
       "cloudDesc": "モデルがまだありません。公式サービスを有効にすると、数十種類の最先端モデルを使えます。",
       "cloudCta": "はじめる",
@@ -12632,12 +12524,6 @@
       "title": "モデルプロバイダーに接続して始めましょう",
       "desc": "利用可能なモデルがまだありません。プロバイダーを接続すると会話を始められます。",
       "recommendedLabel": "おすすめ",
-      "cindy": {
-        "title": "{{appName}} AI",
-        "desc": "公式サービス · 全モデル · Claude Code / Codex 対応",
-        "loginTitle": "{{appName}} にサインイン",
-        "loginDesc": "サインインすると公式 {{appName}} AI サービスが有効になり、全モデルを利用できます。新規ユーザーには特典残高が付きます"
-      },
       "othersToggle": "その他のプロバイダー({{count}})",
       "presetSub": "API キーを入力して接続",
       "dismiss": "あとで",
@@ -12645,7 +12531,6 @@
       "banner": {
         "text": "利用可能なモデルがありません。プロバイダーを接続すると会話できます。",
         "connectCta": "プロバイダーを接続",
-        "loginCta": "{{appName}} にサインイン",
         "dismissAria": "閉じる"
       },
       "detectedLabel": "検出済み",
@@ -19192,7 +19077,7 @@
     "localInstalling": "プラグインをインストール中…",
     "localVersionNotice": "このリンクには共有時のバージョンが保存されています。インストール前にプラグインの権限を確認できます。",
     "localSignIn": "ログインして確認",
-    "localOpenHint": "{{appName}} にログインすると、共有されたプラグインの確認とインストールができます。",
+    "localOpenHint": "このバージョンの {{appName}} では共有されたプラグインを開けません。",
     "localReadFailed": "共有されたプラグインを読み込めませんでした",
     "localChanged": "プラグインが変更されました。このウィンドウを閉じて、もう一度共有してください。",
     "includeAttribution": "自分の名前とアイコンを付ける",

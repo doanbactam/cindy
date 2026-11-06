@@ -9,8 +9,6 @@ const mocks = vi.hoisted(() => ({
   writeText: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
-  exitLocalMode: vi.fn(),
-  handleLogout: vi.fn(),
   authState: {
     user: {
       id: 'user-123',
@@ -32,7 +30,6 @@ const mocks = vi.hoisted(() => ({
       orgSlug: string | null;
     } | null,
     mode: 'cloud' as 'cloud' | 'local',
-    exitLocalMode: vi.fn(),
   },
 }));
 
@@ -48,9 +45,6 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => mocks.authState,
 }));
 
-vi.mock('@/hooks/useLogout', () => ({
-  useLogout: () => ({ handleLogout: mocks.handleLogout }),
-}));
 
 vi.mock('@/lib/makerChatStore', () => ({
   makerChatStore: { getRunningSnapshot: () => new Map() },
@@ -99,8 +93,6 @@ describe('UserProfileCard copy user ID', () => {
       orgSlug: null,
     };
     mocks.authState.mode = 'cloud';
-    mocks.authState.exitLocalMode.mockReset();
-    mocks.handleLogout.mockReset();
   });
 
   afterEach(() => {
@@ -183,25 +175,11 @@ describe('UserProfileCard copy user ID', () => {
     expect(mocks.writeText).not.toHaveBeenCalled();
   });
 
-  it('keeps cloud account actions on the right side of the profile card', async () => {
+  it('shows no logout or add-account action on a cloud profile card', () => {
     renderCard();
 
-    const logoutButton = screen.getByRole('button', { name: 'settings.logout.aria' });
-    const addAccountButton = screen.getByRole('button', {
-      name: 'sidebar.user.menuAddAccount',
-    });
-    expect(logoutButton).toBeTruthy();
-    expect(addAccountButton).toBeTruthy();
-
-    fireEvent.click(logoutButton);
-    expect(mocks.handleLogout).toHaveBeenCalledOnce();
-
-    fireEvent.click(addAccountButton);
-    await waitFor(() =>
-      expect(screen.getByTestId('location-probe').textContent).toBe('/add-account'),
-    );
-    expect(screen.queryByTestId('account-switcher-dialog')).toBeNull();
-    expect(addAccountButton.parentElement?.className).toContain('flex-col');
+    expect(screen.queryByRole('button', { name: 'settings.logout.aria' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'sidebar.user.menuAddAccount' })).toBeNull();
   });
 
   it('does not show cloud account actions in the not-signed-in card', () => {
@@ -224,21 +202,13 @@ describe('UserProfileCard copy user ID', () => {
     );
   });
 
-  it('offers sign-in without exposing a logout action in local mode', () => {
+  it('offers no sign-in or exit action in local mode', () => {
     mocks.authState.user = null;
     mocks.authState.mode = 'local';
     renderCard();
 
-    const signInButton = screen.getByRole('button', {
-      name: 'settings.userProfile.local.signIn',
-    });
-    expect(signInButton).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'settings.userProfile.local.signIn' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'settings.userProfile.local.exit' })).toBeNull();
-    expect(mocks.authState.exitLocalMode).not.toHaveBeenCalled();
-
-    fireEvent.click(signInButton);
-
-    return waitFor(() => expect(mocks.authState.exitLocalMode).toHaveBeenCalledOnce());
   });
 
   it('shows the organization name and role only for an organization membership', () => {

@@ -2524,8 +2524,8 @@
       "avatarAlt": "Avatar de {{name}}",
       "local": {
         "exitFailed": "Impossible de quitter le mode non connecté, veuillez réessayer",
-        "name": "Non connecté",
-        "description": "Les données restent sur cet appareil, sans les services de compte {{appName}}",
+        "name": "Utilisateur local",
+        "description": "Les données restent sur cet appareil",
         "signIn": "Se connecter à {{appName}}",
         "exit": "Quitter le mode non connecté"
       },
@@ -2893,7 +2893,7 @@
       "serviceSource": {
         "label": "Service vocal",
         "hint": "Utilise par défaut le service vocal de {{appName}}. Vous pouvez aussi connecter un service ASR en temps réel avec des identifiants vocaux distincts.",
-        "localHint": "Les services de compte {{appName}} sont indisponibles hors connexion ; connectez un service ASR en temps réel avec des identifiants vocaux distincts.",
+        "localHint": "Cette version de {{appName}} n’inclut pas son service vocal. Connectez un service de reconnaissance vocale en temps réel avec ses propres identifiants vocaux.",
         "ariaLabel": "Source du service vocal",
         "options": {
           "cindy": "Service officiel {{appName}}",
@@ -4499,8 +4499,7 @@
     },
     "experimental": {
       "title": "Expérimental",
-      "toggleAria": "Activer/désactiver la fonctionnalité expérimentale : {{title}}",
-      "features": {}
+      "toggleAria": "Activer/désactiver la fonctionnalité expérimentale : {{title}}"
     },
     "lspMode": {
       "cell": {
@@ -5154,7 +5153,7 @@
       },
       "emptySlot": "Non sélectionné",
       "customHint": "Les modèles sont essayés dans l'ordre choisi et servent aussi de secours à la revue automatique lorsque ses modèles intégrés sont indisponibles. Les fournisseurs sélectionnés reçoivent le contexte de la revue : messages et références, détails des tâches et des actions (y compris les actions bloquées), identité et autorisations, chemins de fichiers et système d'exploitation.",
-      "signInHint": "Connectez-vous à {{appName}} pour utiliser les recommandations automatiques. Sans connexion, choisissez un modèle configuré d'un autre fournisseur sous Personnalisé.",
+      "signInHint": "Les recommandations automatiques ne sont pas disponibles dans cette version. Choisissez dans Personnalisé un modèle configuré d’un autre fournisseur.",
       "chooseAgent": "Choisir un Agent",
       "backToAgents": "Retour à la sélection de l'Agent",
       "searchPlaceholder": "Rechercher des modèles ou des fournisseurs",
@@ -8697,40 +8696,23 @@
   "localDbGate": {
     "title": "Impossible d'ouvrir les données locales",
     "description": "Réessayez, ou revenez aux options de connexion et choisissez à nouveau un mode.",
-    "retry": "Réessayer",
-    "backToLogin": "Retour à la connexion"
+    "retry": "Réessayer"
   },
   "login": {
     "title": "Bienvenue dans {{appName}}",
     "subtitle": "Choisissez un moyen sécurisé de vous connecter",
-    "savedLoginPreserved": "La récupération conserve vos informations de connexion enregistrées",
-    "phonePlaceholder": "Saisissez votre numéro de téléphone",
     "emailPlaceholder": "Saisissez votre e-mail",
-    "invalidEmail": "Veuillez saisir une adresse e-mail valide",
-    "invalidPhone": "Veuillez saisir un numéro de téléphone valide",
     "working": "Veuillez patienter…",
     "continue": "Continuer",
-    "or": "ou",
-    "socialButton": "Continuer avec {{provider}}",
     "social": {
-      "apple": "Apple",
-      "google": "Google",
       "wechat": "WeChat"
     },
     "back": "Retour",
-    "cancel": "Annuler",
     "chooseMethod": "Choisissez un mode de connexion",
-    "emailCode": "Se connecter avec un code par e-mail",
-    "orgDetected": "{{email}} appartient à « {{org}} »",
     "enterpriseLogin": "Avec un compte professionnel",
-    "enterpriseVia": "Authentification unique via {{name}}",
     "personalLogin": "Avec un compte personnel",
     "personalDesc": "Recevoir un code par e-mail",
-    "ssoRequired": "Cette organisation exige une connexion SSO",
-    "ssoEntry": "Se connecter avec le SSO d'entreprise",
     "localModeEntry": "Passer la connexion",
-    "localModeOpening": "Connexion ignorée…",
-    "localModeDescription": "Aucun compte {{appName}} requis. Les données restent sur cet appareil ; les modèles cloud, l'accès multi-appareils et les services de la marketplace ne sont pas disponibles.",
     "consentStatement": "J'accepte les <terms>CGU</terms> et la <privacy>Politique de confidentialité</privacy>",
     "consentDialog": {
       "title": "CGU et Politique de confidentialité",
@@ -8741,44 +8723,11 @@
     "ssoOrgTitle": "SSO d'entreprise",
     "ssoOrgSubtitle": "Saisissez un identifiant d'entreprise, un slug d'organisation ou un domaine vérifié pour continuer avec l'authentification unique",
     "ssoOrgPlaceholder": "Identifiant d'entreprise, slug ou domaine",
-    "ssoOrgHint": "Vous ne connaissez pas l'identifiant de connexion de votre entreprise ? Demandez à votre administrateur",
-    "ssoOrgDetected": "Choisissez une connexion d'authentification unique pour « {{org}} »",
-    "realmConsent": {
-      "personalTitle": "Connexion d'entreprise disponible",
-      "personalBodyCn": "Entreprise trouvée en Chine continentale.\nUtilisez le SSO ou continuez avec votre compte.",
-      "personalBodyGlobal": "Entreprise trouvée dans la région internationale.\nUtilisez le SSO ou continuez avec votre compte.",
-      "enterpriseLogin": "SSO d'entreprise",
-      "continuePersonal": "Continuer en personnel",
-      "title": "Se connecter à la région de votre entreprise",
-      "bodyCn": "Votre entreprise est en Chine continentale.\nContinuez pour connecter {{appName}} à cette région.",
-      "bodyGlobal": "Votre entreprise est dans la région internationale.\nContinuez pour connecter {{appName}} à cette région.",
-      "agree": "Continuer la connexion",
-      "disagree": "Annuler"
-    },
-    "ssoVerificationTitle": "Vérifier votre identité professionnelle",
-    "ssoVerificationSubtitle": "La première connexion nécessite de vérifier le contact renvoyé par votre fournisseur d'identité : {{target}}",
     "enterCode": "Saisissez le code de vérification",
     "codeSentTo": "Nous avons envoyé un code à {{identifier}}",
     "codePlaceholder": "Code à 6 chiffres",
-    "verifying": "Vérification…",
     "signIn": "Se connecter",
     "resendCode": "Renvoyer le code",
-    "resendCountdown": "Renvoi possible dans {{n}} secondes",
-    "chooseAccount": "Choisir une identité",
-    "chooseAccountSubtitle": "Sélectionnez l'identité personnelle ou d'organisation à utiliser",
-    "personalAccount": "Identité personnelle",
-    "binding": {
-      "phoneTitle": "Vérifier un numéro de téléphone",
-      "phoneSubtitle": "Un numéro de téléphone vérifié est requis pour finaliser la connexion",
-      "emailTitle": "Vérifier un e-mail",
-      "emailSubtitle": "Une adresse e-mail réelle et vérifiée est requise pour finaliser la connexion"
-    },
-    "sendCode": "Envoyer le code",
-    "completeSignIn": "Finaliser la connexion",
-    "preparing": "Préparation de la connexion",
-    "preparingSubtitle": "Chargement des méthodes disponibles pour cette région",
-    "unavailable": "Connexion indisponible pour l'instant",
-    "retry": "Réessayer",
     "browserWaiting": "Terminez dans votre navigateur",
     "browserCallback": {
       "successTitle": "Connecté",
@@ -8792,47 +8741,11 @@
       "cn": "CN",
       "dev": "Dev"
     },
-    "captcha": {
-      "title": "Contrôle de sécurité",
-      "loading": "Chargement du contrôle de sécurité…",
-      "failed": "Impossible de charger le contrôle de sécurité.",
-      "retry": "Réessayer",
-      "cancel": "Annuler"
-    },
     "errors": {
-      "fallback": "Échec de la connexion. Veuillez réessayer.",
-      "AUTH_SERVICE_UNAVAILABLE": "Le service de connexion est temporairement indisponible.",
-      "AUTH_REQUEST_FAILED": "La demande de connexion a échoué. Veuillez réessayer.",
-      "CREDENTIAL_STORE_UNAVAILABLE": "Le stockage de connexion est indisponible. Voir les solutions.",
-      "BROWSER_OPEN_FAILED": "Impossible d'ouvrir le navigateur. Veuillez réessayer.",
-      "BROWSER_OPEN_TIMEOUT": "Le navigateur n'a pas démarré à temps. Veuillez réessayer.",
-      "NETWORK_ERROR": "Connexion impossible. Vérifiez votre réseau et réessayez.",
-      "REQUEST_TIMEOUT": "La requête a expiré. Veuillez réessayer.",
-      "INVALID_PARAMS": "Vérifiez la valeur saisie.",
       "INVALID_CODE": "Le code de vérification est incorrect ou a expiré.",
-      "CODE_ATTEMPTS_EXCEEDED": "Trop de tentatives incorrectes. Demandez un nouveau code.",
-      "RATE_LIMITED": "Trop de tentatives. Veuillez patienter et réessayer.",
-      "CAPTCHA_REQUIRED": "Veuillez d'abord effectuer le contrôle de sécurité.",
-      "CAPTCHA_INVALID": "Échec du contrôle de sécurité. Veuillez réessayer.",
-      "CAPTCHA_UNAVAILABLE": "Le contrôle de sécurité est temporairement indisponible. Veuillez réessayer plus tard.",
-      "SSO_LOGIN_REQUIRED": "Cette organisation exige une connexion SSO.",
-      "ORG_SSO_NOT_FOUND": "Entreprise introuvable, ou aucune connexion SSO n'est activée pour elle",
-      "ORG_REALM_AMBIGUOUS": "Cet identifiant d'entreprise existe dans les deux régions. Contactez votre administrateur.",
-      "ORG_REALM_UNAVAILABLE": "{{appName}} ne peut pas vérifier la région de l'entreprise pour le moment. Vérifiez votre connexion et réessayez.",
-      "SSO_EMAIL_REQUIRED": "Votre identité professionnelle n'a pas fourni d'e-mail valide. Demandez à votre administrateur de vérifier la configuration de l'IdP.",
-      "INVALID_SSO_VERIFICATION_TICKET": "La vérification de l'identité professionnelle a expiré. Relancez la connexion SSO.",
-      "SOCIAL_TOKEN_INVALID": "L'autorisation du fournisseur a expiré. Veuillez réessayer.",
-      "SOCIAL_PROVIDER_DISABLED": "Cette méthode de connexion n'est pas disponible actuellement.",
-      "USER_CANCELLED": "La connexion a été annulée.",
-      "STATE_MISMATCH": "Échec de la vérification de sécurité. Veuillez réessayer.",
-      "INVALID_AUTH_CODE": "L'autorisation a expiré. Relancez la connexion.",
-      "INVALID_LOGIN_TICKET": "La session de connexion a expiré. Recommencez.",
-      "INVALID_BIND_TICKET": "La session de vérification a expiré. Recommencez.",
-      "REGION_MISMATCH": "La région du service de connexion ne correspond pas à cette application."
+      "RATE_LIMITED": "Trop de tentatives. Veuillez patienter et réessayer."
     },
     "rateLimit": {
-      "retryAt": "Réessayez après {{time}} (heure locale).",
-      "unknownWait": "Le serveur n'a pas indiqué de délai d'attente. Veuillez patienter avant de réessayer.",
       "intro": "Le service de connexion limite temporairement les requêtes. Ce problème est distinct d'une erreur de stockage local des identifiants.",
       "guidance": "Patientez avant de demander un autre code. Redémarrer, réinstaller ou changer de réseau ne garantit pas la levée de la limite.",
       "support": "Si le problème persiste après l'attente, envoyez en privé les journaux à feedback@cindy.app en indiquant votre système d'exploitation, votre version de {{appName}}, l'heure de l'erreur et le code ci-dessous. Ne publiez pas les journaux publiquement."
@@ -10051,24 +9964,6 @@
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "Voir les notes de version",
       "reopenUpdateBanner": "Mise à jour prête : cliquez pour la consulter"
-    },
-    "accountSwitcher": {
-      "current": "Compte actuel",
-      "switching": "Changement de compte…",
-      "adding": "Préparation de la connexion…",
-      "sharedDataRestriction": "Cette fenêtre de développement partage les données de compte avec une autre instance de {{appName}} ; elle ne peut donc pas changer de compte ni en ajouter. Utilisez la fenêtre {{appName}} d'origine, ou lancez l'application de développement avec des données distinctes.",
-      "title": "Changer de compte",
-      "description": "Choisissez un compte utilisé sur cet appareil",
-      "syncing": "Vérification de l'état de connexion…",
-      "syncFailed": "Impossible de mettre à jour l'état de certains comptes",
-      "switchFailed": "Impossible de changer de compte. Reconnectez-vous à ce compte",
-      "runningTaskTitle": "Arrêter les tâches en cours et changer de compte ?",
-      "runningTaskDescription": "Des tâches sont en cours d'exécution. Changer de compte les arrêtera d'abord, et le travail inachevé ne se poursuivra pas.",
-      "runningTaskConfirm": "Arrêter les tâches et changer",
-      "startFailed": "Impossible d'ouvrir la page de connexion. Réessayez plus tard",
-      "addAccount": "Se connecter à un autre compte",
-      "back": "Retour",
-      "close": "Fermer"
     }
   },
   "bots": {
@@ -11828,7 +11723,6 @@
     "outboundAttachmentsIncomplete": "⚠️ Envoi des pièces jointes incomplet : {{count}} non envoyée(s) ({{names}}).",
     "unnamedAttachment": "Pièce jointe sans titre"
   },
-  "markdown": {},
   "diffPanel": {
     "shell": {
       "resizeHandleAria": "Redimensionner la largeur du panneau",
@@ -12775,8 +12669,6 @@
   "onboarding": {
     "homeZeroModel": {
       "title": "Connectez-vous à {{appName}} pour continuer",
-      "desc": "Vous n'avez encore aucun modèle. Connectez-vous à {{appName}} pour utiliser des dizaines de modèles de premier plan.",
-      "cta": "Se connecter à {{appName}}",
       "cloudTitle": "Continuer avec {{appName}}",
       "cloudDesc": "Vous n'avez encore aucun modèle. Activez le service officiel pour utiliser des dizaines de modèles de premier plan.",
       "cloudCta": "Commencer",
@@ -12786,12 +12678,6 @@
       "title": "Connectez un fournisseur de modèles pour commencer",
       "desc": "Aucun modèle n'est encore disponible. Connectez un fournisseur pour commencer à discuter.",
       "recommendedLabel": "Recommandé",
-      "cindy": {
-        "title": "{{appName}} AI",
-        "desc": "Service officiel · tous les modèles · compatible avec Claude Code et Codex",
-        "loginTitle": "Se connecter à {{appName}}",
-        "loginDesc": "Connectez-vous pour activer le service officiel {{appName}} AI avec accès à tous les modèles. Les nouveaux utilisateurs bénéficient d'un solde promotionnel"
-      },
       "othersToggle": "Autres fournisseurs ({{count}})",
       "presetSub": "Collez une clé API pour vous connecter",
       "dismiss": "Plus tard",
@@ -12799,7 +12685,6 @@
       "banner": {
         "text": "Aucun modèle disponible : connectez un fournisseur pour commencer à discuter.",
         "connectCta": "Connecter un fournisseur",
-        "loginCta": "Se connecter à {{appName}}",
         "dismissAria": "Fermer"
       },
       "detectedLabel": "Détecté",
@@ -19448,7 +19333,7 @@
     "localInstalling": "Installation du plugin…",
     "localVersionNotice": "Ce lien conserve la version enregistrée au moment du partage. Vérifiez les autorisations du plugin avant de l'installer.",
     "localSignIn": "Se connecter pour voir",
-    "localOpenHint": "Connectez-vous à {{appName}} pour voir et installer ce plugin partagé.",
+    "localOpenHint": "Les plugins partagés ne peuvent pas être ouverts dans cette version de {{appName}}.",
     "localReadFailed": "Impossible de lire ce plugin partagé",
     "localChanged": "Le plugin a été modifié. Fermez cette fenêtre et partagez-le à nouveau.",
     "includeAttribution": "Inclure mon nom et mon avatar",

@@ -32,10 +32,6 @@ vi.mock('@/contexts/AuthContext', () => ({
     mode: 'cloud',
   }),
 }));
-vi.mock('@/components/sidebar/AccountSwitcherDialog', () => ({
-  AccountSwitcherDialog: () => null,
-}));
-vi.mock('@/hooks/useSignInToCindy', () => ({ useSignInToCindy: () => vi.fn() }));
 vi.mock('@/hooks/useMacFullscreen', () => ({ useMacFullscreen: () => ({ isMac: false }) }));
 
 const reviews = vi.hoisted(() => ({ updates: [] as PluginReviewUpdate[], refresh: vi.fn(), markRead: vi.fn() }));

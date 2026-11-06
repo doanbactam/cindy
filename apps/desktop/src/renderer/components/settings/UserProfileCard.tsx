@@ -1,14 +1,10 @@
-import { Button } from '@/components/ui/button';
 import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Copy, LogOut, Pencil, UserPlus, UserRound } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Building2, Copy, Pencil, UserRound } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOptionalConfirmDialog } from '@/components/ui/confirm-dialog-provider';
-import { useLogout } from '@/hooks/useLogout';
 import { ProfileEditDialog } from './ProfileEditDialog';
 
 const ORGANIZATION_ROLE_I18N_KEYS = {
@@ -33,11 +29,7 @@ function abbreviateUserId(id: string): string {
 }
 
 export function UserProfileCard() {
-  const { user, mode, exitLocalMode } = useAuth();
-  const confirmDialog = useOptionalConfirmDialog();
-  const { handleLogout } = useLogout();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { user, mode } = useAuth();
   const [avatarError, setAvatarError] = useState(false);
   const [orgLogoError, setOrgLogoError] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -57,16 +49,6 @@ export function UserProfileCard() {
   useEffect(() => {
     setOrgLogoError(false);
   }, [orgLogoUrl]);
-
-  const handleLocalSignIn = async () => {
-    try {
-      await exitLocalMode();
-    } catch {
-      // Continue to the login recovery surface; main remains fail closed while
-      // the durable owner transition is incomplete.
-    }
-    navigate('/login');
-  };
 
   if (!user && mode === 'local') {
     return (
@@ -89,17 +71,6 @@ export function UserProfileCard() {
           <p className="mt-1 text-12 text-[var(--text-tertiary)]">
             {t('settings.userProfile.local.description')}
           </p>
-        </div>
-        <div className="flex shrink-0 items-center">
-          <Button
-            variant="secondary"
-            size="sm"
-            compact
-            type="button"
-            onClick={() => void handleLocalSignIn()}
-          >
-            {t('settings.userProfile.local.signIn')}
-          </Button>
         </div>
       </div>
     );
@@ -126,29 +97,6 @@ export function UserProfileCard() {
     } catch {
       toast.error(t('settings.userProfile.copyUserId.failed'));
     }
-  };
-
-  const confirmRunningTaskInterruption = async (): Promise<boolean> => {
-    const { makerChatStore } = await import('@/lib/makerChatStore');
-    const hasRunningTask = [...makerChatStore.getRunningSnapshot().values()].some(
-      (status) => status.isRunning,
-    );
-    if (!hasRunningTask) return true;
-    if (!confirmDialog) return false;
-    return confirmDialog.confirm({
-      title: t('sidebar.accountSwitcher.runningTaskTitle'),
-      description: t('sidebar.accountSwitcher.runningTaskDescription'),
-      confirmText: t('sidebar.accountSwitcher.runningTaskConfirm'),
-      cancelText: t('logic.confirm.cancel'),
-      confirmVariant: 'destructive',
-    });
-  };
-
-  const openAddAccount = async () => {
-    if (!(await confirmRunningTaskInterruption())) return;
-    navigate('/add-account', {
-      state: { returnTo: `${location.pathname}${location.search}` },
-    });
   };
 
   return (
@@ -270,33 +218,6 @@ export function UserProfileCard() {
           </div>
         )}
       </div>
-
-      {mode === 'cloud' && (
-        <div className="flex shrink-0 flex-col items-stretch gap-2">
-          <Button
-            variant="secondary"
-            size="md"
-            compact
-            type="button"
-            onClick={() => void handleLogout()}
-            aria-label={t('settings.logout.aria')}
-          >
-            <LogOut size={14} aria-hidden="true" />
-            {t('settings.logout.button')}
-          </Button>
-          <Button
-            variant="secondary"
-            size="md"
-            compact
-            type="button"
-            onClick={() => void openAddAccount()}
-            aria-label={t('sidebar.user.menuAddAccount')}
-          >
-            <UserPlus size={14} aria-hidden="true" />
-            {t('sidebar.user.menuAddAccount')}
-          </Button>
-        </div>
-      )}
 
       <ProfileEditDialog open={editOpen} onOpenChange={setEditOpen} />
     </div>

@@ -10,12 +10,11 @@ import {
   ColdStartAuthFallbackRegistry,
   commitColdStartRefreshIfCurrent,
 } from '../authStartupGate';
-import { loginPreparingErrorState } from '../../shared/authIpc';
 
-// Test value (unit): execute the production cold-start and login-action entrypoints with
+// Test value (unit): execute the production cold-start and refresh entrypoints with
 // in-memory credentials/network. On 2026-10-29 three DNS failures stranded a valid login;
-// the pure startup-gate tests did not exercise ongoing retries or the reset action.
-// Minimal input: a saved session, repeated status=0 responses, then recovery/manual action.
+// the pure startup-gate tests did not exercise ongoing retries.
+// Minimal input: a saved session, repeated status=0 responses, then recovery.
 // Compile once; never load Electron, a real credential store, or sleep in wall-clock time.
 const source = ts.createSourceFile(
   'authManager.ts',
@@ -37,19 +36,18 @@ const names = new Set([
   'runAuthRefreshWithReplacementRetry',
   'waitForColdStartRetry',
   'stopColdStartRecovery',
-  'runLoginAction',
 ]);
 const compiled = ts.transpileModule(
   `
-let authStateEpoch = 0, loginFlowEpoch = 0, accessToken = null, currentUser = null;
-let activeAuthRealm = 'global', pendingAuthRealm = null, loginFlowState = null;
+let authStateEpoch = 0, accessToken = null, currentUser = null;
+let activeAuthRealm = 'global';
 let coldStartAuthInFlight = null, coldStartRetryWait = null, refreshTimer = null;
 let coldStartRecoveryStopped = false, coldStartRetryState = null;
 let lastAcceptedRefreshToken = null, persistedRefreshTokenNeedsIdentityCheck = false;
 let foreignDeviceLocalSignOut = false;
 let refreshPromise = null;
 const refreshBackoff = new AuthRefreshBackoff();
-const passiveLocalSignOut = false, settledLoginCommitCount = 0;
+const passiveLocalSignOut = false;
 const API_FETCH_TIMEOUT_MS = 15000;
 const AUTH_REGION = 'global';
 const COLD_START_AUTH_GATE_TIMEOUT_MS = 20000;
@@ -65,12 +63,11 @@ const snapshotLoggedOutAuthState = snapshotAuthState;
 const readPersistedAuthSession = () => saved.session;
 const readStoredRefreshTokenCandidates = () => [saved.session?.refreshToken];
 const hasPotentiallyPersistedAuthCredentials = () => !!saved.session;
-const assertLoginFlowCurrent = (epoch) => { if (epoch !== loginFlowEpoch) throw new Error('superseded'); };
 const finishColdStartSignedOut = async () => snapshotAuthState();
 const recoverAccountFreeOwnerAtStartup = async () => {
   onStartupFallback();
   coldStartTimeoutFallbacks.record(authStateEpoch, authStateEpoch + 1);
-  authStateEpoch++; loginFlowEpoch++;
+  authStateEpoch++;
 };
 const reconcileDesktopActiveAuthSession = async () => saved.session;
 ${source.statements
@@ -78,12 +75,11 @@ ${source.statements
   .map((node) => node.getText(source).replace(/^export /, ''))
   .join('\n')}
 return {
-  fetch: apiFetch, start: initialize, runtimeRefresh: refresh, reset: () => runLoginAction({ type: 'reset' }),
-  manualLogin: () => runLoginAction({ type: 'discover', identifier: 'test@example.invalid' }),
+  fetch: apiFetch, start: initialize, runtimeRefresh: refresh,
   state: snapshotAuthState,
   activateRuntime: () => { accessToken = 'test-expired'; currentUser = { id: 'original' }; },
   backoff: refreshBackoff,
-  fallback: () => { coldStartTimeoutFallbacks.record(authStateEpoch, authStateEpoch + 1); authStateEpoch++; loginFlowEpoch++; },
+  fallback: () => { coldStartTimeoutFallbacks.record(authStateEpoch, authStateEpoch + 1); authStateEpoch++; },
   changeOwner: () => {
     authStateEpoch++; accessToken = 'test-new-login'; currentUser = { id: 'other' };
     saved.session = { version: 1, realm: 'global', refreshToken: 'other-refresh' };
@@ -114,7 +110,6 @@ function setup(random = 0) {
   const request = vi
     .fn<(...args: unknown[]) => Promise<any>>()
     .mockResolvedValue({ ok: false, status: 0, data: null });
-  const loadProviders = vi.fn(async () => ({ step: 'identifier' }));
   const transaction = vi.fn(async (mutate: any, afterPersist: any) => {
     const result = mutate(vault);
     await afterPersist(result);
@@ -156,12 +151,9 @@ function setup(random = 0) {
     removeSafe: vi.fn(),
     isOwnerChangeShellPending: () => false,
     ownerChangeShellGate: { isPending: () => false },
-    sealedLoginFlowCommitDepths: new Set(),
     runRefreshWithReplacementRetry,
-    loginPreparingErrorState,
     requestAuthRefresh: request,
     loadClientEndpointsForRealm: vi.fn(async () => {}),
-    loadLoginProviders: loadProviders,
     createAuthClient: () => ({ discover: vi.fn() }),
     log: { debug: vi.fn(), warn: vi.fn(), info: vi.fn(), error: vi.fn() },
     readActiveVaultRefreshCandidate: () => null,
@@ -190,7 +182,7 @@ function setup(random = 0) {
     notifyAuthListeners: vi.fn(),
   };
   const main = new Function(...Object.keys(deps), compiled)(...Object.values(deps));
-  return { ...main, saved, vault, request, ok, transaction, clear, loadProviders, deps };
+  return { ...main, saved, vault, request, ok, transaction, clear, deps };
 }
 
 describe('saved login recovery after startup network failure', () => {
@@ -218,40 +210,6 @@ describe('saved login recovery after startup network failure', () => {
     expect(h.deps.notifyAuthListeners).toHaveBeenCalled();
   });
 
-  it('retry restores the saved login instead of fetching fresh login providers', async () => {
-    const h = setup();
-    h.request.mockResolvedValue(h.ok);
-    await expect(h.reset()).resolves.toMatchObject({ success: true, state: { step: 'completed' } });
-    expect(h.loadProviders).not.toHaveBeenCalled();
-    expect(h.saved.session.refreshToken).toBe('test-rotated');
-  });
-
-  it('manual login stops the waiting recovery without clearing the saved credential', async () => {
-    const h = setup();
-    const pending = h.start();
-    await vi.advanceTimersByTimeAsync(20_000);
-    await h.manualLogin();
-    const attempts = h.request.mock.calls.length;
-    await vi.advanceTimersByTimeAsync(180_000);
-    await pending;
-    await expect(h.start()).resolves.toMatchObject({ isAuthenticated: false });
-    expect(h.request).toHaveBeenCalledTimes(attempts);
-    expect(h.saved.session.refreshToken).toBe('test-refresh');
-  });
-
-  it('retry wakes a network backoff and reuses the saved session immediately', async () => {
-    const h = setup();
-    void h.start();
-    await vi.advanceTimersByTimeAsync(20_000);
-    expect(h.request).toHaveBeenCalledTimes(1);
-    h.request.mockResolvedValue(h.ok);
-    await expect(h.reset()).resolves.toMatchObject({ success: true, state: { step: 'completed' } });
-    expect(h.request).toHaveBeenCalledTimes(2);
-    expect(h.loadProviders).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(120_000);
-    expect(h.request).toHaveBeenCalledTimes(2);
-  });
-
   it('preserves only the old saved account rotation after an owner change', async () => {
     const h = setup();
     let resolve!: (value: unknown) => void;
@@ -274,43 +232,7 @@ describe('saved login recovery after startup network failure', () => {
 
   // PR #7737: stopping publication must not lose a rotating request's result or
   // its server deadline. Existing tests only stopped a timer or changed owner.
-  // Minimal sequences below execute initialize/reset with an in-flight reply (unit).
-  it.each(['network', 'vault'])(
-    'keeps the rotation when manual login stops publication during %s',
-    async (phase) => {
-      const h = setup();
-      let release!: () => void;
-      const gate = new Promise<void>((resolve) => {
-        release = resolve;
-      });
-      if (phase === 'network')
-        h.request.mockImplementationOnce(async () => {
-          await gate;
-          return h.ok;
-        });
-      else {
-        h.request.mockResolvedValue(h.ok);
-        h.transaction.mockImplementationOnce(async (mutate: any, afterPersist: any) => {
-          await gate;
-          const result = mutate(h.vault);
-          await afterPersist(result);
-          return result;
-        });
-      }
-      const pending = h.start();
-      await vi.advanceTimersByTimeAsync(0);
-      await h.manualLogin();
-      await vi.advanceTimersByTimeAsync(20_000);
-      expect(h.deps.onStartupFallback).not.toHaveBeenCalled();
-      release();
-      await vi.advanceTimersByTimeAsync(0);
-      await pending;
-      expect(h.saved.session.refreshToken).toBe('test-rotated');
-      expect(h.state()).toMatchObject({ isAuthenticated: false });
-      expect(h.deps.notifyAuthListeners).not.toHaveBeenCalled();
-    },
-  );
-
+  // Minimal sequences below execute initialize with an in-flight reply (unit).
   it.each(['logout', 'newer-token'])(
     'does not resurrect or overwrite credentials after %s',
     async (change) => {
@@ -339,67 +261,10 @@ describe('saved login recovery after startup network failure', () => {
     },
   );
 
-  it('continues a retry requested before the stopped request fails without offering new login', async () => {
-    const h = setup();
-    let resolve!: (value: unknown) => void;
-    h.request.mockImplementationOnce(
-      () =>
-        new Promise((r) => {
-          resolve = r;
-        }),
-    );
-    void h.start();
-    await vi.advanceTimersByTimeAsync(0);
-    await h.manualLogin();
-    const reset = h.reset();
-    resolve({ ok: false, status: 0, data: null });
-    h.request.mockResolvedValue(h.ok);
-    await vi.advanceTimersByTimeAsync(20_000);
-    await reset;
-    expect(h.loadProviders).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(40_000);
-    expect(h.state()).toMatchObject({ isAuthenticated: true });
-  });
-
-  it.each([false, true])(
-    'retains the server deadline across stopping and restarting (late=%s)',
-    async (late) => {
-      const h = setup(0.5);
-      const failure = { ok: false, status: 503, data: {}, retryAt: Date.now() + 120_000 };
-      let resolve!: (value: unknown) => void;
-      h.request.mockImplementationOnce(
-        () =>
-          new Promise((r) => {
-            resolve = r;
-          }),
-      );
-      void h.start();
-      await vi.advanceTimersByTimeAsync(0);
-      if (!late) {
-        resolve(failure);
-        await vi.advanceTimersByTimeAsync(0);
-      }
-      h.stop();
-      if (late) resolve(failure);
-      await vi.advanceTimersByTimeAsync(0);
-      const reset = h.reset();
-      h.request.mockResolvedValue(h.ok);
-      await vi.advanceTimersByTimeAsync(20_000);
-      await reset;
-      await vi.advanceTimersByTimeAsync(129_999);
-      expect(h.request).toHaveBeenCalledTimes(1);
-      await vi.advanceTimersByTimeAsync(1);
-      expect(h.state()).toMatchObject({ isAuthenticated: true });
-    },
-  );
-
   // PR #7737 replacement-token regression (unit): existing deadline tests keep
   // the same token. initialize must retain both Retry-After and failure history
   // when A fails, another instance writes B, and the replacement request is limited.
-  it.each([
-    { status: 429, resume: false },
-    { status: 503, resume: true },
-  ])('keeps replacement-token backoff ($status, resume=$resume)', async ({ status, resume }) => {
+  it('keeps replacement-token backoff', async () => {
     const h = setup(0.5);
     h.request
       .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
@@ -410,7 +275,7 @@ describe('saved login recovery after startup network failure', () => {
       })
       .mockImplementationOnce(async () => ({
         ok: false,
-        status,
+        status: 429,
         data: {},
         retryAt: Date.now() + 240_000,
       }))
@@ -422,17 +287,9 @@ describe('saved login recovery after startup network failure', () => {
       'test-refresh',
       'test-replacement',
     ]);
-    if (resume) {
-      h.stop();
-      await vi.advanceTimersByTimeAsync(0);
-      const reset = h.reset();
-      await vi.advanceTimersByTimeAsync(20_000);
-      await reset;
-      expect(h.loadProviders).not.toHaveBeenCalled();
-    }
     // The second failure adds 60s of jitter after the 240s server deadline.
     // Resetting the failure count would retry 30s early; retaining A's key retries now.
-    await vi.advanceTimersByTimeAsync(299_999 - (resume ? 20_000 : 0));
+    await vi.advanceTimersByTimeAsync(299_999);
     expect(h.request).toHaveBeenCalledTimes(3);
     expect(h.saved.session.refreshToken).toBe('test-replacement');
     await vi.advanceTimersByTimeAsync(1);
@@ -441,62 +298,6 @@ describe('saved login recovery after startup network failure', () => {
     expect(h.saved.session.refreshToken).toBe('test-rotated');
     expect(h.clear).not.toHaveBeenCalled();
   });
-
-  it('coalesces multiple retry clicks and runtime refresh behind the pending request', async () => {
-    const h = setup();
-    let resolve!: (value: unknown) => void;
-    h.request.mockImplementation(
-      () =>
-        new Promise((r) => {
-          resolve = r;
-        }),
-    );
-    void h.start();
-    await vi.advanceTimersByTimeAsync(20_000);
-    const first = h.reset();
-    const second = h.reset();
-    await vi.advanceTimersByTimeAsync(0);
-    await expect(h.runtimeRefresh()).resolves.toBe(false);
-    expect(h.request).toHaveBeenCalledTimes(1);
-    resolve(h.ok);
-    await expect(first).resolves.toMatchObject({ success: true });
-    await expect(second).resolves.toMatchObject({ success: true });
-    expect(h.loadProviders).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    { status: 429, serverWait: undefined },
-    { status: 429, serverWait: 120_000 },
-    { status: 503, serverWait: 120_000 },
-  ])(
-    'keeps server cooldown and jitter across retry clicks ($status, $serverWait)',
-    async ({ status, serverWait }) => {
-      const h = setup(0.5);
-      // Exercise HTTP header parsing too: the old path dropped Retry-After on
-      // 503, so injecting retryAt directly would miss the premature retry bug.
-      h.deps.net.fetch.mockResolvedValue(
-        new Response('{}', {
-          status,
-          headers: serverWait === undefined ? {} : { 'Retry-After': String(serverWait / 1000) },
-        }),
-      );
-      h.request.mockImplementation(() => h.fetch('/api/auth/refresh', { timeoutMs: 0 }));
-      void h.start();
-      await vi.advanceTimersByTimeAsync(20_000);
-      const retry = h.reset();
-      await vi.advanceTimersByTimeAsync(20_000);
-      await expect(retry).resolves.toMatchObject({
-        success: false,
-        code: 'AUTH_SERVICE_UNAVAILABLE',
-      });
-      expect(h.request).toHaveBeenCalledTimes(1);
-      h.request.mockResolvedValue(h.ok);
-      await vi.advanceTimersByTimeAsync((serverWait ?? 60_000) + 30_000 - 40_001);
-      expect(h.request).toHaveBeenCalledTimes(1);
-      await vi.advanceTimersByTimeAsync(1);
-      expect(h.state()).toMatchObject({ isAuthenticated: true });
-    },
-  );
 
   it('retries endpoint discovery without sending the credential to a fallback realm', async () => {
     const h = setup();

@@ -69,7 +69,6 @@ vi.mock('../ComposerSendShortcutSection', () => ({ ComposerSendShortcutSection: 
 vi.mock('../KeyboardShortcutsSection', () => ({ KeyboardShortcutsSection: Stub }));
 vi.mock('../AgentIslandSection', () => ({ AgentIslandSection: Stub }));
 vi.mock('../LanguageSection', () => ({ LanguageSection: Stub }));
-vi.mock('../LogoutSection', () => ({ LogoutSection: Stub }));
 vi.mock('../AboutSection', () => ({ AboutSection: Stub }));
 vi.mock('../WorktreeRecycleCard', () => ({ WorktreeRecycleCard: Stub }));
 vi.mock('../StorageManagementCard', () => ({ StorageManagementCard: Stub }));

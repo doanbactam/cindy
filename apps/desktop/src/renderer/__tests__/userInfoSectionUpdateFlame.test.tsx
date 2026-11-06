@@ -41,10 +41,6 @@ vi.mock('@/hooks/useBetaChannelSettings', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useLogout', () => ({
-  useLogout: () => ({ handleLogout: vi.fn() }),
-}));
-
 vi.mock('@/components/ui/tooltip', () => ({
   Tip: ({ children }: { children: React.ReactNode }) => children,
 }));

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { useAppShellCover } from '@/contexts/AppShellCoverContext';
@@ -41,9 +41,8 @@ const DECISION_RETRY_DELAY_MS = 1_000;
 
 export function LocalDbGate() {
   const { t } = useTranslation();
-  const { dataOwnerId, mode, logout, exitLocalMode } = useAuth();
+  const { dataOwnerId } = useAuth();
   const { reportLocalDbGate } = useAppShellCover();
-  const navigate = useNavigate();
   const [decision, setDecision] = useState<GateDecision>({ phase: 'checking' });
   const [retryNonce, setRetryNonce] = useState(0);
   const retryCountRef = useRef(0);
@@ -176,18 +175,6 @@ export function LocalDbGate() {
           retryCountRef.current = 0;
           setDecision({ phase: 'checking' });
           setRetryNonce((n) => n + 1);
-        }}
-        onBackToLogin={() => {
-          const leave = mode === 'local' ? exitLocalMode() : logout();
-          void leave.then(
-            () => navigate('/login', { replace: true }),
-            (err) => {
-              // The fatal screen must always have an escape hatch. A failed
-              // teardown is still logged, but must not trap the user here.
-              log.warn('failed to leave the current session from local-db fatal screen', err);
-              navigate('/login', { replace: true });
-            },
-          );
         }}
       />
     );

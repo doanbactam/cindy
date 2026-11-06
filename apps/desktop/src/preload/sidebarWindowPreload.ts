@@ -159,7 +159,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   authHasPersistedSessionHintSync: (): boolean =>
     ipcRenderer.sendSync('auth:has-persisted-session-hint-sync') === true,
   authInitialize: (): Promise<unknown> => ipcRenderer.invoke('auth:initialize'),
-  authGetLoginState: (): Promise<unknown> => ipcRenderer.invoke('auth:get-login-state'),
   authGetAccountDeletionAvailability: (): Promise<unknown> =>
     ipcRenderer.invoke('auth:account-deletion:get-availability'),
   authGetAccountDeletionStatus: (): Promise<unknown> =>

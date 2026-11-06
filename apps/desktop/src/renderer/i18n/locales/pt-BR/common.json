@@ -2524,8 +2524,8 @@
       "avatarAlt": "Avatar de {{name}}",
       "local": {
         "exitFailed": "Não foi possível sair do estado sem login. Tente novamente",
-        "name": "Login não realizado",
-        "description": "Os dados ficam neste dispositivo sem os serviços da conta {{appName}}",
+        "name": "Usuário local",
+        "description": "Os dados ficam neste dispositivo",
         "signIn": "Entrar na {{appName}}",
         "exit": "Sair do estado sem login"
       },
@@ -2893,7 +2893,7 @@
       "serviceSource": {
         "label": "Serviço de voz",
         "hint": "Usa o serviço de voz do {{appName}} por padrão. Você pode conectar um serviço ASR em tempo real com credenciais de voz separadas.",
-        "localHint": "Os serviços da conta {{appName}} ficam indisponíveis sem login; conecte um serviço ASR em tempo real com credenciais de voz separadas.",
+        "localHint": "Esta versão do {{appName}} não inclui o serviço de voz. Conecte um serviço de ASR em tempo real com credenciais de voz próprias.",
         "ariaLabel": "Origem do serviço de voz",
         "options": {
           "cindy": "Serviço oficial do {{appName}}",
@@ -4499,8 +4499,7 @@
     },
     "experimental": {
       "title": "Experimental",
-      "toggleAria": "Ativar/desativar recurso experimental: {{title}}",
-      "features": {}
+      "toggleAria": "Ativar/desativar recurso experimental: {{title}}"
     },
     "lspMode": {
       "cell": {
@@ -5154,7 +5153,7 @@
       },
       "emptySlot": "Não selecionado",
       "customHint": "Os modelos são testados na ordem escolhida e também servem de alternativa à Revisão automática quando os modelos integrados estão indisponíveis. Os provedores selecionados recebem o contexto da revisão: mensagens e referências, detalhes de tarefas e ações (incluindo ações bloqueadas), identidade e permissões, caminhos de arquivos e sistema operacional.",
-      "signInHint": "Entre na {{appName}} para usar as recomendações automáticas. Sem fazer login, escolha um modelo configurado de outro provedor em Personalizado.",
+      "signInHint": "As recomendações automáticas não estão disponíveis nesta versão. Escolha em Personalizado um modelo configurado de outro provedor.",
       "chooseAgent": "Escolher um Agent",
       "backToAgents": "Voltar à seleção de Agent",
       "searchPlaceholder": "Buscar modelos ou provedores",
@@ -8697,40 +8696,23 @@
   "localDbGate": {
     "title": "Não foi possível abrir os dados locais",
     "description": "Tente novamente ou volte às opções de login e selecione um modo novamente.",
-    "retry": "Tentar novamente",
-    "backToLogin": "Voltar ao login"
+    "retry": "Tentar novamente"
   },
   "login": {
     "title": "Boas-vindas ao {{appName}}",
     "subtitle": "Escolha uma forma segura de entrar",
-    "savedLoginPreserved": "A recuperação mantém seus dados de login salvos",
-    "phonePlaceholder": "Digite seu número de telefone",
     "emailPlaceholder": "Digite seu e-mail",
-    "invalidEmail": "Digite um endereço de e-mail válido",
-    "invalidPhone": "Digite um número de celular válido",
     "working": "Aguarde…",
     "continue": "Continuar",
-    "or": "ou",
-    "socialButton": "Continuar com {{provider}}",
     "social": {
-      "apple": "Apple",
-      "google": "Google",
       "wechat": "WeChat"
     },
     "back": "Voltar",
-    "cancel": "Cancelar",
     "chooseMethod": "Escolha como entrar",
-    "emailCode": "Entrar com um código por e-mail",
-    "orgDetected": "{{email}} pertence a \"{{org}}\"",
     "enterpriseLogin": "Com sua identidade profissional",
-    "enterpriseVia": "Login único via {{name}}",
     "personalLogin": "Entrar com uma conta pessoal",
     "personalDesc": "Receber um código por e-mail",
-    "ssoRequired": "Esta organização exige login por SSO",
-    "ssoEntry": "Entrar com SSO empresarial",
     "localModeEntry": "Pular login",
-    "localModeOpening": "Pulando login…",
-    "localModeDescription": "Não é necessário ter uma conta do {{appName}}. Os dados ficam neste dispositivo; modelos na nuvem, acesso entre dispositivos e serviços do marketplace ficam indisponíveis.",
     "consentStatement": "Aceito os <terms>Termos de Serviço</terms> e a <privacy>Política de Privacidade</privacy>",
     "consentDialog": {
       "title": "Termos e Política de Privacidade",
@@ -8741,44 +8723,11 @@
     "ssoOrgTitle": "SSO empresarial",
     "ssoOrgSubtitle": "Digite um ID de empresa, slug de organização ou domínio verificado para continuar com o login único",
     "ssoOrgPlaceholder": "ID da empresa, identificador ou domínio",
-    "ssoOrgHint": "Não sabe seu identificador de login empresarial? Consulte seu administrador",
-    "ssoOrgDetected": "Escolha uma conexão de login único para \"{{org}}\"",
-    "realmConsent": {
-      "personalTitle": "Login empresarial disponível",
-      "personalBodyCn": "Empresa encontrada na China Continental.\nUse SSO ou continue com sua conta.",
-      "personalBodyGlobal": "Empresa encontrada na região Global.\nUse SSO ou continue com sua conta.",
-      "enterpriseLogin": "SSO empresarial",
-      "continuePersonal": "Continuar com conta pessoal",
-      "title": "Conecte-se à região da sua empresa",
-      "bodyCn": "Sua empresa está na China continental.\nContinue para conectar a {{appName}} a essa região.",
-      "bodyGlobal": "Sua empresa está na região Global.\nContinue para conectar a {{appName}} a essa região.",
-      "agree": "Continuar login",
-      "disagree": "Cancelar"
-    },
-    "ssoVerificationTitle": "Verifique sua identidade profissional",
-    "ssoVerificationSubtitle": "O primeiro login exige a verificação do contato retornado pelo seu provedor de identidade: {{target}}",
     "enterCode": "Digite o código de verificação",
     "codeSentTo": "Enviamos um código para {{identifier}}",
     "codePlaceholder": "Código de 6 dígitos",
-    "verifying": "Verificando…",
     "signIn": "Entrar",
     "resendCode": "Reenviar código",
-    "resendCountdown": "{{n}} segundos para reenviar",
-    "chooseAccount": "Escolha uma identidade",
-    "chooseAccountSubtitle": "Selecione a identidade pessoal ou da organização que deseja usar",
-    "personalAccount": "Identidade pessoal",
-    "binding": {
-      "phoneTitle": "Verificar um número de telefone",
-      "phoneSubtitle": "É necessário um número de telefone verificado para concluir o login",
-      "emailTitle": "Verificar um e-mail",
-      "emailSubtitle": "É necessário um e-mail real verificado para concluir o login"
-    },
-    "sendCode": "Enviar código",
-    "completeSignIn": "Concluir login",
-    "preparing": "Conectando ao login",
-    "preparingSubtitle": "Carregando os métodos disponíveis para esta região",
-    "unavailable": "Login indisponível no momento",
-    "retry": "Tentar novamente",
     "browserWaiting": "Conclua a verificação no navegador",
     "browserCallback": {
       "successTitle": "Login realizado",
@@ -8792,47 +8741,11 @@
       "cn": "CN",
       "dev": "Dev"
     },
-    "captcha": {
-      "title": "Verificação de segurança",
-      "loading": "Carregando verificação de segurança…",
-      "failed": "Falha ao carregar a verificação de segurança.",
-      "retry": "Tentar novamente",
-      "cancel": "Cancelar"
-    },
     "errors": {
-      "fallback": "Falha no login. Tente novamente.",
-      "AUTH_SERVICE_UNAVAILABLE": "O serviço de login está temporariamente indisponível.",
-      "AUTH_REQUEST_FAILED": "A solicitação de login falhou. Tente novamente.",
-      "CREDENTIAL_STORE_UNAVAILABLE": "O armazenamento de login está indisponível. Veja as soluções.",
-      "BROWSER_OPEN_FAILED": "Não foi possível abrir o navegador. Tente novamente.",
-      "BROWSER_OPEN_TIMEOUT": "O navegador não iniciou a tempo. Tente novamente.",
-      "NETWORK_ERROR": "Não foi possível conectar. Verifique sua rede e tente novamente.",
-      "REQUEST_TIMEOUT": "O tempo limite da solicitação foi atingido. Tente novamente.",
-      "INVALID_PARAMS": "Confira o valor inserido.",
       "INVALID_CODE": "O código de verificação está incorreto ou expirou.",
-      "CODE_ATTEMPTS_EXCEEDED": "Muitas tentativas incorretas. Solicite um novo código.",
-      "RATE_LIMITED": "Muitas tentativas. Aguarde e tente novamente.",
-      "CAPTCHA_REQUIRED": "Conclua a verificação de segurança primeiro.",
-      "CAPTCHA_INVALID": "A verificação de segurança falhou. Tente novamente.",
-      "CAPTCHA_UNAVAILABLE": "A verificação de segurança está temporariamente indisponível. Tente novamente mais tarde.",
-      "SSO_LOGIN_REQUIRED": "Esta organização exige login com SSO.",
-      "ORG_SSO_NOT_FOUND": "Empresa não encontrada ou sem conexão SSO habilitada",
-      "ORG_REALM_AMBIGUOUS": "Este identificador empresarial existe em ambas as regiões. Entre em contato com seu administrador.",
-      "ORG_REALM_UNAVAILABLE": "A {{appName}} não consegue verificar a região da empresa agora. Verifique sua conexão e tente novamente.",
-      "SSO_EMAIL_REQUIRED": "O provedor de identidade profissional não informou um e-mail válido. Peça ao administrador para verificar a configuração do IdP.",
-      "INVALID_SSO_VERIFICATION_TICKET": "A verificação da identidade profissional expirou. Inicie o login com SSO novamente.",
-      "SOCIAL_TOKEN_INVALID": "A autorização do provedor expirou. Tente novamente.",
-      "SOCIAL_PROVIDER_DISABLED": "Este método de login não está disponível no momento.",
-      "USER_CANCELLED": "O login foi cancelado.",
-      "STATE_MISMATCH": "A verificação de segurança falhou. Tente novamente.",
-      "INVALID_AUTH_CODE": "A autorização expirou. Inicie o login novamente.",
-      "INVALID_LOGIN_TICKET": "A sessão de login expirou. Comece novamente.",
-      "INVALID_BIND_TICKET": "A sessão de verificação expirou. Comece novamente.",
-      "REGION_MISMATCH": "A região do serviço de login não corresponde à deste aplicativo."
+      "RATE_LIMITED": "Muitas tentativas. Aguarde e tente novamente."
     },
     "rateLimit": {
-      "retryAt": "Tente novamente após {{time}} (horário local).",
-      "unknownWait": "O servidor não informou um tempo de espera. Aguarde antes de tentar novamente.",
       "intro": "O serviço de login está limitando temporariamente as solicitações. Isso é independente de um erro de armazenamento local de credenciais.",
       "guidance": "Aguarde antes de solicitar outro código. Reiniciar, reinstalar ou trocar de rede não garante que o limite seja removido.",
       "support": "Se o problema continuar após a espera, envie os logs em particular para feedback@cindy.app com seu sistema operacional, a versão do {{appName}}, o horário do erro e o código abaixo. Não publique logs."
@@ -10051,24 +9964,6 @@
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "Ver notas da versão",
       "reopenUpdateBanner": "Atualização pronta — clique para revisar"
-    },
-    "accountSwitcher": {
-      "current": "Conta atual",
-      "switching": "Trocando de conta…",
-      "adding": "Preparando login…",
-      "sharedDataRestriction": "Esta janela de desenvolvimento compartilha dados de conta com outra instância do {{appName}}, por isso não pode trocar nem adicionar contas. Use a janela original do {{appName}} ou inicie o aplicativo de desenvolvimento com dados separados.",
-      "title": "Trocar de conta",
-      "description": "Escolha uma conta usada neste dispositivo",
-      "syncing": "Verificando status do login…",
-      "syncFailed": "Não foi possível atualizar o status de algumas contas",
-      "switchFailed": "Não foi possível trocar de conta. Entre nessa conta novamente",
-      "runningTaskTitle": "Parar as tarefas em execução e trocar de conta?",
-      "runningTaskDescription": "Há tarefas em execução. A troca de conta vai interrompê-las primeiro, e o trabalho não concluído não continuará.",
-      "runningTaskConfirm": "Parar tarefas e trocar",
-      "startFailed": "Não foi possível abrir a página de login. Tente novamente mais tarde",
-      "addAccount": "Entrar em outra conta",
-      "back": "Voltar",
-      "close": "Fechar"
     }
   },
   "bots": {
@@ -11828,7 +11723,6 @@
     "outboundAttachmentsIncomplete": "⚠️ Entrega de anexos incompleta: {{count}} não enviados ({{names}}).",
     "unnamedAttachment": "Anexo sem título"
   },
-  "markdown": {},
   "diffPanel": {
     "shell": {
       "resizeHandleAria": "Redimensionar largura do painel",
@@ -12775,8 +12669,6 @@
   "onboarding": {
     "homeZeroModel": {
       "title": "Entre no {{appName}} para continuar",
-      "desc": "Você ainda não tem modelos. Entre no {{appName}} para usar dezenas de modelos de ponta.",
-      "cta": "Entrar na {{appName}}",
       "cloudTitle": "Continuar com {{appName}}",
       "cloudDesc": "Você ainda não tem modelos. Ative o serviço oficial para usar dezenas de modelos de ponta.",
       "cloudCta": "Começar",
@@ -12786,12 +12678,6 @@
       "title": "Conecte um provedor de modelos para começar",
       "desc": "Nenhum modelo disponível ainda. Conecte um provedor para começar a conversar.",
       "recommendedLabel": "Recomendado",
-      "cindy": {
-        "title": "{{appName}} AI",
-        "desc": "Serviço oficial · todos os modelos · funciona com Claude Code e Codex",
-        "loginTitle": "Entrar na {{appName}}",
-        "loginDesc": "Entre para ativar o serviço oficial {{appName}} AI com acesso a todos os modelos — novos usuários recebem saldo promocional"
-      },
       "othersToggle": "Outros provedores ({{count}})",
       "presetSub": "Cole uma chave de API para conectar",
       "dismiss": "Talvez mais tarde",
@@ -12799,7 +12685,6 @@
       "banner": {
         "text": "Nenhum modelo disponível — conecte um provedor para começar a conversar.",
         "connectCta": "Conectar um provedor",
-        "loginCta": "Entrar na {{appName}}",
         "dismissAria": "Fechar"
       },
       "detectedLabel": "Detectado",
@@ -19448,7 +19333,7 @@
     "localInstalling": "Instalando plugin…",
     "localVersionNotice": "Este link mantém a versão salva no momento do compartilhamento. Revise as permissões do plugin antes da instalação.",
     "localSignIn": "Entrar para visualizar",
-    "localOpenHint": "Entre no {{appName}} para ver e instalar este plugin compartilhado.",
+    "localOpenHint": "Plugins compartilhados não podem ser abertos nesta versão do {{appName}}.",
     "localReadFailed": "Não foi possível ler este plugin compartilhado",
     "localChanged": "O plugin mudou. Feche esta janela e compartilhe-o novamente.",
     "includeAttribution": "Incluir meu nome e avatar",

@@ -6,10 +6,8 @@ import { Select } from '@/components/ui/select';
 import { Tip } from '@/components/ui/tooltip';
 import type { GhostPluginListItem } from './lib/ghostPluginViewModel';
 import type { PluginMarketDetail } from '../../../shared/pluginMarket';
-import { AccountSwitcherDialog } from '@/components/sidebar/AccountSwitcherDialog';
-import { useSignInToCindy } from '@/hooks/useSignInToCindy';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,16 +83,12 @@ export function MyPluginsPage({
   const { t, i18n } = useTranslation();
   const { dataOwnerId, dataOwnerGeneration, user, mode } = useAuth();
   const ownerKey = JSON.stringify([dataOwnerId, dataOwnerGeneration, user?.id, mode]);
-  const navigate = useNavigate();
   const location = useLocation();
-  const signIn = useSignInToCindy(`${location.pathname}${location.search}`);
   const [picker, setPicker] = useState<PluginPublishDialogRequest | null>(null);
   const pickerSequence = useRef(0);
   const [updateRefresh, setUpdateRefresh] = useState(0);
   const [selectedInstallation, setSelectedInstallation] = useState<{ context: string; instanceId: string } | null>(null);
   const preparePreview = onPrepare ?? reader.prepare;
-  const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
-  const accountTrigger = useRef<HTMLButtonElement>(null);
   const { confirm } = useConfirmDialog();
   const reviewUpdates = usePluginReviewUpdates();
   const [cancelBusy, setCancelBusy] = useState(false);
@@ -1168,23 +1162,6 @@ export function MyPluginsPage({
               <p role="status" className="text-14 leading-6 text-[var(--text-secondary)]">
                 {t(`${copy}.signInRequired`)}
               </p>
-              <Button
-                ref={accountTrigger}
-                variant="secondary"
-                onClick={() => (mode === 'cloud' ? setAccountSwitcherOpen(true) : void signIn())}
-              >
-                {t(mode === 'cloud' ? 'sidebar.accountSwitcher.title' : 'login.signIn')}
-              </Button>
-              <AccountSwitcherDialog
-                open={accountSwitcherOpen}
-                onOpenChange={setAccountSwitcherOpen}
-                triggerRef={accountTrigger}
-                onAddAccount={() =>
-                  navigate('/add-account', {
-                    state: { returnTo: `${location.pathname}${location.search}` },
-                  })
-                }
-              />
             </div>
           ) : (
             <>

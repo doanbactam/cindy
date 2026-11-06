@@ -10,21 +10,16 @@ import {
   type ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { soleLoginMethod } from '@cindy/auth-client';
 
 import { useConfirmDialog } from '@/components/ui/confirm-dialog-provider';
 import { clearWorkersCache } from '@/features/cc-agent/hooks/useWorkers';
 import { setSelectedMachineOwner } from '@/features/device-link/selectedMachineStore';
 import { createLogger } from '@/lib/logger';
-import { getLoginEmailCaptchaGate } from '@/lib/loginCaptchaGate';
 import { toast } from '@/lib/toast';
 import {
   createAuthService,
   type AuthService,
   type AuthState,
-  type DesktopLoginAction,
-  type DesktopLoginActionResult,
-  type DesktopAccountSwitcherSnapshot,
   type User,
 } from '@/lib/authService';
 import {
@@ -53,26 +48,10 @@ import { setModelVisibilityOwner } from '@/state/modelVisibilityPrefs';
 import { setComposerDraftOwner } from '@/lib/composerDraftStore';
 import { setBotReadStateOwner } from '@/features/bots/botReadState';
 import { setPendingHandoffOwner } from '@/state/pendingFirstMessage';
-import { rememberSsoOrgIdentifier } from '@/state/ssoOrgHistory';
 import { setDeferredUiAssignmentOwner } from '@/features/cc-agent/deferredUiAssignment';
 import { invalidateProvidersSnapshot } from '@/lib/providersSnapshotStore';
-import { preloadLocalCatalogSnapshot } from '@/lib/localCatalogSnapshot';
 import { invalidateRemoteCatalogSnapshots } from '@/lib/remoteCatalogSnapshot';
-import { awaitDesktopLoginStateLoad, type DesktopLoginState } from '../../shared/authIpc';
 import { getDataOwnerGeneration, setDataOwnerGeneration } from './dataOwnerGeneration';
-
-/** Keep response metadata attached to the exact screen it describes. */
-function presentLoginResult(result: DesktopLoginActionResult): DesktopLoginState | null {
-  if (!result.state) return null;
-  return {
-    ...result.state,
-    retryAt: result.success
-      ? result.state.retryAt
-      : result.code === 'RATE_LIMITED'
-        ? (result.retryAt ?? result.state.retryAt)
-        : undefined,
-  };
-}
 
 /**
  * 登录态上下文：user / isAuthenticated / isCanary / deviceId 全部来自 main 的
@@ -86,12 +65,9 @@ export interface AuthContextValue {
   user: User | null;
   mode: 'signed-out' | 'local' | 'cloud';
   dataOwnerId: string | null;
-  /** Failed auth boundaries remount owner-scoped routes so stale generations can rehydrate. */
-  dataOwnerRecoveryEpoch: number;
   /**
    * Main-owned owner generation as last pushed. It advances on every owner commit,
-   * including same-owner repairs that keep `dataOwnerId` and never touch
-   * `dataOwnerRecoveryEpoch`; owner-stamped mirrors in main are fenced on it, so a
+   * including same-owner repairs that keep `dataOwnerId`; owner-stamped mirrors in main are fenced on it, so a
    * consumer that pushes such a mirror must re-push when this changes (#4469).
    */
   dataOwnerGeneration: number;
@@ -102,18 +78,6 @@ export interface AuthContextValue {
   isInitializing: boolean;
   /** SkillHub 跨设备识别：本机 deviceId（machineIdSync），登录前后都有值；初始化前为 null */
   deviceId: string | null;
-  /** Renderer-safe login screen state; auth tickets remain in main. */
-  loginState: DesktopLoginState | null;
-  loadLoginState: () => Promise<DesktopLoginActionResult>;
-  dispatchLoginAction: (action: DesktopLoginAction) => Promise<DesktopLoginActionResult>;
-  logout: () => Promise<void>;
-  listAccounts: () => Promise<DesktopAccountSwitcherSnapshot>;
-  syncAccounts: () => Promise<DesktopAccountSwitcherSnapshot>;
-  switchAccount: (accountKey: string) => Promise<void>;
-  beginAddAccount: () => Promise<DesktopLoginActionResult>;
-  cancelAddAccount: () => Promise<void>;
-  enterLocalMode: () => Promise<void>;
-  exitLocalMode: () => Promise<void>;
   hasAccountDeletionReceipt: boolean;
   accountDeletionRestored: boolean;
   /** 持久凭证库(safeStorage)连续多个刷新周期不可用(#1687);全局警示条据此显隐。 */
@@ -170,7 +134,6 @@ export function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [mode, setMode] = useState<'signed-out' | 'local' | 'cloud'>('signed-out');
   const [dataOwnerId, setDataOwnerId] = useState<string | null>(null);
-  const [dataOwnerRecoveryEpoch, setDataOwnerRecoveryEpoch] = useState(0);
   const [dataOwnerGeneration, setDataOwnerGenerationState] = useState(0);
   const [canEnterApp, setCanEnterApp] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -180,10 +143,6 @@ export function AuthProvider({
   const [hasAccountDeletionReceipt, setHasAccountDeletionReceipt] = useState(false);
   const [accountDeletionRestored, setAccountDeletionRestored] = useState(false);
   const [credentialStoreUnavailable, setCredentialStoreUnavailable] = useState(false);
-  const [loginState, setLoginState] = useState<DesktopLoginState | null>(null);
-  // Main rejects superseded credentials; this also prevents late IPC responses
-  // from repainting a login page the user has already left.
-  const loginOperationRef = useRef(0);
   const { confirm } = useConfirmDialog();
   const { t } = useTranslation();
 
@@ -202,37 +161,6 @@ export function AuthProvider({
   // another window may have started a second boundary before this renderer's
   // first operation settles.
   const pendingOwnerProjectionRef = useRef(false);
-
-  // Auth mutations invalidate owner-bound in-flight reads before crossing IPC. If Main rejects
-  // the transition, restore the single authoritative owner ref (which successful siblings and
-  // newer pushes both update), then rebuild the cache because React state may never have changed.
-  const runDataOwnerBoundary = useCallback(async <T,>(operation: () => Promise<T>): Promise<T> => {
-    // Invalidate old-owner ingress before crossing IPC, but defer stopping the
-    // cached turn until the new owner has committed. On failure, reconcile
-    // against Main: an early rejection keeps the runtime, a late one may not.
-    publishDataOwnerGeneration(null, undefined, { finalizeSessions: false });
-    try {
-      const result = await operation();
-      return result;
-    } catch (error) {
-      // Restore the exact main-owned generation. Recomputing it locally would
-      // make every stamped push from the still-active owner look stale after a
-      // rejected auth transition.
-      publishDataOwnerGeneration(
-        activeDataOwnerIdRef.current,
-        activeDataOwnerGenerationRef.current,
-        { finalizeSessions: false },
-      );
-      const rollbackNeedsReconcile = pendingOwnerProjectionRef.current;
-      if (rollbackNeedsReconcile) {
-        void reconcileSessionsAfterDataOwnerRollback();
-      }
-      setDataOwnerGenerationState(activeDataOwnerGenerationRef.current);
-      setDataOwnerRecoveryEpoch((epoch) => epoch + 1);
-      void preloadLocalCatalogSnapshot();
-      throw error;
-    }
-  }, []);
 
   /**
    * 身份即 auth-server membership(产品 role 水合已随 /api/me 退役,2026-07)。
@@ -389,7 +317,6 @@ export function AuthProvider({
       setAccountDeletionRestored(state.accountDeletionRestored);
       setCredentialStoreUnavailable(state.credentialStoreUnavailable);
       if (state.user) {
-        setLoginState(null);
         if (ownerChanged) {
           activeUserIdRef.current = state.user.id;
           setUser(state.user);
@@ -399,9 +326,6 @@ export function AuthProvider({
       } else {
         if (!pendingSignedOutProjection) activeUserIdRef.current = null;
         setUser(null);
-        // Both signed-out and local sessions have no Cindy user. Clear any
-        // in-progress SSO/OTP step so returning to /login always starts fresh.
-        setLoginState(null);
       }
     },
     [applyIncomingUser],
@@ -442,7 +366,6 @@ export function AuthProvider({
         publishDataOwnerGeneration(null);
         activeDataOwnerIdRef.current = null;
         activeUserIdRef.current = null;
-        setLoginState(null);
         clearWorkersCache();
         setUser(null);
         setCredentialStoreUnavailable(false);
@@ -503,140 +426,11 @@ export function AuthProvider({
         setCanEnterApp(false);
         setIsAuthenticated(false);
         setIsCanary(false);
-        setLoginState(null);
         setCredentialStoreUnavailable(false);
         handling = false;
       });
     });
   }, [confirm, enableSessionExpiredPrompt, t]);
-
-  const loadLoginState = useCallback(async (): Promise<DesktopLoginActionResult> => {
-    const operation = ++loginOperationRef.current;
-    // preparing 只允许在 load 进行中出现。settle / throw / 30s 超时都必须落到
-    // identifier 或既有 error 步,避免 AUTH_FLOW_SUPERSEDED + state=null 或 IPC
-    // 挂起把「正在连接登录服务」变成永不结束。
-    const result = await awaitDesktopLoginStateLoad(() => authServiceRef.current!.getLoginState());
-    if (operation !== loginOperationRef.current) {
-      return { success: false, code: 'AUTH_FLOW_SUPERSEDED', state: null };
-    }
-    setLoginState(presentLoginResult(result));
-    return result;
-  }, []);
-
-  const dispatchLoginAction = useCallback(
-    async (action: DesktopLoginAction): Promise<DesktopLoginActionResult> => {
-      const operation = ++loginOperationRef.current;
-      // Main keeps the browser request open until its loopback callback arrives,
-      // so project the waiting screen immediately to expose the cancel action.
-      if (action.type === 'start-browser') {
-        setLoginState({ step: 'browser-redirect', label: action.label });
-      }
-      const result = await authServiceRef.current!.dispatchLoginAction(action);
-      if (operation !== loginOperationRef.current) {
-        return { success: false, code: 'AUTH_FLOW_SUPERSEDED', state: null };
-      }
-      // Org discovery can auto-start a sole SSO browser flow below. Persist at
-      // the successful discovery boundary so a later browser cancel/timeout
-      // does not erase a valid organization from local history.
-      if (action.type === 'discover-sso-org' && result.success) {
-        rememberSsoOrgIdentifier(action.org);
-      }
-      // 没有真正选择时不停留 method-choice：唯一 SSO 改派 start-browser
-      //（确认窗立刻消失、露出等待态）；唯一邮箱验证码直接发码进输码页。
-      if (result.success && result.state.step === 'method-choice') {
-        const sole = soleLoginMethod(result.state.methods);
-        if (sole?.type === 'sso') {
-          return dispatchLoginAction({
-            type: 'start-browser',
-            kind: 'sso',
-            providerOrConnectionId: sole.connectionId,
-            label: sole.connectionName || sole.orgName,
-          });
-        }
-        if (sole?.type === 'email_code' && result.state.email) {
-          // 自动发码同样要先过人机验证闸（LoginPage 注册的挑战 overlay）：
-          // 这条快捷链不经过 LoginPage 的 dispatchRequestCode，不过闸会在
-          // global 开启 captcha 后不带 token 发码直接吃 400。
-          const captchaGate = getLoginEmailCaptchaGate();
-          const captchaToken = captchaGate ? await captchaGate() : undefined;
-          if (operation !== loginOperationRef.current) {
-            return { success: false, code: 'AUTH_FLOW_SUPERSEDED', state: null };
-          }
-          if (captchaToken === null) {
-            // 用户取消挑战：停在 method-choice，个人行可再次发起（会重新过闸）
-            setLoginState(presentLoginResult(result));
-            return result;
-          }
-          return dispatchLoginAction({
-            type: 'request-code',
-            kind: 'email',
-            identifier: result.state.email,
-            captchaToken,
-          });
-        }
-      }
-      setLoginState(presentLoginResult(result));
-      return result;
-    },
-    [],
-  );
-
-  const logout = useCallback(async () => {
-    await runDataOwnerBoundary(() => authServiceRef.current!.logout());
-    sessionsStore.reset();
-    clearWorkersCache();
-  }, [runDataOwnerBoundary]);
-
-  const listAccounts = useCallback(() => authServiceRef.current!.listAccounts(), []);
-
-  const syncAccounts = useCallback(() => authServiceRef.current!.syncAccounts(), []);
-
-  const switchAccount = useCallback(
-    (accountKey: string) =>
-      runDataOwnerBoundary(() => authServiceRef.current!.switchAccount(accountKey)),
-    [runDataOwnerBoundary],
-  );
-
-  const beginAddAccount = useCallback(async () => {
-    const operation = ++loginOperationRef.current;
-    const result = await authServiceRef.current!.beginAddAccount();
-    if (operation !== loginOperationRef.current) {
-      return { success: false as const, code: 'AUTH_FLOW_SUPERSEDED', state: null };
-    }
-    setLoginState(presentLoginResult(result));
-    return result;
-  }, []);
-
-  const cancelAddAccount = useCallback(async () => {
-    const operation = ++loginOperationRef.current;
-    await authServiceRef.current!.cancelAddAccount();
-    if (operation === loginOperationRef.current) setLoginState(null);
-  }, []);
-
-  const enterLocalMode = useCallback(async () => {
-    const operation = ++loginOperationRef.current;
-    // 本地模式也是一次 dataOwnerId 切换。必须走 applyIncomingState,不能自己拼半套
-    // setter:漏接草稿 / prompt / 模型可见性 / 记忆分区会让跳过登录进主界面后仍读写
-    // signed-out 槽(2026-08-21 #3201 Codex P1)。
-    try {
-      const state = await runDataOwnerBoundary(() => authServiceRef.current!.enterLocalMode());
-      applyIncomingState(state);
-    } catch (error) {
-      // The abandoned provider load can no longer settle preparing. Preserve any
-      // usable form or newer operation, otherwise expose the existing retry screen.
-      if (operation === loginOperationRef.current) {
-        setLoginState((current) => current ?? {
-          step: 'error', code: 'AUTH_REQUEST_FAILED', recoverTo: 'identifier',
-        });
-      }
-      throw error;
-    }
-  }, [applyIncomingState, runDataOwnerBoundary]);
-
-  const exitLocalMode = useCallback(async () => {
-    const state = await runDataOwnerBoundary(() => authServiceRef.current!.exitLocalMode());
-    applyIncomingState(state);
-  }, [applyIncomingState, runDataOwnerBoundary]);
 
   const getAccountDeletionAvailability = useCallback(
     () => authServiceRef.current!.getAccountDeletionAvailability(),
@@ -681,24 +475,12 @@ export function AuthProvider({
       user,
       mode,
       dataOwnerId,
-      dataOwnerRecoveryEpoch,
       dataOwnerGeneration,
       canEnterApp,
       isAuthenticated,
       isCanary,
       isInitializing,
       deviceId,
-      loginState,
-      loadLoginState,
-      dispatchLoginAction,
-      logout,
-      listAccounts,
-      syncAccounts,
-      switchAccount,
-      beginAddAccount,
-      cancelAddAccount,
-      enterLocalMode,
-      exitLocalMode,
       hasAccountDeletionReceipt,
       accountDeletionRestored,
       credentialStoreUnavailable,
@@ -713,24 +495,12 @@ export function AuthProvider({
       user,
       mode,
       dataOwnerId,
-      dataOwnerRecoveryEpoch,
       dataOwnerGeneration,
       canEnterApp,
       isAuthenticated,
       isCanary,
       isInitializing,
       deviceId,
-      loginState,
-      loadLoginState,
-      dispatchLoginAction,
-      logout,
-      listAccounts,
-      syncAccounts,
-      switchAccount,
-      beginAddAccount,
-      cancelAddAccount,
-      enterLocalMode,
-      exitLocalMode,
       hasAccountDeletionReceipt,
       accountDeletionRestored,
       credentialStoreUnavailable,

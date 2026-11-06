@@ -45,26 +45,12 @@ describe('AuthContext auth-state races', () => {
     }
   });
 
-  it('applies the complete owner transition on local-mode boundaries', () => {
-    // 本地模式进出同样是一次 dataOwnerId 切换。自己拼半套 setter 会漏草稿 /
-    // prompt / 模型可见性 / 记忆分区(2026-08-21 #3201 Codex P1)。行为断言在
-    // authContextSessionBoundary.test.tsx。
-    for (const entry of ['const enterLocalMode = useCallback', 'const exitLocalMode = useCallback']) {
-      const start = source.indexOf(entry);
-      expect(start).toBeGreaterThan(-1);
-      const block = source.slice(start, source.indexOf('[applyIncomingState, runDataOwnerBoundary]', start));
-      expect(block).toContain('applyIncomingState(state);');
-      expect(block).not.toContain('setModelEnginePrefsOwner(state.dataOwnerId);');
-    }
-  });
-
   it('ignores initialize results after a newer pushed auth event', () => {
     expect(source).toContain('authStateVersionRef.current += 1;');
     expect(source).toContain('authStateVersionRef.current !== initializeVersion');
   });
 
-  it('clears login progress at auth boundaries', () => {
-    expect(source).toContain('setLoginState(null);');
+  it('clears worker caches at auth boundaries', () => {
     expect(source).toContain('clearWorkersCache();');
   });
 
@@ -82,46 +68,8 @@ describe('AuthContext auth-state races', () => {
     expect(source.indexOf('cancelRemoteOptimisticSendsForDataOwnerBoundary();')).toBeLessThan(
       source.indexOf('setDataOwnerGeneration(dataOwnerId, ownerGeneration);'),
     );
-    const enterLocal = source.indexOf('const enterLocalMode = useCallback');
-    const exitLocal = source.indexOf('const exitLocalMode = useCallback');
-    expect(source.indexOf('applyIncomingState(state);', enterLocal)).toBeLessThan(exitLocal);
-    expect(source.indexOf('applyIncomingState(state);', exitLocal)).toBeGreaterThan(exitLocal);
     expect(source).toContain('activeDataOwnerGenerationRef.current');
-    expect(source).toContain('setDataOwnerRecoveryEpoch((epoch) => epoch + 1);');
-    expect(appSource).toContain("`${dataOwnerId ?? 'signed-out'}:${dataOwnerRecoveryEpoch}`");
+    expect(appSource).toContain("const ownerKey = dataOwnerId ?? 'signed-out';");
     expect(appSource).toContain('<RouterProvider key={ownerKey} router={router} />');
-  });
-
-  it('projects browser waiting state before the main-process loopback request settles', () => {
-    expect(source).toContain("if (action.type === 'start-browser')");
-    expect(source).toContain("setLoginState({ step: 'browser-redirect', label: action.label });");
-  });
-
-  it('auto-continues a sole method-choice so fake pickers never paint', () => {
-    expect(source).toContain('soleLoginMethod(result.state.methods)');
-    expect(source).toContain("type: 'start-browser'");
-    expect(source).toContain('providerOrConnectionId: sole.connectionId');
-    expect(source).toContain("type: 'request-code'");
-    expect(source).toContain("kind: 'email'");
-    expect(source).toContain('identifier: result.state.email');
-    const projectWaiting = source.indexOf(
-      "setLoginState({ step: 'browser-redirect', label: action.label });",
-    );
-    const autoStart = source.indexOf('soleLoginMethod(result.state.methods)');
-    expect(projectWaiting).toBeGreaterThan(-1);
-    expect(autoStart).toBeGreaterThan(projectWaiting);
-  });
-
-  it('gates the sole-email auto request-code behind the login captcha gate', () => {
-    // 唯一邮箱自动发码链不经过 LoginPage 的 dispatchRequestCode 闸;这里必须
-    // 先问 loginCaptchaGate(global 开启 captcha 后,不过闸会不带 token 发码
-    // 直接吃 400),取消(null)则停在 method-choice 不发码。
-    expect(source).toContain("from '@/lib/loginCaptchaGate'");
-    const gateAt = source.indexOf('getLoginEmailCaptchaGate()');
-    const autoRequestAt = source.indexOf("type: 'request-code'");
-    expect(gateAt).toBeGreaterThan(-1);
-    expect(gateAt).toBeLessThan(autoRequestAt);
-    expect(source).toContain('if (captchaToken === null)');
-    expect(source).toContain('captchaToken,');
   });
 });

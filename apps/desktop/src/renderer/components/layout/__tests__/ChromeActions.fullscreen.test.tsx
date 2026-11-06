@@ -64,7 +64,7 @@ vi.mock('@/hooks/useMacFullscreen', () => ({
   useMacFullscreen: () => fullscreenState,
 }));
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ dataOwnerId: 'owner-a', dataOwnerRecoveryEpoch: 1 }),
+  useAuth: () => ({ dataOwnerId: 'owner-a' }),
 }));
 vi.mock('@/lib/sessionsStore', () => ({
   sessionsStore: { subscribePatches: sessionPatches.subscribePatches },

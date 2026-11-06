@@ -26,7 +26,6 @@ import { cn } from '@/lib/utils';
 import { hasProviderLogo, ProviderLogoMark } from '@/components/icons/ProviderLogoMark';
 import { providerMonogram } from '@/lib/providerModels';
 import { useProviderOnboarding } from '@/hooks/useProviderOnboarding';
-import { useSignInToCindy } from '@/hooks/useSignInToCindy';
 import type { ProviderOnboardingRow } from '@/hooks/useProviderOnboarding';
 import type { ProviderLogoRouting } from '@/components/icons/ProviderLogoMark';
 
@@ -43,14 +42,12 @@ export function ConnectProviderCard({ className, dismissible = true }: {
 }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const signInToCindy = useSignInToCindy();
   const onboarding = useProviderOnboarding({ loadPresets: true, dismissible });
   const [othersOpen, setOthersOpen] = useState(false);
 
   if (!onboarding.visible) return null;
 
-  const { authMode, xdProvider, detectedRows, primaryRows, moreRows } = onboarding;
-  const cloudMode = authMode === 'cloud';
+  const { detectedRows, primaryRows, moreRows } = onboarding;
   const goConnect = (id: string) =>
     navigate(`/settings?tab=providers&connect=${encodeURIComponent(id)}`);
 
@@ -108,22 +105,6 @@ export function ConnectProviderCard({ className, dismissible = true }: {
             />
           );
         })}
-        {/* 推荐行:Cindy AI(cloud)/ 登录 Cindy(signed-out・local) */}
-        <ProviderRow
-          icon={rowIcon('xd', xdProvider?.name ?? 'Cindy AI')}
-          label={
-            cloudMode
-              ? (xdProvider?.name ?? t('onboarding.connectProvider.cindy.title'))
-              : t('onboarding.connectProvider.cindy.loginTitle')
-          }
-          sub={
-            cloudMode
-              ? t('onboarding.connectProvider.cindy.desc')
-              : t('onboarding.connectProvider.cindy.loginDesc')
-          }
-          badge={t('onboarding.connectProvider.recommendedLabel')}
-          onClick={() => (cloudMode ? goConnect('xd') : void signInToCindy())}
-        />
         {primaryRows.map(renderRow)}
 
         {moreRows.length > 0 && (

@@ -2459,8 +2459,8 @@
       "avatarAlt": "{{name}} 之頭像",
       "local": {
         "exitFailed": "退出未登入之態未成，請再試",
-        "name": "未登門",
-        "description": "資料僅存於此機，不用 {{appName}} 名籍服務",
+        "name": "本機之人",
+        "description": "資料僅存於此機",
         "signIn": "登門 {{appName}}",
         "exit": "退出未登入之態"
       },
@@ -2828,7 +2828,7 @@
       "serviceSource": {
         "label": "語音服務",
         "hint": "預設用 {{appName}} 語音服務；亦可連支援即時 ASR 之服務，並用獨立語音憑證。",
-        "localHint": "未登門時不用 {{appName}} 名籍服務；請連支援即時 ASR 之服務，並設獨立語音憑證。",
+        "localHint": "此版 {{appName}} 無辨音之服務；請接可即時辨音之服務，並另置語音憑證。",
         "ariaLabel": "擇語音服務來源",
         "options": {
           "cindy": "{{appName}} 官方服務",
@@ -4403,8 +4403,7 @@
     },
     "experimental": {
       "title": "試行之術",
-      "toggleAria": "切換試行之術：{{title}}",
-      "features": {}
+      "toggleAria": "切換試行之術：{{title}}"
     },
     "lspMode": {
       "cell": {
@@ -5056,7 +5055,7 @@
       },
       "emptySlot": "未擇",
       "customHint": "輕簡文字依所擇之序試之；內建審核不可用時，亦充自動審核之備。所擇供方將收審核上下文，含訊與引用內容、差事與操作詳情及攔截之錄、身分與權柄、卷之路徑及作業系統。",
-      "signInHint": "登門 {{appName}} 後方可用自薦；未登門時，請於自訂中擇已設之他供方模型。",
+      "signInHint": "此版不供自薦；請於自定中擇已置之他家模型。",
       "chooseAgent": "擇 Agent",
       "backToAgents": "歸擇 Agent",
       "searchPlaceholder": "尋模型或供方",
@@ -8587,40 +8586,23 @@
   "localDbGate": {
     "title": "本地資料暫無從開啟",
     "description": "可再試，或歸登入方式，重擇使用之式。",
-    "retry": "再試",
-    "backToLogin": "歸登入方式"
+    "retry": "再試"
   },
   "login": {
     "title": "{{appName}} 恭候多時矣",
     "subtitle": "擇一法，安然登門",
-    "savedLoginPreserved": "復原之舉將保留已存之登入資訊",
-    "phonePlaceholder": "請書手機號碼",
     "emailPlaceholder": "請書電子郵件",
-    "invalidEmail": "請輸入正確之電子郵件地址",
-    "invalidPhone": "請輸入正確之手機號碼",
     "working": "稍候…",
     "continue": "續",
-    "or": "或",
-    "socialButton": "以 {{provider}} 登門",
     "social": {
-      "apple": "Apple",
-      "google": "Google",
       "wechat": "微信"
     },
     "back": "歸",
-    "cancel": "罷",
     "chooseMethod": "擇登門之法",
-    "emailCode": "以電子郵件驗證碼登門",
-    "orgDetected": "{{email}} 屬企業「{{org}}」",
     "enterpriseLogin": "以企業身分登門",
-    "enterpriseVia": "經 {{name}} 單點登入",
     "personalLogin": "以個人身分登門",
     "personalDesc": "遣驗證碼至電子郵件",
-    "ssoRequired": "此企業須經 SSO 登入",
-    "ssoEntry": "以企業 SSO 登門",
     "localModeEntry": "略登門",
-    "localModeOpening": "方略登門…",
-    "localModeDescription": "無需 {{appName}} 名籍，資料存於此機。雲端模型、跨裝置與市場服務不可用。",
     "consentStatement": "吾已閱並同意 <terms>服務條款</terms> 與 <privacy>隱私政策</privacy>",
     "consentDialog": {
       "title": "服務條款與隱私政策",
@@ -8631,44 +8613,11 @@
     "ssoOrgTitle": "企業 SSO 登門",
     "ssoOrgSubtitle": "輸入企業 ID、組織 slug 或已驗證之域名，以轉企業單點登入",
     "ssoOrgPlaceholder": "請書企業 ID、slug 或域名",
-    "ssoOrgHint": "不知企業登入標識？請詢企業管理員",
-    "ssoOrgDetected": "擇企業「{{org}}」之單點登入方式",
-    "realmConsent": {
-      "personalTitle": "見企業登入",
-      "personalBodyCn": "信箱所屬企業位於中國大陸區。\n可用企業 SSO，或續以個人登門。",
-      "personalBodyGlobal": "信箱所屬企業位於國際區。\n可用企業 SSO，或續以個人登門。",
-      "enterpriseLogin": "企業 SSO",
-      "continuePersonal": "續個人登門",
-      "title": "連企業所在之區",
-      "bodyCn": "君之企業位於中國大陸區。\n續之，{{appName}} 將連此區。",
-      "bodyGlobal": "君之企業位於國際區。\n續之，{{appName}} 將連此區。",
-      "agree": "續登門",
-      "disagree": "罷"
-    },
-    "ssoVerificationTitle": "驗企業聯絡之方",
-    "ssoVerificationSubtitle": "首次登入，須驗身分提供方所傳回之聯絡方式 {{target}}",
     "enterCode": "書驗證碼",
     "codeSentTo": "驗證碼已遣至 {{identifier}}",
     "codePlaceholder": "6 位驗證碼",
-    "verifying": "方驗…",
     "signIn": "登門",
     "resendCode": "重遣驗證碼",
-    "resendCountdown": "{{n}} 秒後可重遣",
-    "chooseAccount": "擇身分",
-    "chooseAccountSubtitle": "擇此次所用之個人或企業身分",
-    "personalAccount": "私身",
-    "binding": {
-      "phoneTitle": "繫手機號碼",
-      "phoneSubtitle": "登入完成前，須驗一手機號碼",
-      "emailTitle": "繫電子郵件",
-      "emailSubtitle": "登入完成前，須驗一真實電子郵件"
-    },
-    "sendCode": "遣驗證碼",
-    "completeSignIn": "畢登門",
-    "preparing": "方連登入服務",
-    "preparingSubtitle": "將為君載當前區域可用之登入方式",
-    "unavailable": "暫不能登入",
-    "retry": "再試",
     "browserWaiting": "請於瀏覽器中完成驗證",
     "browserCallback": {
       "successTitle": "登門已成",
@@ -8682,47 +8631,11 @@
       "cn": "CN",
       "dev": "Dev"
     },
-    "captcha": {
-      "title": "安全驗證",
-      "loading": "方載安全驗證…",
-      "failed": "安全驗證載入未成",
-      "retry": "再試",
-      "cancel": "罷"
-    },
     "errors": {
-      "fallback": "登入未成，請稍後再試",
-      "AUTH_SERVICE_UNAVAILABLE": "登入之服暫不可用",
-      "AUTH_REQUEST_FAILED": "登入請求未成，請再試",
-      "CREDENTIAL_STORE_UNAVAILABLE": "登入儲存不可用，請觀解決之法",
-      "BROWSER_OPEN_FAILED": "瀏覽器無從開啟，請再試",
-      "BROWSER_OPEN_TIMEOUT": "瀏覽器未及時啟動，請再試",
-      "NETWORK_ERROR": "網路連線未成，請檢查網路",
-      "REQUEST_TIMEOUT": "請求逾時，請再試",
-      "INVALID_PARAMS": "輸入格式不正",
       "INVALID_CODE": "驗證碼有誤或已過期",
-      "CODE_ATTEMPTS_EXCEEDED": "驗證碼錯誤次數過多，請重新取得",
-      "RATE_LIMITED": "操作過頻，請稍後再試",
-      "CAPTCHA_REQUIRED": "請先畢安全驗證",
-      "CAPTCHA_INVALID": "安全驗證未通過，請再試",
-      "CAPTCHA_UNAVAILABLE": "安全驗證服務暫不可用，請稍後再試",
-      "SSO_LOGIN_REQUIRED": "此電子郵件所屬企業須經 SSO 登入",
-      "ORG_SSO_NOT_FOUND": "未尋得此企業，或此企業未啟 SSO 登入",
-      "ORG_REALM_AMBIGUOUS": "此企業標識並存於兩區，請聯絡企業管理員處理",
-      "ORG_REALM_UNAVAILABLE": "企業所在之區暫無從確認，請檢查網路後再試",
-      "SSO_EMAIL_REQUIRED": "此企業身份未提供有效電子郵件，請聯絡企業管理員檢查 IdP 配置",
-      "INVALID_SSO_VERIFICATION_TICKET": "企業身分驗證已逾期，請重發 SSO 登入",
-      "SOCIAL_TOKEN_INVALID": "第三方授權已失效，請再試",
-      "SOCIAL_PROVIDER_DISABLED": "此登入方式今不可用",
-      "USER_CANCELLED": "登入已罷",
-      "STATE_MISMATCH": "安全校驗未成，請再試",
-      "INVALID_AUTH_CODE": "授權已逾期，請重新登入",
-      "INVALID_LOGIN_TICKET": "登入會話已逾期，請重新登入",
-      "INVALID_BIND_TICKET": "繫結會話已逾期，請重新登入",
-      "REGION_MISMATCH": "登入服務之區與當前客戶端不符"
+      "RATE_LIMITED": "操作過頻，請稍後再試"
     },
     "rateLimit": {
-      "retryAt": "請於 {{time}}（本機時間）之後再試。",
-      "unknownWait": "伺服器未示等待之時，請稍後再試，勿連續取驗證碼。",
       "intro": "登入服務暫限請求次數。此與本機憑證儲存之異，乃兩事也。",
       "guidance": "請稍待再取驗證碼。重新啟動、重新安裝或切換網路，皆不保解除限制。",
       "support": "稍待之後仍無法登入，請將記錄私下寄予 feedback@cindy.app，並附作業系統、{{appName}} 版本、出錯時間及下方錯誤碼。請勿公開發布記錄。"
@@ -9931,24 +9844,6 @@
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "覽版本日誌",
       "reopenUpdateBanner": "有更新待重啟，點之以覽"
-    },
-    "accountSwitcher": {
-      "current": "當前名籍",
-      "switching": "方易名籍…",
-      "adding": "方備登門…",
-      "sharedDataRestriction": "此開發視窗與另一 {{appName}} 執行個體共用名籍資料，不能易換或增添名籍。請於原 {{appName}} 視窗操作，或以獨立資料啟動開發版。",
-      "title": "易名籍",
-      "description": "擇此裝置上曾登之名籍",
-      "syncing": "方察登門之態…",
-      "syncFailed": "部分名籍之態暫不能更",
-      "switchFailed": "易換未成，請重登此名籍",
-      "runningTaskTitle": "斷差事而易名籍？",
-      "runningTaskDescription": "今有差事方行。易名籍將先斷此等差事，未竟之執行不復繼續。",
-      "runningTaskConfirm": "斷差事並易之",
-      "startFailed": "不能啟登門之頁，請稍後再試",
-      "addAccount": "另登一名籍",
-      "back": "歸",
-      "close": "闔"
     }
   },
   "bots": {
@@ -11687,7 +11582,6 @@
     "outboundAttachmentsIncomplete": "⚠️ 有 {{count}} 件附件未能遣：{{names}}",
     "unnamedAttachment": "無名附件"
   },
-  "markdown": {},
   "diffPanel": {
     "shell": {
       "resizeHandleAria": "調面板之寬",
@@ -12621,8 +12515,6 @@
   "onboarding": {
     "homeZeroModel": {
       "title": "登門 {{appName}}，以續其事",
-      "desc": "君尚未設模型。登門 {{appName}}，即可用數十種上乘大模型。",
-      "cta": "登門 {{appName}}",
       "cloudTitle": "以 {{appName}} 續之",
       "cloudDesc": "君尚未設模型。啟官方之服，即可用數十種上乘大模型。",
       "cloudCta": "始用",
@@ -12632,12 +12524,6 @@
       "title": "連一模型供方，以啟言談",
       "desc": "尚無可用之模型。任連一供方，即可啟言談。",
       "recommendedLabel": "薦",
-      "cindy": {
-        "title": "{{appName}} AI",
-        "desc": "官方之服 · 諸模型俱備 · Claude Code / Codex 皆通",
-        "loginTitle": "登門 {{appName}}",
-        "loginDesc": "登門後自啟 {{appName}} AI 官方之服，諸模型皆可用；新客另有贈資"
-      },
       "othersToggle": "他家供方({{count}})",
       "presetSub": "填 API Key 即可連",
       "dismiss": "容後再議",
@@ -12645,7 +12531,6 @@
       "banner": {
         "text": "今無可用之模型，連一供方即可言談。",
         "connectCta": "連供方",
-        "loginCta": "登門 {{appName}}",
         "dismissAria": "闔此引導"
       },
       "detectedLabel": "已察得",
@@ -18901,7 +18786,7 @@
     "localInstalling": "方裝法器…",
     "localVersionNotice": "此連結存分享時之版本。安裝前將示法器權柄，由君確認。",
     "localSignIn": "登門以覽",
-    "localOpenHint": "登門 {{appName}} 後，即可覽並安裝此番所分享之法器。",
+    "localOpenHint": "此版 {{appName}} 不能啟所分享之法器。",
     "localReadFailed": "無法讀此番所分享之法器",
     "localChanged": "法器已變更，請闔此視窗後重新分享。",
     "includeAttribution": "附吾之暱稱與頭像",

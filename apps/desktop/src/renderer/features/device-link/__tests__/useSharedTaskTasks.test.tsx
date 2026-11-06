@@ -12,7 +12,7 @@ const state = vi.hoisted(() => ({
   disconnected: vi.fn(), bind: vi.fn(), reset: vi.fn(),
   rawSessions: vi.fn(), status: undefined as undefined | ((state: { status: string }) => void),
 }));
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ isAuthenticated: true, dataOwnerId: 'guest', dataOwnerRecoveryEpoch: 0 }) }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ isAuthenticated: true, dataOwnerId: 'guest' }) }));
 vi.mock('@/lib/sessionsStore', () => ({ sessionsStore: { findById: vi.fn() } }));
 vi.mock('@/lib/sessionService', () => ({ get: vi.fn() }));
 vi.mock('../remoteProjectsStore', () => ({ remoteProjectsStore: {

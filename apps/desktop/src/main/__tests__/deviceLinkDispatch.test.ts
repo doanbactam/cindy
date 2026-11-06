@@ -2695,6 +2695,7 @@ describe('被控端订阅 registry + topic 转发', () => {
         channel: 'local-db:messages:created',
         payload: { sessionId: 's1', id: 'm1' },
         topic: 'session:s1',
+        ownerStamp: { dataOwnerId: 'local-v1', ownerGeneration: 0 },
       },
     ]);
   });
@@ -2718,6 +2719,7 @@ describe('被控端订阅 registry + topic 转发', () => {
         channel: 'local-db:messages:created',
         payload: { sessionId: 's1', id: 'm1' },
         topic: 'session:s1',
+        ownerStamp: { dataOwnerId: 'local-v1', ownerGeneration: 0 },
       },
     ]);
   });

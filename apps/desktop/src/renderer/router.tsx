@@ -6,10 +6,7 @@ import { MainEntryRedirect } from '@/components/layout/MainEntryRedirect';
 import { RouteErrorFallback } from '@/components/error/RouteErrorFallback';
 import { SidebarWindowLayout } from '@/components/layout/SidebarWindowLayout';
 import { SettingsView } from '@/components/settings/SettingsView';
-import { LoginPage } from '@/components/login/LoginPage';
-import { AddAccountLoginPage } from '@/components/login/AddAccountLoginPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { GuestRoute } from '@/components/auth/GuestRoute';
 import { LocalDbGate } from '@/components/auth/LocalDbGate';
 import { CCAgentFeatureLayout } from '@/features/cc-agent/CCAgentFeatureLayout';
 import { CCAgentIndexRedirect } from '@/features/cc-agent/CCAgentIndexRedirect';
@@ -38,12 +35,9 @@ import { BotGroupChatView } from '@/features/bots/BotGroupChatView';
 import { GhostMainViewFeatureLayout } from '@/features/plugin/GhostMainViewFeatureLayout';
 
 /**
- * 三层路由架构：
+ * 路由架构（Cindy 账号登录已移除，始终是免账号的本地会话）：
  *
- *   GuestRoute (未登录)
- *    └── /login                    → LoginPage
- *
- *   ProtectedRoute (已登录) — 校验 canEnterApp（真登出或换号窗口）
+ *   ProtectedRoute — 等 canEnterApp（本地会话提交完成）
  *    └── LocalDbGate               → 等 localDb.ensureReady（按 userId 切库）
  *         └── MainLayout            → 主功能区
  *              ├── /                → Restore account's last top-level entry
@@ -55,23 +49,12 @@ import { GhostMainViewFeatureLayout } from '@/features/plugin/GhostMainViewFeatu
  */
 export const router = createHashRouter([
   {
-    path: '/login',
-    element: <GuestRoute />,
-    // 登录线渲染崩溃时的全屏兜底(没有它 react-router 会渲染开发者默认错误页)。
-    errorElement: <RouteErrorFallback />,
-    children: [{ index: true, element: <LoginPage /> }],
-  },
-  {
     path: '/',
     element: <ProtectedRoute />,
     // 最外层兜底:MainLayout / 各 Gate 自身崩溃、或下层没有更近 errorElement 时
     // 冒泡到这里,全屏展示可恢复错误页(2026-07-09 React #130 事故的直接止血层)。
     errorElement: <RouteErrorFallback />,
     children: [
-      {
-        path: 'add-account',
-        element: <AddAccountLoginPage />,
-      },
       {
         // 主功能区入口 —— 经过 LocalDbGate（localDb 就绪）才能进
         element: <LocalDbGate />,

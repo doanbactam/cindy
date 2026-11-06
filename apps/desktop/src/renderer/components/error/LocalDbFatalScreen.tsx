@@ -20,12 +20,10 @@ import { resolveLocalDbFatalView } from './localDbFatalView';
 export function LocalDbFatalScreen({
   code,
   message,
-  onBackToLogin,
   onRetry,
 }: {
   code?: string;
   message?: string;
-  onBackToLogin?: () => void;
   onRetry?: () => void;
 }) {
   const { t } = useTranslation();
@@ -101,9 +99,7 @@ export function LocalDbFatalScreen({
         onOpenChange={() => {}}
         title={title}
         description={description}
-        showCancel={onBackToLogin !== undefined}
-        cancelText={t('localDbGate.backToLogin')}
-        onCancel={onBackToLogin}
+        showCancel={false}
         autoFocusConfirm
         loading={(installing && view === 'install-update') || view === 'preparing-update'}
         confirmText={confirmText}

@@ -98,11 +98,6 @@ const SOURCE_CONSUMERS: ReadonlyArray<{
   keyPathFor: (region: string) => string;
 }> = [
   {
-    label: '登录页标题旁区域徽标',
-    file: 'components/login/LoginPage.tsx',
-    keyPathFor: (region) => `login.regionPill.${region}`,
-  },
-  {
     label: '侧栏用户卡片版本行',
     file: 'components/sidebar/UserInfoSection.tsx',
     keyPathFor: (region) => `sidebar.user.${regionCodeKeyFor(region)}`,

@@ -98,12 +98,12 @@ describe('application session boundary isolation', () => {
     });
 
     try {
-      commitActiveAppSession('local');
+      commitActiveAppSession('cloud', 'membership-id');
     } finally {
       setAppSessionCommitBoundaryHook(null);
     }
 
-    expect(observedModes).toEqual(['signed-out']);
+    expect(observedModes).toEqual(['local']);
     expect(sessionRuntimeControlOwnerEpochMatches(captured)).toBe(false);
   });
 

@@ -3,7 +3,7 @@
 /**
  * ConnectProviderBanner — 会话内零可用模型引导条关键不变量:
  *   1. 与首屏卡片同判定:零已连接来源才渲染;有连接 → null。
- *   2. CTA 按登录态分派:cloud → /settings?tab=providers;local → /login。
+ *   2. CTA 一律落 /settings?tab=providers(Cindy 账号登录已移除)。
  *   3. dismiss 与卡片共享同一 key:banner 上点 X,key 写入(两处一起消失)。
  */
 
@@ -14,10 +14,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ProviderView } from '@cindy/model-providers';
 
-const { providersState, authState, exitLocalModeMock } = vi.hoisted(() => ({
+const { providersState, authState } = vi.hoisted(() => ({
   providersState: { providers: [] as unknown[], loading: false },
   authState: { mode: 'cloud' as string },
-  exitLocalModeMock: vi.fn(async () => undefined),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -29,7 +28,7 @@ vi.mock('@/hooks/useProviders', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ ...authState, exitLocalMode: exitLocalModeMock }),
+  useAuth: () => authState,
 }));
 
 import { ConnectProviderBanner } from '@/components/onboarding/ConnectProviderBanner';
@@ -111,13 +110,12 @@ describe('ConnectProviderBanner', () => {
     expect(screen.getByTestId('location').textContent).toBe('/settings?tab=providers');
   });
 
-  it('local 模式 CTA 变登录,落 /login', async () => {
+  it('local 模式 CTA 同样落 /settings?tab=providers,不走登录', () => {
     authState.mode = 'local';
     renderBanner();
 
-    fireEvent.click(screen.getByText('onboarding.connectProvider.banner.loginCta'));
-    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/login'));
-    expect(exitLocalModeMock).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByText('onboarding.connectProvider.banner.connectCta'));
+    expect(screen.getByTestId('location').textContent).toBe('/settings?tab=providers');
   });
 
   it('有已连接来源 → 渲染 null', () => {

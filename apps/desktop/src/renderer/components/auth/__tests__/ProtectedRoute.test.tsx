@@ -23,7 +23,6 @@ function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/login" element={<div data-testid="login-page" />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<div data-testid="app-shell" />} />
         </Route>
@@ -52,31 +51,17 @@ describe('ProtectedRoute', () => {
     };
     renderAt('/');
     expect(screen.getByTestId('app-shell')).toBeTruthy();
-    expect(screen.queryByTestId('login-page')).toBeNull();
   });
 
-  it('leaves the shell during a real owner-change window', () => {
+  it('renders nothing while the local session is still being committed', () => {
     authState.current = {
-      mode: 'cloud',
+      mode: 'local',
       isInitializing: false,
-      dataOwnerId: 'user-1',
+      dataOwnerId: 'local-v1',
       canEnterApp: false,
     };
-    renderAt('/');
-    expect(screen.getByTestId('login-page')).toBeTruthy();
-    expect(screen.queryByTestId('app-shell')).toBeNull();
-  });
-
-  it('sends a real signed-out session to login', () => {
-    authState.current = {
-      mode: 'signed-out',
-      isInitializing: false,
-      dataOwnerId: null,
-      canEnterApp: false,
-    };
-    renderAt('/');
-    expect(screen.getByTestId('login-page')).toBeTruthy();
-    expect(screen.queryByTestId('app-shell')).toBeNull();
+    const { container } = renderAt('/');
+    expect(container.innerHTML).toBe('');
   });
 
   it('lets local mode enter the app without a Cindy account', () => {

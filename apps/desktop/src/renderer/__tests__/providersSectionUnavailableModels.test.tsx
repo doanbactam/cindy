@@ -136,7 +136,6 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     mode: 'cloud',
     dataOwnerId: authState.dataOwnerId,
-    exitLocalMode: vi.fn(async () => undefined),
   }),
 }));
 

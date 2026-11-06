@@ -68,7 +68,7 @@ vi.mock('@/hooks/useProviders', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ ...authState, exitLocalMode: vi.fn(async () => undefined) }),
+  useAuth: () => authState,
 }));
 
 vi.mock('@/hooks/useModelAccessCreditUsage', () => ({

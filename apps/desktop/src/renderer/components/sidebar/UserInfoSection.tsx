@@ -1,33 +1,25 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Building2,
-  Check,
   Flame,
   Settings,
   Shield,
-  UserPlus,
   UserRound,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOptionalConfirmDialog } from '@/components/ui/confirm-dialog-provider';
 import { useUpdateStatus } from '@/hooks/useUpdateStatus';
 import { useUpdateBannerDismiss } from '@/hooks/useUpdateBannerDismiss';
 import { useBetaChannelSettings } from '@/hooks/useBetaChannelSettings';
 import { Tip } from '@/components/ui/tooltip';
-import { Spinner } from '@/components/ui/spinner';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { toast } from '@/lib/toast';
-import type { DesktopSavedAccount } from '@/lib/authService';
 import { CURRENT_CINDY_REGION } from '../../../shared/brandRegion';
 import { shouldLabelRegion } from '../../../shared/regionCode';
 
@@ -36,51 +28,12 @@ interface UserInfoSectionProps {
   onOpenUpdateNotice?: () => void;
 }
 
-function AccountMenuAvatar({ account }: { account: DesktopSavedAccount }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  const imageUrl = account.kind === 'org' ? account.orgLogoUrl : account.avatarUrl;
-
-  useEffect(() => setImageFailed(false), [imageUrl]);
-
-  if (imageUrl && !imageFailed) {
-    return (
-      <img
-        src={imageUrl}
-        alt=""
-        className="h-7 w-7 shrink-0 rounded-full object-cover"
-        onError={() => setImageFailed(true)}
-      />
-    );
-  }
-
-  return (
-    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--surface-hover)] text-[var(--text-secondary)]">
-      {account.kind === 'org' ? (
-        <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
-      ) : (
-        <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
-      )}
-    </span>
-  );
-}
-
 export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSectionProps) {
-  const { user, mode, dataOwnerId, isCanary, listAccounts, syncAccounts, switchAccount } =
-    useAuth();
-  const confirmDialog = useOptionalConfirmDialog();
+  const { user, mode, isCanary } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [avatarError, setAvatarError] = useState(false);
-  const [savedAccounts, setSavedAccounts] = useState<DesktopSavedAccount[]>([]);
-  const [savedAccountsOwnerKey, setSavedAccountsOwnerKey] = useState<string | null>(null);
-  const [accountsMutationAllowed, setAccountsMutationAllowed] = useState(true);
-  const [accountsSyncing, setAccountsSyncing] = useState(false);
-  const [switchingAccountKey, setSwitchingAccountKey] = useState<string | null>(null);
-  const [addingAccount, setAddingAccount] = useState(false);
-  const accountsLoadGenerationRef = useRef(0);
   const { t } = useTranslation();
-  const accountsOwnerKey = mode === 'cloud' ? dataOwnerId : null;
-  const accountsReadyForOwner = savedAccountsOwnerKey === accountsOwnerKey;
 
   // 火焰按钮双职责:
   // - 正常情况(无 pending update 或 banner 未 dismiss)→ 弹更新历史 Dialog。
@@ -102,18 +55,6 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
   useEffect(() => {
     setAvatarError(false);
   }, [avatarUrl]);
-
-  // Account snapshots belong to the active data owner. Invalidate them as
-  // soon as ownership changes so a reopened menu can never act on the prior
-  // account while the fresh list is loading.
-  useEffect(() => {
-    accountsLoadGenerationRef.current += 1;
-    setSavedAccountsOwnerKey(null);
-    setSavedAccounts([]);
-    setAccountsMutationAllowed(false);
-    setAccountsSyncing(false);
-    setSwitchingAccountKey(null);
-  }, [accountsOwnerKey]);
 
   if (!user && !isLocal) return null;
 
@@ -148,175 +89,10 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
     if (location.pathname !== '/settings') navigate('/settings');
   };
 
-  const openAddAccount = async () => {
-    if (addingAccount) return;
-    setAddingAccount(true);
-    try {
-      if (!(await confirmRunningTaskInterruption())) return;
-      await navigate('/add-account', {
-        state: { returnTo: `${location.pathname}${location.search}` },
-      });
-    } catch {
-      toast.error(t('sidebar.accountSwitcher.startFailed'));
-    } finally {
-      setAddingAccount(false);
-    }
-  };
-
-  const refreshSavedAccounts = async () => {
-    if (mode !== 'cloud') return;
-    const generation = ++accountsLoadGenerationRef.current;
-    setSavedAccountsOwnerKey(null);
-    setSavedAccounts([]);
-    setAccountsMutationAllowed(false);
-    setAccountsSyncing(true);
-    try {
-      const initialSnapshot = await listAccounts();
-      if (generation !== accountsLoadGenerationRef.current) return;
-      setSavedAccounts(initialSnapshot.accounts);
-      setAccountsMutationAllowed(initialSnapshot.mutationAllowed);
-      setSavedAccountsOwnerKey(accountsOwnerKey);
-
-      const syncedSnapshot = await syncAccounts();
-      if (generation !== accountsLoadGenerationRef.current) return;
-      setSavedAccounts(syncedSnapshot.accounts);
-      setAccountsMutationAllowed(syncedSnapshot.mutationAllowed);
-      setSavedAccountsOwnerKey(accountsOwnerKey);
-    } catch {
-      if (generation === accountsLoadGenerationRef.current) {
-        toast.error(t('sidebar.accountSwitcher.syncFailed'));
-      }
-    } finally {
-      if (generation === accountsLoadGenerationRef.current) setAccountsSyncing(false);
-    }
-  };
-
-  const confirmRunningTaskInterruption = async (): Promise<boolean> => {
-    const { makerChatStore } = await import('@/lib/makerChatStore');
-    const hasRunningTask = [...makerChatStore.getRunningSnapshot().values()].some(
-      (status) => status.isRunning,
-    );
-    if (!hasRunningTask) return true;
-    if (!confirmDialog) return false;
-    return confirmDialog.confirm({
-      title: t('sidebar.accountSwitcher.runningTaskTitle'),
-      description: t('sidebar.accountSwitcher.runningTaskDescription'),
-      confirmText: t('sidebar.accountSwitcher.runningTaskConfirm'),
-      cancelText: t('logic.confirm.cancel'),
-      confirmVariant: 'destructive',
-    });
-  };
-
-  const switchSavedAccount = async (account: DesktopSavedAccount) => {
-    if (
-      account.isCurrent ||
-      switchingAccountKey ||
-      !accountsMutationAllowed ||
-      !accountsReadyForOwner
-    )
-      return;
-    setSwitchingAccountKey(account.accountKey);
-    let progressToast: string | undefined;
-    try {
-      if (!(await confirmRunningTaskInterruption())) return;
-      // The menu closes on selection; keep progress visible outside it.
-      progressToast = toast.loading(t('sidebar.accountSwitcher.switching'));
-      await switchAccount(account.accountKey);
-    } catch {
-      toast.error(t('sidebar.accountSwitcher.switchFailed'));
-    } finally {
-      if (progressToast) toast.dismiss(progressToast);
-      setSwitchingAccountKey(null);
-    }
-  };
-
-  const renderSavedAccountItems = () => {
-    const switchableAccounts = savedAccounts.filter((account) => !account.isCurrent);
-    if (mode !== 'cloud' || !accountsReadyForOwner || switchableAccounts.length === 0) return null;
-
-    return (
-      <>
-        {savedAccounts.map((account) => {
-          const hasDistinctOrgName =
-            account.kind === 'org' &&
-            Boolean(account.orgName?.trim()) &&
-            account.orgName !== account.displayName;
-          const primaryLabel = hasDistinctOrgName ? account.orgName : account.displayName;
-          const secondaryLabel =
-            account.kind === 'org' && hasDistinctOrgName ? account.displayName : account.email;
-          const switching = switchingAccountKey === account.accountKey;
-
-          return (
-            <DropdownMenuItem
-              key={account.accountKey}
-              disabled={
-                account.isCurrent || switchingAccountKey !== null || !accountsMutationAllowed
-              }
-              onSelect={() => void switchSavedAccount(account)}
-              // Radix synthesizes a click when a press starts outside this item
-              // and releases over it. Async account rows can move under that
-              // release; require a normal click or keyboard selection instead.
-              onPointerUp={(event) => event.preventDefault()}
-              className="gap-2.5 py-2"
-            >
-              <AccountMenuAvatar account={account} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">{primaryLabel}</span>
-                {secondaryLabel ? (
-                  <span className="mt-0.5 block truncate text-12 leading-[1.33] text-[var(--cmd-palette-item-meta)]">
-                    {secondaryLabel}
-                  </span>
-                ) : null}
-              </span>
-              {switching ? (
-                <Spinner size={14} className="shrink-0 text-[var(--text-secondary)]" />
-              ) : account.isCurrent ? (
-                <span className="flex shrink-0 items-center gap-1 text-12 leading-[1.33] text-[var(--cmd-palette-item-meta)]">
-                  <Check className="h-4 w-4" aria-hidden="true" />
-                  {t('sidebar.accountSwitcher.current')}
-                </span>
-              ) : null}
-            </DropdownMenuItem>
-          );
-        })}
-        {accountsSyncing ? (
-          <div className="px-2 py-1 text-11 text-[var(--text-secondary)]">
-            {t('sidebar.accountSwitcher.syncing')}
-          </div>
-        ) : null}
-      </>
-    );
-  };
-
   const renderMoreMenu = (trigger: ReactNode) => (
-    <DropdownMenu onOpenChange={(open) => open && void refreshSavedAccounts()}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" sideOffset={8} className="min-w-[190px]">
-        {mode === 'cloud' && accountsReadyForOwner && !accountsMutationAllowed ? (
-          <p role="status" className="max-w-[280px] px-2 py-2 text-12 text-[var(--text-secondary)]">
-            {t('sidebar.accountSwitcher.sharedDataRestriction')}
-          </p>
-        ) : null}
-        {renderSavedAccountItems()}
-        {mode === 'cloud' &&
-        accountsReadyForOwner &&
-        savedAccounts.some((account) => !account.isCurrent) ? (
-          <DropdownMenuSeparator />
-        ) : null}
-        {mode === 'local' ? (
-          <DropdownMenuItem
-            disabled={addingAccount}
-            onSelect={() => void openAddAccount()}
-            className="gap-2.5"
-          >
-            {addingAccount ? (
-              <Spinner size={16} />
-            ) : (
-              <UserPlus className="h-4 w-4" aria-hidden="true" />
-            )}
-            {addingAccount ? t('sidebar.accountSwitcher.adding') : t('login.signIn')}
-          </DropdownMenuItem>
-        ) : null}
         <DropdownMenuItem onSelect={openSettings} className="gap-2.5">
           <Settings className="h-4 w-4" aria-hidden="true" />
           {t('sidebar.user.menuSettings')}

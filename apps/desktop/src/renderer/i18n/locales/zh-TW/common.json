@@ -2459,8 +2459,8 @@
       "avatarAlt": "{{name}} 的頭像",
       "local": {
         "exitFailed": "退出未登入狀態失敗，請重試",
-        "name": "未登入",
-        "description": "資料僅儲存在本機，不使用 {{appName}} 帳號服務",
+        "name": "本機使用者",
+        "description": "資料僅儲存在本機",
         "signIn": "登入 {{appName}}",
         "exit": "退出未登入狀態"
       },
@@ -2828,7 +2828,7 @@
       "serviceSource": {
         "label": "語音服務",
         "hint": "預設使用 {{appName}} 語音服務；也可以連線支援即時 ASR 的服務，並使用獨立的語音憑證。",
-        "localHint": "未登入狀態不使用 {{appName}} 帳號服務；請連線支援即時 ASR 的服務並配置獨立語音憑證。",
+        "localHint": "此版本的 {{appName}} 不含語音服務；請連接支援即時 ASR 的服務並設定獨立語音憑證。",
         "ariaLabel": "語音服務來源選擇",
         "options": {
           "cindy": "{{appName}} 官方服務",
@@ -4403,8 +4403,7 @@
     },
     "experimental": {
       "title": "實驗性功能",
-      "toggleAria": "切換實驗功能：{{title}}",
-      "features": {}
+      "toggleAria": "切換實驗功能：{{title}}"
     },
     "lspMode": {
       "cell": {
@@ -5056,7 +5055,7 @@
       },
       "emptySlot": "未選擇",
       "customHint": "輕量文字按所選順序嘗試；內建審核無法使用時，也用於自動審核備援。所選供應商會收到審核上下文，包括訊息與引用內容、任務與操作詳情及攔截記錄、身分與權限、檔案路徑和作業系統。",
-      "signInHint": "登入 {{appName}} 後可使用自動推薦；未登入時請在自訂中選擇已設定的其他供應商模型。",
+      "signInHint": "此版本不提供自動推薦；請在自訂中選擇已設定的其他供應商模型。",
       "chooseAgent": "選擇 Agent",
       "backToAgents": "返回選擇 Agent",
       "searchPlaceholder": "搜尋模型或供應商",
@@ -8587,40 +8586,23 @@
   "localDbGate": {
     "title": "本地資料暫時無法開啟",
     "description": "可以重試，或返回登入方式後重新選擇使用模式。",
-    "retry": "重試",
-    "backToLogin": "返回登入方式"
+    "retry": "重試"
   },
   "login": {
     "title": "歡迎使用 {{appName}}",
     "subtitle": "選擇一種方式安全登入",
-    "savedLoginPreserved": "恢復操作會保留已儲存的登入資訊",
-    "phonePlaceholder": "請輸入手機號碼",
     "emailPlaceholder": "請輸入電子郵件",
-    "invalidEmail": "請輸入正確的電子郵件地址",
-    "invalidPhone": "請輸入正確的手機號碼",
     "working": "請稍候…",
     "continue": "繼續",
-    "or": "或",
-    "socialButton": "使用 {{provider}} 登入",
     "social": {
-      "apple": "Apple",
-      "google": "Google",
       "wechat": "微信"
     },
     "back": "返回",
-    "cancel": "取消",
     "chooseMethod": "選擇登入方式",
-    "emailCode": "使用電子郵件驗證碼登入",
-    "orgDetected": "{{email}} 屬於企業「{{org}}」",
     "enterpriseLogin": "以企業身分登入",
-    "enterpriseVia": "透過 {{name}} 單點登入",
     "personalLogin": "以個人身分登入",
     "personalDesc": "向電子郵件傳送驗證碼",
-    "ssoRequired": "該企業要求透過 SSO 登入",
-    "ssoEntry": "使用企業 SSO 登入",
     "localModeEntry": "跳過登入",
-    "localModeOpening": "正在跳過登入…",
-    "localModeDescription": "無需 {{appName}} 帳號，資料儲存在本機。雲模型、跨裝置與市場服務不可用。",
     "consentStatement": "我已閱讀並同意 <terms>服務條款</terms> 和 <privacy>隱私政策</privacy>",
     "consentDialog": {
       "title": "服務條款和隱私政策",
@@ -8631,44 +8613,11 @@
     "ssoOrgTitle": "企業 SSO 登入",
     "ssoOrgSubtitle": "輸入企業 ID、組織 slug 或已驗證域名，跳轉到企業單點登入",
     "ssoOrgPlaceholder": "請輸入企業 ID、slug 或域名",
-    "ssoOrgHint": "不知道企業登入標識？請聯絡企業管理員",
-    "ssoOrgDetected": "選擇企業「{{org}}」的單點登入方式",
-    "realmConsent": {
-      "personalTitle": "發現企業登入",
-      "personalBodyCn": "信箱對應企業位於中國大陸區。\n可使用企業 SSO，或繼續個人登入。",
-      "personalBodyGlobal": "信箱對應企業位於國際區。\n可使用企業 SSO，或繼續個人登入。",
-      "enterpriseLogin": "企業 SSO",
-      "continuePersonal": "繼續個人登入",
-      "title": "連線企業所在區域",
-      "bodyCn": "你的企業位於中國大陸區。\n繼續後，{{appName}} 會連線該區域。",
-      "bodyGlobal": "你的企業位於國際區。\n繼續後，{{appName}} 會連線該區域。",
-      "agree": "繼續登入",
-      "disagree": "取消"
-    },
-    "ssoVerificationTitle": "驗證企業聯絡方式",
-    "ssoVerificationSubtitle": "首次登入需要驗證身分提供方返回的聯絡方式 {{target}}",
     "enterCode": "輸入驗證碼",
     "codeSentTo": "驗證碼已傳送至 {{identifier}}",
     "codePlaceholder": "6 位驗證碼",
-    "verifying": "正在驗證…",
     "signIn": "登入",
     "resendCode": "重新傳送驗證碼",
-    "resendCountdown": "{{n}} 秒後可重新傳送",
-    "chooseAccount": "選擇身分",
-    "chooseAccountSubtitle": "選擇本次要使用的個人或企業身分",
-    "personalAccount": "個人身分",
-    "binding": {
-      "phoneTitle": "繫結手機號碼",
-      "phoneSubtitle": "登入完成前，需要驗證一個手機號碼",
-      "emailTitle": "繫結電子郵件",
-      "emailSubtitle": "登入完成前，需要驗證一個真實電子郵件"
-    },
-    "sendCode": "傳送驗證碼",
-    "completeSignIn": "完成登入",
-    "preparing": "正在連線登入服務",
-    "preparingSubtitle": "將為你載入當前區域可用的登入方式",
-    "unavailable": "暫時無法登入",
-    "retry": "重試",
     "browserWaiting": "請在瀏覽器中完成驗證",
     "browserCallback": {
       "successTitle": "登入成功",
@@ -8682,47 +8631,11 @@
       "cn": "CN",
       "dev": "Dev"
     },
-    "captcha": {
-      "title": "安全驗證",
-      "loading": "正在載入安全驗證…",
-      "failed": "安全驗證載入失敗",
-      "retry": "重試",
-      "cancel": "取消"
-    },
     "errors": {
-      "fallback": "登入失敗，請稍後重試",
-      "AUTH_SERVICE_UNAVAILABLE": "登入服務暫不可用",
-      "AUTH_REQUEST_FAILED": "登入請求失敗，請重試",
-      "CREDENTIAL_STORE_UNAVAILABLE": "登入儲存無法使用，請檢視解決方法",
-      "BROWSER_OPEN_FAILED": "無法開啟瀏覽器，請重試",
-      "BROWSER_OPEN_TIMEOUT": "瀏覽器未及時啟動，請重試",
-      "NETWORK_ERROR": "網路連線失敗，請檢查網路",
-      "REQUEST_TIMEOUT": "請求超時，請重試",
-      "INVALID_PARAMS": "輸入格式不正確",
       "INVALID_CODE": "驗證碼錯誤或已過期",
-      "CODE_ATTEMPTS_EXCEEDED": "驗證碼錯誤次數過多，請重新獲取",
-      "RATE_LIMITED": "操作過於頻繁，請稍後再試",
-      "CAPTCHA_REQUIRED": "請先完成安全驗證",
-      "CAPTCHA_INVALID": "安全驗證未通過，請重試",
-      "CAPTCHA_UNAVAILABLE": "安全驗證服務暫時無法使用，請稍後再試",
-      "SSO_LOGIN_REQUIRED": "該電子郵件所屬企業要求透過 SSO 登入",
-      "ORG_SSO_NOT_FOUND": "未找到該企業，或該企業未啟用 SSO 登入",
-      "ORG_REALM_AMBIGUOUS": "該企業標識同時存在於兩個區域，請聯絡企業管理員處理",
-      "ORG_REALM_UNAVAILABLE": "暫時無法確認企業所在區域，請檢查網路後重試",
-      "SSO_EMAIL_REQUIRED": "該企業身份未提供有效電子郵件，請聯絡企業管理員檢查 IdP 配置",
-      "INVALID_SSO_VERIFICATION_TICKET": "企業身份驗證已過期，請重新發起 SSO 登入",
-      "SOCIAL_TOKEN_INVALID": "第三方授權已失效，請重試",
-      "SOCIAL_PROVIDER_DISABLED": "該登入方式當前不可用",
-      "USER_CANCELLED": "已取消登入",
-      "STATE_MISMATCH": "安全校驗失敗，請重試",
-      "INVALID_AUTH_CODE": "授權已過期，請重新登入",
-      "INVALID_LOGIN_TICKET": "登入會話已過期，請重新登入",
-      "INVALID_BIND_TICKET": "繫結會話已過期，請重新登入",
-      "REGION_MISMATCH": "登入服務區域與當前客戶端不匹配"
+      "RATE_LIMITED": "操作過於頻繁，請稍後再試"
     },
     "rateLimit": {
-      "retryAt": "請在 {{time}}（本機時間）之後重試。",
-      "unknownWait": "伺服器未提供等待時間，請稍後再試，避免連續取得驗證碼。",
       "intro": "登入服務暫時限制了請求次數。這與本機憑證儲存異常是不同的問題。",
       "guidance": "請等待後再取得驗證碼。重新啟動、重新安裝或切換網路不保證解除限制。",
       "support": "等待後仍無法登入，請將記錄私下寄給 feedback@cindy.app，並提供作業系統、{{appName}} 版本、出錯時間和下方錯誤碼。請勿公開發布記錄。"
@@ -9931,24 +9844,6 @@
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "檢視版本日誌",
       "reopenUpdateBanner": "有更新待重啟，點選檢視"
-    },
-    "accountSwitcher": {
-      "current": "目前帳號",
-      "switching": "正在切換帳號…",
-      "adding": "正在準備登入…",
-      "sharedDataRestriction": "目前的開發視窗與另一個 {{appName}} 執行個體共用帳號資料，無法切換或新增帳號。請在原 {{appName}} 視窗操作，或使用獨立資料啟動開發版。",
-      "title": "切換帳號",
-      "description": "選擇這台裝置上登入過的帳號",
-      "syncing": "正在檢查登入狀態…",
-      "syncFailed": "部分帳號狀態暫時無法更新",
-      "switchFailed": "切換失敗，請重新登入該帳號",
-      "runningTaskTitle": "中斷任務並切換帳號？",
-      "runningTaskDescription": "目前有任務正在執行。切換帳號會先中斷這些任務，未完成的執行不會繼續。",
-      "runningTaskConfirm": "中斷任務並切換",
-      "startFailed": "無法開啟登入頁面，請稍後再試",
-      "addAccount": "登入更多帳號",
-      "back": "返回",
-      "close": "關閉"
     }
   },
   "bots": {
@@ -11687,7 +11582,6 @@
     "outboundAttachmentsIncomplete": "⚠️ 有 {{count}} 個附件未能傳送：{{names}}",
     "unnamedAttachment": "未命名附件"
   },
-  "markdown": {},
   "diffPanel": {
     "shell": {
       "resizeHandleAria": "調整面板寬度",
@@ -12621,8 +12515,6 @@
   "onboarding": {
     "homeZeroModel": {
       "title": "登入 {{appName}} 繼續使用",
-      "desc": "你還未設定任何模型，登入 {{appName}} 後即可使用數十種頂級大模型。",
-      "cta": "登入 {{appName}}",
       "cloudTitle": "使用 {{appName}} 繼續",
       "cloudDesc": "你還未設定任何模型，開通官方服務即可使用數十種頂級大模型。",
       "cloudCta": "開始使用",
@@ -12632,12 +12524,6 @@
       "title": "連線一個模型供應商，開始對話",
       "desc": "還沒有可用的模型。連線任意一個供應商即可開始對話。",
       "recommendedLabel": "推薦",
-      "cindy": {
-        "title": "{{appName}} AI",
-        "desc": "官方服務 · 全部模型 · Claude Code / Codex 通用",
-        "loginTitle": "登入 {{appName}}",
-        "loginDesc": "登入後自動開通 {{appName}} AI 官方服務，即可使用全部模型，新使用者含贈送餘額"
-      },
       "othersToggle": "其他供應商({{count}})",
       "presetSub": "填入 API Key 即可連線",
       "dismiss": "稍後再說",
@@ -12645,7 +12531,6 @@
       "banner": {
         "text": "當前沒有可用的模型，連線一個供應商後即可對話。",
         "connectCta": "連線供應商",
-        "loginCta": "登入 {{appName}}",
         "dismissAria": "關閉引導"
       },
       "detectedLabel": "已檢測到",
@@ -19192,7 +19077,7 @@
     "localInstalling": "正在安裝插件…",
     "localVersionNotice": "此連結保留分享時的版本。安裝前會顯示插件權限，由你確認。",
     "localSignIn": "登入並查看",
-    "localOpenHint": "登入 {{appName}} 後，即可查看並安裝本次分享的插件。",
+    "localOpenHint": "此版本的 {{appName}} 無法開啟分享的插件。",
     "localReadFailed": "無法讀取本次分享的插件",
     "localChanged": "插件已發生變更，請關閉此視窗後重新分享。",
     "includeAttribution": "附上我的暱稱和頭像",

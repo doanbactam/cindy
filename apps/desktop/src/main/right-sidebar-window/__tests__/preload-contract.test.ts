@@ -149,7 +149,6 @@ describe('sidebarWindowPreload 椤跺眰濂戠害', () => {
     expect(topLevel).toEqual(expect.arrayContaining([
       'authHasPersistedSessionHintSync',
       'authInitialize',
-      'authGetLoginState',
       'authGetAccountDeletionAvailability',
       'authGetAccountDeletionStatus',
       'onAuthStateChange',

@@ -472,11 +472,11 @@ export function MainLayout() {
   // 任务浏览栈与它的快捷键监听挂在常驻壳层:设置页会整个卸载左上按钮簇
   // (下面的 `!isSettingsRoute && <ChromeActions>`)，快捷键不能跟着一起消失——
   // hook 的语义包含「从设置等栈外页后退回最近任务」。浏览栈按数据所有者
-  // (账号 + 恢复代次)隔离：切号时不能把上一个账号的任务带过来。
-  const { dataOwnerId, dataOwnerRecoveryEpoch } = useAuth();
-  useEffect(() => { initPluginTabViewHost(); }, [dataOwnerId, dataOwnerRecoveryEpoch]);
+  // 隔离：切号时不能把上一个账号的任务带过来。
+  const { dataOwnerId } = useAuth();
+  useEffect(() => { initPluginTabViewHost(); }, [dataOwnerId]);
   const browseHistory = useSessionBrowseHistory({
-    ownerKey: `${dataOwnerId ?? 'signed-out'}:${dataOwnerRecoveryEpoch}`,
+    ownerKey: dataOwnerId ?? 'signed-out',
   });
 
   // 完全隐藏态 hover 临时浮出(peek)状态机 —— hover 折叠按钮抽屉滑出预览,

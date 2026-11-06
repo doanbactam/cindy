@@ -59,7 +59,6 @@ import { ComposerSendShortcutSection } from './ComposerSendShortcutSection';
 import { KeyboardShortcutsSection } from './KeyboardShortcutsSection';
 import { AgentIslandSection } from './AgentIslandSection';
 import { LanguageSection } from './LanguageSection';
-import { LogoutSection } from './LogoutSection';
 import { ImBotSection, isImBotSettingsGroup, type ImBotSettingsGroup } from './ImBotSection';
 import { AboutSection } from './AboutSection';
 import { WorktreeRecycleCard } from './WorktreeRecycleCard';
@@ -543,11 +542,6 @@ function SettingsViewContent() {
                     {/* Section — Experimental (py 18). */}
                     <section id={generalSettings.experimental.targetId} className="py-[18px]" aria-label={t(generalSettings.experimental.titleKey)}>
                       <ExperimentalSection />
-                    </section>
-
-                    {/* Section — Logout (pt 18) */}
-                    <section className="pt-[18px]" aria-label={t('settings.sections.logout')}>
-                      <LogoutSection />
                     </section>
                   </>
                 )}

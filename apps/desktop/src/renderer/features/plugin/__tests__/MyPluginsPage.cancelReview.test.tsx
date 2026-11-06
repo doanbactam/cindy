@@ -39,8 +39,6 @@ vi.mock('react-i18next', () => ({
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ dataOwnerId: 'owner', dataOwnerGeneration: 1, user: { id: 'member', membershipKind: 'personal' }, mode: 'cloud' }),
 }));
-vi.mock('@/components/sidebar/AccountSwitcherDialog', () => ({ AccountSwitcherDialog: () => null }));
-vi.mock('@/hooks/useSignInToCindy', () => ({ useSignInToCindy: () => vi.fn() }));
 vi.mock('@/hooks/useMacFullscreen', () => ({ useMacFullscreen: () => ({ isMac: false }) }));
 
 const prefix = 'settings.ghosts.contribution';

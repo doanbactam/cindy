@@ -2459,8 +2459,8 @@
       "avatarAlt": "{{name}} 的头像",
       "local": {
         "exitFailed": "退出未登录状态失败，请重试",
-        "name": "未登录",
-        "description": "数据仅保存在本机，不使用 {{appName}} 账号服务",
+        "name": "本机用户",
+        "description": "数据仅保存在本机",
         "signIn": "登录 {{appName}}",
         "exit": "退出未登录状态"
       },
@@ -2828,7 +2828,7 @@
       "serviceSource": {
         "label": "语音服务",
         "hint": "默认使用 {{appName}} 语音服务；也可以连接支持实时 ASR 的服务，并使用独立的语音凭证。",
-        "localHint": "未登录状态不使用 {{appName}} 账号服务；请连接支持实时 ASR 的服务并配置独立语音凭证。",
+        "localHint": "此版本的 {{appName}} 不含语音服务；请连接支持实时 ASR 的服务并配置独立语音凭证。",
         "ariaLabel": "语音服务来源选择",
         "options": {
           "cindy": "{{appName}} 官方服务",
@@ -4403,8 +4403,7 @@
     },
     "experimental": {
       "title": "实验性功能",
-      "toggleAria": "切换实验功能：{{title}}",
-      "features": {}
+      "toggleAria": "切换实验功能：{{title}}"
     },
     "lspMode": {
       "cell": {
@@ -5056,7 +5055,7 @@
       },
       "emptySlot": "未选择",
       "customHint": "轻量文本按所选顺序尝试；内置审核不可用时，也用于自动审核兜底。所选供应商会收到审核上下文，包括消息与引用内容、任务与操作详情及拦截记录、身份与权限、文件路径和操作系统。",
-      "signInHint": "登录 {{appName}} 后可使用自动推荐；未登录时请在自定义中选择已配置的其他供应商模型。",
+      "signInHint": "此版本不提供自动推荐；请在自定义中选择已配置的其他供应商模型。",
       "chooseAgent": "选择 Agent",
       "backToAgents": "返回选择 Agent",
       "searchPlaceholder": "搜索模型或供应商",
@@ -8587,40 +8586,23 @@
   "localDbGate": {
     "title": "本地数据暂时无法打开",
     "description": "可以重试，或返回登录方式后重新选择使用模式。",
-    "retry": "重试",
-    "backToLogin": "返回登录方式"
+    "retry": "重试"
   },
   "login": {
     "title": "欢迎使用 {{appName}}",
     "subtitle": "选择一种方式安全登录",
-    "savedLoginPreserved": "恢复操作会保留已保存的登录信息",
-    "phonePlaceholder": "请输入手机号",
     "emailPlaceholder": "请输入邮箱",
-    "invalidEmail": "请输入正确邮箱",
-    "invalidPhone": "请输入正确手机号",
     "working": "请稍候…",
     "continue": "继续",
-    "or": "或",
-    "socialButton": "使用 {{provider}} 登录",
     "social": {
-      "apple": "Apple",
-      "google": "Google",
       "wechat": "微信"
     },
     "back": "返回",
-    "cancel": "取消",
     "chooseMethod": "选择登录方式",
-    "emailCode": "使用邮箱验证码登录",
-    "orgDetected": "{{email}} 属于企业「{{org}}」",
     "enterpriseLogin": "以企业身份登录",
-    "enterpriseVia": "通过 {{name}} 单点登录",
     "personalLogin": "以个人身份登录",
     "personalDesc": "向邮箱发送验证码",
-    "ssoRequired": "该企业要求通过 SSO 登录",
-    "ssoEntry": "使用企业 SSO 登录",
     "localModeEntry": "跳过登录",
-    "localModeOpening": "正在跳过登录…",
-    "localModeDescription": "无需 {{appName}} 账号，数据保存在本机。云模型、跨设备与市场服务不可用。",
     "consentStatement": "我已阅读并同意 <terms>服务条款</terms> 和 <privacy>隐私协议</privacy>",
     "consentDialog": {
       "title": "服务条款和隐私协议",
@@ -8631,44 +8613,11 @@
     "ssoOrgTitle": "企业 SSO 登录",
     "ssoOrgSubtitle": "输入企业 ID、组织 slug 或已验证域名，跳转到企业单点登录",
     "ssoOrgPlaceholder": "请输入企业 ID、slug 或域名",
-    "ssoOrgHint": "不知道企业登录标识？请联系企业管理员",
-    "ssoOrgDetected": "选择企业「{{org}}」的单点登录方式",
-    "realmConsent": {
-      "personalTitle": "发现企业登录",
-      "personalBodyCn": "邮箱对应企业位于中国大陆区。\n可使用企业 SSO，或继续个人登录。",
-      "personalBodyGlobal": "邮箱对应企业位于国际区。\n可使用企业 SSO，或继续个人登录。",
-      "enterpriseLogin": "企业 SSO",
-      "continuePersonal": "继续个人登录",
-      "title": "连接企业所在区域",
-      "bodyCn": "你的企业位于中国大陆区。\n继续后，{{appName}} 会连接该区域。",
-      "bodyGlobal": "你的企业位于国际区。\n继续后，{{appName}} 会连接该区域。",
-      "agree": "继续登录",
-      "disagree": "取消"
-    },
-    "ssoVerificationTitle": "验证企业联系方式",
-    "ssoVerificationSubtitle": "首次登录需要验证身份提供方返回的联系方式 {{target}}",
     "enterCode": "输入验证码",
     "codeSentTo": "验证码已发送至 {{identifier}}",
     "codePlaceholder": "6 位验证码",
-    "verifying": "正在验证…",
     "signIn": "登录",
     "resendCode": "重新发送验证码",
-    "resendCountdown": "{{n}} 秒后可重新发送",
-    "chooseAccount": "选择身份",
-    "chooseAccountSubtitle": "选择本次要使用的个人或企业身份",
-    "personalAccount": "个人身份",
-    "binding": {
-      "phoneTitle": "绑定手机号",
-      "phoneSubtitle": "登录完成前，需要验证一个手机号",
-      "emailTitle": "绑定邮箱",
-      "emailSubtitle": "登录完成前，需要验证一个真实邮箱"
-    },
-    "sendCode": "发送验证码",
-    "completeSignIn": "完成登录",
-    "preparing": "正在连接登录服务",
-    "preparingSubtitle": "将为你加载当前区域可用的登录方式",
-    "unavailable": "暂时无法登录",
-    "retry": "重试",
     "browserWaiting": "请在浏览器中完成验证",
     "browserCallback": {
       "successTitle": "登录成功",
@@ -8682,47 +8631,11 @@
       "cn": "CN",
       "dev": "Dev"
     },
-    "captcha": {
-      "title": "安全验证",
-      "loading": "正在加载安全验证…",
-      "failed": "安全验证加载失败",
-      "retry": "重试",
-      "cancel": "取消"
-    },
     "errors": {
-      "fallback": "登录失败，请稍后重试",
-      "AUTH_SERVICE_UNAVAILABLE": "登录服务暂不可用",
-      "AUTH_REQUEST_FAILED": "登录请求失败，请重试",
-      "CREDENTIAL_STORE_UNAVAILABLE": "登录存储不可用，请查看解决方法",
-      "BROWSER_OPEN_FAILED": "无法打开浏览器，请重试",
-      "BROWSER_OPEN_TIMEOUT": "浏览器未及时启动，请重试",
-      "NETWORK_ERROR": "网络连接失败，请检查网络",
-      "REQUEST_TIMEOUT": "请求超时，请重试",
-      "INVALID_PARAMS": "输入格式不正确",
       "INVALID_CODE": "验证码错误或已过期",
-      "CODE_ATTEMPTS_EXCEEDED": "验证码错误次数过多，请重新获取",
-      "RATE_LIMITED": "操作过于频繁，请稍后再试",
-      "CAPTCHA_REQUIRED": "请先完成安全验证",
-      "CAPTCHA_INVALID": "安全验证未通过，请重试",
-      "CAPTCHA_UNAVAILABLE": "安全验证服务暂不可用，请稍后再试",
-      "SSO_LOGIN_REQUIRED": "该邮箱所属企业要求通过 SSO 登录",
-      "ORG_SSO_NOT_FOUND": "未找到该企业，或该企业未启用 SSO 登录",
-      "ORG_REALM_AMBIGUOUS": "该企业标识同时存在于两个区域，请联系企业管理员处理",
-      "ORG_REALM_UNAVAILABLE": "暂时无法确认企业所在区域，请检查网络后重试",
-      "SSO_EMAIL_REQUIRED": "该企业身份未提供有效邮箱，请联系企业管理员检查 IdP 配置",
-      "INVALID_SSO_VERIFICATION_TICKET": "企业身份验证已过期，请重新发起 SSO 登录",
-      "SOCIAL_TOKEN_INVALID": "第三方授权已失效，请重试",
-      "SOCIAL_PROVIDER_DISABLED": "该登录方式当前不可用",
-      "USER_CANCELLED": "已取消登录",
-      "STATE_MISMATCH": "安全校验失败，请重试",
-      "INVALID_AUTH_CODE": "授权已过期，请重新登录",
-      "INVALID_LOGIN_TICKET": "登录会话已过期，请重新登录",
-      "INVALID_BIND_TICKET": "绑定会话已过期，请重新登录",
-      "REGION_MISMATCH": "登录服务区域与当前客户端不匹配"
+      "RATE_LIMITED": "操作过于频繁，请稍后再试"
     },
     "rateLimit": {
-      "retryAt": "请在 {{time}}（本机时间）之后重试。",
-      "unknownWait": "服务端未提供等待时间，请稍后再试，避免连续获取验证码。",
       "intro": "登录服务暂时限制了请求次数。这与本机凭证存储异常是不同的问题。",
       "guidance": "请等待后再获取验证码。重启、重装或切换网络不保证解除限流。",
       "support": "等待后仍无法登录，请将日志私下发给 feedback@cindy.app，并提供操作系统、{{appName}} 版本、出错时间和下方错误码。请勿公开发布日志。"
@@ -9931,24 +9844,6 @@
       "regionCodeDev": "Dev",
       "viewReleaseNotes": "查看版本日志",
       "reopenUpdateBanner": "有更新待重启，点击查看"
-    },
-    "accountSwitcher": {
-      "current": "当前账号",
-      "switching": "正在切换账号…",
-      "adding": "正在准备登录…",
-      "sharedDataRestriction": "当前开发窗口与另一个 {{appName}} 实例共用账号数据，无法切换或添加账号。请在原 {{appName}} 窗口操作，或使用独立数据启动开发版。",
-      "title": "切换账号",
-      "description": "选择这台设备上登录过的账号",
-      "syncing": "正在检查登录状态…",
-      "syncFailed": "部分账号状态暂时无法更新",
-      "switchFailed": "切换失败，请重新登录该账号",
-      "runningTaskTitle": "中断任务并切换账号？",
-      "runningTaskDescription": "当前有任务正在运行。切换账号会先中断这些任务，未完成的执行不会继续。",
-      "runningTaskConfirm": "中断任务并切换",
-      "startFailed": "无法打开登录页面，请稍后重试",
-      "addAccount": "登录更多账号",
-      "back": "返回",
-      "close": "关闭"
     }
   },
   "bots": {
@@ -11687,7 +11582,6 @@
     "outboundAttachmentsIncomplete": "⚠️ 有 {{count}} 个附件未能发送：{{names}}",
     "unnamedAttachment": "未命名附件"
   },
-  "markdown": {},
   "diffPanel": {
     "shell": {
       "resizeHandleAria": "调整面板宽度",
@@ -12621,8 +12515,6 @@
   "onboarding": {
     "homeZeroModel": {
       "title": "登录 {{appName}} 继续使用",
-      "desc": "你还未配置任何模型，登录 {{appName}} 后即可使用数十种顶级大模型。",
-      "cta": "登录 {{appName}}",
       "cloudTitle": "使用 {{appName}} 继续",
       "cloudDesc": "你还未配置任何模型，开通官方服务即可使用数十种顶级大模型。",
       "cloudCta": "开始使用",
@@ -12632,12 +12524,6 @@
       "title": "连接一个模型供应商，开始对话",
       "desc": "还没有可用的模型。连接任意一个供应商即可开始对话。",
       "recommendedLabel": "推荐",
-      "cindy": {
-        "title": "{{appName}} AI",
-        "desc": "官方服务 · 全部模型 · Claude Code / Codex 通用",
-        "loginTitle": "登录 {{appName}}",
-        "loginDesc": "登录后自动开通 {{appName}} AI 官方服务，即可使用全部模型，新用户含赠送余额"
-      },
       "othersToggle": "其他供应商({{count}})",
       "presetSub": "填入 API Key 即可连接",
       "dismiss": "稍后再说",
@@ -12645,7 +12531,6 @@
       "banner": {
         "text": "当前没有可用的模型，连接一个供应商后即可对话。",
         "connectCta": "连接供应商",
-        "loginCta": "登录 {{appName}}",
         "dismissAria": "关闭引导"
       },
       "detectedLabel": "已检测到",
@@ -19192,7 +19077,7 @@
     "localInstalling": "正在安装插件…",
     "localVersionNotice": "此链接保留分享时的版本。安装前会显示插件权限，由你确认。",
     "localSignIn": "登录并查看",
-    "localOpenHint": "登录 {{appName}} 后，可查看并安装本次分享的插件。",
+    "localOpenHint": "此版本的 {{appName}} 无法打开分享的插件。",
     "localReadFailed": "无法读取本次分享的插件",
     "localChanged": "插件已发生变化，请关闭此窗口后重新分享。",
     "includeAttribution": "附上我的昵称和头像",
