@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
  * or its keyring identity.
  */
 export function linuxUserDesktopName(prefix: string): string {
-  return `com.xd.cindy.user.h${createHash('sha256').update(prefix).digest('hex').slice(0, 16)}.desktop`;
+  return `com.doanbactam.hana.user.h${createHash('sha256').update(prefix).digest('hex').slice(0, 16)}.desktop`;
 }
 
 /** Only our marked, user-owned release layout is eligible for unprivileged

@@ -26,7 +26,7 @@ export function parseProviderShareInvitationIntent(value: string): ProviderShare
   if (value.length > 4096) return null;
   try {
     const url = new URL(value);
-    if (!['cindy:', 'cindycn:', 'cindydev:'].includes(url.protocol) || url.username || url.password || url.port || url.hash) return null;
+    if (!['hana:', 'hanacn:', 'hanadev:', 'cindy:', 'cindycn:', 'cindydev:'].includes(url.protocol) || url.username || url.password || url.port || url.hash) return null;
     if (url.host !== 'provider-share' || url.pathname !== '/join') return null;
     if ([...url.searchParams.keys()].some((key) => key !== 'invitation' && key !== 'server')) return null;
     if (url.searchParams.getAll('invitation').length !== 1 || url.searchParams.getAll('server').length !== 1) return null;

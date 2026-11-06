@@ -54,7 +54,7 @@ describe('OAuth result page language and copy', () => {
 
   it('builds a localized return-to-Cindy deep link', () => {
     expect(buildOAuthReturnAction('zh', 'xai oauth', 'Cindy')).toEqual({
-      href: 'cindy://focus/xai%20oauth',
+      href: 'hana://focus/xai%20oauth',
       label: '返回 Cindy',
     });
     expect(buildOAuthReturnAction('en', 'generic-oauth', 'Cindy').label).toBe('Return to Cindy');
@@ -78,7 +78,7 @@ describe('OAuth result page language and copy', () => {
 
   it('localizes the return action for English', () => {
     expect(buildOAuthReturnAction('en', 'ghost-oauth', 'Cindy')).toEqual({
-      href: 'cindy://focus/ghost-oauth',
+      href: 'hana://focus/ghost-oauth',
       label: 'Return to Cindy',
     });
   });
@@ -172,13 +172,13 @@ describe('renderOAuthResultPage', () => {
       title: '<Title>',
       body: '<Body>',
       detail: '<script>alert(1)</script>',
-      action: { href: 'cindy://focus/test" onclick="bad()', label: '<Return>' },
+      action: { href: 'hana://focus/test" onclick="bad()', label: '<Return>' },
     });
     expect(html).toContain('lang="en&quot;&gt;&lt;script&gt;"');
     expect(html).toContain('&lt;Title&gt;');
     expect(html).toContain('&lt;Body&gt;');
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
-    expect(html).toContain('href="cindy://focus/test&quot; onclick=&quot;bad()"');
+    expect(html).toContain('href="hana://focus/test&quot; onclick=&quot;bad()"');
     expect(html).toContain('&lt;Return&gt;');
     expect(html).not.toContain('<script>alert(1)</script>');
   });
@@ -189,9 +189,9 @@ describe('renderOAuthResultPage', () => {
       variant: 'warning',
       title: '需要继续操作',
       body: '请返回 Cindy。',
-      action: { href: 'cindy://focus/slack-hook-install', label: '返回 Cindy' },
+      action: { href: 'hana://focus/slack-hook-install', label: '返回 Cindy' },
     });
-    expect(html).toContain('<a class="cta" href="cindy://focus/slack-hook-install">返回 Cindy</a>');
+    expect(html).toContain('<a class="cta" href="hana://focus/slack-hook-install">返回 Cindy</a>');
     expect(html).toContain('@media(max-width:480px)');
     expect(html).toContain('border-radius:12px');
   });
@@ -204,7 +204,7 @@ const BRAND_BASE = {
   title: '登录成功',
   body: '登录已成功，现在可以关闭此页面了。',
   closeCountdown: '{{count}}秒后自动关闭',
-  action: { href: 'cindy://focus/desktop-login', label: '回到 Cindy' },
+  action: { href: 'hana://focus/desktop-login', label: '回到 Cindy' },
 } as const;
 
 describe('wave4 brand login callback card (pageKind=desktop-login)', () => {
@@ -247,7 +247,7 @@ describe('wave4 brand login callback card (pageKind=desktop-login)', () => {
       title: '登录未完成',
       body: '请回到 Cindy 重新登录。',
     });
-    expect(html).toContain('<a class="cta" href="cindy://focus/desktop-login">回到 Cindy</a>');
+    expect(html).toContain('<a class="cta" href="hana://focus/desktop-login">回到 Cindy</a>');
     expect(html).not.toContain('id="close-countdown"');
   });
 
@@ -355,14 +355,14 @@ describe('wave4 brand login callback card (pageKind=desktop-login)', () => {
       title: '<Title>',
       body: '<Body>',
       detail: '<script>alert(1)</script>',
-      action: { href: 'cindy://focus/login" onclick="bad()', label: '<Return>' },
+      action: { href: 'hana://focus/login" onclick="bad()', label: '<Return>' },
     });
     expect(html).toContain('lang="zh&quot;&gt;&lt;script&gt;"');
     expect(html).toContain('data-cindy-oauth-copy="&quot;&gt;&lt;img src=x onerror=alert(2)&gt;"');
     expect(html).toContain('&lt;Title&gt;');
     expect(html).toContain('&lt;Body&gt;');
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
-    expect(html).toContain('href="cindy://focus/login&quot; onclick=&quot;bad()"');
+    expect(html).toContain('href="hana://focus/login&quot; onclick=&quot;bad()"');
     expect(html).toContain('&lt;Return&gt;');
     expect(html).not.toContain('<script>alert(1)</script>');
     expect(html).not.toContain('<img src=x');

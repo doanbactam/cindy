@@ -98,7 +98,7 @@ fn install_registered(installation: &Installation, staged: std::path::PathBuf) -
     let manager = manager(SC_MANAGER_CREATE_SERVICE | SC_MANAGER_CONNECT).stage(Step::ScmOpen)?;
     let name = wide(&installation.service());
     // Service display names are also unique in the SCM namespace. Include the
-    // installation id so Cindy and CindyDev (or two side-by-side installs)
+    // installation id so Cindy and HanaDev (or two side-by-side installs)
     // cannot reject each other's registration with
     // ERROR_DUPLICATE_SERVICE_NAME.
     let display_name = wide(&format!("Cindy Remote Desktop ({})", installation.id));

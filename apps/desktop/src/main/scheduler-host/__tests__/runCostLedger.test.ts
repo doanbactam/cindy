@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../shared/brandRegion', () => ({
   CURRENT_CINDY_REGION: 'cn',
-  CURRENT_APP_ID: 'com.xd.cindycn',
+  CURRENT_APP_ID: 'com.doanbactam.hanacn',
 }));
 
 import type { DbClient } from '../../localDb/client/DbClient';

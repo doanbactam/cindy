@@ -4054,7 +4054,7 @@ export function getDesktopCodexHome(): string {
     /* fallback for non-Electron test runners */
   }
 
-  // 兜底路径按现有区域目录映射取值(global=CindyGlobal,cn=Cindy，同机双装分库)。
+  // 兜底路径按现有区域目录映射取值(global=HanaGlobal,cn=Cindy，同机双装分库)。
   const dirName = brandUserDataDirName(CURRENT_CINDY_REGION);
   if (process.platform === 'darwin') {
     return path.join(os.homedir(), 'Library', 'Application Support', dirName, 'codex-home');

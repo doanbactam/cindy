@@ -25,11 +25,11 @@ const IDENTITY = Object.freeze({
 
 test("macOS WebAuthn access group is derived from the exact signing and bundle identities", () => {
   assert.equal(
-    macWebAuthnKeychainAccessGroup("TEAM123456", "com.xd.cindy"),
-    "TEAM123456.com.xd.cindy.webauthn",
+    macWebAuthnKeychainAccessGroup("TEAM123456", "com.doanbactam.hana"),
+    "TEAM123456.com.doanbactam.hana.webauthn",
   );
   assert.throws(
-    () => macWebAuthnKeychainAccessGroup("short", "com.xd.cindy"),
+    () => macWebAuthnKeychainAccessGroup("short", "com.doanbactam.hana"),
     /invalid Apple Team ID/,
   );
   assert.throws(
@@ -46,7 +46,7 @@ test("macOS WebAuthn keychain entitlement is main-only", () => {
   const mainPath = path.join(tempDir, "main.plist");
   const keychainAccessGroup = macWebAuthnKeychainAccessGroup(
     "TEAM123456",
-    "com.xd.cindy",
+    "com.doanbactam.hana",
   );
   try {
     writeMacEntitlements(helperPath);
@@ -77,8 +77,8 @@ function validWebAuthnProvisioningProfile(overrides = {}) {
     ExpirationDate: "2099-01-01T00:00:00.000Z",
     Entitlements: {
       "com.apple.developer.team-identifier": "TEAM123456",
-      "com.apple.application-identifier": "TEAM123456.com.xd.cindy",
-      "keychain-access-groups": ["TEAM123456.com.xd.cindy.webauthn"],
+      "com.apple.application-identifier": "TEAM123456.com.doanbactam.hana",
+      "keychain-access-groups": ["TEAM123456.com.doanbactam.hana.webauthn"],
     },
     ...overrides,
   };
@@ -86,8 +86,8 @@ function validWebAuthnProvisioningProfile(overrides = {}) {
 
 const WEB_AUTHN_PROFILE_EXPECTED = Object.freeze({
   teamId: "TEAM123456",
-  bundleId: "com.xd.cindy",
-  keychainAccessGroup: "TEAM123456.com.xd.cindy.webauthn",
+  bundleId: "com.doanbactam.hana",
+  keychainAccessGroup: "TEAM123456.com.doanbactam.hana.webauthn",
 });
 
 test("macOS WebAuthn provisioning profile must authorize the signing, app and keychain identities", () => {
@@ -195,7 +195,7 @@ test("macOS WebAuthn provisioning profile is validated before it is embedded", (
 test("codesign TeamIdentifier parser reads the signing authority actually applied", () => {
   assert.equal(
     parseCodesignTeamIdentifier(
-      "Identifier=com.xd.cindy\nTeamIdentifier=TEAM123456\n",
+      "Identifier=com.doanbactam.hana\nTeamIdentifier=TEAM123456\n",
     ),
     "TEAM123456",
   );

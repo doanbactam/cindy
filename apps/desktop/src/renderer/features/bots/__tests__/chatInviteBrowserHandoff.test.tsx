@@ -28,7 +28,7 @@ it('does not pull invitations in a secondary window, leaving the intent for the 
   const take = vi.fn(async () => takePendingDeepLink());
   const receive = vi.fn();
   const token = 'secondary-window-fixture-'.padEnd(43, 'a');
-  handleIncomingDeepLink(`cindy://chat-invite/${token}`, 'open-url');
+  handleIncomingDeepLink(`hana://chat-invite/${token}`, 'open-url');
   const previousUrl = window.location.href;
   try {
     window.history.replaceState(null, '', '?secondaryWindow=1');
@@ -67,7 +67,7 @@ it.each(['darwin', 'win32', 'linux'].flatMap(platform => [false, true].map(alrea
   if (alreadyOpen) connect();
   const token = 'offline-browser-fixture-'.padEnd(43, 'a');
   const anchor = document.createElement('a');
-  anchor.href = `cindy://chat-invite/${token}`;
+  anchor.href = `hana://chat-invite/${token}`;
   anchor.addEventListener('click', event => {
     event.preventDefault();
     // Exercise the platform-specific focus branch on every CI host. Restore
@@ -83,7 +83,7 @@ it.each(['darwin', 'win32', 'linux'].flatMap(platform => [false, true].map(alrea
   await act(async () => { anchor.click(); anchor.click(); });
   if (!alreadyOpen) {
     expect(listener).toBeUndefined(); // login has not mounted the authenticated consumer
-    handleIncomingDeepLink('cindy://focus/desktop-login', 'open-url');
+    handleIncomingDeepLink('hana://focus/desktop-login', 'open-url');
     setDeepLinkMainWindow(win); connect(); await pull();
   }
   render(<MemoryRouter><ChatInviteHost /></MemoryRouter>);
@@ -114,7 +114,7 @@ it('turns a truncated clicked invitation into an explicit notice through preload
   } as unknown as BrowserWindow;
   setDeepLinkMainWindow(win);
   bridge.onDeepLinkNavigate(() => void pull());
-  await act(async () => { handleIncomingDeepLink(`cindy://chat-invite/${'truncated'.padEnd(30, 'a')}`, 'open-url'); });
+  await act(async () => { handleIncomingDeepLink(`hana://chat-invite/${'truncated'.padEnd(30, 'a')}`, 'open-url'); });
   render(<MemoryRouter><ChatInviteHost /></MemoryRouter>);
   expect(screen.getByRole('alert').textContent).toBe('bots.groupChat.server.malformedInvite');
   expect(previewInvite).not.toHaveBeenCalled();

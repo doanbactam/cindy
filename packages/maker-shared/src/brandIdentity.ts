@@ -14,7 +14,7 @@
  *  - 这是**构建期单点,不是运行时开关**。区域(cn/global)是唯一的构建期维度,
  *    经打包命令的 CINDY_AUTH_REGION 选择,默认 global。appId / userData 目录名
  *    按区域派生(cn 与 global 是两个可并存的系统身份,appId 与 mobile 的
- *    com.xd.cindycn / com.xd.cindy 同一套);exe 名 cn/global 同值 'Cindy'
+ *    com.doanbactam.hanacn / com.doanbactam.hana 同一套);exe 名 cn/global 同值 'Cindy'
  *    (2026-07-26 显示名统一决策,文件层双装隔离随之放弃,dev 仍独立)。
  *  - 历史兼容锚点(旧 scheme 解析、旧 userData / DB 文件识别)由
  *    `legacySchemes` / `legacyUserDataDirNames(ByRegion)` / `legacyDbFilePrefixes`
@@ -39,7 +39,7 @@ import { BRAND_NAME } from './branding.js';
 
 /**
  * 构建期区域维度(与 mobile 的 EXPO_PUBLIC_CINDY_AUTH_REGION 同语义)。
- * 2026-07-20 新增第三目标 `dev`:独立系统身份(CindyDev,可与 cn/global 同机
+ * 2026-07-20 新增第三目标 `dev`:独立系统身份(HanaDev,可与 cn/global 同机
  * 三装),连接独立的 dev 服务器(config/endpoint.dev.json,服务端就绪前为
  * 约定占位域名)。行为语义上 dev 归 cn 系(登录线/文案等运行时按区域分支处
  * 与 cn 同待遇),差异只在端点与身份。注意与「开发模式(未注入区域的本地
@@ -81,7 +81,7 @@ export interface BrandIdentity {
    * Cindy——代价是 cn/global 同机双装时安装目录 / .app / .lnk 同名互抢
    * (第二个安装覆盖第一个的文件与快捷方式,更新器按 exe 名杀进程会波及另一
    * 区域),该场景明确放弃支持;appId 与 userData 目录仍按区域分离,系统身份
-   * 与数据互不影响。dev 保持独立名(CindyDev,可与正式包并存)。区域名不含
+   * 与数据互不影响。dev 保持独立名(HanaDev,可与正式包并存)。区域名不含
    * 空格(部分系统对带空格路径的兼容性差,owner 决策)。
    */
   readonly executableNameByRegion: Readonly<Record<CindyRegion, string>>;
@@ -98,7 +98,7 @@ export interface BrandIdentity {
   readonly legacySchemes: readonly string[];
   /**
    * Electron 默认派生的 userData 目录名(= package.json productName)。已发布的
-   * cn 构建沿用该目录；global 继续使用历史独立目录 `CindyGlobal`，避免启动时
+   * cn 构建沿用该目录；global 继续使用历史独立目录 `HanaGlobal`，避免启动时
    * 改名或搬迁用户数据。
    */
   readonly userDataDirName: string;
@@ -148,26 +148,27 @@ export interface BrandIdentity {
  */
 export const BRAND_IDENTITY: BrandIdentity = Object.freeze({
   displayName: BRAND_NAME,
-  executableName: 'Cindy',
+  executableName: 'Hana',
   executableNameByRegion: Object.freeze({
-    cn: 'Cindy',
-    // 2026-07-26 与 cn 同值(见字段 doc):global 包全部可见位置显示 Cindy,
+    cn: 'Hana',
+    // 2026-07-26 与 cn 同值(见字段 doc):global 包全部可见位置显示 Hana,
     // 放弃 cn/global 同机双装的文件层隔离;appId / userData 仍分区。
-    global: 'Cindy',
-    dev: 'CindyDev',
+    global: 'Hana',
+    dev: 'HanaDev',
   }),
   appIdByRegion: Object.freeze({
-    cn: 'com.xd.cindycn',
-    global: 'com.xd.cindy',
-    dev: 'com.xd.cindydev',
+    cn: 'com.doanbactam.hanacn',
+    global: 'com.doanbactam.hana',
+    dev: 'com.doanbactam.hanadev',
   }),
-  primaryScheme: 'cindy',
+  primaryScheme: 'hana',
+  // Hana 不注册 Cindy 的 cindy://,避免与同机安装的 Cindy 抢深链;xdt-maker 历史锚保留。
   legacySchemes: Object.freeze(['xdt-maker']),
-  userDataDirName: 'Cindy',
+  userDataDirName: 'Hana',
   userDataDirNameByRegion: Object.freeze({
-    cn: 'Cindy',
-    global: 'CindyGlobal',
-    dev: 'CindyDev',
+    cn: 'Hana',
+    global: 'HanaGlobal',
+    dev: 'HanaDev',
   }),
   legacyUserDataDirNames: Object.freeze(['xdt-maker']),
   legacyUserDataDirNamesByRegion: Object.freeze({
@@ -183,7 +184,7 @@ export const BRAND_IDENTITY: BrandIdentity = Object.freeze({
   }),
   cdnPrefix: 'cindy',
   updaterName: 'cindy-updater',
-  dbFilePrefix: 'cindy',
+  dbFilePrefix: 'hana',
   legacyDbFilePrefixes: Object.freeze(['xdt-maker']),
 });
 

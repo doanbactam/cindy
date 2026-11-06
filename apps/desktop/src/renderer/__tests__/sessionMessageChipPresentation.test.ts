@@ -51,7 +51,7 @@ function renderSessionChip(href: string, label = 'Fix white screen'): HTMLElemen
 
 describe('composer session-link chip presentation', () => {
   it('keeps a whole-conversation link as the conversation title', () => {
-    const chip = renderSessionChip('cindy://session/session-1');
+    const chip = renderSessionChip('hana://session/session-1');
 
     expect(chip.textContent).toBe('Fix white screen');
     expect(chip.querySelector('path')?.getAttribute('d')).toBe('M15 10l5 5-5 5');
@@ -59,7 +59,7 @@ describe('composer session-link chip presentation', () => {
 
   it('shows the message excerpt directly and keeps the full text on hover', () => {
     const chip = renderSessionChip(
-      'cindy://session/session-1?message=client-1',
+      'hana://session/session-1?message=client-1',
       'First line\n\nsecond line',
     );
 

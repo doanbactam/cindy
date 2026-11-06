@@ -314,7 +314,7 @@ describe('extractText — messages.content JSON → 纯文本', () => {
   });
 
   it('标题素材使用 semantic projection，保留 raw wire 但不暴露 quote marker / 私有深链', () => {
-    const href = 'cindy://session/session-a?message=message-a';
+    const href = 'hana://session/session-a?message=message-a';
     const text = `> <!-- cindy-composer-quote -->\n> selected\n\ninspect ${href}`;
     const raw = JSON.stringify({
       text,

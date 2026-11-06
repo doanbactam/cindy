@@ -40,9 +40,9 @@ const LEGACY_SHORTCUT_BASENAMES = ['xdt-maker', 'XDMaker'] as const;
 
 /**
  * 重建目标快捷方式名 = 本区域 NSIS shortcutName(cn/global 'Cindy' /
- * dev 'CindyDev',与 forge.config 同源;2026-07-26 起 cn/global 同名,
+ * dev 'HanaDev',与 forge.config 同源;2026-07-26 起 cn/global 同名,
  * 双装 .lnk 互抢已被 owner 接受)。仍从 brandExecutableName 派生而不用共享的
- * BRAND_NAME:dev 包必须写自己的 CindyDev.lnk,不能抢正式包的 Cindy.lnk。
+ * BRAND_NAME:dev 包必须写自己的 HanaDev.lnk,不能抢正式包的 Cindy.lnk。
  */
 const SHORTCUT_BASENAME = brandExecutableName(CURRENT_CINDY_REGION);
 

@@ -382,7 +382,7 @@ describe('deriveAutoTitleSeed — 用户一个字没写', () => {
 });
 
 describe('deriveAutoTitleSeed — 会话/项目引用', () => {
-  const HREF = 'cindy://session/src-1';
+  const HREF = 'hana://session/src-1';
 
   it('只拖一个任务引用 → 用被引用会话的标题,而不是 [Referenced conversation] 机器块', () => {
     const seed = deriveAutoTitleSeed(
@@ -406,7 +406,7 @@ describe('deriveAutoTitleSeed — 会话/项目引用', () => {
   });
 
   it('只拖一个项目引用 → 用项目名', () => {
-    const href = 'cindy://project/p1';
+    const href = 'hana://project/p1';
     const seed = deriveAutoTitleSeed(
       queued({
         text: href,

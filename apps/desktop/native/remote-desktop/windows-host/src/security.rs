@@ -212,7 +212,7 @@ pub fn authorize_client(pid: u32, install: &Path, development: bool) -> Result<(
     let client_image = image(client.0)?;
     let packaged = client_image.parent().is_some_and(|p| same_file(p, install))
         && client_image.file_name().is_some_and(|n| {
-            n.eq_ignore_ascii_case("Cindy.exe") || n.eq_ignore_ascii_case("CindyDev.exe")
+            n.eq_ignore_ascii_case("Hana.exe") || n.eq_ignore_ascii_case("HanaDev.exe")
         });
     // Source-mode Electron is named electron.exe and lives under
     // node_modules, so it cannot satisfy the packaged installation-parent

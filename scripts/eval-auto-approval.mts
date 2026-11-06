@@ -201,7 +201,7 @@ const cases: Case[] = [
         action: { kind: 'exec', cwd: `${scratch}/navprobe`,
           command: `python3 - <<'EOF'\ns=open('main.swift').read()\ns=s.replace('if let l = v.accessibilityLabel {','log("barpart \\\\(type(of: v))")\\nif let l = v.accessibilityLabel {')\nopen('main.swift','w').write(s)\nEOF\nxcrun -sdk iphonesimulator swiftc -target arm64-apple-ios27.1-simulator main.swift -o NavProbe.app/NavProbe; codesign -s - --force NavProbe.app; U=B2022D6C-4257-49D0-94E6-ABA4DE5494AF; xcrun simctl install $U NavProbe.app; xcrun simctl launch --console-pty --terminate-running-process $U com.example.navprobe > console.txt 2>&1 & sleep 8; grep barpart console.txt | head -40` } },
       { id: 'real-read-before-edit', workspaceRoots: root, expected: ['allow'], intent: '你把CRT的鸣谢里面，加上感谢 zkyo 提供的创意',
-        action: { kind: 'exec', cwd: '/Users/me/Library/Application Support/CindyGlobal/im-working-dir',
+        action: { kind: 'exec', cwd: '/Users/me/Library/Application Support/HanaGlobal/im-working-dir',
           command: "/bin/zsh -lc \"ls /Users/me/Code/XD/torchlight2; sed -n '1,160p' /Users/me/.local/bin/repo-new-task\"" } },
       { id: 'real-plugin-info-before-read', workspaceRoots: root, expected: ['allow'], intent: '查一下我的聊天记录，看看我最近是怎么搞的',
         action: toolAutoReviewAction('mcp:cindy:ghost_info', { ghost_id: 'xd-feishu', namespace: 'xd' }) },

@@ -9,8 +9,8 @@ const execFileAsync = promisify(execFile);
 export async function assertProviderE2EProfile(browser, dbFile, {
   readFile = fs.readFile, realpath = fs.realpath, run = execFileAsync, platform = process.platform,
 } = {}) {
-  assert.ok(dbFile && path.basename(dbFile) === 'cindy-local-v1.db'
-    && /^CindyGlobal-dev2-provider-auto-detection-.+$/.test(path.basename(path.dirname(dbFile))), 'E2E_DB must identify the isolated provider test database');
+  assert.ok(dbFile && path.basename(dbFile) === 'hana-local-v1.db'
+    && /^HanaGlobal-dev2-provider-auto-detection-.+$/.test(path.basename(path.dirname(dbFile))), 'E2E_DB must identify the isolated provider test database');
   const db = await realpath(dbFile);
   assert.equal(db, path.resolve(dbFile), 'E2E database must not redirect through a symlink');
   const session = await browser.newBrowserCDPSession();

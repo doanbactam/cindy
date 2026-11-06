@@ -85,7 +85,7 @@ import { getSsoOrgHistory } from '@/state/ssoOrgHistory';
  * global 挂 "Global" 徽标,读出来反而是「存在一个本土主场版、这是它的出口型号」,
  * 与叙事相反。cn / dev 仍标注:两者连的都不是 global 端点(cn 走国内端点、dev
  * 走独立 dev 端点),登录页是用户确认自己连向哪个后端的位置;dev 另有并存场景
- * ——CindyDev 保持独立可执行名,可与正式包同机共存。⚠️ 别把 cn 的理由写成
+ * ——HanaDev 保持独立可执行名,可与正式包同机共存。⚠️ 别把 cn 的理由写成
  * 「区分同机双装的 cn / global」:2026-07-26 起两者可执行名同为 Cindy、安装
  * 目录与快捷方式同名互抢,该双装场景已明确放弃支持(见 brandIdentity.ts 的
  * executableNameByRegion doc)。

@@ -57,7 +57,7 @@ afterEach(async () => {
 describe('adoptLocalProfileDatabase', () => {
   it('retries receipt publication failure without losing the local database', async () => {
     const { root, deps } = await fixture();
-    const source = path.join(root, 'cindy-local-v1.db');
+    const source = path.join(root, 'hana-local-v1.db');
     const target = path.join(root, 'cindy-owner-a.db');
     await fs.writeFile(source, 'local-db');
     const writeFile = originalFs.writeFileSync;
@@ -77,7 +77,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('records the actual exclusive-copy target identity on filesystems without hard links', async () => {
     const { root, deps } = await fixture();
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     deps.fs.link = async () => { throw Object.assign(new Error('unsupported'), { code: 'ENOTSUP' }); };
     deps.fs.copyNoReplace = createProductionLocalProfileDataMigrationDeps(root, 'cindy').fs.copyNoReplace;
     expect((await adoptLocalProfileDatabase('owner-a', deps)).status).toBe('adopted');
@@ -90,7 +90,7 @@ describe('adoptLocalProfileDatabase', () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
     const receipt = `${target}.model-visibility-adoption.v1.json`;
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     let receiptWritesAfterPublication = 0;
     let published = false;
     const writeFile = originalFs.writeFileSync;
@@ -126,7 +126,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('hands local preferences only to the adopted database, retaining proof on restart', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     expect(readModelVisibilityAdoption(target)).toBe('absent');
     expect((await adoptLocalProfileDatabase('owner-a', deps)).status).toBe('adopted');
     expect(readModelVisibilityAdoption(target)).toBe('adopted');
@@ -139,7 +139,7 @@ describe('adoptLocalProfileDatabase', () => {
   it.each(['original', 'replaced', 'legacy'] as const)(
     'preserves the original receipt during published-copy recovery (%s target)', async (state) => {
       const { root, deps } = await fixture();
-      const source = path.join(root, 'cindy-local-v1.db');
+      const source = path.join(root, 'hana-local-v1.db');
       const target = path.join(root, 'cindy-owner-a.db');
       const receipt = `${target}.model-visibility-adoption.v1.json`;
       const pending = `${target}.local-profile-copy-pending`;
@@ -171,7 +171,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('does not grant a handoff when a different target wins publication', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     deps.fs.link = async (_source, destination) => {
       await fs.writeFile(destination, 'cloud-db');
       throw Object.assign(new Error('exists'), { code: 'EEXIST' });
@@ -190,7 +190,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it.each(['', '{'])('fails closed for a malformed owner marker containing %j', async (contents) => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     await fs.writeFile(marker, contents);
 
     expect(reserveLocalProfileDataOwner('owner-a', root, 'cindy')).toBe('failed');
@@ -207,7 +207,7 @@ describe('adoptLocalProfileDatabase', () => {
     expect(reserveLocalProfileDataOwner('owner-a', root, 'cindy')).toBe('claimed');
     expect(reserveLocalProfileDataOwner('owner-b', root, 'cindy')).toBe('owned-by-other');
     expect(linkSpy).toHaveBeenCalled();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     await expect(fs.readFile(marker, 'utf8').then(JSON.parse)).resolves.toMatchObject({
       ownerId: 'owner-a',
     });
@@ -215,7 +215,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('recovers a truncated fallback marker from its pending publication', async () => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     const pending = `${marker}.pending`;
     vi.spyOn(originalFs, 'linkSync').mockImplementation(() => {
       throw Object.assign(new Error('hard links unsupported'), { code: 'EOPNOTSUPP' });
@@ -244,7 +244,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('restores an atomic-write backup before deciding ownership', async () => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     await fs.writeFile(`${marker}.bak`, JSON.stringify({ ownerId: 'owner-a' }));
 
     expect(reserveLocalProfileDataOwner('owner-b', root, 'cindy')).toBe('owned-by-other');
@@ -255,7 +255,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('falls back to exclusive snapshot copy when hard links are unsupported', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     const fallbackDeps: LocalProfileDataMigrationDeps = {
       ...deps,
       fs: {
@@ -276,7 +276,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('keeps the cloud target when exclusive snapshot copy loses the race', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     const fallbackDeps: LocalProfileDataMigrationDeps = {
       ...deps,
       fs: {
@@ -301,7 +301,7 @@ describe('adoptLocalProfileDatabase', () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
     const pending = `${target}.local-profile-copy-pending`;
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     let interrupted = true;
     const recoveringDeps: LocalProfileDataMigrationDeps = {
       ...deps,
@@ -339,7 +339,7 @@ describe('adoptLocalProfileDatabase', () => {
     const { root } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
     const pending = `${target}.local-profile-copy-pending`;
-    const source = path.join(root, 'cindy-local-v1.db');
+    const source = path.join(root, 'hana-local-v1.db');
     await fs.writeFile(source, 'local-db');
     const productionDeps = createProductionLocalProfileDataMigrationDeps(root, 'cindy');
     const racingDeps: LocalProfileDataMigrationDeps = {
@@ -385,7 +385,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('persists the fallback claiming marker before opening the exclusive target', async () => {
     const { root } = await fixture();
-    const source = path.join(root, 'cindy-local-v1.db');
+    const source = path.join(root, 'hana-local-v1.db');
     const target = path.join(root, 'cindy-owner-a.db');
     const pending = `${target}.local-profile-copy-pending`;
     const sourceDb = createBetterSqliteDatabase(source);
@@ -426,7 +426,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('fails closed when target ownership is unproven after the fallback claim is interrupted', async () => {
     const { root } = await fixture();
-    const source = path.join(root, 'cindy-local-v1.db');
+    const source = path.join(root, 'hana-local-v1.db');
     const target = path.join(root, 'cindy-owner-a.db');
     const pending = `${target}.local-profile-copy-pending`;
     const sourceDb = createBetterSqliteDatabase(source);
@@ -476,7 +476,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('does not reclaim an invalid marker while another process holds the migration lock', async () => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     const lockDb = createBetterSqliteDatabase(`${marker}${LOCAL_PROFILE_MIGRATION_LOCK_DB_SUFFIX}`);
     await fs.writeFile(marker, '{');
     lockDb.exec('BEGIN IMMEDIATE');
@@ -501,7 +501,7 @@ describe('adoptLocalProfileDatabase', () => {
       status: 'already-owned',
       ownerId: 'owner-a',
     });
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     const beforeWrongToken = await fs.readFile(marker, 'utf8');
     expect(releaseLocalProfileDataOwner('owner-a', root, 'cindy', 'wrong-token')).toBe(false);
     await expect(fs.readFile(marker, 'utf8')).resolves.toBe(beforeWrongToken);
@@ -514,7 +514,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('fails closed when a released marker cannot be restored atomically', async () => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     const candidate = `${marker}.release`;
     const reservation = reserveLocalProfileDataOwnerDetailed('owner-a', root, 'cindy');
     expect(reservation).toMatchObject({ status: 'claimed', claimToken: expect.any(String) });
@@ -535,7 +535,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('finalizes a pending claim for the committed owner', async () => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     const openSpy = vi.spyOn(originalFs, 'openSync');
     const reservation = reserveLocalProfileDataOwnerDetailed('owner-a', root, 'cindy');
     expect(reservation).toMatchObject({ status: 'claimed', claimToken: expect.any(String) });
@@ -550,7 +550,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('finalizes a committed claim stranded in a release candidate', async () => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     const candidate = `${marker}.release`;
     const reservation = reserveLocalProfileDataOwnerDetailed('owner-a', root, 'cindy');
     expect(reservation).toMatchObject({ status: 'claimed', claimToken: expect.any(String) });
@@ -565,7 +565,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('releases an uncommitted claim stranded in a release candidate', async () => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     const candidate = `${marker}.release`;
     expect(reserveLocalProfileDataOwner('owner-a', root, 'cindy')).toBe('claimed');
     originalFs.renameSync(marker, candidate);
@@ -578,7 +578,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('restores a tokenless owner stranded in a release candidate', async () => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     const candidate = `${marker}.release`;
     expect(reserveCommittedLocalProfileDataOwner('owner-a', root, 'cindy')).toBe('claimed');
     originalFs.renameSync(marker, candidate);
@@ -591,7 +591,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('restores an atomic-write backup before settling a pending claim', async () => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     await fs.writeFile(
       `${marker}.bak`,
       JSON.stringify({ ownerId: 'owner-a', claimToken: 'claim-a' }),
@@ -609,7 +609,7 @@ describe('adoptLocalProfileDatabase', () => {
     expect(reserveCommittedLocalProfileDataOwner('owner-a', root, 'cindy')).toBe('claimed');
     const marker = JSON.parse(
       await fs.readFile(
-        path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`),
+        path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`),
         'utf8',
       ),
     );
@@ -639,7 +639,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('keeps a pending claim recoverable when the migration lock is temporarily busy', async () => {
     const { root } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     expect(reserveLocalProfileDataOwner('owner-a', root, 'cindy')).toBe('claimed');
     const lockDb = createBetterSqliteDatabase(`${marker}${LOCAL_PROFILE_MIGRATION_LOCK_DB_SUFFIX}`);
     lockDb.exec('BEGIN IMMEDIATE');
@@ -661,7 +661,7 @@ describe('adoptLocalProfileDatabase', () => {
     await expect(adoptLocalProfileDatabase('owner-a', deps)).resolves.toEqual({
       status: 'no-local-db',
     });
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
 
     await expect(adoptLocalProfileDatabase('owner-b', deps)).resolves.toEqual({
       status: 'claimed-by-other-owner',
@@ -669,7 +669,7 @@ describe('adoptLocalProfileDatabase', () => {
     await expect(fs.access(path.join(root, 'cindy-owner-b.db'))).rejects.toThrow();
     await expect(
       fs.readFile(
-        path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`),
+        path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`),
         'utf8',
       ),
     ).resolves.toContain('owner-a');
@@ -706,7 +706,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('blocks initialization when source sidecars exist without the main database', async () => {
     const { root, deps } = await fixture();
-    const source = path.join(root, 'cindy-local-v1.db');
+    const source = path.join(root, 'hana-local-v1.db');
     const target = path.join(root, 'cindy-owner-a.db');
     await fs.writeFile(`${source}-wal`, 'orphaned-wal');
 
@@ -720,9 +720,9 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('adopts a standalone snapshot without deleting the local source', async () => {
     const { root, deps } = await fixture();
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db-wal'), 'local-wal');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db-shm'), 'local-shm');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db-wal'), 'local-wal');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db-shm'), 'local-shm');
 
     await expect(adoptLocalProfileDatabase('owner-a', deps)).resolves.toMatchObject({
       status: 'adopted',
@@ -732,20 +732,20 @@ describe('adoptLocalProfileDatabase', () => {
     );
     await expect(fs.access(path.join(root, 'cindy-owner-a.db-wal'))).rejects.toThrow();
     await expect(fs.access(path.join(root, 'cindy-owner-a.db-shm'))).rejects.toThrow();
-    await expect(fs.readFile(path.join(root, 'cindy-local-v1.db'), 'utf8')).resolves.toBe(
+    await expect(fs.readFile(path.join(root, 'hana-local-v1.db'), 'utf8')).resolves.toBe(
       'local-db',
     );
     await expect(
       fs.access(
         path.join(
           root,
-          `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}${LOCAL_PROFILE_MIGRATION_LOCK_DB_SUFFIX}`,
+          `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}${LOCAL_PROFILE_MIGRATION_LOCK_DB_SUFFIX}`,
         ),
       ),
     ).resolves.toBeUndefined();
     const marker = JSON.parse(
       await fs.readFile(
-        path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`),
+        path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`),
         'utf8',
       ),
     );
@@ -754,7 +754,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('captures committed WAL data through SQLite online backup while the source stays open', async () => {
     const { root } = await fixture();
-    const source = path.join(root, 'cindy-local-v1.db');
+    const source = path.join(root, 'hana-local-v1.db');
     const sourceDb = createBetterSqliteDatabase(source);
     const openSpy = vi.spyOn(originalFs, 'openSync');
     try {
@@ -791,7 +791,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('never overwrites an existing cloud database', async () => {
     const { root, deps } = await fixture();
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     await fs.writeFile(path.join(root, 'cindy-owner-a.db'), 'cloud-db');
 
     await expect(adoptLocalProfileDatabase('owner-a', deps)).resolves.toEqual({
@@ -805,7 +805,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('does not publish into an existing cloud database file group', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     await fs.writeFile(target, 'cloud-db');
     await fs.writeFile(`${target}-wal`, 'cloud-wal');
 
@@ -819,7 +819,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('blocks initialization when target sidecars exist without the main database', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     await fs.writeFile(`${target}-wal`, 'orphaned-wal');
 
     await expect(adoptLocalProfileDatabase('owner-a', deps)).resolves.toMatchObject({
@@ -832,7 +832,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('requires the primary instance when the retained source belongs to this owner', async () => {
     const { root, deps } = await fixture();
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
 
     await expect(inspectPassiveLocalProfileAdoption('owner-a', deps)).resolves.toEqual({
       status: 'required',
@@ -853,7 +853,7 @@ describe('adoptLocalProfileDatabase', () => {
       reason: 'no-local-db',
     });
 
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     await fs.writeFile(path.join(root, 'cindy-owner-a.db'), 'cloud-db');
     await expect(inspectPassiveLocalProfileAdoption('owner-a', deps)).resolves.toEqual({
       status: 'not-required',
@@ -870,7 +870,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('blocks passive initialization for orphaned source sidecars', async () => {
     const { root, deps } = await fixture();
-    const source = path.join(root, 'cindy-local-v1.db');
+    const source = path.join(root, 'hana-local-v1.db');
     await fs.writeFile(`${source}-shm`, 'orphaned-shm');
 
     await expect(inspectPassiveLocalProfileAdoption('owner-a', deps)).resolves.toEqual({
@@ -912,7 +912,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('blocks passive initialization when a fallback copy is still in progress', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     await fs.writeFile(target, 'partial');
     await fs.writeFile(
       `${target}.local-profile-copy-pending`,
@@ -1026,7 +1026,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('assigns the retained local source to only the first cloud owner', async () => {
     const { root, deps } = await fixture();
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
 
     await expect(adoptLocalProfileDatabase('owner-a', deps)).resolves.toMatchObject({
       status: 'adopted',
@@ -1041,9 +1041,9 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('does not replace a target when same-owner adoption races across processes', async () => {
     const { root, deps } = await fixture();
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db-wal'), 'local-wal');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db-shm'), 'local-shm');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db-wal'), 'local-wal');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db-shm'), 'local-shm');
 
     const results = await Promise.all([
       adoptLocalProfileDatabase('owner-a', deps),
@@ -1059,7 +1059,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('keeps the first same-owner snapshot when concurrent publishers produce different bytes', async () => {
     const { root, deps } = await fixture();
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     let backupCount = 0;
     const racingDeps: LocalProfileDataMigrationDeps = {
       ...deps,
@@ -1087,7 +1087,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('does not replace a cloud database created after the target preflight', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
 
     const racingDeps: LocalProfileDataMigrationDeps = {
       ...deps,
@@ -1111,7 +1111,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('keeps a cloud database created during the online backup', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
 
     let backupStarted!: () => void;
     let releaseBackup!: () => void;
@@ -1146,8 +1146,8 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('does not publish WAL sidecars when the main target loses the race', async () => {
     const { root, deps } = await fixture();
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db-wal'), 'local-wal');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db-wal'), 'local-wal');
     const racingDeps: LocalProfileDataMigrationDeps = {
       ...deps,
       fs: {
@@ -1176,7 +1176,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('does not publish a database when the online backup fails', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     const failingDeps: LocalProfileDataMigrationDeps = {
       ...deps,
       fs: {
@@ -1202,7 +1202,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('blocks initialization when probing the local database fails', async () => {
     const { root, deps } = await fixture();
-    const source = path.join(root, 'cindy-local-v1.db');
+    const source = path.join(root, 'hana-local-v1.db');
     const target = path.join(root, 'cindy-owner-a.db');
     await fs.writeFile(source, 'local-db');
     const failingDeps: LocalProfileDataMigrationDeps = {
@@ -1228,7 +1228,7 @@ describe('adoptLocalProfileDatabase', () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
     const legacyLease = `${target}.local-profile-migration-lease`;
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     await fs.writeFile(
       legacyLease,
       JSON.stringify({ ownerId: 'owner-a', leaseId: 'stale', pid: process.pid, claimedAt: 1 }),
@@ -1242,10 +1242,10 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('fails promptly when the SQLite migration lock cannot be opened', async () => {
     const { root, deps } = await fixture();
-    const marker = path.join(root, `cindy-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
+    const marker = path.join(root, `hana-local-v1${LOCAL_PROFILE_MIGRATION_MARKER_SUFFIX}`);
     const target = path.join(root, 'cindy-owner-a.db');
     const activeSnapshot = `${target}${LOCAL_PROFILE_MIGRATION_TMP_SUFFIX}.active-holder`;
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     await fs.writeFile(activeSnapshot, 'active-snapshot');
     await fs.mkdir(`${marker}${LOCAL_PROFILE_MIGRATION_LOCK_DB_SUFFIX}`, { recursive: true });
 
@@ -1259,7 +1259,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('defers adoption while another live instance can still write local-v1', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
 
     await expect(
       adoptLocalProfileDatabase('owner-a', {
@@ -1275,7 +1275,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('keeps the first owner reservation and retries after a legacy packaged instance exits', async () => {
     const { root, deps } = await fixture();
-    const source = path.join(root, 'cindy-local-v1.db');
+    const source = path.join(root, 'hana-local-v1.db');
     const target = path.join(root, 'cindy-owner-a.db');
     await fs.writeFile(source, 'local-db');
     let packagedInstanceRunning = true;
@@ -1308,7 +1308,7 @@ describe('adoptLocalProfileDatabase', () => {
 
   it('holds the packaged startup barrier through snapshot publication', async () => {
     const { root, deps } = await fixture();
-    const source = path.join(root, 'cindy-local-v1.db');
+    const source = path.join(root, 'hana-local-v1.db');
     const target = path.join(root, 'cindy-owner-a.db');
     await fs.writeFile(source, 'local-db');
     let held = true;
@@ -1347,7 +1347,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('removes its published target when the packaged startup barrier is lost', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     let heldChecks = 0;
     const release = vi.fn(async () => undefined);
 
@@ -1403,7 +1403,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('discards the snapshot if exclusive source access is lost before publication', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     let accessChecks = 0;
 
     await expect(
@@ -1422,7 +1422,7 @@ describe('adoptLocalProfileDatabase', () => {
   it('cleans interrupted temporary files before retrying', async () => {
     const { root, deps } = await fixture();
     const target = path.join(root, 'cindy-owner-a.db');
-    await fs.writeFile(path.join(root, 'cindy-local-v1.db'), 'local-db');
+    await fs.writeFile(path.join(root, 'hana-local-v1.db'), 'local-db');
     await fs.writeFile(`${target}${LOCAL_PROFILE_MIGRATION_TMP_SUFFIX}`, 'stale');
     await fs.writeFile(`${target}${LOCAL_PROFILE_MIGRATION_TMP_SUFFIX}.attempt-a`, 'stale-copy');
     await fs.writeFile(`${target}-wal${LOCAL_PROFILE_MIGRATION_TMP_SUFFIX}`, 'stale-wal');

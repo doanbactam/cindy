@@ -129,7 +129,7 @@ try {
     targets: Platform.WINDOWS.createTarget('nsis', Arch.x64),
     publish: 'never',
     config: {
-      appId: 'com.xd.cindy', productName: 'Cindy', electronVersion: '40.0.0',
+      appId: 'com.doanbactam.hana', productName: 'Cindy', electronVersion: '40.0.0',
       directories: { output: path.join(root, 'out'), buildResources: path.join(desktop, 'resources') },
       win: { signAndEditExecutable: false },
       nsis: {

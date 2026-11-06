@@ -66,24 +66,24 @@ it('delivers remote-control settings through the live bridge and cold-start buff
 
 // Review #8227 (Codex P2): the Computer Use enablement link must reach a running app, not only
 // the cold-start buffer; the preload whitelist had no builtin-tools branch.
-it('delivers cindy://settings/builtin-tools through the live bridge and cold-start buffer', () => {
+it('delivers hana://settings/builtin-tools through the live bridge and cold-start buffer', () => {
   const { received } = connect();
-  handleIncomingDeepLink('cindy://settings/builtin-tools', 'open-url');
+  handleIncomingDeepLink('hana://settings/builtin-tools', 'open-url');
   expect(received).toEqual([{ type: 'settings', tab: 'builtin-tools' }]);
   setDeepLinkMainWindow(null);
-  handleIncomingDeepLink('cindy://settings/builtin-tools', 'argv');
+  handleIncomingDeepLink('hana://settings/builtin-tools', 'argv');
   expect(takePendingDeepLink()).toEqual({ type: 'settings', tab: 'builtin-tools' });
 });
 
 // Review 2026-10-29 (Codex P1): the warm-app path dropped installed-plugin payloads because the
 // preload validator had no branch for them; only the cold-start buffer worked.
-it('delivers cindy://plugins links through the live bridge and cold-start buffer', () => {
+it('delivers hana://plugins links through the live bridge and cold-start buffer', () => {
   const { received } = connect();
-  handleIncomingDeepLink('cindy://plugins/my-browser', 'open-url');
-  handleIncomingDeepLink('cindy://plugins', 'open-url');
+  handleIncomingDeepLink('hana://plugins/my-browser', 'open-url');
+  handleIncomingDeepLink('hana://plugins', 'open-url');
   expect(received).toEqual([{ type: 'installed-plugin', ghostId: 'my-browser' }, { type: 'installed-plugin' }]);
   setDeepLinkMainWindow(null);
-  handleIncomingDeepLink('cindy://plugins/my-browser', 'argv');
+  handleIncomingDeepLink('hana://plugins/my-browser', 'argv');
   expect(takePendingDeepLink()).toEqual({ type: 'installed-plugin', ghostId: 'my-browser' });
 });
 
@@ -91,7 +91,7 @@ describe('Agent Island click id across the preload deep-link bridge', () => {
   // External links must keep their owning computer through both the live bridge
   // and the cold-start buffer; otherwise a same-id local task wins.
   it('preserves a remote task and message through live delivery and cold start', () => {
-    const href = 'cindy://session/same?device=other-mac&message=m-1';
+    const href = 'hana://session/same?device=other-mac&message=m-1';
     const expected = { type: 'session', id: 'same', deviceId: 'other-mac', messageClientId: 'm-1' };
     const { received } = connect();
     handleIncomingDeepLink(href, 'open-url');
@@ -133,7 +133,7 @@ describe('Agent Island click id across the preload deep-link bridge', () => {
 // a loaded window, and the real one-shot main queue; no Electron is started.
 describe('public plugin entry through the production bridge', () => {
   const pluginId = 'c123456789012345678901234';
-  const href = `cindy://plugin/${pluginId}`;
+  const href = `hana://plugin/${pluginId}`;
   const expected = { type: 'plugin', pluginId };
 
   it('delivers a live wake-up and retains the intent for exactly one consumer', () => {
@@ -146,7 +146,7 @@ describe('public plugin entry through the production bridge', () => {
 
   it('retains the last plugin during login and cold start until the mount pull', () => {
     connect();
-    handleIncomingDeepLink('cindy://plugin/c223456789012345678901234', 'open-url');
+    handleIncomingDeepLink('hana://plugin/c223456789012345678901234', 'open-url');
     handleIncomingDeepLink(href, 'open-url');
     expect(takePendingDeepLink()).toEqual(expected);
     expect(takePendingDeepLink()).toBeNull();

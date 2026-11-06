@@ -511,7 +511,7 @@ function defaultXdtUserDataDir(
   appDataDir: string,
   env: NodeJS.ProcessEnv,
 ): string {
-  // 按现有区域目录映射取值(global=CindyGlobal,cn=Cindy，同机双装分库)。
+  // 按现有区域目录映射取值(global=HanaGlobal,cn=Cindy，同机双装分库)。
   const dirName = brandUserDataDirName(CURRENT_CINDY_REGION);
   if (platform === 'darwin') return path.join(homeDir, 'Library', 'Application Support', dirName);
   if (platform === 'win32') return path.join(appDataDir, dirName);

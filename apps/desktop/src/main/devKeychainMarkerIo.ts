@@ -58,7 +58,7 @@ export function createKeychainMarkerIo(deps: KeychainMarkerIoDeps): KeychainIden
   };
 
   // writeSync 允许短写(配额/磁盘/网络文件系统压力下不抛错而少写)。短写发布的
-  // 截断标记可能恰好是词表里另一个合法身份("CindyDev\n" 截 5 字节 = "Cindy"),
+  // 截断标记可能恰好是词表里另一个合法身份("HanaDev\n" 截 4 字节 = "Hana"),
   // 认领进程与后续启动会各选一个身份(review 反馈 P1 第十七轮)——必须写满才算
   // 写完;无进展按写失败抛出,走各自的 error/撤销路径。
   const writeMarkerContentSync = (fd: number, name: string): void => {
@@ -76,14 +76,14 @@ export function createKeychainMarkerIo(deps: KeychainMarkerIoDeps): KeychainIden
   const readMarkerOnce = (): ReadOutcome => {
     try {
       // 原始内容不 trim:完整性(终止换行)由 resolver 判定。提前 trim 会把
-      // O_EXCL 回退里写到一半的 "Cindy"(= "CindyDev\n" 前 5 字节)洗成完整
+      // O_EXCL 回退里写到一半的 "Hana"(= "HanaDev\n" 前 4 字节)洗成完整
       // 的默认身份标记,并发读端据此分裂身份(review 反馈 P1 第十八轮)。
       // 只接受普通文件 + 有界读取:裸覆写目录可能存在同名**外来文件**——
       // 巨型文件无界读会耗尽内存,FIFO / 设备(或指向它们的符号链接)会把
       // main 启动永久阻塞(review 反馈 P2 第二十八轮)。O_NOFOLLOW 拒符号
       // 链接、O_NONBLOCK 防 FIFO 在 open 挂起;非普通文件与超限一律按
       // unreadable → abort(fail-safe 方向不变)。上限远大于词表最长合法
-      // 内容("CindyDev\n" 9 字节),不影响任何正常标记。
+      // 内容("HanaDev\n" 8 字节),不影响任何正常标记。
       // Windows 上 O_NOFOLLOW 不可用(undefined → 0),open 会跟随符号链接,
       // fstat 检查的是链接目标——profile 外部可独立替换的文件将决定 safeStorage
       // 身份(review 反馈 P1 第三十五轮,Windows CI 实测符号链接用例失败)。
@@ -176,7 +176,7 @@ export function createKeychainMarkerIo(deps: KeychainMarkerIoDeps): KeychainIden
       // 原子发布完整标记:先写临时文件并 fsync,再 hard link 独占落位,最后 fsync
       // 父目录——link 既是排他认领(EEXIST = 输掉竞态)又保证可见即完整;fsync 保证
       // 标记先于后续任何 profile/凭证写入持久化,否则断电后「标记消失 + profile
-      // 非空」会被下次启动判成旧沙箱、用错钥匙覆盖 CindyDev 密文(review 反馈)。
+      // 非空」会被下次启动判成旧沙箱、用错钥匙覆盖 HanaDev 密文(review 反馈)。
       // 临时文件名带随机成分且 'wx' 独占创建:仅 PID 后缀在 SMB 等多主机共享
       // 目录上会撞名(两台机器同 PID),'w' 打开还会截断对方的 tmp——若对方已把
       // 该 inode hard link 成最终标记,这里的重写会隔着共享 inode 改掉**已发布**
@@ -191,7 +191,7 @@ export function createKeychainMarkerIo(deps: KeychainMarkerIoDeps): KeychainIden
         } finally {
           fs.closeSync(fd);
         }
-        // 目录项持久化——契约要求标记「完整且持久」后才允许选定 CindyDev。
+        // 目录项持久化——契约要求标记「完整且持久」后才允许选定 HanaDev。
         // 认领成功与输掉竞态(EEXIST)两条路径都必须先 flush(与 flushProfileDir
         // 同一实现);读路径的接受由 resolver 经 flushProfileDir 确认。
         let linkOutcome: 'claimed' | 'exists' | null;

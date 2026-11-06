@@ -468,10 +468,10 @@ describe('userMessageLinkify', () => {
     });
   });
 
-  // 双 scheme 收敛:主 scheme cindy:// 与历史 xdt-maker://(上方全部用例)
+  // 双 scheme 收敛:主 scheme hana:// 与历史 xdt-maker://(上方全部用例)
   // 同一口径匹配;长度切片按实际命中的前缀(两 scheme 长度不同)。
-  it('matches primary-scheme cindy:// session links (bare + markdown form)', () => {
-    const sessionUrl = 'cindy://session/03e0c22d-19db-4ac5-814f-1ea04040b471';
+  it('matches primary-scheme hana:// session links (bare + markdown form)', () => {
+    const sessionUrl = 'hana://session/03e0c22d-19db-4ac5-814f-1ea04040b471';
     expect(findLinkifyMatches(`看这个 ${sessionUrl} 的会话`)).toEqual([
       {
         kind: 'session',
@@ -494,20 +494,20 @@ describe('userMessageLinkify', () => {
     ]);
   });
 
-  it('matches primary-scheme cindy:// project links and rejects empty ids per scheme', () => {
-    const projectUrl = 'cindy://project/%2Ftmp%2Ffoo';
+  it('matches primary-scheme hana:// project links and rejects empty ids per scheme', () => {
+    const projectUrl = 'hana://project/%2Ftmp%2Ffoo';
     expect(findLinkifyMatches(`项目在 ${projectUrl} 这里`)[0]).toMatchObject({
       kind: 'project',
       href: projectUrl,
     });
-    expect(findLinkifyMatches('cindy://other/foo')).toEqual([]);
-    expect(findLinkifyMatches('cindy://project/')).toEqual([]);
-    expect(findLinkifyMatches('cindy://session/')).toEqual([]);
+    expect(findLinkifyMatches('hana://other/foo')).toEqual([]);
+    expect(findLinkifyMatches('hana://project/')).toEqual([]);
+    expect(findLinkifyMatches('hana://session/')).toEqual([]);
   });
 
   it('matches both schemes mixed in one message', () => {
     const legacy = 'xdt-maker://session/aaa-111';
-    const primary = 'cindy://session/bbb-222';
+    const primary = 'hana://session/bbb-222';
     const matches = findLinkifyMatches(`${legacy} 与 ${primary}`);
     expect(matches.map((m) => (m.kind === 'session' ? m.href : null))).toEqual([
       legacy,

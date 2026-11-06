@@ -16,7 +16,7 @@ function waitForIo(assertion: () => unknown) {
 const h = vi.hoisted(() => ({
   profile: '',
   appPath: '',
-  name: 'Cindy',
+  name: 'Hana',
   packaged: false,
   makeEnabled: true,
   spawn: vi.fn(),
@@ -87,7 +87,7 @@ beforeEach(async ({ task }) => {
   h.profile = path.join(root, 'profile');
   h.appPath = path.join(root, 'checkout', 'apps', 'desktop');
   Object.defineProperty(process, 'resourcesPath', { value: h.appPath, configurable: true });
-  h.name = 'Cindy';
+  h.name = 'Hana';
   h.packaged = false;
   h.makeEnabled = true;
   h.ready = false;
@@ -136,7 +136,7 @@ beforeEach(async ({ task }) => {
   startup = await import('../versionStartup');
   original = {
     protocol: 1,
-    profile: { userData: h.profile, appName: 'Cindy', region: 'global', passive: false },
+    profile: { userData: h.profile, appName: 'Hana', region: 'global', passive: false },
     executable,
     appPath: h.appPath,
     resources: h.appPath,
@@ -180,7 +180,7 @@ async function savePersonalVersion(options: { corrupt?: boolean } = {}) {
   const directory = store.versionDirectory(h.profile, id);
   const resources = path.join(directory, 'resources');
   await mkdir(path.join(resources, 'drizzle'), { recursive: true });
-  await writeFile(path.join(directory, 'Cindy.exe'), 'personal executable');
+  await writeFile(path.join(directory, 'Hana.exe'), 'personal executable');
   await writeFile(path.join(resources, 'app.asar'), 'personal application');
   await writeFile(
     path.join(resources, 'cindy-version-protocol.json'),
@@ -200,13 +200,13 @@ async function savePersonalVersion(options: { corrupt?: boolean } = {}) {
     builtAt: '2026-09-17T20:00:00.000+08:00',
     platform: process.platform,
     arch: process.arch,
-    executable: 'Cindy.exe',
+    executable: 'Hana.exe',
     resources: 'resources',
     executableHash: digest(options.corrupt ? 'something else' : 'personal executable'),
     applicationHash: digest('personal application'),
     migrationHash: store.migrationIdentity(path.join(h.appPath, 'drizzle')),
   });
-  return { id, executable: path.join(directory, 'Cindy.exe') };
+  return { id, executable: path.join(directory, 'Hana.exe') };
 }
 /**
  * Electron emits 'ready' from the first event-loop turn after the main script; anything the
@@ -315,12 +315,12 @@ describe('one original version type for Dev and installed Cindy', () => {
   });
   it('preserves the profile keychain identity and rejects a conflicting launch identity', async () => {
     saveOriginal();
-    await writeFile(path.join(h.profile, 'keychain-identity'), 'CindyDev\n');
+    await writeFile(path.join(h.profile, 'keychain-identity'), 'HanaDev\n');
     const first = launchRequest();
     process.argv.push('--cindy-version-profile=' + h.profile, '--cindy-version-launch=' + first.id);
     expect(() => startup.prepareCindyVersionStartup()).toThrow();
     const second = launchRequest({
-      profile: { ...original.profile, appName: 'CindyDev', deviceId: 'dev-test' },
+      profile: { ...original.profile, appName: 'HanaDev', deviceId: 'dev-test' },
     });
     process.argv = [
       process.execPath,
@@ -329,7 +329,7 @@ describe('one original version type for Dev and installed Cindy', () => {
       '--cindy-version-launch=' + second.id,
     ];
     startup.prepareCindyVersionStartup();
-    expect(h.name).toBe('CindyDev');
+    expect(h.name).toBe('HanaDev');
     expect(process.env.XDT_DEVICE_ID_OVERRIDE).toBe('dev-test');
   });
   it('uses the existing instance activation path instead of repeatedly launching the selected personal version', async () => {

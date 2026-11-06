@@ -243,7 +243,7 @@ describe('agent process priority watcher', () => {
 });
 
 describe('agent process discovery', () => {
-  // userData 目录名按当前构建区域取(测试环境默认 global → CindyGlobal),不写死区域
+  // userData 目录名按当前构建区域取(测试环境默认 global → HanaGlobal),不写死区域
   const userDataDir = allUserDataDirNames(CURRENT_CINDY_REGION)[0].toLowerCase();
   const claudeCmd = `/users/me/library/application support/${userDataDir}/claude-code/2.1.219/claude --setting-sources user`;
   const codexCmd = `/users/me/library/application support/${userDataDir}/codex/0.145.0/codex app-server`;

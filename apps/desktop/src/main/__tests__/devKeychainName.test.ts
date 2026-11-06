@@ -7,7 +7,7 @@
  *  - 无标记且有真实数据(排除标记自身产物)→ 复查标记后判旧沙箱。
  *  - 无标记且为空 → 原子认领;输掉竞态以胜者完整标记为准;认领写失败(非 EEXIST)
  *    同样 abort——并发对手可能恰好认领成功,keep-default 会让同一 profile 双身份。
- *  - 覆写目录的非认领启动 = 观察模式:绝不认领 CindyDev,有标记依标记(不可读/
+ *  - 覆写目录的非认领启动 = 观察模式:绝不认领 HanaDev,有标记依标记(不可读/
  *    不可识别同样 abort);空 profile 原子认领默认身份,输家依胜者标记——身份在
  *    两种模式下都原子落定,并发启动不分叉。
  *  - packaged / 无目录覆写的 dev 一律默认名。
@@ -25,7 +25,7 @@ import {
 } from '../devKeychainName.js';
 
 const ABSENT: KeychainMarkerRead = { kind: 'absent' };
-const DEV: KeychainMarkerRead = { kind: 'present', value: 'CindyDev\n' };
+const DEV: KeychainMarkerRead = { kind: 'present', value: 'HanaDev\n' };
 
 function io(overrides: Partial<KeychainIdentityIo>): KeychainIdentityIo {
   return {
@@ -40,17 +40,17 @@ function io(overrides: Partial<KeychainIdentityIo>): KeychainIdentityIo {
 const base = { isPackaged: false, isolated: true, hasDirOverride: true };
 
 describe('resolveDevKeychainDecision', () => {
-  it('有标记 = CindyDev → 跨重启粘住,不看目录内容', () => {
+  it('有标记 = HanaDev → 跨重启粘住,不看目录内容', () => {
     expect(
       resolveDevKeychainDecision({
         ...base,
         io: io({ readMarker: () => DEV, profileHasData: () => true }),
       }),
-    ).toEqual({ kind: 'rename', appName: 'CindyDev' });
+    ).toEqual({ kind: 'rename', appName: 'HanaDev' });
   });
 
   it('标记不可读(非 ENOENT)→ abort,不得静默回退默认身份(review 反馈 P1 第七轮)', () => {
-    // 沙箱可能已有按 CindyDev 主密钥加密的密文;暂时读不出标记时用默认身份写入
+    // 沙箱可能已有按 HanaDev 主密钥加密的密文;暂时读不出标记时用默认身份写入
     // 会用错钥匙覆盖它们。
     const d = resolveDevKeychainDecision({
       ...base,
@@ -60,7 +60,7 @@ describe('resolveDevKeychainDecision', () => {
   });
 
   it('标记内容为空、不可识别或缺终止换行(写到一半的前缀)→ abort(身份不确定)', () => {
-    // 'Cindy' 无换行 = O_EXCL 回退里 "CindyDev\n" 写到第 5 字节的并发读快照,
+    // 'Hana' 无换行 = O_EXCL 回退里 "HanaDev\n" 写到第 5 字节的并发读快照,
     // 也可能是完整默认标记缺了换行——两者读侧无法区分,统一按身份不确定 abort
     // (review 反馈 P1 第十八轮:只 trim 会把该前缀当完整默认身份接受,双身份分裂)。
     // 剥离规则严格到恰好一个末尾换行:多余换行/空白被 trim 洗成合法身份会让
@@ -68,11 +68,11 @@ describe('resolveDevKeychainDecision', () => {
     for (const value of [
       '',
       'SomethingElse',
-      'Cindy',
-      'CindyDev',
+      'Hana',
+      'HanaDev',
       'SomethingElse\n',
-      'CindyDev\n\n',
-      ' Cindy \n',
+      'HanaDev\n\n',
+      ' Hana \n',
       '\n',
     ]) {
       const d = resolveDevKeychainDecision({
@@ -92,18 +92,18 @@ describe('resolveDevKeychainDecision', () => {
     expect(
       resolveDevKeychainDecision({
         ...base,
-        io: io({ readMarker: () => ({ kind: 'present', value: 'CindyDev\r\n' }) }),
+        io: io({ readMarker: () => ({ kind: 'present', value: 'HanaDev\r\n' }) }),
       }),
-    ).toEqual({ kind: 'rename', appName: 'CindyDev' });
+    ).toEqual({ kind: 'rename', appName: 'HanaDev' });
   });
 
   it('全新沙箱 → 原子认领成功后改名', () => {
     const claim = vi.fn<KeychainIdentityIo['claimMarker']>(() => 'claimed');
     expect(resolveDevKeychainDecision({ ...base, io: io({ claimMarker: claim }) })).toEqual({
       kind: 'rename',
-      appName: 'CindyDev',
+      appName: 'HanaDev',
     });
-    expect(claim).toHaveBeenCalledWith('CindyDev');
+    expect(claim).toHaveBeenCalledWith('HanaDev');
   });
 
   it('认领输掉竞态(EEXIST)→ 以胜者完整标记为准', () => {
@@ -116,7 +116,7 @@ describe('resolveDevKeychainDecision', () => {
         ...base,
         io: io({ readMarker: reads, claimMarker: () => 'exists' }),
       }),
-    ).toEqual({ kind: 'rename', appName: 'CindyDev' });
+    ).toEqual({ kind: 'rename', appName: 'HanaDev' });
   });
 
   it('认领竞态后标记消失/不可读 → abort(身份不确定)', () => {
@@ -148,7 +148,7 @@ describe('resolveDevKeychainDecision', () => {
         ...base,
         io: io({ readMarker: reads, profileHasData: () => true }),
       }),
-    ).toEqual({ kind: 'rename', appName: 'CindyDev' });
+    ).toEqual({ kind: 'rename', appName: 'HanaDev' });
   });
 
   it('无标记且有数据,复查确证 absent = 真旧沙箱 → 永久默认名', () => {
@@ -180,18 +180,18 @@ describe('resolveDevKeychainDecision', () => {
 });
 
 describe('覆写目录的非认领启动 = 观察模式(review 反馈 P1 第十四/十五轮)', () => {
-  // 裸 XDT_USER_DATA_DIR 指向已按 CindyDev 认领的 -dev2 沙箱是受支持形态:
+  // 裸 XDT_USER_DATA_DIR 指向已按 HanaDev 认领的 -dev2 沙箱是受支持形态:
   // 缺隔离旗标不能成为跳过标记、以默认身份打开同一 profile 的理由。
   const observe = { isPackaged: false, isolated: false, hasDirOverride: true };
 
-  it('目录已带 CindyDev 标记 → 依标记以 CindyDev 打开(先 flush 确认)', () => {
+  it('目录已带 HanaDev 标记 → 依标记以 HanaDev 打开(先 flush 确认)', () => {
     const flush = vi.fn<KeychainIdentityIo['flushProfileDir']>(() => true);
     expect(
       resolveDevKeychainDecision({
         ...observe,
         io: io({ readMarker: () => DEV, flushProfileDir: flush }),
       }),
-    ).toEqual({ kind: 'rename', appName: 'CindyDev' });
+    ).toEqual({ kind: 'rename', appName: 'HanaDev' });
     expect(flush).toHaveBeenCalled();
   });
 
@@ -207,16 +207,16 @@ describe('覆写目录的非认领启动 = 观察模式(review 反馈 P1 第十�
   });
 
   it('空 profile → 原子认领默认身份,不与并发隔离启动分叉(review 反馈 P1 第十五轮)', () => {
-    // 若空 profile 直接 keep-default 而不落标记,并发隔离启动可在其后认领 CindyDev,
+    // 若空 profile 直接 keep-default 而不落标记,并发隔离启动可在其后认领 HanaDev,
     // 两个进程对同一 profile 以两种身份写密文。
     const claim = vi.fn<KeychainIdentityIo['claimMarker']>(() => 'claimed');
     expect(
       resolveDevKeychainDecision({ ...observe, io: io({ claimMarker: claim }) }),
     ).toEqual({ kind: 'keep-default' });
-    expect(claim).toHaveBeenCalledWith('Cindy');
+    expect(claim).toHaveBeenCalledWith('Hana');
   });
 
-  it('认领输给并发隔离启动(EEXIST)→ 依胜者标记以 CindyDev 打开', () => {
+  it('认领输给并发隔离启动(EEXIST)→ 依胜者标记以 HanaDev 打开', () => {
     const reads = vi
       .fn<KeychainIdentityIo['readMarker']>()
       .mockReturnValueOnce(ABSENT)
@@ -226,7 +226,7 @@ describe('覆写目录的非认领启动 = 观察模式(review 反馈 P1 第十�
         ...observe,
         io: io({ readMarker: reads, claimMarker: () => 'exists' }),
       }),
-    ).toEqual({ kind: 'rename', appName: 'CindyDev' });
+    ).toEqual({ kind: 'rename', appName: 'HanaDev' });
   });
 
   it('认领写失败(非 EEXIST)→ abort;有数据无标记的外来目录 → 默认名且不认领', () => {
@@ -250,7 +250,7 @@ describe('默认身份标记(词表第二项,review 反馈 P1 第十五轮)', ()
     expect(
       resolveDevKeychainDecision({
         ...base,
-        io: io({ readMarker: () => ({ kind: 'present', value: 'Cindy\n' }), flushProfileDir: flush }),
+        io: io({ readMarker: () => ({ kind: 'present', value: 'Hana\n' }), flushProfileDir: flush }),
       }),
     ).toEqual({ kind: 'keep-default' });
     expect(flush).toHaveBeenCalled();
@@ -261,7 +261,7 @@ describe('默认身份标记(词表第二项,review 反馈 P1 第十五轮)', ()
       resolveDevKeychainDecision({
         ...base,
         io: io({
-          readMarker: () => ({ kind: 'present', value: 'Cindy\n' }),
+          readMarker: () => ({ kind: 'present', value: 'Hana\n' }),
           flushProfileDir: () => false,
         }),
       }).kind,

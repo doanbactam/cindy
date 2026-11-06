@@ -11,5 +11,5 @@ export function stageLinuxBuildInfo(
     throw new Error('Invalid Linux build identity');
   }
   fs.writeFileSync(path.join(buildPath, 'resources', 'linux-build-info'),
-    `cindy-linux-v1\n${version}\n${arch}\n${region}\n${region === 'dev' ? 'CindyDev' : 'Cindy'}\n`);
+    `cindy-linux-v1\n${version}\n${arch}\n${region}\n${region === 'dev' ? 'HanaDev' : 'Hana'}\n`);
 }

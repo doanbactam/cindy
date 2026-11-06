@@ -79,7 +79,7 @@ public struct DesktopInputCaller {
     var appURL = ownExecutable.resolvingSymlinksInPath()
     for _ in 0..<5 { appURL.deleteLastPathComponent() }
     guard let bundle = Bundle(url: appURL), let identifier = bundle.bundleIdentifier,
-      ["com.xd.cindy", "com.xd.cindycn"].contains(identifier),
+      ["com.doanbactam.hana", "com.doanbactam.hanacn"].contains(identifier),
       let mainExecutable = bundle.executableURL else { return nil }
     executable = mainExecutable.resolvingSymlinksInPath()
     let rule = "anchor apple generic and identifier \"\(identifier)\" and certificate leaf[subject.OU] = \"\(team)\""

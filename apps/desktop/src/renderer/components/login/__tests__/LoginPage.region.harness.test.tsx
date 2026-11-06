@@ -46,7 +46,7 @@ vi.mock('react-i18next', () => ({
 // 构建区域 = global(LEGAL_LINKS 亦随之解析为 cindy.app 系)
 vi.mock('../../../../shared/brandRegion', () => ({
   CURRENT_CINDY_REGION: 'global',
-  CURRENT_APP_ID: 'com.xd.cindy',
+  CURRENT_APP_ID: 'com.doanbactam.hana',
 }));
 vi.mock('@/hooks/useLogin', () => ({ useLogin: () => loginHook.value }));
 vi.mock('@/components/title-bar/WindowControls', () => ({ WindowControls: () => null }));

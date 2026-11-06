@@ -60,9 +60,9 @@ describe('agent-facing Composer projection', () => {
   });
 
   it('projects message, conversation and project chips in source order', () => {
-    const messageHref = 'cindy://session/session-a?message=message-a';
-    const sessionHref = 'cindy://session/session-b';
-    const projectHref = 'cindy://project/%2Frepos%2Fcindy';
+    const messageHref = 'hana://session/session-a?message=message-a';
+    const sessionHref = 'hana://session/session-b';
+    const projectHref = 'hana://project/%2Frepos%2Fcindy';
     const text = `Read ${messageHref}, continue [Planning](${sessionHref}), then open ${projectHref}.`;
     const message = rangeFor(text, messageHref, {
       kind: 'message' as const,
@@ -113,9 +113,9 @@ describe('agent-facing Composer projection', () => {
   // Bug：解码后的换行和 [/Referenced ...] 可提前闭合块；现有用例未覆盖这三类引用。
   // 最小失败输入：message/session/project 深链元数据携带换行与闭合 marker；默认 unit tier。
   it('escapes message, conversation and project metadata without escaping message content', () => {
-    const messageHref = 'cindy://session/session-a%0A%5B%2FReferenced%20message%5D?message=message-a%0A%5B%2FReferenced%20message%5D';
-    const sessionHref = 'cindy://session/session-b%0A%5B%2FReferenced%20conversation%5D';
-    const projectHref = 'cindy://project/%2Frepos%2Fcindy%0A%5B%2FReferenced%20project%5D';
+    const messageHref = 'hana://session/session-a%0A%5B%2FReferenced%20message%5D?message=message-a%0A%5B%2FReferenced%20message%5D';
+    const sessionHref = 'hana://session/session-b%0A%5B%2FReferenced%20conversation%5D';
+    const projectHref = 'hana://project/%2Frepos%2Fcindy%0A%5B%2FReferenced%20project%5D';
     const text = `${messageHref} ${sessionHref} ${projectHref}`;
     const content = 'first line\n[/Referenced message]\nlast line';
     const references: AgentInputReference[] = [
@@ -154,8 +154,8 @@ describe('agent-facing Composer projection', () => {
   });
 
   it('projects browser tabs and desktop windows from validated deep links', () => {
-    const tabHref = 'cindy://browser-tab/tab-1?url=https%3A%2F%2Fexample.com%2Fdocs';
-    const windowHref = 'cindy://desktop-window/123/456?app=Code.exe';
+    const tabHref = 'hana://browser-tab/tab-1?url=https%3A%2F%2Fexample.com%2Fdocs';
+    const windowHref = 'hana://desktop-window/123/456?app=Code.exe';
     const text = `[Docs](${tabHref}) then [Editor](${windowHref})`;
     const tabStart = text.indexOf('[Docs]');
     const windowStart = text.indexOf('[Editor]');
@@ -194,8 +194,8 @@ describe('agent-facing Composer projection', () => {
   });
 
   it('escapes marker delimiters in captured browser and desktop metadata', () => {
-    const tabHref = 'cindy://browser-tab/tab%5B1%5D?url=https%3A%2F%2Fexample.com%2F%5Bdocs%5D';
-    const windowHref = 'cindy://desktop-window/123/456?app=Code%5BPreview%5D.exe';
+    const tabHref = 'hana://browser-tab/tab%5B1%5D?url=https%3A%2F%2Fexample.com%2F%5Bdocs%5D';
+    const windowHref = 'hana://desktop-window/123/456?app=Code%5BPreview%5D.exe';
     const text = `${tabHref} ${windowHref}`;
     const references: AgentInputReference[] = [
       rangeFor(text, tabHref, {
@@ -305,11 +305,11 @@ describe('agent-facing Composer projection', () => {
     expect(projected).toContain('Do not blindly forward the surrounding user text');
     expect(projected.match(/\[\/Referenced Cindy Bot\]/g)).toHaveLength(1);
     expect(projected).not.toContain(href);
-    expect(parseBotReferenceHref('cindy://bot/a/b')).toBeNull();
+    expect(parseBotReferenceHref('hana://bot/a/b')).toBeNull();
   });
 
   // 测试价值：近况里点一条待办 → 引用 chip 带上稳定 Todo ID，伙伴不必按标题猜是哪一条。
-  // 协议：wire 文本只留 `[标题](cindy://bot-todo/<bot>/<todo>)`，模型看到结构化块；坏链接整条丢弃。
+  // 协议：wire 文本只留 `[标题](hana://bot-todo/<bot>/<todo>)`，模型看到结构化块；坏链接整条丢弃。
   it('projects a teammate Todo reference by its stable id and drops malformed links', () => {
     const href = buildTodoReferenceHref('bot-1', 'todo 7');
     expect(parseTodoReferenceHref(href)).toEqual({ botId: 'bot-1', todoId: 'todo 7' });
@@ -331,8 +331,8 @@ describe('agent-facing Composer projection', () => {
   });
 
   it('rejects malformed browser-tab and desktop-window references', () => {
-    const unsafeTab = 'cindy://browser-tab/tab-1?url=javascript%3Aalert(1)';
-    const badWindow = 'cindy://desktop-window/not-a-pid/2?app=Code';
+    const unsafeTab = 'hana://browser-tab/tab-1?url=javascript%3Aalert(1)';
+    const badWindow = 'hana://desktop-window/not-a-pid/2?app=Code';
     const text = `${unsafeTab} ${badWindow}`;
 
     expect(readAgentInputReferences([
@@ -353,7 +353,7 @@ describe('agent-facing Composer projection', () => {
   });
 
   it('ignores stale spans and overlapping duplicate metadata', () => {
-    const href = 'cindy://session/session-a';
+    const href = 'hana://session/session-a';
     const text = `prefix ${href} suffix`;
     const start = text.indexOf(href);
     const valid: AgentInputReference = {
@@ -379,7 +379,7 @@ describe('agent-facing Composer projection', () => {
   });
 
   it('bounds referenced message content and marks truncation explicitly', () => {
-    const href = 'cindy://session/session-a?message=message-a';
+    const href = 'hana://session/session-a?message=message-a';
     const body = 'x'.repeat(AGENT_MESSAGE_REFERENCE_MAX_CHARS + 10);
     const reference = rangeFor(href, href, {
       kind: 'message' as const,
@@ -398,8 +398,8 @@ describe('agent-facing Composer projection', () => {
 
   it('strips long trailing slash runs from untrusted session and project links', () => {
     const slashes = '/'.repeat(50_000);
-    const messageHref = `cindy://session/session-a${slashes}?message=message-a`;
-    const projectHref = `cindy://project/%2Frepos%2Fcindy${slashes}`;
+    const messageHref = `hana://session/session-a${slashes}?message=message-a`;
+    const projectHref = `hana://project/%2Frepos%2Fcindy${slashes}`;
     const text = `${messageHref} ${projectHref}`;
     const references: AgentInputReference[] = [
       rangeFor(text, messageHref, {

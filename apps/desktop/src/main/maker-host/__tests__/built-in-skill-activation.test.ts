@@ -38,7 +38,7 @@ describe('Windows built-in Skill activation identity', () => {
         'v7-fedcba9876543210-22222222-2222-2222-2222-222222222222',
       ].map((version) => path.join(sourceRoot, '.versions', version, name));
       const keys = sources.map((source) => canonicalBuiltInSkillActivationPath(
-        source, path.join(appData, 'CindyGlobal'), appData,
+        source, path.join(appData, 'HanaGlobal'), appData,
       ));
       expect(keys).toEqual([path.join(sourceRoot, name), path.join(sourceRoot, name)]);
     },
@@ -55,11 +55,11 @@ describe('Windows built-in Skill activation identity', () => {
     vi.mocked(fs.realpathSync.native).mockImplementation(resolve);
     const sourceRoot = path.toNamespacedPath(root).toLowerCase();
     const source = path.join(sourceRoot, '.active', 'learn');
-    expect(canonicalBuiltInSkillActivationPath(source, path.join(appData, 'CindyGlobal'), appData))
+    expect(canonicalBuiltInSkillActivationPath(source, path.join(appData, 'HanaGlobal'), appData))
       .toBe(path.join(sourceRoot, 'learn'));
     const foreignRoot = path.join(appData, 'project', 'shared-system-skills');
     const foreignSource = path.join(foreignRoot, '.active', 'learn');
-    expect(canonicalBuiltInSkillActivationPath(foreignSource, path.join(appData, 'CindyGlobal'), appData))
+    expect(canonicalBuiltInSkillActivationPath(foreignSource, path.join(appData, 'HanaGlobal'), appData))
       .toBe(foreignSource);
   });
 });

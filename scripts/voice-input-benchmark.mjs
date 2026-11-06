@@ -631,8 +631,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { app, safeStorage } = require('electron');
 // safeStorage service name remains Cindy for the shared packaged CN/Global keychain;
-// the profile path is selected explicitly so Global reads CindyGlobal storage.
-app.setName('Cindy');
+// the profile path is selected explicitly so Global reads HanaGlobal storage.
+app.setName('Hana');
 app.setPath('userData', ${JSON.stringify(userDataDir)});
 app.whenReady().then(() => {
   try {

@@ -31,6 +31,8 @@ import type {
   HookEvent,
   PreToolUseHookInput,
 } from '@anthropic-ai/claude-agent-sdk';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import type { Logger } from '@cindy/maker-core';
 import {
   isShellDesktopInputCommand,
@@ -43,9 +45,9 @@ const BASH_TOOL_NAME = 'Bash';
 export const SHELL_DESKTOP_INPUT_DISABLED_REASON =
   `${SHELL_DESKTOP_INPUT_DENIAL_CODE}: desktop keyboard and mouse input is not available through the shell ` +
   '(osascript System Events keystroke/click, cliclick, CGEvent scripts, the cua-driver CLI ignore the target ' +
-  'window and the person using this computer). Cindy Computer Use is disabled in Settings, so there is no ' +
+  'window and the person using this computer). ' + BRAND_NAME + ' Computer Use is disabled in Settings, so there is no ' +
   'desktop input entry in this task. Tell the person this step needs Computer Use: they can turn it on under ' +
-  'Settings → Built-in tools → Computer Use (link: cindy://settings/builtin-tools; macOS also asks for ' +
+  'Settings → Built-in tools → Computer Use (link: ' + BRAND_IDENTITY.primaryScheme + '://settings/builtin-tools; macOS also asks for ' +
   'Accessibility and Screen Recording there), then send the next message or start a new task so the ' +
   'cindy_computer tools appear. See cindy_helper get_capabilities({key:"computer-use"}).';
 

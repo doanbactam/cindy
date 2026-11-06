@@ -133,9 +133,9 @@ function fail(msg) {
  * Electron app.getPath('userData') 在不同平台的等价路径 — 与
  * apps/desktop/src/main/localDb/index.ts 中 dbPath() 的拼接逻辑一致。
  * userData 子目录名由 shared/desktop-dev-region.mjs 镜像区域映射；本脚本
- * 复用该路径函数，默认 Global → CindyGlobal，避免辅助工具读错 profile。
+ * 复用该路径函数，默认 Global → HanaGlobal，避免辅助工具读错 profile。
  */
-const DB_FILE_PREFIX = 'cindy';
+const DB_FILE_PREFIX = 'hana';
 
 function userDataDir(region) {
   try {

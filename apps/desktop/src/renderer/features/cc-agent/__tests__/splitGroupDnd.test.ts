@@ -68,14 +68,14 @@ describe('splitGroupDnd', () => {
     expect(writeSplitGroupSessionDragData(dataTransfer, ' session-a ')).toBe(true);
     expect(dataTransfer.effectAllowed).toBe('copyMove');
     expect(values.get(SPLIT_GROUP_SESSION_MIME)).toBe('session-a');
-    expect(values.get(SPLIT_GROUP_SESSION_LINK_MIME)).toBe('cindy://session/session-a');
+    expect(values.get(SPLIT_GROUP_SESSION_LINK_MIME)).toBe('hana://session/session-a');
     expect(values.has('text/plain')).toBe(false);
     expect(values.has('text/uri-list')).toBe(false);
     expect(
       writeSplitGroupSessionDragData(dataTransfer, 'session-remote', { deviceId: 'device-b' }),
     ).toBe(true);
     expect(values.get(SPLIT_GROUP_SESSION_LINK_MIME)).toBe(
-      'cindy://session/session-remote?device=device-b',
+      'hana://session/session-remote?device=device-b',
     );
     expect(writeSplitGroupSessionDragData(dataTransfer, '   ')).toBe(false);
   });

@@ -67,7 +67,7 @@ export const RELEASE_DIR = path.join(DESKTOP_ROOT, 'release');
  * (xdt-maker-<version>-Setup.exe / .dmg / .zip 等)仍留在老值:新渠道 bucket
  * 未就绪,发布目标另议,不随本次翻转。
  */
-export const PACKAGED_APP_NAME = 'Cindy';
+export const PACKAGED_APP_NAME = 'Hana';
 
 /**
  * 按区域取打包产物基名(exe / .app / 安装目录 / 快捷方式全部跟随)。
@@ -77,9 +77,9 @@ export const PACKAGED_APP_NAME = 'Cindy';
  * PACKAGED_APP_NAME 保留为正式版共同基线值,供未传 region 的 legacy 脚本使用。
  */
 export const PACKAGED_APP_NAME_BY_REGION = Object.freeze({
-  cn: 'Cindy',
-  global: 'Cindy',
-  dev: 'CindyDev',
+  cn: 'Hana',
+  global: 'Hana',
+  dev: 'HanaDev',
 });
 
 export function packagedAppName(region = 'global') {
@@ -95,9 +95,9 @@ export function packagedAppName(region = 'global') {
  * 本地产物命名对齐。
  */
 export const RELEASE_ARTIFACT_BASENAME_BY_REGION = Object.freeze({
-  cn: 'cindy',
-  global: 'cindy',
-  dev: 'cindy-dev',
+  cn: 'hana',
+  global: 'hana',
+  dev: 'hana-dev',
 });
 
 export function releaseArtifactBasename(region = 'global') {
@@ -117,7 +117,7 @@ export function releaseArtifactBasename(region = 'global') {
  */
 export function assertNotPublishingCindyToLegacyChannel(ossPrefix) {
   if (process.env.XDT_ALLOW_LEGACY_CHANNEL_RELEASE === '1') return;
-  if (PACKAGED_APP_NAME === 'Cindy' && ossPrefix === 'xdt-maker') {
+  if (PACKAGED_APP_NAME === 'Hana' && ossPrefix === 'xdt-maker') {
     throw new Error(
       '[channel-freeze] 拒绝把 Cindy 身份的产物发布到已冻结的 /xdt-maker 渠道:'
       + '存量用户更新器会因 exe 布局变化(Cindy.exe)当场断裂。'
@@ -1140,7 +1140,7 @@ export function createMacDMG(appPath, dmgPath, volumeName, identity) {
     throw new Error(`DMG background missing: ${backgroundPath}`);
   }
 
-  const appName = path.basename(appPath); // Cindy.app(cn/global)/ CindyDev.app(dev 线)
+  const appName = path.basename(appPath); // Cindy.app(cn/global)/ HanaDev.app(dev 线)
   // JSON.stringify 产出合法 Python 字符串字面量(转义引号/反斜杠语义一致)
   const py = (s) => JSON.stringify(s);
   const settings = [
@@ -1185,7 +1185,7 @@ export function runSmokeTest(platform, arch, region = 'global') {
       'scripts/smoke-packaged.mjs',
       `--platform=${platform}`,
       `--arch=${arch}`,
-      // 产物基名按区域派生(cn/global 'Cindy' / dev 'CindyDev')。
+      // 产物基名按区域派生(cn/global 'Cindy' / dev 'HanaDev')。
       `--app-name=${packagedAppName(region)}`,
     ],
     { stdio: 'inherit', cwd: DESKTOP_ROOT, shell: false },

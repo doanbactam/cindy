@@ -112,8 +112,8 @@ describe('queueMessageToComposerEditDraft', () => {
 
   it('restores structured references, file mentions and pasted text chips', () => {
     const entry = queuedMessage();
-    const messageHref = 'cindy://session/source?message=message-1';
-    const projectHref = 'cindy://project/C%3A%2Fworkspace';
+    const messageHref = 'hana://session/source?message=message-1';
+    const projectHref = 'hana://project/C%3A%2Fworkspace';
     const text =
       `See ${messageHref} and [Workspace](${projectHref}) with @src/app.ts and pasted selection`;
     const messageStart = text.indexOf(messageHref);
@@ -224,7 +224,7 @@ describe('rebaseQueueComposerEditContentAfterSlashCommandRewrite', () => {
         kind: 'session' as const,
         start: 13,
         end: 19,
-        href: 'cindy://session/source',
+        href: 'hana://session/source',
         sessionId: 'source',
       }],
       pastedTextRanges: [{ start: 13, end: 19, display: 'selection' }],

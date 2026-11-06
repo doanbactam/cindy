@@ -105,7 +105,7 @@ describe('OS deep-link registration', () => {
   });
 });
 
-function providerImportUrl(scheme: 'cindy' | 'xdt-maker'): string {
+function providerImportUrl(scheme: 'hana' | 'xdt-maker'): string {
   const payload = {
     kind: 'custom',
     name: 'Deep Link Import',
@@ -136,7 +136,7 @@ describe('history task links', () => {
 
 describe('chat invitation handoff', () => {
   const token = 'synthetic-invitation-'.padEnd(43, 'a');
-  const link = `cindy://chat-invite/${token}`;
+  const link = `hana://chat-invite/${token}`;
   it('keeps the invitation for the main frame when secondary windows or subframes try to take it', () => {
     setDeepLinkMainWindow(null);
     handleIncomingDeepLink(link, 'open-url');
@@ -158,12 +158,12 @@ describe('chat invitation handoff', () => {
   });
   it('recognizes the existing generated link and rejects ambiguous targets', () => {
     expect(parseDeepLink(link)).toEqual({ type: 'chat-invite', token });
-    expect(parseDeepLink(link.replace('cindy:', 'xdt-maker:'))).toEqual({ type: 'chat-invite', token });
+    expect(parseDeepLink(link.replace('hana:', 'xdt-maker:'))).toEqual({ type: 'chat-invite', token });
     // A damaged invitation never yields a token, but the click is reported instead of ignored.
-    for (const value of [link + '/extra', link + '?token=other', link + '#secret', link + 'a', link.slice(0, -1), 'cindy://chat-invite/']) {
+    for (const value of [link + '/extra', link + '?token=other', link + '#secret', link + 'a', link.slice(0, -1), 'hana://chat-invite/']) {
       expect(parseDeepLink(value)).toEqual({ type: 'chat-invite-malformed' });
     }
-    expect(parseDeepLink('cindy://chat-invite')).toBeNull();
+    expect(parseDeepLink('hana://chat-invite')).toBeNull();
   });
   it('queues one malformed-link notice behind valid invitations without logging the link', () => {
     setDeepLinkMainWindow(null);
@@ -171,19 +171,19 @@ describe('chat invitation handoff', () => {
     handleIncomingDeepLink(damaged, 'open-url');
     handleIncomingDeepLink(link, 'open-url');
     handleIncomingDeepLink(damaged + 'x', 'second-instance');
-    handleIncomingDeepLink('cindy://session/ordinary-task', 'open-url');
+    handleIncomingDeepLink('hana://session/ordinary-task', 'open-url');
     expect(takePendingDeepLink()).toEqual({ type: 'chat-invite-malformed' });
     expect(takePendingDeepLink()).toEqual({ type: 'chat-invite', token });
     expect(takePendingDeepLink()).toEqual({ type: 'session', id: 'ordinary-task' });
     expect(takePendingDeepLink()).toBeNull();
-    expect(JSON.stringify(Object.values(logs).map(log => log.mock.calls))).not.toContain(damaged.slice('cindy://chat-invite/'.length));
+    expect(JSON.stringify(Object.values(logs).map(log => log.mock.calls))).not.toContain(damaged.slice('hana://chat-invite/'.length));
   });
   it.each(['open-url', 'cold-start-argv', 'second-instance'])('retains %s through login focus and unrelated navigation', source => {
     setDeepLinkMainWindow(null);
     handleIncomingDeepLink(link, source);
     handleIncomingDeepLink(link, source);
-    handleIncomingDeepLink('cindy://focus/desktop-login', 'open-url');
-    handleIncomingDeepLink('cindy://session/ordinary-task', source);
+    handleIncomingDeepLink('hana://focus/desktop-login', 'open-url');
+    handleIncomingDeepLink('hana://session/ordinary-task', source);
     expect(takePendingDeepLink()).toEqual({ type: 'chat-invite', token });
     expect(takePendingDeepLink()).toEqual({ type: 'session', id: 'ordinary-task' });
     expect(takePendingDeepLink()).toBeNull();
@@ -198,10 +198,10 @@ describe('chat invitation handoff', () => {
     expect(send).toHaveBeenCalledWith('deep-link:navigate', { type: 'chat-invite', token });
     expect(takePendingDeepLink()).toEqual({ type: 'chat-invite', token });
     expect(takePendingDeepLink()).toBeNull();
-    const argv = ['cindy.exe', link, 'cindy://chat-invite/invalid-secret'];
+    const argv = ['cindy.exe', link, 'hana://chat-invite/invalid-secret'];
     expect(findDeepLinkInArgv(['cindy.exe', link])).toBe(link);
     redactConsumedDeepLinkInArgv(argv);
-    expect(argv).toEqual(['cindy.exe', 'cindy://consumed', 'cindy://consumed']);
+    expect(argv).toEqual(['cindy.exe', 'hana://consumed', 'hana://consumed']);
     setDeepLinkMainWindow(null);
   });
 });
@@ -209,19 +209,19 @@ describe('chat invitation handoff', () => {
 describe('shared task invitation handoff', () => {
   it('buffers until the authenticated renderer takes it, without logging the secret', () => {
     const invitation = 'A'.repeat(43);
-    const url = 'cindy://shared-task/join?invitation=' + invitation + '&server=https%3A%2F%2Frelay.example.test';
+    const url = 'hana://shared-task/join?invitation=' + invitation + '&server=https%3A%2F%2Frelay.example.test';
     setDeepLinkMainWindow(null);
     handleIncomingDeepLink(url, 'test');
     expect(takePendingDeepLink()).toEqual({ type: 'shared-task-join', invitation, server: 'https://relay.example.test' });
     expect(takePendingDeepLink()).toBeNull();
     expect(JSON.stringify(Object.values(logs).map(log => log.mock.calls))).not.toContain(invitation);
-    const argv = ['cindy.exe', url, 'cindy://shared-task/join?invitation=invalid-secret'];
+    const argv = ['cindy.exe', url, 'hana://shared-task/join?invitation=invalid-secret'];
     redactConsumedDeepLinkInArgv(argv, url);
     expect(argv.join(' ')).not.toContain(invitation);
     expect(argv.join(' ')).not.toContain('invalid-secret');
   });
   it('rejects malformed and duplicate invitation fields', () => {
-    const url = 'cindy://shared-task/join?invitation=' + 'A'.repeat(43) + '&server=https%3A%2F%2Frelay.example.test';
+    const url = 'hana://shared-task/join?invitation=' + 'A'.repeat(43) + '&server=https%3A%2F%2Frelay.example.test';
     expect(parseDeepLink(url + '&invitation=' + 'B'.repeat(43))).toBeNull();
     expect(parseDeepLink(url.replace('https%3A%2F%2Frelay.example.test', 'javascript%3Aalert(1)'))).toBeNull();
   });
@@ -348,7 +348,7 @@ describe('parseDeepLink', () => {
 
   // islandEntryId 只由主进程的灵动岛点击写入;外部链接不能冒充一次点击去处置提醒。
   it('never derives an Agent Island click id from an external link', () => {
-    expect(parseDeepLink('cindy://session/abc-123?islandEntryId=1')).toEqual({
+    expect(parseDeepLink('hana://session/abc-123?islandEntryId=1')).toEqual({
       type: 'session',
       id: 'abc-123',
     });
@@ -451,40 +451,40 @@ describe('parseDeepLink', () => {
 
   it('parses plugins payload to the installed list or one plugin detail', () => {
     // Bug/规则依据: 随包浏览器扩展的断连引导要把用户带回该插件的设置页。
-    expect(parseDeepLink('cindy://plugins')).toEqual({ type: 'installed-plugin' });
-    expect(parseDeepLink('cindy://plugins/')).toEqual({ type: 'installed-plugin' });
-    expect(parseDeepLink('cindy://plugins/my-browser')).toEqual({ type: 'installed-plugin', ghostId: 'my-browser' });
-    expect(parseDeepLink('cindy://plugins/my-browser/?x=1')).toEqual({ type: 'installed-plugin', ghostId: 'my-browser' });
-    expect(parseDeepLink('cindy://plugins/My Browser')).toBeNull();
-    expect(parseDeepLink('cindy://plugins/..%2Fetc')).toBeNull();
+    expect(parseDeepLink('hana://plugins')).toEqual({ type: 'installed-plugin' });
+    expect(parseDeepLink('hana://plugins/')).toEqual({ type: 'installed-plugin' });
+    expect(parseDeepLink('hana://plugins/my-browser')).toEqual({ type: 'installed-plugin', ghostId: 'my-browser' });
+    expect(parseDeepLink('hana://plugins/my-browser/?x=1')).toEqual({ type: 'installed-plugin', ghostId: 'my-browser' });
+    expect(parseDeepLink('hana://plugins/My Browser')).toBeNull();
+    expect(parseDeepLink('hana://plugins/..%2Fetc')).toBeNull();
   });
 
   // Agent guidance target when Computer Use is off (CU-013 follow-up): the page
   // holds the switch and the macOS permission guide, so only the bare path opens.
   it('parses settings/builtin-tools as a bare tab and rejects parameters or sub-paths', () => {
-    expect(parseDeepLink('cindy://settings/builtin-tools')).toEqual({ type: 'settings', tab: 'builtin-tools' });
-    expect(parseDeepLink('cindy://settings/builtin-tools/')).toEqual({ type: 'settings', tab: 'builtin-tools' });
-    expect(parseDeepLink('cindy://settings/builtin-tools?connect=x')).toEqual({ type: 'settings', tab: 'builtin-tools' });
-    expect(parseDeepLink('cindy://settings/builtin-tools/computer')).toBeNull();
-    expect(parseDeepLink('cindy://settings/general')).toBeNull();
+    expect(parseDeepLink('hana://settings/builtin-tools')).toEqual({ type: 'settings', tab: 'builtin-tools' });
+    expect(parseDeepLink('hana://settings/builtin-tools/')).toEqual({ type: 'settings', tab: 'builtin-tools' });
+    expect(parseDeepLink('hana://settings/builtin-tools?connect=x')).toEqual({ type: 'settings', tab: 'builtin-tools' });
+    expect(parseDeepLink('hana://settings/builtin-tools/computer')).toBeNull();
+    expect(parseDeepLink('hana://settings/general')).toBeNull();
   });
 
   it('parses settings/providers payload with and without a connect target', () => {
-    expect(parseDeepLink('cindy://settings/providers')).toEqual({
+    expect(parseDeepLink('hana://settings/providers')).toEqual({
       type: 'settings',
       tab: 'providers',
     });
-    expect(parseDeepLink('cindy://settings/providers/')).toEqual({
+    expect(parseDeepLink('hana://settings/providers/')).toEqual({
       type: 'settings',
       tab: 'providers',
     });
-    expect(parseDeepLink('cindy://settings/providers?connect=openrouter')).toEqual({
+    expect(parseDeepLink('hana://settings/providers?connect=openrouter')).toEqual({
       type: 'settings',
       tab: 'providers',
       connect: 'openrouter',
     });
     // connect 同时覆盖 provider id 与 preset id 的字符契约;其它 query 参数忽略。
-    expect(parseDeepLink('cindy://settings/providers?foo=bar&connect=Vendor_2')).toEqual({
+    expect(parseDeepLink('hana://settings/providers?foo=bar&connect=Vendor_2')).toEqual({
       type: 'settings',
       tab: 'providers',
       connect: 'Vendor_2',
@@ -499,48 +499,48 @@ describe('parseDeepLink', () => {
 
   it('rejects settings deep links outside the providers tab', () => {
     // voice-input 仍是主进程内部专用 payload,不开放给外部 URL 注入
-    expect(parseDeepLink('cindy://settings/voice-input')).toBeNull();
-    expect(parseDeepLink('cindy://settings/anything-else')).toBeNull();
-    expect(parseDeepLink('cindy://settings/providers/anything-else')).toBeNull();
-    expect(parseDeepLink('cindy://settings/')).toBeNull();
+    expect(parseDeepLink('hana://settings/voice-input')).toBeNull();
+    expect(parseDeepLink('hana://settings/anything-else')).toBeNull();
+    expect(parseDeepLink('hana://settings/providers/anything-else')).toBeNull();
+    expect(parseDeepLink('hana://settings/')).toBeNull();
   });
 
   it('rejects settings deep links whose connect value fails the shared id whitelist', () => {
     // 深链是不可信输入:非法 connect 整条拒绝,不做"半执行"。
-    expect(parseDeepLink('cindy://settings/providers?connect=')).toBeNull();
-    expect(parseDeepLink('cindy://settings/providers?connect=a.b')).toBeNull();
-    expect(parseDeepLink('cindy://settings/providers?connect=a%20b')).toBeNull();
-    expect(parseDeepLink('cindy://settings/providers?connect=%3Cscript%3E')).toBeNull();
-    expect(parseDeepLink('cindy://settings/providers?connect=%E4%ZZ')).toBeNull();
+    expect(parseDeepLink('hana://settings/providers?connect=')).toBeNull();
+    expect(parseDeepLink('hana://settings/providers?connect=a.b')).toBeNull();
+    expect(parseDeepLink('hana://settings/providers?connect=a%20b')).toBeNull();
+    expect(parseDeepLink('hana://settings/providers?connect=%3Cscript%3E')).toBeNull();
+    expect(parseDeepLink('hana://settings/providers?connect=%E4%ZZ')).toBeNull();
     expect(
-      parseDeepLink(`cindy://settings/providers?connect=${'a'.repeat(129)}`),
+      parseDeepLink(`hana://settings/providers?connect=${'a'.repeat(129)}`),
     ).toBeNull();
   });
 });
 
 // 双 scheme 收敛(2026-07 品牌翻转):解析 cindy 主 + 历史 xdt-maker 都认,
-// 生成一律主 scheme cindy://。上面的 xdt-maker:// 用例即历史 scheme 回归。
+// 生成一律主 scheme hana://。上面的 xdt-maker:// 用例即历史 scheme 回归。
 describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
-  it('parses primary-scheme cindy:// links for every payload type', () => {
-    expect(parseDeepLink('cindy://session/abc-123')).toEqual({
+  it('parses primary-scheme hana:// links for every payload type', () => {
+    expect(parseDeepLink('hana://session/abc-123')).toEqual({
       type: 'session',
       id: 'abc-123',
     });
-    expect(parseDeepLink('cindy://session/abc-123?message=client-9')).toEqual({
+    expect(parseDeepLink('hana://session/abc-123?message=client-9')).toEqual({
       type: 'session',
       id: 'abc-123',
       messageClientId: 'client-9',
     });
-    expect(parseDeepLink(`cindy://project/${encodeURIComponent('C:\\Some Path\\proj')}`)).toEqual({
+    expect(parseDeepLink(`hana://project/${encodeURIComponent('C:\\Some Path\\proj')}`)).toEqual({
       type: 'project',
       workingDir: 'C:\\Some Path\\proj',
     });
-    expect(parseDeepLink('cindy://focus/google-auth')).toEqual({ type: 'focus' });
-    expect(parseDeepLink('cindy://unknown/x')).toBeNull();
-    expect(parseDeepLink('cindy://session/')).toBeNull();
+    expect(parseDeepLink('hana://focus/google-auth')).toEqual({ type: 'focus' });
+    expect(parseDeepLink('hana://unknown/x')).toBeNull();
+    expect(parseDeepLink('hana://session/')).toBeNull();
   });
 
-  it.each(['cindy', 'xdt-maker'] as const)(
+  it.each(['hana', 'xdt-maker'] as const)(
     'parses %s provider imports into an opaque Main-only draft id',
     (scheme) => {
       const result = parseDeepLink(providerImportUrl(scheme));
@@ -566,14 +566,14 @@ describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
     openMainWindowSession('account-a-task', { deviceId: 'studio', messageClientId: 'reply' });
     owner.generation += 1;
     expect(takePendingDeepLink()).toBeNull();
-    handleIncomingDeepLink('cindy://session/external-task', 'open-url');
+    handleIncomingDeepLink('hana://session/external-task', 'open-url');
     owner.generation += 1;
     expect(takePendingDeepLink()).toEqual({ type: 'session', id: 'external-task' });
   });
 
   it('buffers only the opaque provider import id during cold start', () => {
     setDeepLinkMainWindow(null);
-    handleIncomingDeepLink(providerImportUrl('cindy'), 'test');
+    handleIncomingDeepLink(providerImportUrl('hana'), 'test');
 
     const pending = takePendingDeepLink();
     expect(pending).toEqual({
@@ -593,7 +593,7 @@ describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
     };
     setDeepLinkMainWindow(win as unknown as BrowserWindow);
     try {
-      handleIncomingDeepLink(providerImportUrl('cindy'), 'test');
+      handleIncomingDeepLink(providerImportUrl('hana'), 'test');
       const first = send.mock.calls[0]![1];
       handleIncomingDeepLink(providerImportUrl('xdt-maker'), 'test');
       const last = send.mock.calls[1]![1];
@@ -608,19 +608,19 @@ describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
   });
 
   it('rejects malformed provider import paths and repeated parameters', () => {
-    const valid = providerImportUrl('cindy');
+    const valid = providerImportUrl('hana');
     expect(parseDeepLink(valid.replace('provider/import', 'providers/import'))).toBeNull();
     expect(parseDeepLink(`${valid}&data=duplicate`)).toBeNull();
   });
 
-  it('generates all builders with the primary cindy:// scheme', () => {
-    expect(DEEP_LINK_PROTOCOL).toBe('cindy');
-    expect(buildSessionDeepLink('abc-123')).toBe('cindy://session/abc-123');
+  it('generates all builders with the primary hana:// scheme', () => {
+    expect(DEEP_LINK_PROTOCOL).toBe('hana');
+    expect(buildSessionDeepLink('abc-123')).toBe('hana://session/abc-123');
     expect(buildSessionMessageDeepLink('abc-123', 'm1')).toBe(
-      'cindy://session/abc-123?message=m1',
+      'hana://session/abc-123?message=m1',
     );
-    expect(buildProjectDeepLink('/tmp/x')).toBe('cindy://project/%2Ftmp%2Fx');
-    expect(buildFocusDeepLink('google-auth')).toBe('cindy://focus/google-auth');
+    expect(buildProjectDeepLink('/tmp/x')).toBe('hana://project/%2Ftmp%2Fx');
+    expect(buildFocusDeepLink('google-auth')).toBe('hana://focus/google-auth');
   });
 });
 
@@ -636,7 +636,7 @@ describe('findDeepLinkInArgv', () => {
   });
 
   it('accepts both cindy and legacy xdt-maker schemes in argv', () => {
-    expect(findDeepLinkInArgv(['electron.exe', 'cindy://session/a'])).toBe('cindy://session/a');
+    expect(findDeepLinkInArgv(['electron.exe', 'hana://session/a'])).toBe('hana://session/a');
     expect(findDeepLinkInArgv(['electron.exe', 'xdt-maker://session/a'])).toBe(
       'xdt-maker://session/a',
     );
@@ -645,24 +645,24 @@ describe('findDeepLinkInArgv', () => {
 
 describe('redactConsumedDeepLinkInArgv', () => {
   it('drops both schemes before restart without selecting or retaining an import', () => {
-    const argv = ['electron', '--flag', 'cindy://session/keep', providerImportUrl('cindy'), providerImportUrl('xdt-maker')];
+    const argv = ['electron', '--flag', 'hana://session/keep', providerImportUrl('hana'), providerImportUrl('xdt-maker')];
     redactConsumedDeepLinkInArgv(argv);
-    expect(argv).toEqual(['electron', '--flag', 'cindy://session/keep', 'cindy://consumed', 'cindy://consumed']);
+    expect(argv).toEqual(['electron', '--flag', 'hana://session/keep', 'hana://consumed', 'hana://consumed']);
   });
   it('removes every import, including invalid and duplicate arguments, while retaining the selected URL for parsing', () => {
     const selected = providerImportUrl('xdt-maker');
-    const argv = ['electron.exe', '--flag', 'cindy://session/keep', 'cindy://provider/import?invalid=FAKE', selected, selected];
+    const argv = ['electron.exe', '--flag', 'hana://session/keep', 'hana://provider/import?invalid=FAKE', selected, selected];
     const url = findDeepLinkInArgv(argv)!;
     redactConsumedDeepLinkInArgv(argv, url);
-    expect(argv).toEqual(['electron.exe', '--flag', 'cindy://session/keep', 'cindy://consumed', 'cindy://consumed', 'cindy://consumed']);
+    expect(argv).toEqual(['electron.exe', '--flag', 'hana://session/keep', 'hana://consumed', 'hana://consumed', 'hana://consumed']);
     expect(parseDeepLink(url)?.type).toBe('provider-import');
   });
   it('parses provider share links and never keeps their invitation in argv', () => {
-    const link = `cindy://provider-share/join?invitation=${'a'.repeat(43)}&server=${encodeURIComponent('https://device-link.cindy.app')}`;
+    const link = `hana://provider-share/join?invitation=${'a'.repeat(43)}&server=${encodeURIComponent('https://device-link.cindy.app')}`;
     expect(parseDeepLink(link)).toEqual({ type: 'provider-share-join', link });
     const argv = ['electron', link];
     redactConsumedDeepLinkInArgv(argv);
-    expect(argv).toEqual(['electron', 'cindy://consumed']);
+    expect(argv).toEqual(['electron', 'hana://consumed']);
   });
 
   it('releases an overwritten cold-start draft before a renderer ever mounts', () => {
@@ -672,22 +672,22 @@ describe('redactConsumedDeepLinkInArgv', () => {
         kind: 'custom', name: `Draft ${i}`, auth: { method: 'apiKey', apiKey: 'FAKE-KEY' },
         endpoints: [{ protocol: 'openai-chat', baseUrl: 'https://example.invalid/v1' }],
       })).toString('base64url');
-      handleIncomingDeepLink(`cindy://provider/import?v=1&data=${data}`, 'cold-start-argv');
+      handleIncomingDeepLink(`hana://provider/import?v=1&data=${data}`, 'cold-start-argv');
     }
     const draft = takePendingDeepLink();
     if (draft?.type !== 'provider-import') throw new Error('missing draft');
     expect(previewProviderImport(draft.importId, { dataOwnerId: null, generation: 0 }, []).name).toBe('Draft 129');
   });
   it('replaces a consumed URL without changing unrelated argv entries', () => {
-    const argv = ['electron.exe', '--flag', 'cindy://provider/import?v=1&data=secret'];
+    const argv = ['electron.exe', '--flag', 'hana://provider/import?v=1&data=secret'];
     redactConsumedDeepLinkInArgv(argv, argv[2]!);
-    expect(argv).toEqual(['electron.exe', '--flag', 'cindy://consumed']);
+    expect(argv).toEqual(['electron.exe', '--flag', 'hana://consumed']);
   });
 
   it('does nothing when the URL is no longer present', () => {
-    const argv = ['electron.exe', 'cindy://other'];
-    redactConsumedDeepLinkInArgv(argv, 'cindy://provider/import?v=1&data=secret');
-    expect(argv).toEqual(['electron.exe', 'cindy://other']);
+    const argv = ['electron.exe', 'hana://other'];
+    redactConsumedDeepLinkInArgv(argv, 'hana://provider/import?v=1&data=secret');
+    expect(argv).toEqual(['electron.exe', 'hana://other']);
   });
 });
 
@@ -847,13 +847,13 @@ describe('findOpenShareFileInArgv', () => {
 describe('public plugin links are navigation only', () => {
   const id = 'c123456789012345678901234';
   it('opens exactly the referenced market resource', () => {
-    expect(parseDeepLink(`cindy://plugin/${id}`)).toEqual({ type: 'plugin', pluginId: id });
+    expect(parseDeepLink(`hana://plugin/${id}`)).toEqual({ type: 'plugin', pluginId: id });
   });
   it.each(['?install=1', '?url=https://example.test/package', '/releases/release', '#auto', '/../other'])('rejects extra behavior %s', suffix => {
-    expect(parseDeepLink(`cindy://plugin/${id}${suffix}`)).toBeNull();
+    expect(parseDeepLink(`hana://plugin/${id}${suffix}`)).toBeNull();
   });
   it('does not accept ghost names as server resource IDs', () => {
-    expect(parseDeepLink('cindy://plugin/cindy-github')).toBeNull();
+    expect(parseDeepLink('hana://plugin/cindy-github')).toBeNull();
   });
 });
 
@@ -866,12 +866,12 @@ describe('fixed local plugin share navigation', () => {
       restore: vi.fn(), moveTop: vi.fn(), setAlwaysOnTop: vi.fn(),
       webContents: { isLoading: () => false, send: vi.fn() } } as unknown as BrowserWindow;
     setDeepLinkMainWindow(window);
-    handleIncomingDeepLink(`cindy://plugin-share/${snapshotId}`, 'open-url');
+    handleIncomingDeepLink(`hana://plugin-share/${snapshotId}`, 'open-url');
     expect(takePendingDeepLink()).toEqual({ type: 'local-plugin-share', snapshotId });
     expect(takePendingDeepLink()).toBeNull();
     setDeepLinkMainWindow(null);
   });
   it.each(['?install=1', '?url=https://example.test/file', '#auto', '/other', '/../other'])('rejects extra behavior %s', suffix => {
-    expect(parseDeepLink(`cindy://plugin-share/${snapshotId}${suffix}`)).toBeNull();
+    expect(parseDeepLink(`hana://plugin-share/${snapshotId}${suffix}`)).toBeNull();
   });
 });

@@ -72,8 +72,8 @@ describe('reapClaudeOrphansSync', () => {
       if (file === 'taskkill') return '';
       return [
         `${selfChildPid}|${process.pid}|C:\\tools\\claude.exe`,
-        `${historicalPid}|99999|C:\\Users\\me\\AppData\\Roaming\\CindyGlobal\\claude-code\\claude.exe`,
-        `${livePeerPid}|88888|C:\\Users\\me\\AppData\\Roaming\\CindyGlobal\\claude-code\\claude.exe`,
+        `${historicalPid}|99999|C:\\Users\\me\\AppData\\Roaming\\HanaGlobal\\claude-code\\claude.exe`,
+        `${livePeerPid}|88888|C:\\Users\\me\\AppData\\Roaming\\HanaGlobal\\claude-code\\claude.exe`,
         `${externalPid}|77777|C:\\Users\\me\\.local\\bin\\claude.exe`,
       ].join('\n');
     });
@@ -122,8 +122,8 @@ describe('reapClaudeOrphansSync', () => {
     const execFileSync = vi.fn((file: string) => {
       if (file === 'taskkill') return '';
       return [
-        `${systemOrphanPid}|4|C:\\Users\\me\\AppData\\Roaming\\CindyGlobal\\claude-code\\claude.exe`,
-        `${selfChildPid}|${process.pid}|C:\\Users\\me\\AppData\\Roaming\\CindyGlobal\\claude-code\\claude.exe`,
+        `${systemOrphanPid}|4|C:\\Users\\me\\AppData\\Roaming\\HanaGlobal\\claude-code\\claude.exe`,
+        `${selfChildPid}|${process.pid}|C:\\Users\\me\\AppData\\Roaming\\HanaGlobal\\claude-code\\claude.exe`,
       ].join('\n');
     });
     const killSpy = vi.spyOn(process, 'kill').mockImplementation((() => true) as typeof process.kill);
@@ -141,9 +141,9 @@ describe('reapClaudeOrphansSync', () => {
     const execFileSync = vi.fn((file: string) => {
       if (file === 'taskkill') return '';
       return [
-        `${pids[0]}|4|C:\\Users\\me\\AppData\\Roaming\\CindyGlobal\\claude-code\\claude.exe`,
-        `${pids[1]}|4|C:/Users/me/AppData/Roaming/CindyGlobal/claude-code/claude.exe`,
-        `${pids[2]}|4|/Users/me/Library/Application Support/CindyGlobal/claude-code/claude`,
+        `${pids[0]}|4|C:\\Users\\me\\AppData\\Roaming\\HanaGlobal\\claude-code\\claude.exe`,
+        `${pids[1]}|4|C:/Users/me/AppData/Roaming/HanaGlobal/claude-code/claude.exe`,
+        `${pids[2]}|4|/Users/me/Library/Application Support/HanaGlobal/claude-code/claude`,
       ].join('\n');
     });
     const { reapClaudeOrphansSync } = await importReaper({ platform: 'win32', execFileSync });
@@ -299,7 +299,7 @@ describe('reapClaudeOrphansSync', () => {
     const lowercasePid = 801;
     const execFileSync = vi.fn((file: string) => {
       if (file === 'taskkill') return '';
-      return `${lowercasePid}|4|C:\\users\\me\\appdata\\roaming\\cindyglobal\\claude-code\\claude.exe`;
+      return `${lowercasePid}|4|C:\\users\\me\\appdata\\roaming\\hanaglobal\\claude-code\\claude.exe`;
     });
     const { reapClaudeOrphansSync } = await importReaper({ platform: 'win32', execFileSync });
 

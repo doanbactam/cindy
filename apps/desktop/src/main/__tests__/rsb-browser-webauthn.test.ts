@@ -70,18 +70,18 @@ function createSessionHarness() {
 
 describe('resolveWebAuthnKeychainAccessGroup', () => {
   it('combines the signed Apple team identity with the runtime bundle id', () => {
-    expect(resolveWebAuthnKeychainAccessGroup('TEAM123456', 'com.xd.cindy')).toBe(
-      'TEAM123456.com.xd.cindy.webauthn',
+    expect(resolveWebAuthnKeychainAccessGroup('TEAM123456', 'com.doanbactam.hana')).toBe(
+      'TEAM123456.com.doanbactam.hana.webauthn',
     );
   });
 
   it.each([
-    [undefined, 'com.xd.cindy'],
-    ['', 'com.xd.cindy'],
-    ['too-short', 'com.xd.cindy'],
+    [undefined, 'com.doanbactam.hana'],
+    ['', 'com.doanbactam.hana'],
+    ['too-short', 'com.doanbactam.hana'],
     ['TEAM123456', ''],
     ['TEAM123456', 'com..xd.cindy'],
-    ['TEAM123456', 'com.xd.cindy<bad>'],
+    ['TEAM123456', 'com.doanbactam.hana<bad>'],
   ])('fails closed for an invalid signing identity (%s, %s)', (teamId, appId) => {
     expect(resolveWebAuthnKeychainAccessGroup(teamId, appId)).toBeNull();
   });
@@ -416,7 +416,7 @@ describe('configureRsbBrowserWebAuthn', () => {
       configureRsbBrowserWebAuthn({
         platform: 'darwin',
         appleTeamId: '',
-        appId: 'com.xd.cindy',
+        appId: 'com.doanbactam.hana',
         browserSession: harness.browserSession,
         configureWebAuthn,
         logger: silentLogger,
@@ -432,7 +432,7 @@ describe('configureRsbBrowserWebAuthn', () => {
       configureRsbBrowserWebAuthn({
         platform: 'darwin',
         appleTeamId: 'TEAM123456',
-        appId: 'com.xd.cindy',
+        appId: 'com.doanbactam.hana',
         browserSession: harness.browserSession,
         configureWebAuthn,
         logger: silentLogger,
@@ -440,7 +440,7 @@ describe('configureRsbBrowserWebAuthn', () => {
     ).toEqual({ accountSelectionInstalled: true, touchIdConfigured: true });
     expect(configureWebAuthn).toHaveBeenCalledWith({
       touchID: {
-        keychainAccessGroup: 'TEAM123456.com.xd.cindy.webauthn',
+        keychainAccessGroup: 'TEAM123456.com.doanbactam.hana.webauthn',
         promptReason: expect.stringContaining('$1'),
       },
     });

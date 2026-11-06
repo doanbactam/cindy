@@ -146,7 +146,7 @@ describe('sidebar-embedded session navigation boundary', () => {
     const wrong = { id: 'same', title: 'Wrong', deviceLinkDeviceId: 'mac-a', orcaRole: 'worker' as const };
     const right = { id: 'same', title: 'Right', deviceLinkDeviceId: 'mac-b', orcaRole: null };
     mocks.remoteSessions = [wrong, right];
-    render(<SessionLinkChip href="cindy://session/same?device=mac-b" label="Task" />);
+    render(<SessionLinkChip href="hana://session/same?device=mac-b" label="Task" />);
     fireEvent.click(screen.getByRole('button', { name: 'Task' }));
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalled());
     expect(mocks.pinSessionOrigin).toHaveBeenCalledWith('mac-b', 'same');
@@ -157,7 +157,7 @@ describe('sidebar-embedded session navigation boundary', () => {
     'opens remote task links separately for modifier %j, keeping the message anchor', async (modifier) => {
       const onNavigate = vi.fn();
       render(splitPane(<SessionLinkChip
-        href="cindy://session/remote-task?device=remote-mac&message=m%2F1" label="Remote task"
+        href="hana://session/remote-task?device=remote-mac&message=m%2F1" label="Remote task"
       />, onNavigate));
       fireEvent.click(screen.getByRole('button', { name: 'Remote task' }), modifier);
       await waitFor(() => expect(mocks.openSessionInNewWindow)
@@ -168,14 +168,14 @@ describe('sidebar-embedded session navigation boundary', () => {
   );
 
   it('supports Shift+Enter on an inline task chip', async () => {
-    render(<SessionLinkChip href="cindy://session/local?device=this-mac" label="Local" />);
+    render(<SessionLinkChip href="hana://session/local?device=this-mac" label="Local" />);
     fireEvent.keyDown(screen.getByRole('button', { name: 'Local' }), { key: 'Enter', shiftKey: true });
     await waitFor(() => expect(mocks.openSessionInNewWindow).toHaveBeenCalledWith('local', undefined, null));
     expect(mocks.navigate).not.toHaveBeenCalled();
   });
 
   it('supports middle click without navigating the source pane', async () => {
-    render(<SessionLinkChip href="cindy://session/local" label="Local" />);
+    render(<SessionLinkChip href="hana://session/local" label="Local" />);
     fireEvent(screen.getByRole('button', { name: 'Local' }), new MouseEvent('auxclick', { bubbles: true, button: 1 }));
     await waitFor(() => expect(mocks.openSessionInNewWindow).toHaveBeenCalledWith('local', undefined, null));
     expect(mocks.navigate).not.toHaveBeenCalled();
@@ -184,7 +184,7 @@ describe('sidebar-embedded session navigation boundary', () => {
   it('offers the same new-window action in the context menu without triggering parent clicks', async () => {
     const parentClick = vi.fn();
     render(<div onClick={parentClick}><SessionLinkChip
-      href="cindy://session/remote-task?device=remote-mac" label="Remote task"
+      href="hana://session/remote-task?device=remote-mac" label="Remote task"
     /></div>);
     fireEvent.contextMenu(screen.getByRole('button', { name: 'Remote task' }), { clientX: 12, clientY: 24 });
     fireEvent.click(await screen.findByRole('menuitem', { name: 'ccAgent.sidebar.sessionMenu.openInNewWindow' }));
@@ -194,7 +194,7 @@ describe('sidebar-embedded session navigation boundary', () => {
   });
 
   it('opens the menu with Shift+F10 and copies the complete link', async () => {
-    const href = 'cindy://session/remote-task?device=remote-mac&message=m%2F1';
+    const href = 'hana://session/remote-task?device=remote-mac&message=m%2F1';
     render(<SessionLinkChip href={href} label="Remote task" />);
     const link = screen.getByRole('button', { name: 'Remote task' });
     fireEvent.keyDown(link, { key: 'F10', shiftKey: true });
@@ -206,14 +206,14 @@ describe('sidebar-embedded session navigation boundary', () => {
 
   it('reports a rejected window-open request and leaves the source pane intact', async () => {
     mocks.openSessionInNewWindow.mockRejectedValueOnce(new Error('unavailable'));
-    render(<SessionLinkChip href="cindy://session/local" label="Local" />);
+    render(<SessionLinkChip href="hana://session/local" label="Local" />);
     fireEvent.click(screen.getByRole('button', { name: 'Local' }), { shiftKey: true });
     await waitFor(() => expect(mocks.error).toHaveBeenCalledWith('chat.markdownRenderer.openLinkFailed'));
     expect(mocks.navigate).not.toHaveBeenCalled();
   });
 
   it('routes an unmirrored remote history link through its host before resolving the task', async () => {
-    render(<SessionLinkChip href="cindy://session/archived-task?device=remote-mac" />);
+    render(<SessionLinkChip href="hana://session/archived-task?device=remote-mac" />);
     expect(mocks.getSession).not.toHaveBeenCalled();
     expect(mocks.pinSessionOrigin).not.toHaveBeenCalled();
 
@@ -227,7 +227,7 @@ describe('sidebar-embedded session navigation boundary', () => {
   });
 
   it('keeps a link to this computer local', async () => {
-    render(<SessionLinkChip href="cindy://session/local-task?device=this-mac" label="Local task" />);
+    render(<SessionLinkChip href="hana://session/local-task?device=this-mac" label="Local task" />);
     fireEvent.click(screen.getByRole('button'));
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/cc-agent/local-task', undefined));
     expect(mocks.pinSessionOrigin).not.toHaveBeenCalled();
@@ -299,7 +299,7 @@ describe('sidebar-embedded session navigation boundary', () => {
   });
 
   it.each([false, true])('keeps the anchored pill visibly clickable and on a single line (embedded=%s)', async (isEmbedded) => {
-    const chip = <SessionLinkChip href="cindy://session/session-a?message=message-1" label="Session A" />;
+    const chip = <SessionLinkChip href="hana://session/session-a?message=message-1" label="Session A" />;
     const { container } = render(isEmbedded ? embedded(chip) : chip);
     await act(async () => {
       await Promise.resolve();
@@ -568,7 +568,7 @@ describe('sidebar-embedded session navigation boundary', () => {
   it('renders anchored links from message content and preserves jump navigation', async () => {
     const { container } = render(
       <SessionLinkChip
-        href="cindy://session/session-message?message=client-1"
+        href="hana://session/session-message?message=client-1"
         label="Session Message"
       />,
     );
@@ -603,7 +603,7 @@ describe('sidebar-embedded session navigation boundary', () => {
     const longMessage = `  ${'x'.repeat(320)}  `;
     mocks.resolveSessionMessageText.mockResolvedValueOnce(longMessage);
     const { container } = render(
-      <SessionLinkChip href="cindy://session/session-message?message=client-long" />,
+      <SessionLinkChip href="hana://session/session-message?message=client-long" />,
     );
 
     await waitFor(() =>

@@ -31,7 +31,7 @@ configureLinuxPasswordStore({
   commandLine: app.commandLine,
 });
 
-// 正式目录保持历史兼容：global 构建继续使用 CindyGlobal，cn 版继续使用
+// 正式目录保持历史兼容：global 构建继续使用 HanaGlobal，cn 版继续使用
 // productName 默认的 Cindy；dev 也按构建区域选择对应 profile。必须在
 // initLogger()(packaged 日志目录)、crashReporter、单实例锁与一切 userData
 // 读取之前完成区域映射。
@@ -178,7 +178,7 @@ if (devFlags.userDataDirOverride) {
   const keychainMarkerPath = path.join(devFlags.userDataDirOverride, KEYCHAIN_IDENTITY_MARKER_FILE);
   const keychainDecision = resolveDevKeychainDecision({
     isPackaged: app.isPackaged,
-    // CindyDev 身份只在「显式隔离 + 纪元派生目录」下认领;其余覆写形态(裸覆写 /
+    // HanaDev 身份只在「显式隔离 + 纪元派生目录」下认领;其余覆写形态(裸覆写 /
     // 指向非纪元目录的隔离启动)走观察模式——不认领,但目录已带标记时依标记运行,
     // 防同一目录被不同启动形态以两种身份轮流打开(review 反馈 P1 第十二/十四轮)。
     isolated: devFlags.isolated && devFlags.isolatedDirIsEpochDerived,
@@ -195,9 +195,9 @@ if (devFlags.userDataDirOverride) {
       `[cindy] FATAL: 沙箱钥匙串身份不确定(${keychainDecision.reason});` +
         `为避免用错误主密钥覆盖沙箱既有密文,拒绝启动。\n` +
         `  标记文件: ${keychainMarkerPath}\n` +
-        `  处置: 若确认该沙箱从未用过 CindyDev 身份,删除该标记文件后重启` +
-        `(或将内容修复为 "Cindy",须以换行结尾);若沙箱曾以 CindyDev 运行,` +
-        `修复其内容为 "CindyDev"(同样以换行结尾)。修复须在退出所有 Cindy dev` +
+        `  处置: 若确认该沙箱从未用过 HanaDev 身份,删除该标记文件后重启` +
+        `(或将内容修复为 "Hana",须以换行结尾);若沙箱曾以 HanaDev 运行,` +
+        `修复其内容为 "HanaDev"(同样以换行结尾)。修复须在退出所有 Cindy dev` +
         `实例后进行,并用原子替换(先写临时文件再 mv 覆盖),不要原地截断重写。\n` +
         `  警告: 不要把旧版本 checkout 显式指向 -dev2 沙箱目录` +
         `(XDT_USER_DATA_DIR)——旧代码不认身份标记,会以默认身份写入并` +

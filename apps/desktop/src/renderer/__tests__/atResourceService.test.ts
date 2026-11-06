@@ -80,7 +80,7 @@ describe('filterAtResources', () => {
     AT_FILE_PICKER_RESOURCE,
     { type: 'file' as const, name: 'README.md', relPath: 'README.md' },
     { type: 'dir' as const, name: 'apps', relPath: 'apps' },
-    { type: 'session' as const, name: 'Release planning', relPath: 'cindy://session/1' },
+    { type: 'session' as const, name: 'Release planning', relPath: 'hana://session/1' },
     { type: 'agent' as const, name: 'reviewer', relPath: '.claude/agents/reviewer.md' },
     { type: 'plugin-command' as const, name: 'Issues', relPath: 'issues' },
   ];
@@ -105,8 +105,8 @@ describe('filterAtResources', () => {
 
   it('shows browser tabs immediately but searches desktop windows on demand', () => {
     const contextual = [
-      { type: 'browser-tab' as const, name: 'Docs', relPath: 'cindy://browser-tab/tab-1' },
-      { type: 'desktop-window' as const, name: 'Editor', relPath: 'cindy://desktop-window/1/2' },
+      { type: 'browser-tab' as const, name: 'Docs', relPath: 'hana://browser-tab/tab-1' },
+      { type: 'desktop-window' as const, name: 'Editor', relPath: 'hana://desktop-window/1/2' },
     ];
 
     expect(filterAtResources(contextual, '').map((item) => item.type)).toEqual([
@@ -205,7 +205,7 @@ describe('mergeAtResourceItems', () => {
     ];
     const incoming = [
       { type: 'dir' as const, name: 'prompts', relPath: 'packages/prompts', description: 'new' },
-      { type: 'session' as const, name: 'PR review', relPath: 'cindy://session/pr-review' },
+      { type: 'session' as const, name: 'PR review', relPath: 'hana://session/pr-review' },
     ];
 
     expect(mergeAtResourceItems(previous, incoming)).toEqual([
@@ -293,10 +293,10 @@ describe('scanAtResources context providers', () => {
       'file',
     ]);
     expect(result.items[0].relPath).toBe(
-      'cindy://browser-tab/tab-1?url=https%3A%2F%2Fexample.com%2Fdocs',
+      'hana://browser-tab/tab-1?url=https%3A%2F%2Fexample.com%2Fdocs',
     );
     expect(result.items[1].relPath).toBe(
-      'cindy://desktop-window/11/22?app=Code.exe',
+      'hana://desktop-window/11/22?app=Code.exe',
     );
   });
 
@@ -413,7 +413,7 @@ describe('scanAtResources context providers', () => {
         {
           type: 'session',
           name: 'Release planning',
-          relPath: 'cindy://session/history-1',
+          relPath: 'hana://session/history-1',
           description: 'Plan the release',
         },
       ],
@@ -438,7 +438,7 @@ describe('scanAtResources context providers', () => {
     expect(result.items).toMatchObject([
       {
         type: 'session',
-        relPath: 'cindy://session/remote-history?device=device-1',
+        relPath: 'hana://session/remote-history?device=device-1',
       },
     ]);
     expect(window.electronAPI.deviceLink.invoke).toHaveBeenCalledWith(
@@ -475,7 +475,7 @@ describe('scanAtResources context providers', () => {
     expect(result.items).toMatchObject([{
       type: 'session',
       name: '未命名任务',
-      relPath: 'cindy://session/older-than-sidebar-cap',
+      relPath: 'hana://session/older-than-sidebar-cap',
     }]);
     expect(window.electronAPI.localDb.conversations.search).toHaveBeenCalledWith({
       query: '未命名',
@@ -515,7 +515,7 @@ describe('scanAtResources context providers', () => {
     expect(result.items).toMatchObject([{
       type: 'session',
       name: 'Untitled session',
-      relPath: 'cindy://session/remote-history?device=device-1',
+      relPath: 'hana://session/remote-history?device=device-1',
     }]);
     expect(window.electronAPI.deviceLink.invoke).toHaveBeenCalledWith(
       'device-1',
@@ -548,7 +548,7 @@ describe('scanAtResources context providers', () => {
 
     expect(result.items).toMatchObject([{
       type: 'session',
-      relPath: 'cindy://session/legacy-remote-history?device=device-1',
+      relPath: 'hana://session/legacy-remote-history?device=device-1',
     }]);
     expect(window.electronAPI.deviceLink.invoke).toHaveBeenNthCalledWith(
       2,

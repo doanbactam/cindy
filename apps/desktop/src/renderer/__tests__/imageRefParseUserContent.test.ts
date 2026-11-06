@@ -471,7 +471,7 @@ describe('parseUserContent — round-trip with localDb mapper simulation', () =>
   });
 
   it('round-trips structured reference metadata without changing bubble text', () => {
-    const href = 'cindy://session/session-a?message=message-a';
+    const href = 'hana://session/session-a?message=message-a';
     const text = `inspect ${href}`;
     const references = [{
       kind: 'message' as const,

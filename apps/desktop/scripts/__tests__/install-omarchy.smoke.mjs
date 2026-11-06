@@ -110,8 +110,8 @@ esac`);
   await t.test('curl pipe, newest manifest on each invocation, two upgrades and idempotent repair', () => {
     const home = fixture('upgrade');
     const prefix = prefixFor(home);
-    fs.mkdirSync(path.join(home, '.config/CindyGlobal'), { recursive: true });
-    const data = path.join(home, '.config/CindyGlobal/fixture-data');
+    fs.mkdirSync(path.join(home, '.config/HanaGlobal'), { recursive: true });
+    const data = path.join(home, '.config/HanaGlobal/fixture-data');
     fs.writeFileSync(data, 'keep existing data');
     ok(run(home, v1, { input: fs.readFileSync(bootstrap, 'utf8') }));
     const first = pointer(prefix);

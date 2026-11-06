@@ -121,11 +121,11 @@ describe('segmentPastedContent — deep links', () => {
     expect(segmentPastedContent('xdt-maker://project/')).toBeNull();
   });
 
-  // 双 scheme 收敛:主 scheme cindy:// 与历史 xdt-maker://(上方全部用例)
+  // 双 scheme 收敛:主 scheme hana:// 与历史 xdt-maker://(上方全部用例)
   // 走同一条分段管线。
-  it('segments primary-scheme cindy:// links (bare + markdown, mixed with legacy)', () => {
-    const cindySession = 'cindy://session/ee59672a-5591-48a7-a44d-aa97e3808c64';
-    const cindyProject = 'cindy://project/%2Ftmp%2Fx';
+  it('segments primary-scheme hana:// links (bare + markdown, mixed with legacy)', () => {
+    const cindySession = 'hana://session/ee59672a-5591-48a7-a44d-aa97e3808c64';
+    const cindyProject = 'hana://project/%2Ftmp%2Fx';
     expect(segmentPastedContent(`看 ${cindySession} 和 [主仓](${cindyProject})`)).toEqual([
       { kind: 'text', text: '看 ' },
       { kind: 'session', href: cindySession, label: null },
@@ -137,8 +137,8 @@ describe('segmentPastedContent — deep links', () => {
       { kind: 'text', text: ' 与 ' },
       { kind: 'session', href: cindySession, label: null },
     ]);
-    expect(segmentPastedContent('cindy://session/')).toBeNull();
-    expect(segmentPastedContent('cindy://other/foo')).toBeNull();
+    expect(segmentPastedContent('hana://session/')).toBeNull();
+    expect(segmentPastedContent('hana://other/foo')).toBeNull();
   });
 
   it('rejects legacy project links with raw delimiters instead of prefix-matching (review P2)', () => {

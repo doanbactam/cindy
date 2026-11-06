@@ -301,16 +301,16 @@ test("userData conflict detection matches exact sandbox dirs only", () => {
 });
 
 test("shared production userData path is region-aware", () => {
-	assert.equal(path.basename(productionUserDataDir()), "CindyGlobal");
-	assert.equal(path.basename(productionUserDataDir("global")), "CindyGlobal");
-	assert.equal(path.basename(productionUserDataDir("cn")), "Cindy");
-	assert.equal(path.basename(productionUserDataDir("dev")), "CindyDev");
+	assert.equal(path.basename(productionUserDataDir()), "HanaGlobal");
+	assert.equal(path.basename(productionUserDataDir("global")), "HanaGlobal");
+	assert.equal(path.basename(productionUserDataDir("cn")), "Hana");
+	assert.equal(path.basename(productionUserDataDir("dev")), "HanaDev");
 });
 
 test("default isolated userData path is region-aware", () => {
-	assert.equal(path.basename(defaultIsolatedUserDataDir("", "global")), "CindyGlobal-dev2");
-	assert.equal(path.basename(defaultIsolatedUserDataDir("", "cn")), "Cindy-dev2");
-	assert.equal(path.basename(defaultIsolatedUserDataDir("review", "dev")), "CindyDev-dev2-review");
+	assert.equal(path.basename(defaultIsolatedUserDataDir("", "global")), "HanaGlobal-dev2");
+	assert.equal(path.basename(defaultIsolatedUserDataDir("", "cn")), "Hana-dev2");
+	assert.equal(path.basename(defaultIsolatedUserDataDir("review", "dev")), "HanaDev-dev2-review");
 });
 
 test("hasIsolationIntent sees argv and ambient XDT_ISOLATED=1", () => {
@@ -376,8 +376,8 @@ test("isOfficialProductionUserDataDir matches every official region profile", ()
 	assert.equal(isOfficialProductionUserDataDir(productionUserDataDir("global")), true);
 	assert.equal(isOfficialProductionUserDataDir(productionUserDataDir("dev")), true);
 	assert.equal(isOfficialProductionUserDataDir(defaultIsolatedUserDataDir("", "cn")), false);
-	assert.ok(officialProductionUserDataDirs().some((dir) => path.basename(dir) === "Cindy"));
-	assert.ok(officialProductionUserDataDirs().some((dir) => path.basename(dir) === "CindyGlobal"));
+	assert.ok(officialProductionUserDataDirs().some((dir) => path.basename(dir) === "Hana"));
+	assert.ok(officialProductionUserDataDirs().some((dir) => path.basename(dir) === "HanaGlobal"));
 });
 
 test("isolated restart target pointing at the other region's official profile is refused", () => {
@@ -1644,7 +1644,7 @@ test("darwinStaleDevEnvUnset keeps variables this launch forwards (isolated with
 	const env = {
 		XDT_ISOLATED: "1",
 		XDT_ISOLATED_NAME: "src-feature-1a2b3c",
-		XDT_USER_DATA_DIR: "/tmp/CindyGlobal-dev2-src-feature-1a2b3c",
+		XDT_USER_DATA_DIR: "/tmp/HanaGlobal-dev2-src-feature-1a2b3c",
 	};
 	const keys = unsetKeys(darwinStaleDevEnvUnset(env));
 	for (const key of Object.keys(env)) assert.ok(!keys.includes(key), `${key} must not be unset`);

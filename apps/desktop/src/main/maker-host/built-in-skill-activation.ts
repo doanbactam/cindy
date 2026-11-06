@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 import { CINDY_BUILT_IN_SKILL_NAMES } from '../../shared/cindyBuiltInSkills';
 const ACTIVE_BUNDLE_LINK = '.active';
 const VERSIONS_DIRECTORY = '.versions';
@@ -24,7 +25,7 @@ export function builtInSkillsRoot(userDataDir: string): string {
 
 /** Profile-independent storage shared by Global, China, dev, and isolated profiles. */
 export function sharedBuiltInSkillsRoot(appDataDir: string): string {
-  return path.join(appDataDir, 'Cindy', 'shared-system-skills');
+  return path.join(appDataDir, BRAND_IDENTITY.userDataDirName, 'shared-system-skills');
 }
 
 /** Keep enable/disable intent stable while immutable built-in bundle revisions change. */

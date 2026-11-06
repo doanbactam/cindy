@@ -15,8 +15,8 @@ describe('buildProjectDeepLink(严格编码,review P2)', () => {
     const workingDir = "/Users/alice/Projects/my(app)'s dir!*";
     const href = buildProjectDeepLink(workingDir);
     // 生成一律主 scheme;切片按主 scheme 前缀长度(双 scheme 后长度不同)。
-    expect(href.startsWith('cindy://project/')).toBe(true);
-    expect(/[!'()]/.test(href.slice('cindy://project/'.length))).toBe(false);
+    expect(href.startsWith('hana://project/')).toBe(true);
+    expect(/[!'()]/.test(href.slice('hana://project/'.length))).toBe(false);
     // 解析端零改动:decodeURIComponent 原生可解严格编码,roundtrip 不变形。
     expect(parseProjectDeepLinkHref(href)).toEqual({ workingDir });
     // 文本匹配白名单能吃下整条生成的链接(不在括号处截断)。
@@ -85,7 +85,7 @@ describe('parseSessionDeepLinkHref', () => {
 describe('session deep link device parameter', () => {
   it('freezes deviceId into the link and roundtrips through the parser', () => {
     const href = buildSessionDeepLink('abc-123', { deviceId: 'dev-mac~1' });
-    expect(href).toBe('cindy://session/abc-123?device=dev-mac~1');
+    expect(href).toBe('hana://session/abc-123?device=dev-mac~1');
     expect(parseSessionDeepLinkHref(href)).toEqual({
       sessionId: 'abc-123',
       messageClientId: null,
@@ -95,7 +95,7 @@ describe('session deep link device parameter', () => {
 
   it('combines message anchor and device parameter', () => {
     const href = buildSessionMessageDeepLink('abc', 'client/9', { deviceId: 'dev-1' });
-    expect(href).toBe('cindy://session/abc?message=client%2F9&device=dev-1');
+    expect(href).toBe('hana://session/abc?message=client%2F9&device=dev-1');
     expect(parseSessionDeepLinkHref(href)).toEqual({
       sessionId: 'abc',
       messageClientId: 'client/9',
@@ -104,17 +104,17 @@ describe('session deep link device parameter', () => {
   });
 
   it('omits the parameter for local sessions (null/undefined deviceId)', () => {
-    expect(buildSessionDeepLink('abc', { deviceId: null })).toBe('cindy://session/abc');
-    expect(buildSessionMessageDeepLink('abc', 'm1', {})).toBe('cindy://session/abc?message=m1');
+    expect(buildSessionDeepLink('abc', { deviceId: null })).toBe('hana://session/abc');
+    expect(buildSessionMessageDeepLink('abc', 'm1', {})).toBe('hana://session/abc?message=m1');
   });
 
   it('ignores empty or malformed device values but keeps the rest of the link', () => {
-    expect(parseSessionDeepLinkHref('cindy://session/abc?device=')).toEqual({
+    expect(parseSessionDeepLinkHref('hana://session/abc?device=')).toEqual({
       sessionId: 'abc',
       messageClientId: null,
       deviceId: null,
     });
-    expect(parseSessionDeepLinkHref('cindy://session/abc?device=%ZZ&message=m1')).toEqual({
+    expect(parseSessionDeepLinkHref('hana://session/abc?device=%ZZ&message=m1')).toEqual({
       sessionId: 'abc',
       messageClientId: 'm1',
       deviceId: null,
@@ -128,26 +128,26 @@ describe('session deep link device parameter', () => {
   });
 });
 
-// 双 scheme 收敛:生成一律 cindy://,解析 cindy + 历史 xdt-maker 都认
+// 双 scheme 收敛:生成一律 hana://,解析 cindy + 历史 xdt-maker 都认
 // (上面的 xdt-maker:// 用例即历史 scheme 回归)。
 describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
-  it('builders emit the primary cindy:// scheme', () => {
-    expect(buildSessionDeepLink('abc-123')).toBe('cindy://session/abc-123');
+  it('builders emit the primary hana:// scheme', () => {
+    expect(buildSessionDeepLink('abc-123')).toBe('hana://session/abc-123');
     expect(buildSessionMessageDeepLink('abc-123', 'm1')).toBe(
-      'cindy://session/abc-123?message=m1',
+      'hana://session/abc-123?message=m1',
     );
-    expect(buildProjectDeepLink('/tmp/x')).toBe('cindy://project/%2Ftmp%2Fx');
+    expect(buildProjectDeepLink('/tmp/x')).toBe('hana://project/%2Ftmp%2Fx');
   });
 
-  it('parsers accept primary-scheme cindy:// hrefs', () => {
-    expect(parseSessionDeepLinkHref('cindy://session/abc-123?message=m1')).toEqual({
+  it('parsers accept primary-scheme hana:// hrefs', () => {
+    expect(parseSessionDeepLinkHref('hana://session/abc-123?message=m1')).toEqual({
       sessionId: 'abc-123',
       messageClientId: 'm1',
       deviceId: null,
     });
-    expect(parseProjectDeepLinkHref('cindy://project/%2Ftmp%2Fx')).toEqual({
+    expect(parseProjectDeepLinkHref('hana://project/%2Ftmp%2Fx')).toEqual({
       workingDir: '/tmp/x',
     });
-    expect(parseSessionDeepLinkHref('cindy://session/')).toBeNull();
+    expect(parseSessionDeepLinkHref('hana://session/')).toBeNull();
   });
 });

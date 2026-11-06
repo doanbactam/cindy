@@ -14,7 +14,7 @@ vi.mock('@/lib/toast', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 import { ProjectLinkChip } from '../ProjectLinkChip';
 import { SessionNavigationModeProvider } from '@/features/cc-agent/embeddedSessionNavigation';
 
-const href = 'cindy://project/%2Fwork%2FMy%20Project';
+const href = 'hana://project/%2Fwork%2FMy%20Project';
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.writeText.mockResolvedValue(undefined);

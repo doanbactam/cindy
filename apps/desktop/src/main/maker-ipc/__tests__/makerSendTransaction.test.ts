@@ -3571,7 +3571,7 @@ describe('session-agent-switch handoff injection', () => {
   // unit: reference-bearing owner input previously stamped an empty receipt,
   // losing both task-action authorship and the Auto reviewer's current request.
   it.each([false, true])('preserves the owner request beside a long message reference (deviceLink=%s)', async deviceLink => {
-    const href = 'cindy://session/referenced-task?message=quoted-message';
+    const href = 'hana://session/referenced-task?message=quoted-message';
     const request = '请开个独立任务做原型，用 opus5.5。';
     const content = {
       text: `${href} ${request}`, images: [], files: [],

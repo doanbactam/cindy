@@ -2,8 +2,8 @@ import test from 'node:test';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { assertProviderE2EProfile } from '../../apps/desktop/scripts/provider-e2e-profile.mjs';
-const profile = path.resolve('isolated', 'CindyGlobal-dev2-provider-auto-detection-fixture');
-const db = path.join(profile, 'cindy-local-v1.db');
+const profile = path.resolve('isolated', 'HanaGlobal-dev2-provider-auto-detection-fixture');
+const db = path.join(profile, 'hana-local-v1.db');
 function fixture() {
   const record = { pid: 123, isolated: true, profileKind: 'isolated-sandbox', state: 'ready', userDataDir: profile,
     processIdentity: { startedAtMs: Date.parse('2026-10-23T12:00:00Z'), executablePath: '/Electron' } };
@@ -26,7 +26,7 @@ for (const scenario of ['daily-client', 'other-profile', 'not-isolated', 'stale-
     if (scenario === 'not-isolated') f.record.isolated = false;
     if (scenario === 'stale-pid') f.record.processIdentity.startedAtMs--;
     if (scenario === 'missing-identity') delete f.record.processIdentity;
-    if (scenario === 'symlink') f.options.realpath = async () => '/daily/cindy-local-v1.db';
+    if (scenario === 'symlink') f.options.realpath = async () => '/daily/hana-local-v1.db';
     if (scenario === 'unavailable-cdp') f.session.send = async () => { throw new Error('unsupported'); };
     if (scenario === 'unsupported-platform') f.options.platform = 'win32';
     await assert.rejects(async () => { await assertProviderE2EProfile(f.browser, db, f.options); writes++; });

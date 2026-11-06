@@ -41,7 +41,7 @@ vi.mock('../../../../shared/brandRegion', () => ({
   get CURRENT_CINDY_REGION() {
     return regionMock.region;
   },
-  CURRENT_APP_ID: 'com.xd.cindy',
+  CURRENT_APP_ID: 'com.doanbactam.hana',
 }));
 vi.mock('@/hooks/useLogin', () => ({ useLogin: () => loginHook.value }));
 vi.mock('@/components/title-bar/WindowControls', () => ({ WindowControls: () => null }));

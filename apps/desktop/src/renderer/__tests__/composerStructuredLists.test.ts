@@ -1625,7 +1625,7 @@ describe('composer structured list serialization', () => {
   });
 
   it('preserves nested markers and projects atom ranges into wire offsets', () => {
-    const href = 'cindy://session/session-a?message=message-a';
+    const href = 'hana://session/session-a?message=message-a';
     const editor = makeEditor({
       type: 'doc',
       content: [
@@ -1733,8 +1733,8 @@ describe('composer structured list serialization', () => {
   });
 
   it('serializes browser-tab and desktop-window chips as structured non-file references', () => {
-    const tabHref = 'cindy://browser-tab/tab-1?url=https%3A%2F%2Fexample.com%2Fdocs';
-    const windowHref = 'cindy://desktop-window/11/22?app=Code.exe';
+    const tabHref = 'hana://browser-tab/tab-1?url=https%3A%2F%2Fexample.com%2Fdocs';
+    const windowHref = 'hana://desktop-window/11/22?app=Code.exe';
     const editor = makeEditor({
       type: 'doc',
       content: [
@@ -1782,7 +1782,7 @@ describe('composer structured list serialization', () => {
   });
 
   it('serializes Plugin business resources as opaque structured references', () => {
-    const href = 'cindy://plugin-resource/issues/search_issues/ISSUE-1';
+    const href = 'hana://plugin-resource/issues/search_issues/ISSUE-1';
     const editor = makeEditor({
       type: 'doc',
       content: [{
@@ -1834,7 +1834,7 @@ describe('composer structured list serialization', () => {
     });
 
     const serialized = serializeEditorContent(editor);
-    const href = 'cindy://bot/bot-dash-1';
+    const href = 'hana://bot/bot-dash-1';
     expect(serialized.text).toBe(`[Dash Bot](${href})`);
     expect(serialized.mentions).toEqual([]);
     expect(serialized.agentReferences).toEqual([{
@@ -1849,7 +1849,7 @@ describe('composer structured list serialization', () => {
 
   // 近况里点一条待办插进来的 chip：发出去要带稳定 Todo ID，不能被当成文件提及。
   it('serializes a teammate Todo chip as a structured reference carrying its id', () => {
-    const href = 'cindy://bot-todo/bot-1/todo-7';
+    const href = 'hana://bot-todo/bot-1/todo-7';
     const editor = makeEditor({
       type: 'doc',
       content: [{

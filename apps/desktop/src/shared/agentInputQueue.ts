@@ -16,6 +16,7 @@ import { stripChatQuoteMarkerLines } from '@cindy/maker-shared/chat-quotes';
 import type { SharedTaskAuthor } from '@cindy/maker-shared';
 import type { MessageSourceDevice, MessageSourcePlugin } from '@cindy/maker-shared/message-source';
 import { UI_ACTION_TRIGGER_PREFIX } from '@cindy/maker-shared/synthetic-trigger';
+import { DEEP_LINK_SCHEME_RE_GROUP } from './deepLinkSchemes.js';
 import { MENTION_TOKEN_SPLIT, parseMentionToken } from '@cindy/maker-shared/mention-ref';
 import {
   formatAnnotationRegion,
@@ -806,8 +807,10 @@ export function updateQueuedMessageContent(
   return merged;
 }
 
-const SESSION_REF_LINK_RE =
-  /(?:cindy|xdt-maker):\/\/session\/([A-Za-z0-9%~_-]+)(?:\?([A-Za-z0-9%&=~._-]*))?/g;
+const SESSION_REF_LINK_RE = new RegExp(
+  `${DEEP_LINK_SCHEME_RE_GROUP}://session/([A-Za-z0-9%~_-]+)(?:\\?([A-Za-z0-9%&=~._-]*))?`,
+  'g',
+);
 
 /** Rebuild structured references from visible text while retaining device hints. */
 export function reconcileSessionRefsForText(

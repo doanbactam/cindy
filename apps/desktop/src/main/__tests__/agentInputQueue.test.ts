@@ -416,7 +416,7 @@ describe('agentInputQueue', () => {
       kind: 'project' as const,
       start: 0,
       end: 12,
-      href: 'cindy://project/repo',
+      href: 'hana://project/repo',
       name: 'repo',
       workingDir: '/repo',
     };
@@ -448,7 +448,7 @@ describe('agentInputQueue', () => {
 
   it('trims sentence punctuation from anchored session links', () => {
     expect(reconcileSessionRefsForText(
-      '请查看 cindy://session/current?message=client-1.',
+      '请查看 hana://session/current?message=client-1.',
       undefined,
     )).toEqual([{ sessionId: 'current', messageClientId: 'client-1' }]);
   });
@@ -477,7 +477,7 @@ describe('agentInputQueue', () => {
 
   it('strips hydrated message-chip bodies from both queue reference copies', () => {
     const entry = queuedMessage(undefined);
-    const href = 'cindy://session/source?message=message-1';
+    const href = 'hana://session/source?message=message-1';
     const reference = {
       kind: 'message' as const,
       start: 0,
@@ -531,7 +531,7 @@ describe('agentInputQueue', () => {
 
   it('strips transient Bot host state from crash-recovery snapshots', () => {
     const entry = queuedMessage(undefined);
-    const href = 'cindy://bot/bot-b';
+    const href = 'hana://bot/bot-b';
     const reference = {
       kind: 'bot' as const,
       start: 0,
@@ -563,7 +563,7 @@ describe('agentInputQueue', () => {
   it('reconciles both current and legacy session links on queue edits', () => {
     expect(
       reconcileSessionRefsForText(
-        'cindy://session/current?message=client-1 and xdt-maker://session/legacy',
+        'hana://session/current?message=client-1 and xdt-maker://session/legacy',
         undefined,
       ),
     ).toEqual([
@@ -577,7 +577,7 @@ describe('agentInputQueue', () => {
   it('binds the device frozen into the link even when the live lookup misses', () => {
     expect(
       reconcileSessionRefsForText(
-        '看这个 cindy://session/remote-1?device=dev-studio',
+        '看这个 hana://session/remote-1?device=dev-studio',
         undefined,
         () => undefined,
       ),
@@ -587,7 +587,7 @@ describe('agentInputQueue', () => {
   it('prefers the frozen link device over live lookup and previous hints', () => {
     expect(
       reconcileSessionRefsForText(
-        'cindy://session/remote-1?message=client-1&device=dev-frozen.',
+        'hana://session/remote-1?message=client-1&device=dev-frozen.',
         [{ sessionId: 'remote-1', deviceId: 'dev-hint' }],
         () => 'dev-live',
       ),
@@ -598,11 +598,11 @@ describe('agentInputQueue', () => {
 
   it('falls back to live lookup then previous hints for links without a device parameter', () => {
     expect(
-      reconcileSessionRefsForText('cindy://session/remote-1', undefined, () => 'dev-live'),
+      reconcileSessionRefsForText('hana://session/remote-1', undefined, () => 'dev-live'),
     ).toEqual([{ sessionId: 'remote-1', deviceId: 'dev-live' }]);
     expect(
       reconcileSessionRefsForText(
-        'cindy://session/remote-1',
+        'hana://session/remote-1',
         [{ sessionId: 'remote-1', deviceId: 'dev-hint' }],
         () => undefined,
       ),
@@ -611,11 +611,11 @@ describe('agentInputQueue', () => {
 
   it('treats an empty or malformed device parameter as absent', () => {
     expect(
-      reconcileSessionRefsForText('cindy://session/remote-1?device=', undefined, () => undefined),
+      reconcileSessionRefsForText('hana://session/remote-1?device=', undefined, () => undefined),
     ).toEqual([{ sessionId: 'remote-1' }]);
     expect(
       reconcileSessionRefsForText(
-        'cindy://session/remote-1?device=%ZZ&message=client-1',
+        'hana://session/remote-1?device=%ZZ&message=client-1',
         undefined,
         () => undefined,
       ),
@@ -650,7 +650,7 @@ describe('agentInputQueue', () => {
 
   it('expands a message chip to its full semantic body instead of sending only the deep link', () => {
     const entry = queuedMessage(undefined);
-    const href = 'cindy://session/session-a?message=message-a';
+    const href = 'hana://session/session-a?message=message-a';
     entry.text = `please inspect ${href}`;
     entry.chatMessage.content = entry.text;
     entry.agentReferences = [{
@@ -697,7 +697,7 @@ describe('agentInputQueue', () => {
       kind: 'session',
       start: 0,
       end: old.text.length,
-      href: 'cindy://session/old',
+      href: 'hana://session/old',
       sessionId: 'old',
     }];
     const next = queuedMessage(undefined);

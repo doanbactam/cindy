@@ -33,8 +33,8 @@ describe('session_search Bot ownership boundary', () => {
     const hits = await searchSessionsFn('release');
 
     expect(hits.map((hit) => hit.sessionUrl)).toEqual([
-      'cindy://session/task%20%2F%3F%23%E4%B8%AD%E6%96%87?device=host-device',
-      'cindy://session/task-2?device=host-device',
+      'hana://session/task%20%2F%3F%23%E4%B8%AD%E6%96%87?device=host-device',
+      'hana://session/task-2?device=host-device',
     ]);
   });
 

@@ -115,7 +115,7 @@ const ISOLATION_NAME_RE = /^[A-Za-z0-9_-]{1,32}$/;
  * 同机所有正式区域 profile 的目录名。当前构建区域只决定默认目录和沙箱派生，
  * 不能缩小保护集合：Global 启动指到 CN 的 Cindy、反向同理，都仍是正式 profile。
  */
-export const OFFICIAL_USER_DATA_DIR_NAMES = ['Cindy', 'CindyGlobal', 'CindyDev'] as const;
+export const OFFICIAL_USER_DATA_DIR_NAMES = ['Hana', 'HanaGlobal', 'HanaDev'] as const;
 
 export interface DevCliFlagsInput {
   argv: readonly string[];
@@ -133,7 +133,7 @@ export interface DevCliFlagsInput {
   defaultUserDataDir: string;
   /**
    * Electron app.getPath('appData')。正式 profile 只从这里派生 Cindy /
-   * CindyGlobal / CindyDev，不得用当前 userData 覆写的父目录猜。
+   * HanaGlobal / HanaDev，不得用当前 userData 覆写的父目录猜。
    * 缺省回落到 dirname(defaultUserDataDir)，仅给旧测试。
    */
   appDataDir?: string;
@@ -148,7 +148,7 @@ export interface DevCliFlagsInput {
   /**
    * XDT_USER_DATA_DIR_EPOCH 环境变量:严格 '1' = 显式 XDT_USER_DATA_DIR 由 restart
    * 脚本按 -dev2 纪元派生(可信纪元信号)。旧 checkout 与人肉覆写都不会携带——
-   * 显式覆写没有该信号时即使路径与纪元派生相同也不认领 CindyDev,防旧代码以
+   * 显式覆写没有该信号时即使路径与纪元派生相同也不认领 HanaDev,防旧代码以
    * 同一显式路径按默认身份打开造成双身份互写(#912 review P1 第三十二轮)。
    */
   envUserDataDirEpoch: string | undefined;
@@ -179,7 +179,7 @@ export interface DevCliFlags {
   userDataDirOverride: string | null;
   /**
    * 生效目录是否等于纪元派生路径(<userData>-dev2[-<名字>];含 restart 脚本经 env
-   * 传入同一路径的标准流程)。CindyDev 钥匙串身份只允许落在纪元目录上——显式指向
+   * 传入同一路径的标准流程)。HanaDev 钥匙串身份只允许落在纪元目录上——显式指向
    * 其它目录的隔离启动不标记,防同一目录被多种启动形态以两种身份打开。
    */
   isolatedDirIsEpochDerived: boolean;
@@ -365,7 +365,7 @@ export function resolveDevCliFlags(input: DevCliFlagsInput): DevCliFlags {
   }
 
   const envDir = input.envUserDataDir?.trim() ? input.envUserDataDir : undefined;
-  // 目录纪元 v2(-dev2):#871 起隔离沙箱使用独立的 CindyDev 钥匙串身份;旧
+  // 目录纪元 v2(-dev2):#871 起隔离沙箱使用独立的 HanaDev 钥匙串身份;旧
   // `-dev[-<名字>]` 目录属 Cindy 身份纪元,**留给旧 checkout 继续用**——同名目录
   // 被新旧 checkout 轮流以两种钥匙串身份打开会互毁密文(#912 review),换目录做
   // 物理隔离,新旧 checkout 各开各的沙箱。
@@ -374,7 +374,7 @@ export function resolveDevCliFlags(input: DevCliFlagsInput): DevCliFlags {
   if (isolated && !envDir) {
     userDataDirOverride = epochDerivedDir;
   }
-  // CindyDev 身份只允许落在纪元派生目录上:restart 脚本经 env 传入的标准路径与
+  // HanaDev 身份只允许落在纪元派生目录上:restart 脚本经 env 传入的标准路径与
   // 本地派生一字不差,同样命中;用户显式指向**任意其它目录**(可能是共享中的既有
   // profile,或会被无隔离/旧 checkout 启动形态打开的目录)则不标记——否则同一目录
   // 在「--isolated + 显式覆写」与「裸覆写 / 旧 checkout」两种受支持启动形态之间
@@ -384,12 +384,12 @@ export function resolveDevCliFlags(input: DevCliFlagsInput): DevCliFlags {
   // 空沙箱抢注默认身份标记,该沙箱**永久**回到共享 Cindy 钥匙串(#912 review 第
   // 十九/二十轮)。规范化交给 canonicalizePath(缺省 realpath 文件系统真值,见
   // defaultCanonicalizePath 注释):不做平台性大小写折叠——大小写敏感卷上仅大小写
-  // 不同的是另一个真实目录,把它标成纪元目录会让不认标记的旧 checkout 与 CindyDev
+  // 不同的是另一个真实目录,把它标成纪元目录会让不认标记的旧 checkout 与 HanaDev
   // 身份对同一 profile 互写密文(#912 review P1 第二十一轮)。
   const canonicalize = input.canonicalizePath ?? defaultCanonicalizePath;
   // 显式 env 覆写必须携带可信纪元信号(XDT_USER_DATA_DIR_EPOCH=1,restart 脚本
   // 派生路径时设置)才允许命中:路径判等挡不住"旧 checkout 以同一显式路径启动"
-  // ——旧代码不认标记、以默认身份打开,新代码若认领 CindyDev 即双身份互写
+  // ——旧代码不认标记、以默认身份打开,新代码若认领 HanaDev 即双身份互写
   // (review 反馈 P1 第三十二轮)。内部派生(无 envDir)无需信号。
   const explicitDirTrusted = !envDir || input.envUserDataDirEpoch === '1';
   const isolatedDirIsEpochDerived =

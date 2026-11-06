@@ -12,7 +12,7 @@ import { chromium } from 'playwright-core';
 const require = createRequire(import.meta.url);
 const Database = require('better-sqlite3');
 const dbFile = process.env.E2E_DB;
-assert.ok(dbFile && /CindyGlobal-dev2-provider-auto-detection-[^/]+\/cindy-local-v1\.db$/.test(dbFile),
+assert.ok(dbFile && /HanaGlobal-dev2-provider-auto-detection-[^/]+\/hana-local-v1\.db$/.test(dbFile),
   'E2E_DB must name this worktree isolated local database; never use a real profile');
 const disk = new Database(dbFile, { readonly: true });
 const out = await fs.mkdtemp(path.join(os.tmpdir(), 'cindy-provider-save-e2e-'));

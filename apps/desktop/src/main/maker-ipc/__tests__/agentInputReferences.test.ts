@@ -95,7 +95,7 @@ describe('hydrateQueuedAgentReferences message visibility', () => {
   }
 
   function queued(capturedText = 'Composer-captured fallback'): AgentInputQueuedMessage {
-    const href = 'cindy://session/source-session?message=target-message';
+    const href = 'hana://session/source-session?message=target-message';
     const text = `inspect ${href}`;
     const reference = {
       kind: 'message' as const,
@@ -177,7 +177,7 @@ describe('hydrateQueuedAgentReferences message visibility', () => {
       INSERT INTO bot_delegations (id, requesting_bot_id, target_bot_id, status)
       VALUES ('delegation-1', 'bot-a', 'bot-b', 'running');
     `);
-    const href = 'cindy://bot/bot-b';
+    const href = 'hana://bot/bot-b';
     const text = `@${href}`;
     const reference = {
       kind: 'bot' as const,

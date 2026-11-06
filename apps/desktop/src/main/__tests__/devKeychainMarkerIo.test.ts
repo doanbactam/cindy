@@ -58,9 +58,9 @@ afterEach(() => {
 describe('createKeychainMarkerIo', () => {
   it('hard-link 成功路径:认领落位完整标记,临时文件清理干净', () => {
     const io = makeIo();
-    expect(io.claimMarker('CindyDev')).toBe('claimed');
-    expect(fs.readFileSync(markerPath, 'utf8')).toBe('CindyDev\n');
-    expect(io.readMarker()).toEqual({ kind: 'present', value: 'CindyDev\n' });
+    expect(io.claimMarker('HanaDev')).toBe('claimed');
+    expect(fs.readFileSync(markerPath, 'utf8')).toBe('HanaDev\n');
+    expect(io.readMarker()).toEqual({ kind: 'present', value: 'HanaDev\n' });
     // 临时文件(<marker>.<pid>-<uuid>.tmp)不残留
     expect(fs.readdirSync(profileDir)).toEqual([KEYCHAIN_IDENTITY_MARKER_FILE]);
   });
@@ -68,32 +68,32 @@ describe('createKeychainMarkerIo', () => {
   it('认领竞态(link 路径):输家得 exists,胜者内容不被改写', () => {
     const winner = makeIo();
     const loser = makeIo();
-    expect(winner.claimMarker('CindyDev')).toBe('claimed');
+    expect(winner.claimMarker('HanaDev')).toBe('claimed');
     expect(loser.claimMarker('Cindy')).toBe('exists');
-    expect(fs.readFileSync(markerPath, 'utf8')).toBe('CindyDev\n');
+    expect(fs.readFileSync(markerPath, 'utf8')).toBe('HanaDev\n');
   });
 
   it('O_EXCL 回退路径:link 不支持时仍原子认领,竞态输家得 exists', () => {
     const io = makeIo({ linkSync: linkUnsupported });
-    expect(io.claimMarker('CindyDev')).toBe('claimed');
-    expect(fs.readFileSync(markerPath, 'utf8')).toBe('CindyDev\n');
+    expect(io.claimMarker('HanaDev')).toBe('claimed');
+    expect(fs.readFileSync(markerPath, 'utf8')).toBe('HanaDev\n');
     const loser = makeIo({ linkSync: linkUnsupported });
     expect(loser.claimMarker('Cindy')).toBe('exists');
-    expect(fs.readFileSync(markerPath, 'utf8')).toBe('CindyDev\n');
+    expect(fs.readFileSync(markerPath, 'utf8')).toBe('HanaDev\n');
   });
 
   it('短写场景:writeSync 每次只写 1 字节,协议循环写满,标记仍完整', () => {
     const oneByteWrites = ((fd: number, data: NodeJS.ArrayBufferView, offset?: number | null, _length?: number | null, position?: number | null) =>
       fs.writeSync(fd, data, offset ?? 0, 1, position ?? null)) as typeof fs.writeSync;
     const io = makeIo({ writeSync: oneByteWrites });
-    expect(io.claimMarker('CindyDev')).toBe('claimed');
-    expect(fs.readFileSync(markerPath, 'utf8')).toBe('CindyDev\n');
+    expect(io.claimMarker('HanaDev')).toBe('claimed');
+    expect(fs.readFileSync(markerPath, 'utf8')).toBe('HanaDev\n');
   });
 
   it('短写零进展:按写失败收敛为 error,不发布任何标记', () => {
     const stuckWrites: typeof fs.writeSync = () => 0;
     const io = makeIo({ writeSync: stuckWrites });
-    expect(io.claimMarker('CindyDev')).toBe('error');
+    expect(io.claimMarker('HanaDev')).toBe('error');
     expect(fs.existsSync(markerPath)).toBe(false);
     expect(io.readMarker()).toEqual({ kind: 'absent' });
   });
@@ -104,7 +104,7 @@ describe('createKeychainMarkerIo', () => {
     // 符号链接(O_NOFOLLOW 拒绝)
     if (canSymlink) {
       const realFile = join(profileDir, 'real.txt');
-      fs.writeFileSync(realFile, 'CindyDev\n');
+      fs.writeFileSync(realFile, 'HanaDev\n');
       fs.symlinkSync(realFile, markerPath);
       expect(io.readMarker()).toEqual({ kind: 'unreadable' });
       fs.unlinkSync(markerPath);
@@ -120,7 +120,7 @@ describe('createKeychainMarkerIo', () => {
 
   it('读后重校验:标记在读取期间被替换(inode 变化)→ 重试耗尽按 unreadable(#912 review)', () => {
     const io = makeIo();
-    expect(io.claimMarker('CindyDev')).toBe('claimed');
+    expect(io.claimMarker('HanaDev')).toBe('claimed');
     // 注入的 statSync 每次返回不同 ino,模拟"每次读取期间都被并发替换"。
     let fakeIno = 10_000;
     const alwaysChanged = (p: string): fs.Stats => {
@@ -133,33 +133,33 @@ describe('createKeychainMarkerIo', () => {
     const unstable = makeIo({ statSync: alwaysChanged });
     expect(unstable.readMarker()).toEqual({ kind: 'unreadable' });
     // 路径稳定(真实 statSync)时照常 present——重校验不影响正常读取。
-    expect(io.readMarker()).toEqual({ kind: 'present', value: 'CindyDev\n' });
+    expect(io.readMarker()).toEqual({ kind: 'present', value: 'HanaDev\n' });
   });
 
   it('读后重校验:同 inode 原地改写(内容变化)→ 重试耗尽按 unreadable(#912 review 34)', () => {
     const io = makeIo();
-    expect(io.claimMarker('CindyDev')).toBe('claimed');
+    expect(io.claimMarker('HanaDev')).toBe('claimed');
     // 注入 readSync:每个读取 pass 返回不同内容,模拟两次读取之间被原地改写。
-    // 每 pass 两次调用(数据 + EOF);奇数 pass 给 "CindyDev\n",偶数 pass 给 "Cindy\n"。
+    // 每 pass 两次调用(数据 + EOF);奇数 pass 给 "HanaDev\n",偶数 pass 给 "Cindy\n"。
     let call = 0;
     const flipping = ((_fd: number, buffer: NodeJS.ArrayBufferView, offset: number) => {
       const pass = Math.floor(call / 2);
       const isData = call % 2 === 0;
       call += 1;
       if (!isData) return 0;
-      const content = Buffer.from(pass % 2 === 0 ? 'CindyDev\n' : 'Cindy\n', 'utf8');
+      const content = Buffer.from(pass % 2 === 0 ? 'HanaDev\n' : 'Cindy\n', 'utf8');
       content.copy(buffer as Buffer, offset);
       return content.length;
     }) as typeof fs.readSync;
     const unstable = makeIo({ readSync: flipping });
     expect(unstable.readMarker()).toEqual({ kind: 'unreadable' });
     // 稳定内容照常 present(真实 readSync 两次 pass 相同)。
-    expect(io.readMarker()).toEqual({ kind: 'present', value: 'CindyDev\n' });
+    expect(io.readMarker()).toEqual({ kind: 'present', value: 'HanaDev\n' });
   });
 
   it('读后重校验:路径在读取期间被换成符号链接 → 重试耗尽按 unreadable(#912 review 37)', () => {
     const io = makeIo();
-    expect(io.claimMarker('CindyDev')).toBe('claimed');
+    expect(io.claimMarker('HanaDev')).toBe('claimed');
     // 注入 lstat 语义的 statSync:模拟 open 后路径项被换成符号链接——即使链接
     // 目标内容与 fd 一致,路径项本身是链接就必须拒。
     const linkNow = (p: string): fs.Stats => {
@@ -170,20 +170,20 @@ describe('createKeychainMarkerIo', () => {
     };
     const swapped = makeIo({ statSync: linkNow });
     expect(swapped.readMarker()).toEqual({ kind: 'unreadable' });
-    expect(io.readMarker()).toEqual({ kind: 'present', value: 'CindyDev\n' });
+    expect(io.readMarker()).toEqual({ kind: 'present', value: 'HanaDev\n' });
   });
 
   it('profileHasData:标记与 .tmp 半成品不算数据,真实文件算', () => {
     const io = makeIo();
     expect(io.profileHasData()).toBe(false);
-    io.claimMarker('CindyDev');
-    fs.writeFileSync(join(profileDir, `${KEYCHAIN_IDENTITY_MARKER_FILE}.123-abc.tmp`), 'CindyDev\n');
+    io.claimMarker('HanaDev');
+    fs.writeFileSync(join(profileDir, `${KEYCHAIN_IDENTITY_MARKER_FILE}.123-abc.tmp`), 'HanaDev\n');
     expect(io.profileHasData()).toBe(false);
     fs.writeFileSync(join(profileDir, 'config.json'), '{}');
     expect(io.profileHasData()).toBe(true);
   });
 
-  it('proof-only isolated-auth profile 仍认领 CindyDev 身份', () => {
+  it('proof-only isolated-auth profile 仍认领 HanaDev 身份', () => {
     fs.writeFileSync(join(profileDir, ISOLATED_AUTH_LAUNCH_PROOF_FILE), '{}\n');
     fs.writeFileSync(
       join(profileDir, `${ISOLATED_AUTH_LAUNCH_PROOF_FILE}.123-${'b'.repeat(64)}.tmp`),
@@ -199,7 +199,7 @@ describe('createKeychainMarkerIo', () => {
         hasDirOverride: true,
         io,
       }),
-    ).toEqual({ kind: 'rename', appName: 'CindyDev' });
-    expect(io.readMarker()).toEqual({ kind: 'present', value: 'CindyDev\n' });
+    ).toEqual({ kind: 'rename', appName: 'HanaDev' });
+    expect(io.readMarker()).toEqual({ kind: 'present', value: 'HanaDev\n' });
   });
 });

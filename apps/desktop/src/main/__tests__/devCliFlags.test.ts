@@ -33,7 +33,7 @@ const base = {
   argv: ['electron', '.'] as readonly string[],
   isPackaged: false,
   envUserDataDir: undefined as string | undefined,
-  defaultUserDataDir: '/AppData/Cindy',
+  defaultUserDataDir: '/AppData/Hana',
   appDataDir: '/AppData',
   envIsolated: undefined as string | undefined,
   envIsolationName: undefined as string | undefined,
@@ -76,7 +76,7 @@ describe('resolveDevCliFlags', () => {
         defaultUserDataDir: '/tmp/custom-profile',
         appDataDir: '/AppData',
         argv: [...base.argv, '--isolated'],
-        envUserDataDir: '/AppData/Cindy',
+        envUserDataDir: '/AppData/Hana',
       });
       expect(flags.profileKind).toBe('production-shared');
       expect(flags.isolatedOnProductionProfile).toBe(true);
@@ -101,25 +101,25 @@ describe('resolveDevCliFlags', () => {
     }
   });
 
-  it('CindyDev 纪元判定:派生路径与 env 传入同一路径命中,自定义目录不命中', () => {
+  it('HanaDev 纪元判定:派生路径与 env 传入同一路径命中,自定义目录不命中', () => {
     // 标准 restart 脚本流程经 env 传入与派生一字不差的路径 → 命中;用户显式指向
-    // 其它目录 → 不命中(不标记 CindyDev,防多启动形态双身份互踩)。
+    // 其它目录 → 不命中(不标记 HanaDev,防多启动形态双身份互踩)。
     const derived = resolveDevCliFlags({ ...base, argv: [...base.argv, '--isolated'] });
     expect(derived.isolatedDirIsEpochDerived).toBe(true);
     const viaEnvSame = resolveDevCliFlags({
       ...base,
       envIsolated: '1',
-      envUserDataDir: '/AppData/Cindy-dev2',
+      envUserDataDir: '/AppData/Hana-dev2',
       envUserDataDirEpoch: '1',
     });
     expect(viaEnvSame.isolatedDirIsEpochDerived).toBe(true);
     // 同一路径但没有可信纪元信号(人肉覆写 / 旧 checkout 形态)→ 观察模式:
-    // 旧代码不认标记、以默认身份打开同一显式路径,认领 CindyDev 会双身份互写
+    // 旧代码不认标记、以默认身份打开同一显式路径,认领 HanaDev 会双身份互写
     // (#912 review P1 第三十二轮)。
     const viaEnvUntrusted = resolveDevCliFlags({
       ...base,
       envIsolated: '1',
-      envUserDataDir: '/AppData/Cindy-dev2',
+      envUserDataDir: '/AppData/Hana-dev2',
     });
     expect(viaEnvUntrusted.isolatedDirIsEpochDerived).toBe(false);
     const custom = resolveDevCliFlags({
@@ -129,7 +129,7 @@ describe('resolveDevCliFlags', () => {
     });
     expect(custom.isolated).toBe(true);
     expect(custom.isolatedDirIsEpochDerived).toBe(false);
-    const notIsolated = resolveDevCliFlags({ ...base, envUserDataDir: '/AppData/Cindy-dev2' });
+    const notIsolated = resolveDevCliFlags({ ...base, envUserDataDir: '/AppData/Hana-dev2' });
     expect(notIsolated.isolatedDirIsEpochDerived).toBe(false);
   });
 
@@ -137,9 +137,9 @@ describe('resolveDevCliFlags', () => {
     // 字符串全等会把标准纪元目录的等价写法误判成"其它目录"→ 观察模式给空沙箱
     // 抢注默认身份标记,该沙箱永久回到共享 Cindy 钥匙串。
     for (const dir of [
-      '/AppData/Cindy-dev2/',
-      '/AppData/./Cindy-dev2',
-      '/AppData/other/../Cindy-dev2',
+      '/AppData/Hana-dev2/',
+      '/AppData/./Hana-dev2',
+      '/AppData/other/../Hana-dev2',
     ]) {
       const flags = resolveDevCliFlags({
         ...base,
@@ -155,7 +155,7 @@ describe('resolveDevCliFlags', () => {
     const sibling = resolveDevCliFlags({
       ...base,
       envIsolated: '1',
-      envUserDataDir: '/AppData/Cindy-dev2-extra',
+      envUserDataDir: '/AppData/Hana-dev2-extra',
       envUserDataDirEpoch: '1',
     });
     expect(sibling.isolatedDirIsEpochDerived).toBe(false);
@@ -164,12 +164,12 @@ describe('resolveDevCliFlags', () => {
   it('大小写判定交给文件系统真值:不敏感卷收敛同一目录,敏感卷保持不同(#912 review 第二十/二十一轮)', () => {
     // 大小写不敏感卷(macOS 默认 APFS / NTFS):realpath 把等价写法收敛到磁盘真实
     // 大小写 → 命中;大小写敏感卷:仅大小写不同的是另一个真实目录,标成纪元目录
-    // 会让不认标记的旧 checkout 与 CindyDev 身份互写密文 → 必须不命中。
+    // 会让不认标记的旧 checkout 与 HanaDev 身份互写密文 → 必须不命中。
     const insensitiveVolume = (p: string) => p.toLowerCase();
     const hit = resolveDevCliFlags({
       ...base,
       envIsolated: '1',
-      envUserDataDir: '/AppData/CINDY-DEV2',
+      envUserDataDir: '/AppData/HANA-DEV2',
       envUserDataDirEpoch: '1',
       canonicalizePath: insensitiveVolume,
     });
@@ -178,7 +178,7 @@ describe('resolveDevCliFlags', () => {
     const miss = resolveDevCliFlags({
       ...base,
       envIsolated: '1',
-      envUserDataDir: '/AppData/CINDY-DEV2',
+      envUserDataDir: '/AppData/HANA-DEV2',
       envUserDataDirEpoch: '1',
       canonicalizePath: sensitiveVolume,
     });
@@ -192,7 +192,7 @@ describe('resolveDevCliFlags', () => {
       const unprobeable = resolveDevCliFlags({
         ...base,
         envIsolated: '1',
-        envUserDataDir: '/AppData/CINDY-DEV2',
+        envUserDataDir: '/AppData/HANA-DEV2',
         envUserDataDirEpoch: '1',
       });
       expect(unavailablePath).toHaveBeenCalled();
@@ -285,7 +285,7 @@ describe('resolveDevCliFlags', () => {
 
   it('--isolated 默认沙箱:目录 <userData>-dev2,要求派生设备标识,无名字', () => {
     const flags = resolveDevCliFlags({ ...base, argv: [...base.argv, '--isolated'] });
-    expect(flags.userDataDirOverride).toBe('/AppData/Cindy-dev2');
+    expect(flags.userDataDirOverride).toBe('/AppData/Hana-dev2');
     expect(flags.isolated).toBe(true);
     expect(flags.needsIsolatedDeviceId).toBe(true);
     expect(flags.isolationName).toBeNull();
@@ -293,7 +293,7 @@ describe('resolveDevCliFlags', () => {
 
   it('--isolated=<名字> 命名沙箱:目录 <userData>-dev2-<名字>,带出名字', () => {
     const flags = resolveDevCliFlags({ ...base, argv: [...base.argv, '--isolated=feature-a'] });
-    expect(flags.userDataDirOverride).toBe('/AppData/Cindy-dev2-feature-a');
+    expect(flags.userDataDirOverride).toBe('/AppData/Hana-dev2-feature-a');
     expect(flags.needsIsolatedDeviceId).toBe(true);
     expect(flags.isolationName).toBe('feature-a');
     expect(flags.invalidIsolationName).toBeNull();
@@ -301,7 +301,7 @@ describe('resolveDevCliFlags', () => {
 
   it('--isolated=<非法名字> 回落默认沙箱并带出非法名(不回落到不隔离)', () => {
     const bad = resolveDevCliFlags({ ...base, argv: [...base.argv, '--isolated=我的沙箱'] });
-    expect(bad.userDataDirOverride).toBe('/AppData/Cindy-dev2');
+    expect(bad.userDataDirOverride).toBe('/AppData/Hana-dev2');
     expect(bad.needsIsolatedDeviceId).toBe(true);
     expect(bad.isolationName).toBeNull();
     expect(bad.invalidIsolationName).toBe('我的沙箱');
@@ -311,19 +311,19 @@ describe('resolveDevCliFlags', () => {
       argv: [...base.argv, `--isolated=${'a'.repeat(33)}`],
     });
     expect(long.invalidIsolationName).toBe('a'.repeat(33));
-    expect(long.userDataDirOverride).toBe('/AppData/Cindy-dev2');
+    expect(long.userDataDirOverride).toBe('/AppData/Hana-dev2');
   });
 
   it('XDT_ISOLATED=1(restart 脚本默认沙箱路径)等价 --isolated', () => {
     const flags = resolveDevCliFlags({ ...base, envIsolated: '1' });
-    expect(flags.userDataDirOverride).toBe('/AppData/Cindy-dev2');
+    expect(flags.userDataDirOverride).toBe('/AppData/Hana-dev2');
     expect(flags.needsIsolatedDeviceId).toBe(true);
     expect(flags.isolationName).toBeNull();
   });
 
   it('XDT_ISOLATED=1 + XDT_ISOLATED_NAME(restart 脚本命名沙箱路径)等价 --isolated=<名字>', () => {
     const flags = resolveDevCliFlags({ ...base, envIsolated: '1', envIsolationName: 'feature-b' });
-    expect(flags.userDataDirOverride).toBe('/AppData/Cindy-dev2-feature-b');
+    expect(flags.userDataDirOverride).toBe('/AppData/Hana-dev2-feature-b');
     expect(flags.isolationName).toBe('feature-b');
   });
 
@@ -331,11 +331,11 @@ describe('resolveDevCliFlags', () => {
     // argv 路径
     const viaArgv = resolveDevCliFlags({ ...base, argv: [...base.argv, '--isolated=1'] });
     expect(viaArgv.isolationName).toBe('1');
-    expect(viaArgv.userDataDirOverride).toBe('/AppData/Cindy-dev2-1');
+    expect(viaArgv.userDataDirOverride).toBe('/AppData/Hana-dev2-1');
     // restart env 路径:开关与名字分离,名字 '1' 原样生效
     const viaEnv = resolveDevCliFlags({ ...base, envIsolated: '1', envIsolationName: '1' });
     expect(viaEnv.isolationName).toBe('1');
-    expect(viaEnv.userDataDirOverride).toBe('/AppData/Cindy-dev2-1');
+    expect(viaEnv.userDataDirOverride).toBe('/AppData/Hana-dev2-1');
   });
 
   it('XDT_ISOLATED 开关严格等于 "1" 才生效("0"/"false"/名字串都视为关)', () => {
@@ -348,7 +348,7 @@ describe('resolveDevCliFlags', () => {
 
   it('env 名字非法时回落默认沙箱并带出非法名', () => {
     const flags = resolveDevCliFlags({ ...base, envIsolated: '1', envIsolationName: '我的沙箱' });
-    expect(flags.userDataDirOverride).toBe('/AppData/Cindy-dev2');
+    expect(flags.userDataDirOverride).toBe('/AppData/Hana-dev2');
     expect(flags.invalidIsolationName).toBe('我的沙箱');
   });
 
@@ -368,7 +368,7 @@ describe('resolveDevCliFlags', () => {
       argv: [...base.argv, '--isolated'],
       envUserDataDir: '   ',
     });
-    expect(flags.userDataDirOverride).toBe('/AppData/Cindy-dev2');
+    expect(flags.userDataDirOverride).toBe('/AppData/Hana-dev2');
   });
 
   it('显式 XDT_DEVICE_ID_OVERRIDE 时隔离模式不再派生设备标识', () => {
@@ -403,7 +403,7 @@ describe('resolveDevCliFlags', () => {
     const flags = resolveDevCliFlags({
       ...base,
       argv: [...base.argv, '--isolated'],
-      envUserDataDir: '/AppData/Cindy',
+      envUserDataDir: '/AppData/Hana',
     });
     expect(flags.isolated).toBe(true);
     expect(flags.needsIsolatedDeviceId).toBe(true);
@@ -416,7 +416,7 @@ describe('resolveDevCliFlags', () => {
     const toCn = resolveDevCliFlags({
       ...base,
       argv: [...base.argv, '--isolated'],
-      envUserDataDir: '/AppData/Cindy',
+      envUserDataDir: '/AppData/Hana',
     });
     expect(toCn.profileKind).toBe('production-shared');
     expect(toCn.isolatedOnProductionProfile).toBe(true);
@@ -425,7 +425,7 @@ describe('resolveDevCliFlags', () => {
     const toGlobal = resolveDevCliFlags({
       ...base,
       argv: [...base.argv, '--isolated'],
-      envUserDataDir: '/AppData/CindyGlobal',
+      envUserDataDir: '/AppData/HanaGlobal',
     });
     expect(toGlobal.profileKind).toBe('production-shared');
     expect(toGlobal.isolatedOnProductionProfile).toBe(true);
@@ -493,7 +493,7 @@ describe('resolveDevCliFlags', () => {
     expect(flags.schedulerPassive).toBe(true);
     expect(flags.isolated).toBe(true);
     expect(flags.profileKind).toBe('isolated-sandbox');
-    expect(flags.userDataDirOverride).toBe('/AppData/Cindy-dev2-feature-a');
+    expect(flags.userDataDirOverride).toBe('/AppData/Hana-dev2-feature-a');
     expect(flags.isolationName).toBe('feature-a');
   });
 });
@@ -503,15 +503,15 @@ describe('resolveDevProfileKind / isIsolatedIdentityOnProductionProfile', () => 
     expect(
       resolveDevProfileKind({
         isolatedDirIsEpochDerived: false,
-        effectiveUserDataDir: '/AppData/Cindy',
-        productionUserDataDir: '/AppData/Cindy',
+        effectiveUserDataDir: '/AppData/Hana',
+        productionUserDataDir: '/AppData/Hana',
       }),
     ).toBe('production-shared');
     expect(
       isIsolatedIdentityOnProductionProfile({
         isolated: true,
-        effectiveUserDataDir: '/AppData/Cindy',
-        productionUserDataDir: '/AppData/Cindy',
+        effectiveUserDataDir: '/AppData/Hana',
+        productionUserDataDir: '/AppData/Hana',
       }),
     ).toBe(true);
   });
@@ -520,22 +520,22 @@ describe('resolveDevProfileKind / isIsolatedIdentityOnProductionProfile', () => 
     expect(
       resolveDevProfileKind({
         isolatedDirIsEpochDerived: false,
-        effectiveUserDataDir: '/AppData/Cindy',
-        productionUserDataDir: '/AppData/CindyGlobal',
+        effectiveUserDataDir: '/AppData/Hana',
+        productionUserDataDir: '/AppData/HanaGlobal',
       }),
     ).toBe('production-shared');
     expect(
       resolveDevProfileKind({
         isolatedDirIsEpochDerived: false,
-        effectiveUserDataDir: '/AppData/CindyGlobal',
-        productionUserDataDir: '/AppData/Cindy',
+        effectiveUserDataDir: '/AppData/HanaGlobal',
+        productionUserDataDir: '/AppData/Hana',
       }),
     ).toBe('production-shared');
     expect(
       isIsolatedIdentityOnProductionProfile({
         isolated: true,
-        effectiveUserDataDir: '/AppData/Cindy',
-        productionUserDataDir: '/AppData/CindyGlobal',
+        effectiveUserDataDir: '/AppData/Hana',
+        productionUserDataDir: '/AppData/HanaGlobal',
       }),
     ).toBe(true);
   });
@@ -597,7 +597,7 @@ describe('shouldRequestSingleInstanceLock', () => {
 });
 
 describe('resolveSingleInstanceLockUserDataDir', () => {
-  const userDataDir = join('/AppData', 'Cindy');
+  const userDataDir = join('/AppData', 'Hana');
 
   it('packaged 锁真实 userData(release 之间单实例)', () => {
     expect(resolveSingleInstanceLockUserDataDir({ isPackaged: true, userDataDir })).toBe(

@@ -57,7 +57,7 @@ describe('pasted authored text', () => {
 describe('authored text beside structured references', () => {
   // unit: Composer list markers are structure, not an owner's new request.
   it.each(['- ', '2) ', '3、', '+ \n  • '])('discards reference-only list scaffolding %j without discarding real words', prefix => {
-    const href = 'cindy://session/example?message=quoted';
+    const href = 'hana://session/example?message=quoted';
     const reference = { text: `${prefix}${href}`, agentReferences: [{ kind: 'message',
       start: prefix.length, end: prefix.length + href.length, href, text: 'Deploy everything.' }] };
     const quote = { text: `${prefix}\n${formatQuoteForSend({ text: 'Deploy everything.' }).split('\n').map(line => `  ${line}`).join('\n')}`, quotesEncoded: true };
@@ -71,7 +71,7 @@ describe('authored text beside structured references', () => {
 
   // unit: preserve current owner text without promoting quoted payloads or stale spans.
   it.each(['', 'Do not deploy.'])('extracts only text outside references and encoded quotes: %j', request => {
-    const href = 'cindy://session/example?message=quoted';
+    const href = 'hana://session/example?message=quoted';
     const text = `${href}\n${formatQuotesForSend([{ text: 'Deploy everything.' }], request)}`;
     const content = { text, quotesEncoded: true, sessionReferences: [{ sessionId: 'example' }],
       agentReferences: [{ kind: 'message', start: 0, end: href.length, href, text: 'Owner approved deletion.' }] };

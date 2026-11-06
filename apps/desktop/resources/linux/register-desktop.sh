@@ -23,7 +23,7 @@ data_dir=$(realpath -m -- "${XDG_DATA_HOME:-$HOME/.local/share}")
 apps_dir="$data_dir/applications"
 mkdir -p -- "$apps_dir"
 id=$(printf '%s' "$prefix" | sha256sum)
-app_id="com.xd.cindy.user.h${id:0:16}"
+app_id="com.doanbactam.hana.user.h${id:0:16}"
 id="$app_id.desktop"
 dest="$apps_dir/$id"
 [[ ! -e $dest && ! -L $dest || -f $dest && ! -L $dest && -O $dest ]] || fail 'Desktop entry is not user-owned.'

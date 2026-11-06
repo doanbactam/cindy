@@ -1,7 +1,7 @@
 ; 区域身份参数化:本文件不再硬编码 Cindy 字面量,
 ; 一律走 electron-builder 在 common.nsh 里注入的宏——
-;   ${APP_EXECUTABLE_FILENAME} = <productName>.exe(cn/global Cindy.exe / dev CindyDev.exe)
-;   ${PRODUCT_FILENAME}        = productName(cn/global Cindy / dev CindyDev)
+;   ${APP_EXECUTABLE_FILENAME} = <productName>.exe(cn/global Cindy.exe / dev HanaDev.exe)
+;   ${PRODUCT_FILENAME}        = productName(cn/global Cindy / dev HanaDev)
 ;   ${SHORTCUT_NAME}           = forge.config nsis.shortcutName(与 exe 基名同源)
 ; 2026-07-26 起 cn/global exe 名同值(显示名统一,双装文件层互抢已被 owner
 ; 接受);dev 仍独立名,dev 安装器绝不误伤同机并存的正式安装。注册表键名
@@ -68,7 +68,7 @@
   ; "用户右键所在的目录" 路径, argv 直传不做 URL 编解码 (deep link 走 cindy:// 另一套)。
   ; 键名用 ${PRODUCT_FILENAME}(区域身份):cn/global 'Cindy' 与历史 'cindy'
   ; 键大小写不敏感同键(2026-07-26 起两区同键,双装互写已被 owner 接受);
-  ; dev 'CindyDev' 独立键;都与老 XDMaker 安装的 xdt-maker 键并存。
+  ; dev 'HanaDev' 独立键;都与老 XDMaker 安装的 xdt-maker 键并存。
   WriteRegStr HKCU "Software\Classes\Directory\shell\${PRODUCT_FILENAME}" "" "通过 ${PRODUCT_FILENAME} 打开"
   WriteRegStr HKCU "Software\Classes\Directory\shell\${PRODUCT_FILENAME}" "Icon" "$INSTDIR\${APP_EXECUTABLE_FILENAME},0"
   WriteRegStr HKCU "Software\Classes\Directory\shell\${PRODUCT_FILENAME}\command" "" '"$INSTDIR\${APP_EXECUTABLE_FILENAME}" --open-folder "%V"'

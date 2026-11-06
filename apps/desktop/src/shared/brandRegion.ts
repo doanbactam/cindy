@@ -4,7 +4,7 @@
  * 区域在**构建期**经 VITE_CINDY_AUTH_REGION 烘焙(main 走 vite.main.config.ts
  * 的 define,renderer 走标准 Vite env;生产由 desktopClientBuildEnv 注入,dev /
  * 未注入一律默认 global)。运行时不可切换——cn 与 global 是两个可并存的系统身份
- * (com.xd.cindycn / com.xd.cindy,与 mobile 同一套命名)。
+ * (com.doanbactam.hanacn / com.doanbactam.hana,与 mobile 同一套命名)。
  *
  * ⚠️ AUMID 三位一体:本文件的 CURRENT_APP_ID 必须与 NSIS appId(forge.config
  * 按同一 region 从 brandAppId() 取值)、快捷方式 AUMID 逐字符一致,否则

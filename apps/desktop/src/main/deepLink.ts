@@ -53,6 +53,7 @@ import { isValidGhostId } from '../shared/ghost';
 import { registerWindowsDeepLinkName } from './deepLinkWindowsRegistration';
 import {
   DEEP_LINK_PRIMARY_SCHEME,
+  DEEP_LINK_SCHEME_RE_GROUP,
   DEEP_LINK_SCHEMES,
   DEEP_LINK_URL_PREFIX,
   isDeepLinkProviderConnectId,
@@ -118,6 +119,11 @@ export type DeepLinkPayload =
    */
   | { type: 'focus' };
 
+const PLUGIN_SHARE_LINK_RE = new RegExp(`^${DEEP_LINK_SCHEME_RE_GROUP}://plugin-share(?:[/?#]|$)`, 'i');
+const PLUGIN_SHARE_ID_RE = new RegExp(`^${DEEP_LINK_SCHEME_RE_GROUP}://plugin-share/([A-Za-z0-9_-]{32})$`);
+const PLUGIN_LINK_RE = new RegExp(`^${DEEP_LINK_SCHEME_RE_GROUP}://plugin(?:[/?#]|$)`, 'i');
+const PLUGIN_ID_RE = new RegExp(`^${DEEP_LINK_SCHEME_RE_GROUP}://plugin/(c[a-z0-9]{24})$`);
+
 /**
  * 解析 cindy:// / xdt-maker:// URL 为 typed payload(两种 scheme 都认,
  * 按实际命中的前缀长度切片)。
@@ -132,12 +138,12 @@ export function parseDeepLink(url: string): DeepLinkPayload | null {
   const invitation = parseSharedTaskInvitationIntent(url);
   if (invitation) return { type: 'shared-task-join', ...invitation };
   if (parseProviderShareInvitationIntent(url)) return { type: 'provider-share-join', link: url };
-  if (/^(?:cindy|xdt-maker):\/\/plugin-share(?:[/?#]|$)/i.test(url)) {
-    const match = /^(?:cindy|xdt-maker):\/\/plugin-share\/([A-Za-z0-9_-]{32})$/.exec(url);
+  if (PLUGIN_SHARE_LINK_RE.test(url)) {
+    const match = PLUGIN_SHARE_ID_RE.exec(url);
     return match && isLocalPluginSnapshotId(match[1]) ? { type: 'local-plugin-share', snapshotId: match[1] } : null;
   }
-  if (/^(?:cindy|xdt-maker):\/\/plugin(?:[/?#]|$)/i.test(url)) {
-    const match = /^(?:cindy|xdt-maker):\/\/plugin\/(c[a-z0-9]{24})$/.exec(url);
+  if (PLUGIN_LINK_RE.test(url)) {
+    const match = PLUGIN_ID_RE.exec(url);
     return match && isValidPluginResourceId(match[1]) ? { type: 'plugin', pluginId: match[1] } : null;
   }
   const prefix = matchDeepLinkPrefix(url);

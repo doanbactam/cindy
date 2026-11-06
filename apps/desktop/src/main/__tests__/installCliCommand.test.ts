@@ -22,26 +22,26 @@ import {
 
 describe('CLI_COMMAND_NAME 跟随 edition 品牌', () => {
   it('测试环境(未注入区域 → 默认 global)命令名为 cindy', () => {
-    expect(CLI_COMMAND_NAME).toBe('cindy');
-    expect(CLI_LINK_PATH).toBe('/usr/local/bin/cindy');
+    expect(CLI_COMMAND_NAME).toBe('hana');
+    expect(CLI_LINK_PATH).toBe('/usr/local/bin/hana');
   });
 
   it('由区域可执行名小写化:global / cn → cindy,内部 dev → cindydev', () => {
     // global 与 cn 展示名统一为 Cindy(2026-07-26 决策),故命令名同为 cindy。
-    expect(brandExecutableName('global').toLowerCase()).toBe('cindy');
-    expect(brandExecutableName('cn').toLowerCase()).toBe('cindy');
-    expect(brandExecutableName('dev').toLowerCase()).toBe('cindydev');
+    expect(brandExecutableName('global').toLowerCase()).toBe('hana');
+    expect(brandExecutableName('cn').toLowerCase()).toBe('hana');
+    expect(brandExecutableName('dev').toLowerCase()).toBe('hanadev');
   });
 });
 
 describe('resolveBundledCliPath', () => {
   it('由 resourcesPath 推出包内 cli/cindy', () => {
-    const resourcesPath = '/Applications/Cindy.app/Contents/Resources';
+    const resourcesPath = '/Applications/Hana.app/Contents/Resources';
     expect(resolveBundledCliPath(resourcesPath)).toBe(path.join(resourcesPath, 'cli', 'cindy'));
   });
 
   it('路径含空格也正确', () => {
-    const resourcesPath = '/Users/a/My Apps/Cindy.app/Contents/Resources';
+    const resourcesPath = '/Users/a/My Apps/Hana.app/Contents/Resources';
     expect(resolveBundledCliPath(resourcesPath)).toBe(path.join(resourcesPath, 'cli', 'cindy'));
   });
 });
@@ -49,30 +49,30 @@ describe('resolveBundledCliPath', () => {
 describe('buildInstallShellCommand', () => {
   it('mkdir -p 链接目录、拒绝真实目录后 ln -sfn 目标到 source', () => {
     const cmd = buildInstallShellCommand(
-      '/Applications/Cindy.app/Contents/Resources/cli/cindy',
+      '/Applications/Hana.app/Contents/Resources/cli/cindy',
       CLI_LINK_PATH,
     );
     expect(cmd).toBe(
-      `mkdir -p '/usr/local/bin' && if [ -d '/usr/local/bin/cindy' ] && [ ! -L '/usr/local/bin/cindy' ]; then echo '/usr/local/bin/cindy is a directory' >&2; exit 1; fi && ln -sfn '/Applications/Cindy.app/Contents/Resources/cli/cindy' '/usr/local/bin/cindy'`,
+      `mkdir -p '/usr/local/bin' && if [ -d '/usr/local/bin/hana' ] && [ ! -L '/usr/local/bin/hana' ]; then echo '/usr/local/bin/hana is a directory' >&2; exit 1; fi && ln -sfn '/Applications/Hana.app/Contents/Resources/cli/cindy' '/usr/local/bin/hana'`,
     );
   });
 
   it('用 -sfn 而非 -sf(macOS 上替换指向目录的旧 symlink,不解引用进目录)', () => {
-    const cmd = buildInstallShellCommand('/App/Cindy.app/Contents/Resources/cli/cindy', CLI_LINK_PATH);
+    const cmd = buildInstallShellCommand('/App/Hana.app/Contents/Resources/cli/cindy', CLI_LINK_PATH);
     expect(cmd).toContain(`ln -sfn `);
     expect(cmd).not.toContain(`ln -sf `);
   });
 
   it('含单引号的路径被安全转义', () => {
-    const cmd = buildInstallShellCommand(`/Users/o'brien/Cindy.app/Contents/Resources/cli/cindy`, CLI_LINK_PATH);
-    expect(cmd).toContain(`'/Users/o'\\''brien/Cindy.app/Contents/Resources/cli/cindy'`);
+    const cmd = buildInstallShellCommand(`/Users/o'brien/Hana.app/Contents/Resources/cli/cindy`, CLI_LINK_PATH);
+    expect(cmd).toContain(`'/Users/o'\\''brien/Hana.app/Contents/Resources/cli/cindy'`);
   });
 });
 
 describe('buildUninstallShellCommand', () => {
   it('仅当目标是 symlink 时才 rm -f(不误删同路径普通文件,并发移除也幂等)', () => {
     expect(buildUninstallShellCommand(CLI_LINK_PATH)).toBe(
-      `if [ -L '/usr/local/bin/cindy' ]; then rm -f '/usr/local/bin/cindy'; fi`,
+      `if [ -L '/usr/local/bin/hana' ]; then rm -f '/usr/local/bin/hana'; fi`,
     );
   });
 
@@ -88,7 +88,7 @@ describe('shellSingleQuote', () => {
   const { shellSingleQuote } = __testing;
 
   it('普通路径直接包单引号', () => {
-    expect(shellSingleQuote('/usr/local/bin/cindy')).toBe(`'/usr/local/bin/cindy'`);
+    expect(shellSingleQuote('/usr/local/bin/hana')).toBe(`'/usr/local/bin/hana'`);
   });
 
   it("内部单引号转义为 '\\''", () => {

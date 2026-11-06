@@ -60,7 +60,7 @@ describe('searchSessionsFn', () => {
       {
         messageId: 'm1',
         sessionId: 's1',
-        sessionUrl: 'cindy://session/s1?device=host-device',
+        sessionUrl: 'hana://session/s1?device=host-device',
         role: 'user',
         ts: 1,
         snippet: '<mark>登录</mark> 报错了',

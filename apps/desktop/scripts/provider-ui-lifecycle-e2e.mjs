@@ -8,7 +8,7 @@ import path from 'node:path';
 import {createRequire} from 'node:module';
 import {chromium} from 'playwright-core';
 const require=createRequire(import.meta.url);
-assert.ok(/CindyGlobal-dev2-provider-auto-detection-[^/]+\/cindy-local-v1\.db$/.test(process.env.E2E_DB??''));
+assert.ok(/HanaGlobal-dev2-provider-auto-detection-[^/]+\/hana-local-v1\.db$/.test(process.env.E2E_DB??''));
 const db=new (require('better-sqlite3'))(process.env.E2E_DB,{readonly:true});
 const out=await fs.mkdtemp(path.join(os.tmpdir(),'cindy-provider-ui-lifecycle-'));
 const wires=['openai-chat','openai-responses','anthropic-messages','google-generative-ai'];

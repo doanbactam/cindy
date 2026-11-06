@@ -36,7 +36,7 @@ pub fn install_of(bundled_exe: &Path) -> Option<&Path> {
         .and_then(Path::parent)
 }
 
-/// A stable id for one installation. Two installations — Cindy and CindyDev,
+/// A stable id for one installation. Two installations — Cindy and HanaDev,
 /// or two copies of the same edition — never share a service, a pipe or a
 /// staged executable.
 pub fn install_id(install: &Path) -> String {
@@ -222,7 +222,7 @@ mod tests {
         );
         assert_ne!(
             upper,
-            install_id(Path::new(r"C:\Program Files\CindyDev")),
+            install_id(Path::new(r"C:\Program Files\HanaDev")),
             "separate installations must not share a service"
         );
         assert_eq!(upper.len(), 32);

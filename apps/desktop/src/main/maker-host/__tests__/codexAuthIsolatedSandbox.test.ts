@@ -87,7 +87,7 @@ function fixture(): {
     }),
   );
   const codexHome = path.join(h.userDataDir, 'codex-home');
-  const releaseAuth = path.join(h.appDataDir, 'CindyGlobal', 'codex-home', 'auth.json');
+  const releaseAuth = path.join(h.appDataDir, 'HanaGlobal', 'codex-home', 'auth.json');
   return {
     codexHome,
     systemAuth,
@@ -385,7 +385,7 @@ describe('dev 沙箱凭证隔离(XDT_ISOLATED_AUTH)', () => {
 
   it('共享 Dev 直接使用 Release 登录态，不重链接或改 binding', async () => {
     const { releaseAuth, systemAuth } = fixture();
-    h.userDataDir = path.join(h.appDataDir, 'CindyGlobal');
+    h.userDataDir = path.join(h.appDataDir, 'HanaGlobal');
     fs.mkdirSync(path.dirname(releaseAuth), { recursive: true });
     fs.writeFileSync(
       releaseAuth,
@@ -413,7 +413,7 @@ describe('dev 沙箱凭证隔离(XDT_ISOLATED_AUTH)', () => {
 
   it('共享 Dev 遇到未绑定的 Release 残留时不覆盖或回落', async () => {
     const { releaseAuth, systemAuth } = fixture();
-    h.userDataDir = path.join(h.appDataDir, 'CindyGlobal');
+    h.userDataDir = path.join(h.appDataDir, 'HanaGlobal');
     fs.mkdirSync(path.dirname(releaseAuth), { recursive: true });
     fs.writeFileSync(
       releaseAuth,

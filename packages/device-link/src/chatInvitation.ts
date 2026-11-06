@@ -9,7 +9,7 @@ export function parseChatInvitationToken(input: string): string | null {
   if (typeof input !== 'string' || input.length > 8192) return null;
   const text = input.trim();
   if (TOKEN.test(text)) return text;
-  return /^(?:cindy|cindycn|cindydev):\/\/chat-invite\/([A-Za-z0-9_-]{43})$/.exec(text)?.[1] ?? null;
+  return /^(?:hana|hanacn|hanadev|cindy|cindycn|cindydev):\/\/chat-invite\/([A-Za-z0-9_-]{43})$/.exec(text)?.[1] ?? null;
 }
 
 /** One complete HTTPS share reference, optionally embedded in human-readable text.

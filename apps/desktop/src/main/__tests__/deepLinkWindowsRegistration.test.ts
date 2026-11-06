@@ -23,24 +23,24 @@ beforeEach(() => {
     callback(args[0] === 'query' ? new Error('missing') : null, '', '');
   });
 });
-it.each(['cindy', 'xdt-maker'])('names only the registered %s protocol, retaining the Electron launch command', async (scheme) => {
+it.each(['hana', 'xdt-maker'])('names only the registered %s protocol, retaining the Electron launch command', async (scheme) => {
   await registerWindowsDeepLinkName(scheme, 'win32');
   const writes = execute.mock.calls.filter(([, args]) => args[0] === 'add');
   expect(writes).toHaveLength(1);
   expect(writes[0].slice(0, 3)).toEqual(['reg.exe', [
-    'add', `HKCU\\Software\\Classes\\${scheme}\\Application`, '/v', 'ApplicationName', '/t', 'REG_SZ', '/d', 'Cindy', '/f',
+    'add', `HKCU\\Software\\Classes\\${scheme}\\Application`, '/v', 'ApplicationName', '/t', 'REG_SZ', '/d', 'Hana', '/f',
   ], { windowsHide: true, encoding: 'utf8', timeout: 3_000 }]);
 });
 it('leaves correct names untouched and does not write on other platforms or to arbitrary protocols', async () => {
-  execute.mockImplementation((_file, _args, _options, callback) => callback(null, '    ApplicationName    REG_SZ    Cindy\r\n', ''));
-  await registerWindowsDeepLinkName('cindy', 'win32');
+  execute.mockImplementation((_file, _args, _options, callback) => callback(null, '    ApplicationName    REG_SZ    Hana\r\n', ''));
+  await registerWindowsDeepLinkName('hana', 'win32');
   expect(execute).toHaveBeenCalledTimes(1);
   execute.mockClear();
-  await registerWindowsDeepLinkName('cindy', 'darwin');
+  await registerWindowsDeepLinkName('hana', 'darwin');
   await registerWindowsDeepLinkName('https', 'win32');
   expect(execute).not.toHaveBeenCalled();
 });
 it('does not fail application startup when Windows refuses the metadata write', async () => {
   execute.mockImplementation((_file, _args, _options, callback) => callback(new Error('denied'), '', ''));
-  await expect(registerWindowsDeepLinkName('cindy', 'win32')).resolves.toBeUndefined();
+  await expect(registerWindowsDeepLinkName('hana', 'win32')).resolves.toBeUndefined();
 });

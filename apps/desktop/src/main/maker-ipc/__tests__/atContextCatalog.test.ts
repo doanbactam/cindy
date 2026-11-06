@@ -89,8 +89,8 @@ describe('at context catalog', () => {
   it('hides Cindy, minimized and off-screen windows and de-duplicates stable ids', () => {
     expect(readAtDesktopWindows({
       windows: [
-        { window_id: 1, pid: 11, app_name: 'Cindy.exe', title: 'Cindy' },
-        { window_id: 2, pid: 12, app_name: 'electron.exe', title: 'CindyDev' },
+        { window_id: 1, pid: 11, app_name: 'Hana.exe', title: 'Hana' },
+        { window_id: 2, pid: 12, app_name: 'electron.exe', title: 'HanaDev' },
         { window_id: 3, pid: 13, app_name: 'chrome.exe', title: 'Minimized', is_minimized: true },
         { window_id: 4, pid: 14, app_name: 'Code.exe', title: 'Off screen', is_on_screen: false },
         { window_id: 5, pid: 15, app_name: 'WindowsTerminal.exe', title: 'PowerShell' },

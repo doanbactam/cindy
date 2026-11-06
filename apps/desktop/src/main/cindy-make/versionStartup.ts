@@ -173,17 +173,17 @@ function assertProfile(profile: VersionProfile): void {
   if (
     !profile ||
     !path.isAbsolute(profile.userData) ||
-    !['Cindy', 'CindyDev'].includes(profile.appName) ||
+    !['Hana', 'HanaDev'].includes(profile.appName) ||
     !['cn', 'global', 'dev'].includes(profile.region) ||
     (profile.deviceId !== undefined && !/^[A-Za-z0-9_-]{1,128}$/.test(profile.deviceId))
   )
     throw versionError('unavailable');
   const marker = path.join(profile.userData, 'keychain-identity');
-  let name = 'Cindy';
+  let name = 'Hana';
   try {
     if (fs.lstatSync(marker).isSymbolicLink()) throw versionError('unavailable');
     const value = fs.readFileSync(marker, 'utf8');
-    if (!['Cindy\n', 'Cindy\r\n', 'CindyDev\n', 'CindyDev\r\n'].includes(value))
+    if (!['Hana\n', 'Hana\r\n', 'HanaDev\n', 'HanaDev\r\n'].includes(value))
       throw versionError('unavailable');
     name = value.trim();
   } catch (error) {
@@ -645,7 +645,7 @@ async function runVersionHelper(item: VersionLaunchRequest): Promise<void> {
       writeVersionJson(file, item);
       // Preserve the explicit original-version recovery entry even if a personal build is broken.
       await selectVersion(item.profile.userData, 'original');
-      dialog.showErrorBox('Cindy', t('cindyMake.versions.errors.recovery'));
+      dialog.showErrorBox('Hana', t('cindyMake.versions.errors.recovery'));
     }
   }
 }

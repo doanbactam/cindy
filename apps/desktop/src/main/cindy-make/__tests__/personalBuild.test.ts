@@ -535,7 +535,7 @@ describe('personal source integration and packaging', () => {
     'retains the app from personal and cleans unpublished copies (cancel: %s)',
     async (cancel) => {
       const h = await fixture();
-      h.task.profile = { userData: h.userData, appName: 'Cindy', region: 'global', passive: false };
+      h.task.profile = { userData: h.userData, appName: 'Hana', region: 'global', passive: false };
       const id = '11111111-1111-4111-8111-111111111111';
       const retainedDirectory = versionStore.versionDirectory(h.userData, id);
       const packaged = path.join(
@@ -543,12 +543,12 @@ describe('personal source integration and packaging', () => {
         'apps',
         'desktop',
         'out',
-        'Cindy-' + process.platform + '-' + process.arch,
+        'Hana-' + process.platform + '-' + process.arch,
       );
       vi.spyOn(versionStore, 'retainPersonalVersion').mockImplementation(async (input) => {
         expect(h.locked()).toBe(true);
         expect(input.sourceDirectory).toBe(
-          process.platform === 'darwin' ? path.join(packaged, 'Cindy.app') : packaged,
+          process.platform === 'darwin' ? path.join(packaged, 'Hana.app') : packaged,
         );
         await mkdir(retainedDirectory, { recursive: true });
         await writeFile(path.join(retainedDirectory, 'pending.txt'), 'retained app');
