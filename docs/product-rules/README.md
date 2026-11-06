@@ -10,13 +10,13 @@
 
 | 主题 | 正文 |
 | --- | --- |
-| Agent 管理用户自己的资源、跨电脑工具与能力发现 | [Agent 与用户同权](agent-user-parity.md) |
-| 任务、对话、消息的用户称谓 | [命名](task-and-conversation-naming.md) |
+| Agent 管理用户自己的任务、定时任务、项目、伙伴的工具（`cindy_helper` / `cindy_scheduler` 等）、工具索引与作用范围说明；改完把现状台账写回 | [Agent 与用户同权](agent-user-parity.md) |
+| 任务、对话、消息的用户称谓；「任务」与 `task` 同句出现时消解歧义 | [命名](task-and-conversation-naming.md) |
 | 消息发送、来源标签与模型说明 | [消息来源](message-source.md) |
 | IM 上下文展示与完成未读 | [IM 消息呈现](im-message-presentation.md) |
 | IM 工具授权、多端确认与暂停回执 | [IM 权限确认](im-permission-confirmation.md) |
-| Telegram 命令、消息、附件与官方／个人 bot 差异 | [Telegram 能力台账](telegram-bot-parity.md) |
-| 登录、密码、验证码等主人代输入 | [代输入](input-handoff.md) |
+| 任一 Telegram bot 的用户可见行为与官方／个人 bot 差异；标「有意不同」的行不去统一，改完写回台账 | [Telegram 能力台账](telegram-bot-parity.md) |
+| 登录、密码、验证码等主人代输入：`ask_owner` fill／scan、代输入卡、截图扫码、终端 askpass、设备码识别等经手主人填写值的路径 | [代输入](input-handoff.md) |
 | 邮件卡的收件人与编辑、发送确认、深浅色、已读标记与头像权限 | [邮件卡](mail-card.md) |
 | 目标运行、补充消息与停止 | [目标模式](goal-mode.md) |
 | 自动任务与目标任务的生命线：归档后恢复、归档前确认、失败后手动继续 | [归档与自动化](archive-pauses-automations.md) |
@@ -26,7 +26,7 @@
 | 伙伴身份、生命周期、fallback、工作目录、Skill / MCP 与委派 | [伙伴运行时](cindy-bots-runtime.md) |
 | 伙伴的工作方式属于伙伴：专属工具盘点、通用化方向与待裁决条款 | [伙伴专属能力台账](teammate-capability-ledger.md) |
 | 伙伴每轮代表谁（主人代办／受托／自主）、自主轮范围与转达凭证 | [伙伴授权](teammate-authority.md) |
-| 伙伴跨电脑身份、主力电脑、云端对话与资料 | [云端伙伴](cloud-companions.md) |
+| 伙伴跨电脑身份、主力电脑、云端对话与资料；`apps/desktop/src/main/companion-cloud/`、Chat Server 伙伴 actor／1:1 房间合同 | [云端伙伴](cloud-companions.md) |
 | 伙伴群聊、群专线、分工与手机群聊 | [伙伴群聊](bot-group-chat.md) |
 | `/review`、成果快照、Finding 与复核生命周期 | [成果复核](review-product-direction.md) |
 | 区域、构建身份、端点与版本文案 | [区域与版本](region-and-editions.md) |
@@ -37,4 +37,5 @@
 | 供应商组、选电脑策略、转发与用量 | [供应商组](provider-groups.md) |
 | 媒体模型资料与发布兼容 | [V4 全类型规范](../model-registry-v4-media.md) |
 | 文档成果、四格式与插件增强 | [文档工坊](document-workshop-quality.md) |
-| 新电脑迁移插件、技能、设置与经确认的密钥 | [迁移助理](new-device-setup-migration.md) |
+| 新电脑迁移插件、技能、设置与经确认的密钥；`maker:setup-snapshot` / `maker:setup-transfer` 协议、新增一类可迁移设置 |
+| Agent 使用多台机器（`list_machines`、机器状态、按机器执行）与资源上限 | [Cindy 机器](cindy-machines.md) | [迁移助理](new-device-setup-migration.md) |

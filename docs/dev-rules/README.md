@@ -10,7 +10,7 @@
 | 主题 | 正文 |
 | --- | --- |
 | Desktop、maker-core 模块内的触发条件 | [Desktop](../../apps/desktop/AGENTS.md)、[maker-core](../../packages/maker-core/AGENTS.md) 的嵌套 AGENTS.md；专题正文不在模块内重复 |
-| 目录职责、按用户行为定位公共入口与测试、开发环境 | [仓库地图](repo-map.md)、[环境准备](environment-setup.md) |
+| 目录职责、按用户行为定位公共入口与测试、新代码归属；首次安装、修复依赖或准备新 worktree | [仓库地图](repo-map.md)、[环境准备](environment-setup.md) |
 | 已发生过的任务体验回归、测试入口与运行命令 | [任务回归台账](session-regressions.md) |
 | Desktop 启动、重启与验证 | [桌面开发](desktop-development.md) |
 | 免登录 UI 模拟数据、`--mock` 启动、数据正本与写入边界 | [UI 模拟数据](ui-mock-data.md) |
@@ -19,7 +19,7 @@
 | 媒体生成、导入、附件、缓存、协议与回收 | [媒体存储](media-storage-and-protocols.md) |
 | Browser Use 工具层、配方目录、外链处理与三种浏览器后端 | [Browser Use](browser-use.md) |
 | 数据库 schema、migration、companion 与运行期访问 | [数据库](database-and-migrations.md) |
-| 模型配置架构、下发、覆盖、价格与默认值 | [模型配置入口](model-catalog-maintenance.md)、[运行细则](model-catalog-runtime.md) |
+| 模型配置架构、新增模型／供应商、下发、覆盖、价格与默认值、目录显示错误；客户端已支持、Server 已实现、生产已部署分别核验 | [模型配置入口](model-catalog-maintenance.md)、[运行细则](model-catalog-runtime.md) |
 | Agent 编排、prompt、tool / MCP、事件、model 映射与 usage | [maker-core 与 system prompt 确认](maker-core-and-agent-behavior.md) |
 | Pi 集成、权限、配置、桥接与原生能力非退化 | [Pi harness](pi-harness.md) |
 | Orca 多 Agent 协同 | [Orca 架构](orca-team-architecture.md) |
@@ -30,9 +30,9 @@
 | 客户端自动更新 | [更新器与 owner 确认](cindy-updater.md) |
 | 日志、IPC 错误、main 业务、测试价值／性能预算、跨平台与 i18n | [工程约定](engineering-conventions.md) |
 | 日志采集、脱敏、上报、行格式与崩溃标记 | [日志上报](log-upload-and-redaction.md) |
-| 本地协议包、插件分发来源、device-link、relay、wire protocol 与 allowlist | [协议兼容](protocol-compatibility.md) |
+| 本地协议包、插件分发来源、device-link、relay、wire protocol 与 allowlist；影响自建中转的改动在同一次改动中同步适配并验证互通 | [协议兼容](protocol-compatibility.md) |
 | 服务器请求、订阅、同步、轮询与重试的调用方式、共享压力及缺陷审查 | [服务器通道调用审查](server-channel-review.md) |
 | package 依赖、Main 模块加载与布局树 | [架构原则与不变量](architecture-invariants.md) |
 | Settings、配置文件、偏好、运行时 profile 与能力开关 | [配置与 override](configuration-and-overrides.md) |
-| workdir、Agent 进程、任务数据、IPC／推送与断链恢复 | [远程适配](remote-adaptation.md) |
-| 托管 worktree、提交、PR、直推、review、项目知识归属与文档整理原则 | [开发工作流](development-workflow.md) |
+| workdir、Agent 进程、任务数据、IPC／推送与断链恢复；恢复路径改动回答「故障半径三问」 | [远程适配](remote-adaptation.md) |
+| Cindy 内嵌 worktree 会话、提交、PR、直推、review、项目知识归属与文档整理原则 | [开发工作流](development-workflow.md) |

@@ -6,14 +6,14 @@
 
 ## 开发与进程边界
 
-- 启动、调试或验证 Desktop 时，必须先读[Desktop 开发](../../docs/dev-rules/desktop-development.md)。
+- 启动、调试或验证 Desktop 时，先读[Desktop 开发](../../docs/dev-rules/desktop-development.md)。
 - 修改 Desktop Renderer、preload、BrowserWindow、WebView、IPC、CSP、导航或 Electron
-  特权能力前，必须先读[Electron 安全与进程边界](../../docs/dev-rules/electron-security-and-process-boundaries.md)。
-- 新增或修改 Desktop 独立窗口、辅助窗口或弹出型 `BrowserWindow` 前，必须遵守
+  特权能力前，先读[Electron 安全与进程边界](../../docs/dev-rules/electron-security-and-process-boundaries.md)。
+- 新增或修改 Desktop 独立窗口、辅助窗口或弹出型 `BrowserWindow` 前，遵守
   [Electron 安全与进程边界](../../docs/dev-rules/electron-security-and-process-boundaries.md)的「独立辅助窗口统一生命周期
-  基线」：复用既有控制器／基础设施，不得另造平行的预热、就绪握手、隐藏复用与崩溃恢复
+  基线」：复用既有控制器／基础设施，不另造平行的预热、就绪握手、隐藏复用与崩溃恢复
   状态机。
-- 修改 Desktop 数据库 schema、migration、companion script 或运行期数据库访问前，必须
+- 修改 Desktop 数据库 schema、migration、companion script 或运行期数据库访问前，
   先读[数据库与迁移](../../docs/dev-rules/database-and-migrations.md)。
 
 ## 界面与渠道
@@ -24,5 +24,5 @@
   带图内容写进「UI 变化」。按改动类型选择验证方式见
   [Desktop 开发](../../docs/dev-rules/desktop-development.md)「按改动选择验证方式」。
 - 修改个人 IM 渠道（`src/main/im/**`）或官方 hook（`src/main/hook-control/**`）的
-  找/建任务、命令、排队与插话、输入拼装、事件观察、交互、收尾或停止逻辑前，必须先读
+  找/建任务、命令、排队与插话、输入拼装、事件观察、交互、收尾或停止逻辑前，先读
   [IM 轮次流程](../../docs/dev-rules/im-turn-flow.md)（入口账本、状态清单、不变量与迁移批次）。
