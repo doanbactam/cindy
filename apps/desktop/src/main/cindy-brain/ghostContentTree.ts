@@ -199,7 +199,10 @@ export function sameStableFileState(before: fs.BigIntStats, after: fs.BigIntStat
 
 function sameStableDirectoryState(before: fs.BigIntStats, after: fs.BigIntStats): boolean {
   // Filesystems may immediately reuse a deleted directory's inode. Timestamps
-  // keep that replacement distinct and also expose namespace changes below it.
+  // usually keep that replacement distinct and also expose namespace changes
+  // below it. Known limit: Linux stamps from a coarse clock (one tick is several
+  // ms), so a delete + recreate inside one tick on ext4 can reuse the inode with
+  // identical mtimeNs/ctimeNs and is indistinguishable here.
   return after.isDirectory() &&
     sameFileIdentity(before, after) &&
     before.mtimeNs === after.mtimeNs &&

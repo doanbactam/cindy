@@ -550,7 +550,11 @@ describe('hashGhostContentFiles', () => {
       label: 'test',
     });
 
-    await fs.promises.rm(root, { recursive: true, force: true });
+    // 旧根移走而不是删除:删除后 ext4 会立刻把同一 inode 分给新目录,粗粒度时钟下
+    // mtime/ctime 也可能逐纳秒相同,那种情况判据本身无法区分(已知限制,见
+    // `sameStableDirectoryState`),用例会随时钟 tick 偶发失败。移走让旧 inode
+    // 保持占用,稳定覆盖"根被换成另一个目录"。
+    await fs.promises.rename(root, path.join(workDir, 'plugin-old'));
     await fs.promises.mkdir(root);
     await fs.promises.writeFile(path.join(root, 'main.js'), 'replacement');
 
