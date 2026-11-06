@@ -10,7 +10,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 
 import { sanitizeSourceName, type MessageSourceDevice } from '@cindy/maker-shared/message-source';
 
-import { isDesktopPlatform, isMobilePlatform } from './controllerPlatform';
+import { isDesktopPlatform } from './controllerPlatform';
 import * as subscriptions from './subscriptions.js';
 import type { SharedTaskPeerCapture } from './sharedTaskDispatch.js';
 
@@ -58,7 +58,7 @@ export function runDeviceLinkInvokeContext<T>(
 
 /**
  * 在本机自己发起的内部操作里运行 `fn`，不继承调用方的 device-link 来源：比如供应商组在发送前替任务换电脑，
- * 触发它的可能是手机发来的一条消息，但换电脑本身是本机的决定，不能按「来自控制端」把错误码降级。
+ * 触发它的可能是另一台电脑发来的一条消息，但换电脑本身是本机的决定，不能按「来自控制端」把错误码降级。
  */
 export function runOutsideDeviceLinkInvokeContext<T>(fn: () => T): T {
   return storage.exit(fn);
@@ -73,40 +73,19 @@ export function isDeviceLinkInvoke(): boolean {
 }
 
 /**
- * 当前调用是否来自**手机**控制端 —— **体验分流用,不是安全判据**(见
- * DeviceLinkInvokeContext.controllerPlatform 的说明)。
- *
- * 本机 renderer 自己发的 invoke 不在 store 里 → false;另一台桌面作控制端 → platform
- * 是 `darwin`/`win32`/`linux` → false;presence 还没到、platform 未知 → 同样 false
- * (fail-closed,见 controllerPlatform.isMobilePlatform 的说明)。
- *
- * ⚠️ 只在**同一条 await 链**上有效。排队路径(maker:input:enqueue → coordinator 队列
- * → drain 派发)在 drain 时已脱离本上下文,读不到来源;那条路要覆盖需要把来源盖章在
- * 入队项上透传到 drain,属独立改动。
- */
-export function isMobileControllerInvoke(): boolean {
-  return isMobilePlatform(storage.getStore()?.controllerPlatform);
-}
-
-/**
  * 当前 invoke 的远程设备来源,供 IPC 边界盖章到队列项 / 直连 sendOpts(`sourceDevice`)。
  *
  * 只认同账号控制端:共享任务访客(context.sharedTask)不是「用户在另一台设备上」,
- * 返回 undefined。平台未知同样返回 undefined(fail closed,与 isMobilePlatform 同口径)。
+ * 返回 undefined。平台未知或不是电脑同样返回 undefined(fail closed)。
  * 本机 renderer 没有 context → undefined,本机输入因此不带设备来源。
  * **只用于归属展示与设备说明,不是权限判据。**
  */
 export function readDeviceLinkInvokeSourceDevice(): MessageSourceDevice | undefined {
   const context = storage.getStore();
   if (!context || context.sharedTask) return undefined;
-  const platform = isMobilePlatform(context.controllerPlatform)
-    ? 'mobile'
-    : isDesktopPlatform(context.controllerPlatform)
-      ? 'desktop'
-      : undefined;
-  if (!platform || !context.controllerDeviceId) return undefined;
+  if (!isDesktopPlatform(context.controllerPlatform) || !context.controllerDeviceId) return undefined;
   const name = sanitizeSourceName(context.controllerName);
-  return { deviceId: context.controllerDeviceId, platform, ...(name ? { name } : {}) };
+  return { deviceId: context.controllerDeviceId, platform: 'desktop', ...(name ? { name } : {}) };
 }
 
 /**

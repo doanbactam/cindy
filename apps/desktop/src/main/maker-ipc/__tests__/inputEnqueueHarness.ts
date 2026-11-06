@@ -3,7 +3,6 @@ import { ScriptTarget, transpileModule } from 'typescript';
 import { CONTINUE_AFTER_APP_EXIT_PROMPT } from '@cindy/maker-shared/synthetic-trigger';
 import { AgentInputCoordinator, markManualSchedulerContinuation } from '../agent-input-coordinator.js';
 import { stampTrustedDesktopQueuedOrigin, stampTrustedDeviceLinkQueuedOrigin } from '../makerSendTransaction.js';
-import { stampMobileClientOrigin } from '../mobileClientPromptNote.js';
 import { isAutomaticInputOriginKind, type AgentInputProjection, type AgentInputQueuedMessage } from '../../../shared/agentInputQueue.js';
 import type { SchedulerQueuedPromptRequest } from '../register.js';
 
@@ -21,11 +20,10 @@ const compiled = transpileModule(`return (${handler});`, {
 
 export function createInputEnqueueHarness(coordinator: AgentInputCoordinator, options: {
   remote?: boolean;
-  mobile?: boolean;
   resumeInterruptedScheduleRun?: typeof import('../../scheduler-host/index.js').resumeInterruptedScheduleRun;
   getSessionFsSnapshot?: () => Promise<{ planModeEnabled?: boolean } | null>;
 } = {}) {
-  const { remote = true, mobile = false, resumeInterruptedScheduleRun = async () => null } = options;
+  const { remote = true, resumeInterruptedScheduleRun = async () => null } = options;
   const noop = () => undefined;
   const sameItem = (item: AgentInputQueuedMessage) => item;
   const owner = {};
@@ -49,10 +47,7 @@ export function createInputEnqueueHarness(coordinator: AgentInputCoordinator, op
     prepareSharedTaskInput: (_sid: string, item: AgentInputQueuedMessage) => item,
     getCurrentDbClientSnapshot: () => owner,
     isDeviceLinkInvoke: () => remote,
-    isMobileControllerInvoke: () => mobile,
-    readDeviceLinkInvokeSourceDevice: () => mobile
-      ? { deviceId: 'phone', name: 'Phone', platform: 'android' }
-      : { deviceId: 'lead-computer', name: 'Lead Computer', platform: 'windows' },
+    readDeviceLinkInvokeSourceDevice: () => ({ deviceId: 'lead-computer', name: 'Lead Computer', platform: 'windows' }),
     readClaimedUiLanguage: noop,
     readClaimedClassicalStyle: noop,
     getResolvedMainLocale: () => 'zh-CN',
@@ -67,7 +62,6 @@ export function createInputEnqueueHarness(coordinator: AgentInputCoordinator, op
     stampTurnUiLanguage: sameItem,
     stampTrustedDesktopQueuedOrigin,
     stampTrustedDeviceLinkQueuedOrigin,
-    stampMobileClientOrigin,
     isAutomaticInputOriginKind,
     prepareDeviceLinkAutoTitle: async () => noop,
     queuedAttachmentOwnership: { activateCurrentOwner: noop },

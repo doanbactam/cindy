@@ -159,7 +159,6 @@ function canTrustDesktopPiCommand(item: AgentInputQueuedMessage): boolean {
     && (item.mentions?.length ?? 0) === 0
     && (item.sessionRefs?.length ?? 0) === 0
     && (item.agentReferences?.length ?? 0) === 0
-    && item.fromMobileClient !== true
     && item.autoResume !== true
     && item.originalSyntheticTrigger === undefined
     && (semanticOrigin === undefined || semanticOrigin.kind === 'desktop');
@@ -290,14 +289,6 @@ type MakerSendOptions = {
    * 打到 sess.send 的 origin(本轮 turnOrigin)并合进落库 user 消息 agentMeta.origin。
    */
   origin?: { kind: 'scheduler'; scheduleId: string; scheduleName: string; runId?: string };
-  /**
-   * 手机来源(coordinator 从队列项透传;**main 构造,不是 wire 输入**——直连 maker:send
-   * 的客户端 sendOpts 在 sessionSendHandler 边界被剥掉,见那里的说明)。
-   *
-   * 必须认这一条:手机会话页所有发送都走 input:enqueue / input:steer,drain 派发时
-   * 入队时的 async context 早已结束,只靠 isMobileClientInvoke() 实际读不到来源。
-   */
-  fromMobileClient?: boolean;
   /** Coordinator-stamped interface language. Direct wire values are stripped. */
   uiLanguage?: string;
   /** Classical output style stamped with uiLanguage. Direct wire values are stripped. */
@@ -571,18 +562,6 @@ export interface MakerSendTransactionDeps {
    * 返回一段只进 wire payload 的说明(见 goal-host/inactiveNote.ts);无需注入返回 null。
    */
   peekGoalInactiveNote?(sessionId: string): Promise<string | null>;
-  /**
-   * 本次调用是否来自手机控制端(缺省 = 否)。**纯体验分流,不是安全判据。**
-   *
-   * 注入而非直接 import `isMobileControllerInvoke`,是为了可单测(同
-   * newMakerWorktreePreferenceHandler 把 isDeviceLinkInvoke 做成 deps 的写法)。
-   *
-   * ⚠️ 判据里的平台值是**对端设备在 hello 帧自报**的(经 presence 广播进本机缓存),
-   * 本仓没有服务端校验 —— 一台改过的同账号已配对设备可以声称自己是手机。它的唯一
-   * 后果是多追加一段体验说明,所以够用;但不得据它放行权限或跳过任何校验。
-   * 完整可信度说明见 device-link/invoke-context.ts。
-   */
-  isMobileClientInvoke?(): boolean;
   /**
    * 被控电脑自身的 device-link 身份(id + 名字),写进 `[客户端说明]` 的「本机」。
    * 缺省时说明只写控制端设备。
@@ -1583,15 +1562,13 @@ export function createMakerSendTransaction(deps: MakerSendTransactionDeps): Make
       // 排在它后面会让说明插到那句话之后(顺序推导同 agentHandoff.composeForkOriginHandoff:
       // 元信息在前、交接正文在后、由交接自带的标记统一收尾)。
       // 设备来源只认主机盖章的 so.sourceDevice(排队项透传,或直连 IPC 边界按 async
-      // context 盖章);没有设备信息时沿用旧的手机判据(直连走 deps 注入的 async context,
-      // 排队走 so.fromMobileClient)。
+      // context 盖章)。
       const sourceDevice = readWireSourceDevice(so.sourceDevice);
       const allowsEnvironmentNotes = shouldPrependMobileClientPromptNote(normalized, sess.agentKind);
       const mobileClientNote = allowsEnvironmentNotes
         ? buildClientEnvironmentNote({
             device: sourceDevice,
             host: sourceDevice ? deps.readHostDeviceIdentity?.() : undefined,
-            legacyMobile: deps.isMobileClientInvoke?.() === true || so.fromMobileClient === true,
           })
         : null;
       // 个人版制作任务说明:与手机说明同层、同占位规则(原生命令必须留在消息开头)。
@@ -1675,8 +1652,7 @@ export function createMakerSendTransaction(deps: MakerSendTransactionDeps): Make
         !containsManagedAttachment(persistUserMessage?.content) &&
         !containsManagedAttachment(persistUserMessage.agentFacingWireContent) &&
         !persistUserMessage?.autoResume &&
-        !so.origin &&
-        !so.fromMobileClient
+        !so.origin
           ? { origin: { kind: 'desktop' as const }, rawChannelText: trustedDesktopQueueReceipt.text }
           : undefined;
       const mainOwnedSendContext = so[MAIN_OWNED_SEND_CONTEXT] ?? directDesktopContext;

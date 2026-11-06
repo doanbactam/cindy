@@ -58,7 +58,6 @@ import type {
 } from '../../../shared/agentInputQueue.js';
 import { HOST_ONLY_AGENT_PREFIX, USAGE_LIMIT_RESET_AUTO_RESUME_REASON, isAutomaticInputOriginKind } from '../../../shared/agentInputQueue.js';
 import { buildRemoteWorkerQueuedMessage, createOrcaRemoteWorkerRuntime, type RemoteWorkerTurnEnd } from '../orcaRemoteWorkerRuntime.js';
-import { stampMobileClientOrigin } from '../mobileClientPromptNote.js';
 import {
   CONTINUE_AFTER_APP_EXIT_PROMPT,
   CONTINUE_AFTER_ERROR_PROMPT,
@@ -211,7 +210,7 @@ describe('trusted owner queue edits', () => {
   const loadFinalizer = new Function('inputCoordinator', 'getDeviceLinkInvokeContext',
     'captureDataOwnerBroadcastScope', 'isDataOwnerBroadcastScopeCurrent',
     'bindTaskActionInput', 'taskActionInputGuard', 'stampTrustedDeviceLinkQueuedOrigin',
-    'stampTrustedDesktopQueuedOrigin', 'stampMobileClientOrigin',
+    'stampTrustedDesktopQueuedOrigin',
     transpileModule(registerSource.slice(start, end) + '\nreturn stampQueuedEditProvenance;',
       { compilerOptions: { target: ScriptTarget.ES2022 } }).outputText);
 
@@ -219,7 +218,7 @@ describe('trusted owner queue edits', () => {
     const h = createHarness(), sid = 'edited-target';
     const finalized = loadFinalizer(h.coordinator, () => mode === 'guest' ? { sharedTask: {} } : null,
       () => 'account', () => true, bindTaskActionInput, taskActionInputGuard,
-      stampTrustedDeviceLinkQueuedOrigin, stampTrustedDesktopQueuedOrigin, stampMobileClientOrigin);
+      stampTrustedDeviceLinkQueuedOrigin, stampTrustedDesktopQueuedOrigin);
     const dispatched = vi.fn();
     h.sendToAgent.mockImplementation(async (_id, message, _opts, sendOpts) => {
       await sendOpts[MCP_APP_MESSAGE_GUARD]?.();
@@ -457,16 +456,16 @@ describe('MCP App queued message grants', () => {
 
 describe('INPUT_ENQUEUE crash-restored remote Worker pause', () => {
   function hostInput(
-    h: ReturnType<typeof createHarness>, remote = true, mobile = false,
+    h: ReturnType<typeof createHarness>, remote = true,
     resumeInterruptedScheduleRun: typeof import('../../scheduler-host/index.js').resumeInterruptedScheduleRun = async () => null,
   ) {
-    return createInputEnqueueHarness(h.coordinator, { remote, mobile, resumeInterruptedScheduleRun }).enqueue;
+    return createInputEnqueueHarness(h.coordinator, { remote, resumeInterruptedScheduleRun }).enqueue;
   }
 
   // Execute the actual shared Desktop/device-link handler with the real queue.
   // The scheduler runner is stubbed so no provider or GitHub code executes.
-  it.each([['phone', true, true], ['remote desktop', true, false], ['local desktop', false, false]] as const)(
-    'reconnects an explicit %s Continue to its run without waiting for completion', async (_name, remote, mobile) => {
+  it.each([['remote desktop', true], ['local desktop', false]] as const)(
+    'reconnects an explicit %s Continue to its run without waiting for completion', async (_name, remote) => {
       const h = createHarness();
       const sid = 'interrupted-scheduled-task';
       h.setLoadQueueSnapshot(async () => [makeItem('later', 'queued later task')]);
@@ -482,7 +481,7 @@ describe('INPUT_ENQUEUE crash-restored remote Worker pause', () => {
           return { runId: 'original-run' };
         }),
       }));
-      const enqueue = hostInput(h, remote, mobile, resume);
+      const enqueue = hostInput(h, remote, resume);
       const input = makeItem('manual-click', CONTINUE_AFTER_APP_EXIT_PROMPT);
       await enqueue({}, sid, input);
       await flush();
@@ -506,7 +505,7 @@ describe('INPUT_ENQUEUE crash-restored remote Worker pause', () => {
   it('does not send an untracked continuation when the scheduler cannot prepare it', async () => {
     const h = createHarness();
     const resume = vi.fn(async () => ({ completion: Promise.resolve({ runId: 'original', deferred: true }) }));
-    await expect(hostInput(h, false, false, resume)(
+    await expect(hostInput(h, false, resume)(
       {}, 'task', makeItem('click', CONTINUE_AFTER_APP_EXIT_PROMPT),
     )).rejects.toThrow('could not be queued');
     expect(h.sendToAgent).not.toHaveBeenCalled();
@@ -574,7 +573,7 @@ describe('INPUT_ENQUEUE crash-restored remote Worker pause', () => {
         return { runId: 'original' };
       }),
     });
-    const pending = hostInput(h, false, false, resume)({}, 'task', makeItem('click', CONTINUE_AFTER_APP_EXIT_PROMPT));
+    const pending = hostInput(h, false, resume)({}, 'task', makeItem('click', CONTINUE_AFTER_APP_EXIT_PROMPT));
     const rejected = expect(pending).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' });
     await entered.promise;
     h.coordinator.clearSession('task');
@@ -590,7 +589,7 @@ describe('INPUT_ENQUEUE crash-restored remote Worker pause', () => {
     const input = { ...makeItem('automatic', CONTINUE_AFTER_APP_EXIT_PROMPT),
       origin: { kind: 'scheduler' as const, scheduleId: 'schedule', scheduleName: 'Review' },
     };
-    await hostInput(h, true, false, resume)({}, 'task', input);
+    await hostInput(h, true, resume)({}, 'task', input);
     expect(resume).not.toHaveBeenCalled();
     expect(h.coordinator.getProjection('task').queuePaused).toBe(true);
     expect(h.sendToAgent).not.toHaveBeenCalled();
@@ -622,12 +621,12 @@ describe('INPUT_ENQUEUE crash-restored remote Worker pause', () => {
     expect(h.sendToAgent.mock.calls[0]?.[1]).toEqual({ type: 'user', content: 'old assignment' });
   });
 
-  it.each([['phone', true, true], ['remote desktop', true, false], ['local desktop', false, false]] as const)(
-    'allows explicit %s input to resume the restored Worker queue', async (_name, remote, mobile) => {
+  it.each([['remote desktop', true], ['local desktop', false]] as const)(
+    'allows explicit %s input to resume the restored Worker queue', async (_name, remote) => {
       const h = createHarness();
       const sid = 'user-resumes-remote-worker';
       h.setLoadQueueSnapshot(async () => [makeItem('restored', 'old assignment')]);
-      await hostInput(h, remote, mobile)({}, sid, makeItem('user-input', 'continue please'));
+      await hostInput(h, remote)({}, sid, makeItem('user-input', 'continue please'));
       await flush();
       expect(h.coordinator.getProjection(sid).queuePaused).toBe(false);
       expect(h.sendToAgent).toHaveBeenCalledOnce();
@@ -636,7 +635,7 @@ describe('INPUT_ENQUEUE crash-restored remote Worker pause', () => {
     },
   );
 
-  it('keeps a user-stopped queue paused for both Lead and phone input', async () => {
+  it('keeps a user-stopped queue paused for both Lead and user input', async () => {
     const h = createHarness();
     const sid = 'stopped-remote-worker';
     await h.coordinator.ensureQueueRestored(sid);
@@ -648,7 +647,7 @@ describe('INPUT_ENQUEUE crash-restored remote Worker pause', () => {
     await flush();
     expect(h.coordinator.getProjection(sid).queuePaused).toBe(true);
     await hostInput(h)({}, sid, leadInput());
-    await hostInput(h, true, true)({}, sid, makeItem('user-input', 'hello'));
+    await hostInput(h, true)({}, sid, makeItem('user-input', 'hello'));
     await flush();
     expect(h.coordinator.getProjection(sid).queuePaused).toBe(true);
     expect(h.sendToAgent).not.toHaveBeenCalled();
@@ -678,7 +677,7 @@ describe('INPUT_ENQUEUE crash-restored remote Worker pause', () => {
     const h = createHarness();
     h.setLoadQueueSnapshot(async sid => sid === 'restored-worker' ? [makeItem('restored', 'old assignment')] : []);
     await hostInput(h)({}, 'restored-worker', leadInput());
-    await hostInput(h, true, true)({}, 'other-task', makeItem('phone-input', 'ordinary input'));
+    await hostInput(h, true)({}, 'other-task', makeItem('remote-input', 'ordinary input'));
     await flush();
     expect(h.coordinator.getProjection('restored-worker').queuePaused).toBe(true);
     expect(h.sendToAgent).toHaveBeenCalledOnce();
@@ -884,7 +883,7 @@ describe('AgentInputCoordinator Orca priority queue transactions', () => {
     const h = createHarness();
     const sid = 'source-drain';
     await h.coordinator.ensureQueueRestored(sid);
-    const sourceDevice = { deviceId: 'phone-1', name: 'iPhone', platform: 'mobile' as const };
+    const sourceDevice = { deviceId: 'pc-1', name: 'Office PC', platform: 'desktop' as const };
     const sourcePlugin = { pluginId: 'gh-1', name: 'Reviewer' };
     h.coordinator.enqueue(sid, makeItem('source-input', 'hello', { sourceDevice, sourcePlugin }));
     await flush();
@@ -15609,7 +15608,7 @@ describe('provider group computer switch hold', () => {
   it.each([
     { name: 'zero output', progress: false, blocked: false },
     { name: 'partial output', progress: true, blocked: false },
-    { name: 'phone input', progress: false, blocked: false, patch: { fromMobileClient: true, fromDeviceLinkClient: true } },
+    { name: 'remote input', progress: false, blocked: false, patch: { fromDeviceLinkClient: true } },
     { name: 'session closes before eligibility', progress: false, blocked: false },
     { name: 'close then user takeover', progress: false, blocked: true },
     { name: 'another task', progress: false, blocked: true, patch: { origin: { kind: 'session', senderSessionId: 'sender', displayText: 'finish' } } },

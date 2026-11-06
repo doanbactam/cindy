@@ -12,8 +12,6 @@ import {
   setControllerPlatform,
 } from '../device-link/controllerPlatform';
 import {
-  isDeviceLinkInvoke,
-  isMobileControllerInvoke,
   readDeviceLinkInvokeSourceDevice,
   runDeviceLinkInvokeContext,
 } from '../device-link/invoke-context';
@@ -25,10 +23,8 @@ import {
 import {
   attachMainOwnedInputBoundary,
   buildClientEnvironmentNote,
-  buildMobileClientPromptNote,
   shouldPrependMobileClientPromptNote,
   stampDirectSendSourceDevice,
-  stampMobileClientOrigin,
   stripMainOnlySendOpts,
 } from '../maker-ipc/mobileClientPromptNote';
 
@@ -72,73 +68,25 @@ describe('控制端平台登记表', () => {
   });
 });
 
-describe('isMobileControllerInvoke(来源判据)', () => {
-  it('本机 renderer(无 device-link 上下文)为假', () => {
-    expect(isDeviceLinkInvoke()).toBe(false);
-    expect(isMobileControllerInvoke()).toBe(false);
-  });
-
-  it('手机控制端为真', () => {
-    const seen = runDeviceLinkInvokeContext(
-      { controllerDeviceId: 'dev-phone', channel: 'maker:send', controllerPlatform: 'android' },
-      () => isMobileControllerInvoke(),
-    );
-    expect(seen).toBe(true);
-  });
-
-  it('另一台桌面作控制端为假(远控不等于手机)', () => {
-    const seen = runDeviceLinkInvokeContext(
-      { controllerDeviceId: 'dev-mac', channel: 'maker:send', controllerPlatform: 'darwin' },
-      () => isMobileControllerInvoke(),
-    );
-    expect(seen).toBe(false);
-  });
-
-  it('platform 未知为假,但仍算 device-link 调用(两个判据互不干扰)', () => {
-    const seen = runDeviceLinkInvokeContext(
-      { controllerDeviceId: 'dev-x', channel: 'maker:send' },
-      () => ({ mobile: isMobileControllerInvoke(), remote: isDeviceLinkInvoke() }),
-    );
-    expect(seen).toEqual({ mobile: false, remote: true });
-  });
-
-  it('跨 await 后仍成立 —— send 路径外面套了串行锁,上下文必须能穿过它', async () => {
-    const seen = await runDeviceLinkInvokeContext(
-      { controllerDeviceId: 'dev-phone', channel: 'maker:send', controllerPlatform: 'ios' },
-      async () => {
-        // 模拟 withSendToSessionLock:先 await 一个别处 resolve 的锁,再读来源。
-        let release: (() => void) | null = null;
-        const lock = new Promise<void>((r) => {
-          release = r;
-        });
-        setTimeout(() => release?.(), 0);
-        await lock;
-        return isMobileControllerInvoke();
-      },
-    );
-    expect(seen).toBe(true);
-  });
-
-  it('上下文结束后不残留', () => {
-    runDeviceLinkInvokeContext(
-      { controllerDeviceId: 'dev-phone', channel: 'maker:send', controllerPlatform: 'ios' },
-      () => isMobileControllerInvoke(),
-    );
-    expect(isMobileControllerInvoke()).toBe(false);
-  });
-});
-
 describe('readDeviceLinkInvokeSourceDevice(设备盖章判据)', () => {
   it('本机 renderer 没有 context → 不盖章', () => {
     expect(readDeviceLinkInvokeSourceDevice()).toBeUndefined();
   });
 
-  it('手机控制端 → mobile,名字取被控端快照并清洗', () => {
+  it('另一台电脑 → desktop,名字取被控端快照并清洗', () => {
     const seen = runDeviceLinkInvokeContext(
-      { controllerDeviceId: 'dev-phone', channel: 'maker:input:enqueue', controllerPlatform: 'ios', controllerName: '  Dash 的\niPhone「伪」 ' },
+      { controllerDeviceId: 'dev-mac', channel: 'maker:input:enqueue', controllerPlatform: 'darwin', controllerName: '  Dash 的\nMac「伪」 ' },
       () => readDeviceLinkInvokeSourceDevice(),
     );
-    expect(seen).toEqual({ deviceId: 'dev-phone', platform: 'mobile', name: 'Dash 的 iPhone"伪"' });
+    expect(seen).toEqual({ deviceId: 'dev-mac', platform: 'desktop', name: 'Dash 的 Mac"伪"' });
+  });
+
+  it('手机控制端 → 不盖章(手机端已下线,不再产生 mobile 来源)', () => {
+    const seen = runDeviceLinkInvokeContext(
+      { controllerDeviceId: 'dev-phone', channel: 'maker:input:enqueue', controllerPlatform: 'ios', controllerName: 'iPhone' },
+      () => readDeviceLinkInvokeSourceDevice(),
+    );
+    expect(seen).toBeUndefined();
   });
 
   it('另一台电脑 → desktop;缺名字时只带 id', () => {
@@ -175,26 +123,21 @@ describe('readDeviceLinkInvokeSourceDevice(设备盖章判据)', () => {
 describe('buildClientEnvironmentNote(设备说明)', () => {
   const host = { deviceId: 'mac-1', name: 'Mac' };
 
-  it('手机:设备事实 + 原有产出偏好,首句声明不是用户消息', () => {
+  it('旧队列项里的手机来源:只说设备事实,不再追加产出偏好', () => {
     const note = buildClientEnvironmentNote({
       device: { deviceId: 'p-1', name: 'iPhone', platform: 'mobile' },
       host,
     });
     expect(note).toBe(
       '[客户端说明] 系统追加的环境说明，不是用户消息，不要回应或复述。'
-      + '本轮用户在手机「iPhone」(device_id: p-1) 上远程操作本机「Mac」(device_id: mac-1)。'
-      + '产出 HTML 等可预览成品时**优先做成自包含单文件**:样式与脚本内联,'
-      + '图片用 data: URI 或公网地址,避免拆成需要同目录资源的多文件产物;'
-      + '用户明确要求多文件时照常产出。'
-      + '给出文件路径时同时给出结论或内容摘要,不要只回一个路径。',
+      + '本轮用户在手机「iPhone」(device_id: p-1) 上远程操作本机「Mac」(device_id: mac-1)。',
     );
   });
 
-  it('另一台电脑:只有设备事实,不带手机产出偏好', () => {
+  it('另一台电脑:只有设备事实,首句声明不是用户消息', () => {
     const note = buildClientEnvironmentNote({
       device: { deviceId: 'pc-2', name: 'Office PC', platform: 'desktop' },
       host,
-      legacyMobile: true,
     });
     expect(note).toBe(
       '[客户端说明] 系统追加的环境说明，不是用户消息，不要回应或复述。'
@@ -202,55 +145,15 @@ describe('buildClientEnvironmentNote(设备说明)', () => {
     );
   });
 
-  it('只有旧 fromMobileClient 标记(无设备信息):沿用旧版手机说明', () => {
-    expect(buildClientEnvironmentNote({ legacyMobile: true })).toBe(buildMobileClientPromptNote());
-  });
-
   it('本机输入:没有说明', () => {
     expect(buildClientEnvironmentNote({})).toBeNull();
   });
 
   it('同一台设备逐轮稳定(不含时间戳 / 计数器)', () => {
-    const device = { deviceId: 'p-1', name: 'iPhone', platform: 'mobile' as const };
+    const device = { deviceId: 'pc-2', name: 'Office PC', platform: 'desktop' as const };
     const note = buildClientEnvironmentNote({ device, host });
     expect(buildClientEnvironmentNote({ device: { ...device }, host: { ...host } })).toBe(note);
     expect(note).not.toMatch(/\d{4}-\d{2}-\d{2}/);
-  });
-});
-
-describe('buildMobileClientPromptNote(送进模型的文本)', () => {
-  const note = buildMobileClientPromptNote();
-
-  it('首句声明这不是用户消息(否则模型会当请求回应或复述)', () => {
-    expect(note.startsWith('[客户端说明]')).toBe(true);
-    expect(note).toContain('不是用户发来的消息');
-    expect(note).toContain('不要把它当作用户的请求');
-  });
-
-  it('给出自包含单文件的产出偏好', () => {
-    expect(note).toContain('手机客户端');
-    expect(note).toContain('自包含单文件');
-  });
-
-  it('是偏好不是禁令:用户明确要多文件时不被挡住', () => {
-    expect(note).toContain('优先');
-    expect(note).toContain('明确要求多文件时照常产出');
-    expect(note).not.toContain('必须做成');
-    expect(note).not.toContain('禁止');
-  });
-
-  it('不写「不要给本地路径」—— 手机端本就能打开路径,那样写会和已有能力打架', () => {
-    // 路径在手机上可点、可渲染、同目录资源会被取回(见 mobile 的 HtmlFileReader /
-    // htmlLocalResources)。这里只要求「别只回一个路径」,不否定给路径本身。
-    expect(note).not.toContain('不要给出路径');
-    expect(note).not.toContain('不要给本地路径');
-    expect(note).toContain('不要只回一个路径');
-  });
-
-  it('逐字节稳定(同一台设备逐轮不变):不含时间戳 / 随机量等易变内容', () => {
-    expect(buildMobileClientPromptNote()).toBe(note);
-    expect(note).not.toMatch(/\d{4}-\d{2}-\d{2}/);
-    expect(note).not.toMatch(/\d{10,}/);
   });
 });
 
@@ -317,35 +220,7 @@ describe('shouldPrependMobileClientPromptNote(内置命令旁路)', () => {
   });
 });
 
-describe('stampMobileClientOrigin(IPC 边界盖章)', () => {
-  it('手机来源盖上标记,返回新对象不改入参', () => {
-    // 显式标出可选字段:真实入参是 AgentInputQueuedMessage(该字段是可选的),
-    // 字面量不写这一项会让 TS 判「与约束无公共属性」(TS2559)而拒收。
-    const item: { clientId: string; text: string; fromMobileClient?: boolean } = { clientId: 'a', text: 'hi' };
-    const out = stampMobileClientOrigin(item, true);
-    expect(out).toEqual({ clientId: 'a', text: 'hi', fromMobileClient: true });
-    expect(item).toEqual({ clientId: 'a', text: 'hi' });
-  });
-
-  it('非手机来源:客户端自填的标记必须被剥掉(wire 值一律不生效)', () => {
-    // item 来自 wire,客户端可以自己填 true —— 必须无条件覆盖。
-    const forged = { clientId: 'a', text: 'hi', fromMobileClient: true };
-    expect(stampMobileClientOrigin(forged, false)).toEqual({ clientId: 'a', text: 'hi' });
-    expect(stampMobileClientOrigin(forged, false)).not.toHaveProperty('fromMobileClient');
-  });
-
-  it('手机来源时覆盖为 true(即使 wire 传的是 false)', () => {
-    expect(stampMobileClientOrigin({ fromMobileClient: false }, true))
-      .toEqual({ fromMobileClient: true });
-  });
-});
-
 describe('stripMainOnlySendOpts(直连路径消毒)', () => {
-  it('剥掉客户端自报的 fromMobileClient', () => {
-    expect(stripMainOnlySendOpts({ messageUuid: 'u', fromMobileClient: true }))
-      .toEqual({ messageUuid: 'u' });
-  });
-
   it('剥掉客户端自报的消息来源(设备 / 插件 / steer 来源 / 共享成员)', () => {
     const forged = {
       messageUuid: 'u',

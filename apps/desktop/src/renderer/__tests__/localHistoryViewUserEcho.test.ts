@@ -322,13 +322,13 @@ describe('local history view keeps user rows through the DB echo', () => {
     makerChatStore.purgeSession(s);
   });
 
-  // Codex review P2：排队项本身不构成本端发送证据。IM 通道、手机端、定时任务
+  // Codex review P2：排队项本身不构成本端发送证据。IM 通道、另一台电脑、定时任务
   // 注入的 user 项也会经 pendingQueue 派发，且不登记 localSentUserMessageIds；
   // 它们的落库回声不得被附上 localSendPrecedingClientIds（否则历史视图会把它
   // 当本地 user 尾项提前插入/重排，刷新后才纠正）。
   it.each<[string, (item: AgentInputQueuedMessage) => AgentInputQueuedMessage]>([
     ['IM 通道', (item) => item],
-    ['手机端', (item) => ({ ...item, fromMobileClient: true })],
+    ['另一台电脑', (item) => ({ ...item, sourceDevice: { deviceId: 'pc-2', platform: 'desktop' } })],
     ['定时任务', (item) => ({
       ...item,
       origin: { kind: 'scheduler', scheduleId: 'sch-1', scheduleName: 'nightly' },

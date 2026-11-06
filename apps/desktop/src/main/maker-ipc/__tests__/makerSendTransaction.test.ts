@@ -42,7 +42,7 @@ import { createWorkingDirectoryRecovery } from '../workingDirectoryRecovery';
 import { createPreflightHarness, filesystemError } from './helpers/workingDirectoryPreflightHarness';
 import { buildCindyMakeTaskNote } from '../../cindy-make/taskNote';
 import { getResolvedMainLocale } from '../../i18n';
-import { buildMobileClientPromptNote } from '../mobileClientPromptNote';
+import { buildClientEnvironmentNote } from '../mobileClientPromptNote';
 import { buildUiLanguageErrorNote } from '../uiLanguageErrorNote';
 import * as mcpApps from '../../mcp-apps/runtime.js';
 import { createWireNoteMemory } from '../wireNoteMemory';
@@ -914,7 +914,6 @@ describe('maker SEND transaction', () => {
       { ...forged, origin: { kind: 'scheduler', scheduleId: 's', scheduleName: 'S' } },
       { ...forged, origin: { kind: 'session', senderSessionId: 's', displayText: command } },
       { ...forged, files: [{}] },
-      { ...forged, fromMobileClient: true },
       { ...forged, autoResume: true },
     ]) {
       const restored = restoreTrustedDesktopQueuedOrigin(ineligible as unknown as AgentInputQueuedMessage);
@@ -3247,70 +3246,30 @@ describe('maker SEND transaction', () => {
   });
 });
 
-describe('mobile client prompt note', () => {
-  it('keeps ordinary mobile messages annotated on the wire but persists the original text', async () => {
-    const session = createSession({ agentKind: 'claude-code' });
+describe('client environment note command bypass', () => {
+  const host = { deviceId: 'mac-1', name: 'Mac' };
+  const pc = { deviceId: 'pc-1', name: 'Office PC', platform: 'desktop' as const };
+  const remoteNote = buildClientEnvironmentNote({ device: pc, host });
+  function setup(agentKind: AgentKind) {
+    const session = createSession({ agentKind });
     const { deps } = createDeps({
       getSession: vi.fn(() => session),
-      isMobileClientInvoke: vi.fn(() => true),
+      readHostDeviceIdentity: vi.fn(() => host),
     });
-    const transaction = createMakerSendTransaction(deps);
+    return { session, transaction: createMakerSendTransaction(deps) };
+  }
 
-    await transaction.sendToAgentAccepted('session-1', 'hello', undefined, {
-      persistUserMessage: { clientId: 'mobile-1', content: 'hello' },
-    });
-
-    const sent = vi.mocked(session.send).mock.calls[0]?.[0];
-    expect(sent).toBe(`${uiLanguageNote()}\n\n${buildMobileClientPromptNote()}\n\nhello`);
-    expect(vi.mocked(deps.createDbMessage).mock.calls[0]?.[1].content).toBe('hello');
-  });
-
-  it('sends mobile Claude Code /compact commands without a prepended note', async () => {
-    const session = createSession({ agentKind: 'claude-code' });
-    const { deps } = createDeps({
-      getSession: vi.fn(() => session),
-      isMobileClientInvoke: vi.fn(() => true),
-    });
-    const transaction = createMakerSendTransaction(deps);
-
-    await transaction.sendToAgentAccepted('session-1', '/compact focus on decisions');
-
+  it('sends remote Claude Code /compact commands without a prepended note', async () => {
+    const { session, transaction } = setup('claude-code');
+    await transaction.sendToAgentAccepted('session-1', '/compact focus on decisions', undefined, { sourceDevice: pc });
     expect(session.send).toHaveBeenCalledWith('/compact focus on decisions', expect.anything());
   });
 
-  it('keeps the mobile note for /compact text sent to Codex', async () => {
-    const session = createSession({ agentKind: 'codex' });
-    const { deps } = createDeps({
-      getSession: vi.fn(() => session),
-      isMobileClientInvoke: vi.fn(() => true),
-    });
-    const transaction = createMakerSendTransaction(deps);
-
-    await transaction.sendToAgentAccepted('session-1', '/compact');
-
+  it('keeps the remote note for /compact text sent to Codex', async () => {
+    const { session, transaction } = setup('codex');
+    await transaction.sendToAgentAccepted('session-1', '/compact', undefined, { sourceDevice: pc });
     const sent = vi.mocked(session.send).mock.calls[0]?.[0];
-    expect(sent).toBe(`${uiLanguageNote()}\n\n${buildMobileClientPromptNote()}\n\n/compact`);
-  });
-
-  it('applies the same command bypass to coordinator-drained mobile messages', async () => {
-    const session = createSession({ agentKind: 'claude-code' });
-    const { deps } = createDeps({
-      getSession: vi.fn(() => session),
-      isMobileClientInvoke: vi.fn(() => false),
-    });
-    const transaction = createMakerSendTransaction(deps);
-
-    await transaction.sendToAgentAccepted(
-      'session-1',
-      { type: 'user', content: '/compact' },
-      undefined,
-      { fromMobileClient: true },
-    );
-
-    expect(session.send).toHaveBeenCalledWith(
-      { type: 'user', content: '/compact' },
-      expect.anything(),
-    );
+    expect(sent).toBe(`${uiLanguageNote()}\n\n${remoteNote}\n\n/compact`);
   });
 });
 
@@ -3320,11 +3279,7 @@ describe('message source notes', () => {
   const pc = { deviceId: 'pc-1', name: 'Office PC', platform: 'desktop' as const };
   const phoneNote =
     '[客户端说明] 系统追加的环境说明，不是用户消息，不要回应或复述。'
-    + '本轮用户在手机「iPhone」(device_id: phone-1) 上远程操作本机「Mac」(device_id: mac-1)。'
-    + '产出 HTML 等可预览成品时**优先做成自包含单文件**:样式与脚本内联,'
-    + '图片用 data: URI 或公网地址,避免拆成需要同目录资源的多文件产物;'
-    + '用户明确要求多文件时照常产出。'
-    + '给出文件路径时同时给出结论或内容摘要,不要只回一个路径。';
+    + '本轮用户在手机「iPhone」(device_id: phone-1) 上远程操作本机「Mac」(device_id: mac-1)。';
   const pcNote =
     '[客户端说明] 系统追加的环境说明，不是用户消息，不要回应或复述。'
     + '本轮用户在另一台电脑「Office PC」(device_id: pc-1) 上远程操作本机「Mac」(device_id: mac-1)。';
@@ -3348,11 +3303,10 @@ describe('message source notes', () => {
   const persistedMeta = (deps: MakerSendTransactionDeps) =>
     vi.mocked(deps.createDbMessage).mock.calls[0]?.[1].agentMeta as Record<string, unknown>;
 
-  it('states the remote phone (with the mobile output preference) and persists the stamped device', async () => {
+  it('states a phone device left in an old queue item without the retired output preference', async () => {
     const { session, deps, transaction } = setup();
     await transaction.sendToAgentAccepted('session-1', 'hello', undefined, {
       sourceDevice: phone,
-      fromMobileClient: true,
       persistUserMessage: { clientId: 'm-1', content: 'hello' },
     });
     expect(sentText(session)).toBe(`${uiLanguageNote()}\n\n${phoneNote}\n\nhello`);
@@ -3360,7 +3314,7 @@ describe('message source notes', () => {
     expect(persistedMeta(deps).sourceDevice).toEqual(phone);
   });
 
-  it('states a desktop controller without the mobile output preference', async () => {
+  it('states a desktop controller and persists the stamped device', async () => {
     const { session, deps, transaction } = setup();
     await transaction.sendToAgentAccepted('session-1', 'hello', undefined, {
       sourceDevice: pc,
@@ -3368,16 +3322,6 @@ describe('message source notes', () => {
     });
     expect(sentText(session)).toBe(`${uiLanguageNote()}\n\n${pcNote}\n\nhello`);
     expect(persistedMeta(deps).sourceDevice).toEqual(pc);
-  });
-
-  it('keeps the legacy mobile note when only the old mobile marker survives', async () => {
-    const { session, deps, transaction } = setup();
-    await transaction.sendToAgentAccepted('session-1', 'hello', undefined, {
-      fromMobileClient: true,
-      persistUserMessage: { clientId: 'm-1', content: 'hello' },
-    });
-    expect(sentText(session)).toBe(`${uiLanguageNote()}\n\n${buildMobileClientPromptNote()}\n\nhello`);
-    expect(persistedMeta(deps)).not.toHaveProperty('sourceDevice');
   });
 
   it('adds no device or source note for local input', async () => {

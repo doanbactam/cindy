@@ -1480,7 +1480,6 @@ import {
   deviceLinkInvokeControllerSupports,
   getDeviceLinkInvokeContext,
   isDeviceLinkInvoke,
-  isMobileControllerInvoke,
   readDeviceLinkInvokeSourceDevice,
   runOutsideDeviceLinkInvokeContext,
 } from '../device-link/invoke-context.js';
@@ -1500,7 +1499,6 @@ import {
   shouldPrependMobileClientPromptNote,
   stampDirectSendSourceDevice,
   stripMainOnlySendOpts,
-  stampMobileClientOrigin,
   type MainOwnedInputBoundaryStamp,
 } from './mobileClientPromptNote.js';
 import { buildWireMessageSourceNote, readWireSourceDevice } from './messageSourceNote.js';
@@ -18833,7 +18831,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     // 手机客户端说明的开关:被控端盖章的来源判据(本机 renderer / 桌面控制端 / 平台
     // 未知一律 false)。必须在这里现取,不能提前求值缓存——同一个装配好的事务会服务
     // 后续所有 send,来源是逐次调用的属性。
-    isMobileClientInvoke: () => isMobileControllerInvoke(),
     // 被控电脑自身身份(设备说明里的「本机」),同样每次现取。
     readHostDeviceIdentity: () => getHostSourceDevice(),
     // 个人版制作任务说明:按持久化的 sessions.source 判定,每次 send 现读,不信任
@@ -19316,8 +19313,6 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
       userName?: string;
       signal?: AbortSignal;
       beforeProviderStart?: () => Promise<void>;
-      /** coordinator 从队列项透传的手机来源(main 构造,非 wire 输入)。 */
-      fromMobileClient?: boolean;
       uiLanguage?: string;
       classicalStyle?: string;
       /**
@@ -19430,15 +19425,13 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     const withSteerSourceNote = steerSourceNote
       ? prependNoteToWireUserMessage(withSteerReplyQuoteNote as HandoffWireMessage, steerSourceNote)
       : withSteerReplyQuoteNote;
-    // 设备来源只认盖章值(coordinator 透传 / 直连 IPC 边界按 async context 盖);没有设备
-    // 信息时沿用旧手机判据:IPC 直连 steer 时 async context 在;coordinator 投递时靠透传。
+    // 设备来源只认盖章值(coordinator 透传 / 直连 IPC 边界按 async context 盖)。
     const steerDevice = readWireSourceDevice(so.sourceDevice);
     const steerAllowsEnvironmentNotes = shouldPrependMobileClientPromptNote(normalized, sess.agentKind);
     const steerNote = steerAllowsEnvironmentNotes
       ? buildClientEnvironmentNote({
           device: steerDevice,
           host: steerDevice ? getHostSourceDevice() : undefined,
-          legacyMobile: isMobileControllerInvoke() || so.fromMobileClient === true,
         })
       : null;
     const steerLanguageNote = steerAllowsEnvironmentNotes
@@ -19563,8 +19556,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
       || containsManagedAttachment(persisted?.content)
       || persisted?.autoResume === true
       || persisted?.origin !== undefined
-      || opts?.origin !== undefined
-      || opts?.fromMobileClient === true) return sendOpts;
+      || opts?.origin !== undefined) return sendOpts;
     return {
       ...(sendOpts && typeof sendOpts === 'object' && !Array.isArray(sendOpts)
         ? sendOpts as Record<string, unknown>
@@ -19685,11 +19677,10 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     MAKER_INVOKE.STEER,
     async (event, sessionId: unknown, message: unknown, sendOpts?: unknown) => {
       // **wire sendOpts 必须消毒**(review P1/P2,两个 bot 各报一次):这个 channel 在
-      // device-link allowlist 里开放,`sendOpts` 是调用方可控输入。不剥的话,桌面 renderer
-      // 或任意获准远控的非手机客户端只要传 `{ fromMobileClient: true }`,就能让本轮拿到伪造
-      // 的手机环境说明、按错误的来源调整产物形态。
+      // device-link allowlist 里开放,`sendOpts` 是调用方可控输入,只允许 main 写的字段
+      // (消息来源、turnPermissionPolicy 等)不剥就能被伪造。
       //
-      // 契约与 maker:send 一致(sessionSendHandler 同样在 IPC 边界剥):**该字段只由 main
+      // 契约与 maker:send 一致(sessionSendHandler 同样在 IPC 边界剥):**这些字段只由 main
       // 盖章**。coordinator 的内部 steerToAgent 调用不经过这里,透传值不受影响。
       if (typeof sessionId !== 'string') throwIpcError('INVALID_PARAMS', 'sessionId required');
       const deviceLinkInvoke = isDeviceLinkInvoke();
@@ -21976,18 +21967,14 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
       try {
         const queuedWithAttachments = materialized.item as AgentInputQueuedMessage;
         assertCurrentInputGeneration();
-        // 手机来源在**入队这一刻**盖章:drain 派发时已脱离本 invoke 的 async context。
-        // 无条件覆盖 —— item 来自 wire,客户端自填的 fromMobileClient 一律不生效。
+        // 来源在**入队这一刻**盖章:drain 派发时已脱离本 invoke 的 async context。
         const queued = stampTurnUiLanguage(
           stampTrustedDeviceLinkQueuedOrigin(
             stampTrustedDesktopQueuedOrigin(
-              stampMobileClientOrigin(
-                await hydrateQueuedAgentReferences(queuedWithAttachments, {
-                  isSessionTurnRunning: (targetSessionId) =>
-                    getMakerIfReady()?.getSession(targetSessionId)?.isTurnRunning() ?? false,
-                }),
-                isMobileControllerInvoke(),
-              ),
+              await hydrateQueuedAgentReferences(queuedWithAttachments, {
+                isSessionTurnRunning: (targetSessionId) =>
+                  getMakerIfReady()?.getSession(targetSessionId)?.isTurnRunning() ?? false,
+              }),
               deviceLinkInvoke,
             ),
             deviceLinkInvoke,
@@ -22298,13 +22285,10 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
         const queued = stampTurnUiLanguage(
           stampTrustedDeviceLinkQueuedOrigin(
             stampTrustedDesktopQueuedOrigin(
-              stampMobileClientOrigin(
-                await hydrateQueuedAgentReferences(queuedWithAttachments, {
-                  isSessionTurnRunning: (targetSessionId) =>
-                    getMakerIfReady()?.getSession(targetSessionId)?.isTurnRunning() ?? false,
-                }),
-                isMobileControllerInvoke(),
-              ),
+              await hydrateQueuedAgentReferences(queuedWithAttachments, {
+                isSessionTurnRunning: (targetSessionId) =>
+                  getMakerIfReady()?.getSession(targetSessionId)?.isTurnRunning() ?? false,
+              }),
               deviceLinkInvoke,
             ),
             deviceLinkInvoke,
@@ -22551,14 +22535,13 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
 
   /**
    * 排队消息被编辑时按**编辑者**所在设备重新盖章:改写后的正文出自这次编辑的设备,原条目的
-   * 设备 / 手机来源(以及插件来源)不再属实。与入队同一套盖章,wire 自报一律不生效;
+   * 设备来源(以及插件来源)不再属实。与入队同一套盖章,wire 自报一律不生效;
    * 设备与平台在 IPC 边界的 invoke context 里读,回调执行时不再依赖 async context。
    */
   function readQueuedEditorProvenance(): {
     sourceDevice: ReturnType<typeof readDeviceLinkInvokeSourceDevice>;
-    isMobile: boolean;
   } {
-    return { sourceDevice: readDeviceLinkInvokeSourceDevice(), isMobile: isMobileControllerInvoke() };
+    return { sourceDevice: readDeviceLinkInvokeSourceDevice() };
   }
   function stampQueuedEditProvenance(
     sessionId: string,
@@ -22578,7 +22561,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
       });
     }
     return stampTrustedDeviceLinkQueuedOrigin(
-      stampTrustedDesktopQueuedOrigin(stampMobileClientOrigin(updated, editor.isMobile), remote, true),
+      stampTrustedDesktopQueuedOrigin(updated, remote, true),
       remote,
       editor.sourceDevice,
     );

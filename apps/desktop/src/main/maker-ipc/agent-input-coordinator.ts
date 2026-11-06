@@ -243,12 +243,6 @@ export interface AgentInputSendOpts {
    * 其它路径(用户输入 / orca)不设,行为不变。
    */
   origin?: { kind: 'scheduler'; scheduleId: string; scheduleName: string; runId?: string };
-  /**
-   * 队列项上盖的手机来源(见 AgentInputQueuedMessage.fromMobileClient)。
-   * drain / steer 都在原 invoke 的 async context 之外派发,只能靠这条透传把来源带到
-   * 最终 wire 消息。**由 main 构造,不是 wire 输入。**
-   */
-  fromMobileClient?: boolean;
   uiLanguage?: string;
   /** Classical output style stamped with uiLanguage; direct wire values are stripped. */
   classicalStyle?: string;
@@ -2742,8 +2736,6 @@ export class AgentInputCoordinator {
         ...(opts?.expectedTurnGeneration !== undefined
           ? { expectedTurnGeneration: opts.expectedTurnGeneration }
           : {}),
-        // 同 drain:steer 投递也在入队时的 async context 之外。
-        ...(item.fromMobileClient ? { fromMobileClient: true } : {}),
         ...(item.uiLanguage ? { uiLanguage: item.uiLanguage } : {}),
         ...(item.classicalStyle ? { classicalStyle: item.classicalStyle } : {}),
         // 消息来源同样随 steer 透传(只用于说明与归属,steer 不经 send 事务)。主机生成的
@@ -5292,8 +5284,6 @@ export class AgentInputCoordinator {
         expectedClearBoundaryMs: active.clearBoundaryMs,
         expectedInputGeneration: active.generation,
         ...(head.origin?.kind === 'scheduler' ? { origin: head.origin } : {}),
-        // 手机来源透传到 send 事务:drain 已脱离入队时的 async context。
-        ...(head.fromMobileClient ? { fromMobileClient: true } : {}),
         ...(head.uiLanguage ? { uiLanguage: head.uiLanguage } : {}),
         ...(head.classicalStyle ? { classicalStyle: head.classicalStyle } : {}),
         ...(head.fromDeviceLinkClient ? { fromDeviceLinkClient: true } : {}),

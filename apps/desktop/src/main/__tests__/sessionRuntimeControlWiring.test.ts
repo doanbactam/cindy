@@ -347,7 +347,7 @@ describe('session runtime control wiring', () => {
       'MAKER_INVOKE.INPUT_UPDATE_CONTENT,',
     );
     expect(registerSource).toContain(
-      'stampTrustedDesktopQueuedOrigin(stampMobileClientOrigin(updated, editor.isMobile), remote, true)',
+      'stampTrustedDesktopQueuedOrigin(updated, remote, true)',
     );
     expect(updateText).toContain('if (!remote) assertTrustedAppRendererEvent(event);');
     expect(updateText).toContain('stampQueuedEditProvenance(sid, updated, remote, editor)');
