@@ -184,12 +184,6 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  html[data-voice-input-overlay='true'],
-  html[data-voice-input-overlay='true'] body,
-  html[data-voice-input-overlay='true'] #root {
-    background: transparent;
-  }
-
   [data-theme='cindy-light'][data-splash-active] .bg-content-area,
   [data-theme='cindy-dark'][data-splash-active] .bg-content-area {
     background: transparent;
@@ -345,25 +339,10 @@ html:lang(ko) {
   height: 0;
   pointer-events: none;
 }
-[data-voice-draft-active='true'] .ProseMirror > p.is-editor-empty:first-child::before,
-[data-voice-draft-active='true'] .ProseMirror > p.is-empty:first-child:only-child::before {
-  content: none;
-}
 /* 输入框推荐提示词生效时,推荐词由 ChatInput 的 overlay 承载,关掉原生 placeholder。 */
-[data-voice-hint-active='true'] .ProseMirror > p.is-editor-empty:first-child::before,
-[data-voice-hint-active='true'] .ProseMirror > p.is-empty:first-child:only-child::before,
 [data-recommendation-active='true'] .ProseMirror > p.is-editor-empty:first-child::before,
 [data-recommendation-active='true'] .ProseMirror > p.is-empty:first-child:only-child::before {
   content: none;
-}
-.ProseMirror[data-voice-holding='true'],
-.ProseMirror[data-voice-holding='true'] * {
-  -webkit-user-select: none;
-  user-select: none;
-}
-/* 空框用完整语音提示替代语音光标，避免图标压住提示首字。 */
-[data-voice-hint-active='true'] [data-voice-caret] {
-  visibility: hidden;
 }
 /* 首页建议悬停预览:预览由 ChatInput 的 overlay 承载,暂时隐去正文/placeholder;
    预览不改变编辑器高度,见 ChatInput 的 promptPreviewLines。 */
@@ -595,88 +574,6 @@ html:lang(ko) {
      因此可以安全地在串内断字，而不会影响普通英文句子的词边界。 */
   word-break: break-all;
   vertical-align: top;
-}
-.ProseMirror .voice-input-draft-replaced {
-  display: none;
-}
-/* Long-run body boxes can overlap a voice replacement in single-line rows.
-   The general multiline list path switches to the paragraph fallback while a
-   replacement is active, so its full-width row wrapper is never fragmented. */
-.ProseMirror .composer-list-long-run-body.voice-input-draft-replaced {
-  display: none;
-}
-.ProseMirror [data-voice-draft-inline] {
-  color: var(--chat-input-text);
-  opacity: 0.7;
-  overflow-wrap: anywhere;
-  pointer-events: none;
-  white-space: pre-wrap;
-}
-.ProseMirror [data-voice-draft-inline][data-voice-draft-source='stable'],
-.ProseMirror [data-voice-draft-inline][data-voice-draft-source='refinement'] {
-  opacity: 1;
-}
-/* Voice caret — replaces the native caret while dictation holds the composer
-   read-only. Listening keeps the mic outline static and animates only the
-   level bars inside the capsule; submitting/refining swaps to a spinner arc. */
-.ProseMirror [data-voice-caret] {
-  display: inline-flex;
-  align-items: center;
-  vertical-align: -0.2em;
-  margin-left: 1px;
-  color: var(--chat-input-text);
-  pointer-events: none;
-  user-select: none;
-}
-.ProseMirror [data-voice-caret] svg {
-  display: block;
-  width: 1.1em;
-  height: 1.1em;
-  /* Clip any sub-pixel bleed to the icon box so a busy refine indicator can
-     never touch neighbouring wrapped text lines. */
-  overflow: hidden;
-}
-/* Spin only the inner arc around the viewBox centre, NOT the whole <svg>:
-   rotating the inline svg element sweeps a bounding box that overlaps adjacent
-   wrapped lines and makes Chromium repaint their text every frame (the
-   multi-line refine jitter). Rotating the path keeps the svg's paint box
-   fixed — the same containment the listening level-bars rely on. */
-.ProseMirror [data-voice-caret][data-voice-caret-state='processing'] [data-voice-spinner-arc] {
-  transform-box: view-box;
-  transform-origin: center;
-  animation: voice-caret-spin 0.9s linear infinite;
-}
-@keyframes voice-caret-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-/* Mic level bars — shared by every VoiceInputMicWaveIcon consumer (in-app
-   voice caret widget, dictation overlay title), hence not scoped to
-   .ProseMirror. The bars exist only inside that icon's svg. */
-[data-voice-mic-active='true'] [data-voice-mic-bar] {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: voice-mic-wave 1.1s ease-in-out infinite;
-  will-change: transform, opacity;
-}
-/* bar 1 keeps the keyframe's default 0s delay */
-[data-voice-mic-active='true'] [data-voice-mic-bar='2'] {
-  animation-delay: 0.18s;
-}
-[data-voice-mic-active='true'] [data-voice-mic-bar='3'] {
-  animation-delay: 0.36s;
-}
-@keyframes voice-mic-wave {
-  0%,
-  100% {
-    transform: scaleY(0.4);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
 }
 .ProseMirror :is([data-mention-chip], [data-pasted-text-chip], [data-composer-quote]) {
   /* Small vertical lift so every atomic chip aligns with the inline text
@@ -1011,7 +908,6 @@ body.resizing-pane [data-ghost-webview] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-voice-mic-active='true'] [data-voice-mic-bar],
   .status-bar-shimmer,
   .status-bar-done,
   .session-status-breathing,
@@ -1054,8 +950,6 @@ body.resizing-pane [data-ghost-webview] {
    (animate-[spin_2.4s_linear_infinite] 之类,见 GhostSummonCard)不含 animate-spin
    子串,靠 [class*='infinite'] 兜住:Tailwind 把 keyframes 简写原样编进类名,
    循环动画必然带 infinite 字面量,而一次性的 animate-[xxx_200ms_ease-out] 不会。 */
-[data-app-hidden='true'] [data-voice-spinner-arc],
-[data-app-hidden='true'] [data-voice-mic-bar],
 /* .status-bar-shimmer 已 cadenced 化为一次性动画(2026-08-07),按「一次性动画
    不得纳入冻结清单」原则移出 —— 冻在中途帧会让状态栏停在半暗。 */
 [data-app-hidden='true'] .session-status-breathing,

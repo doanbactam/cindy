@@ -13,7 +13,6 @@ const BASE = {
   hasMessage: false,
   hasAttachments: false,
   hasBrowserComments: false,
-  hasVoiceDraftText: false,
   mutationLocked: false,
 };
 
@@ -71,7 +70,7 @@ describe('shouldShowComposerPromptRecommendation', () => {
 
     const clickStart = acceptEnd;
     const clickEnd = CHAT_INPUT_SOURCE.indexOf(
-      'voiceInputStopAndSendRef.current = handleClickSend;',
+      'composerRequestSendRef.current = handleClickSend;',
       clickStart,
     );
     const clickBlock = CHAT_INPUT_SOURCE.slice(clickStart, clickEnd);
@@ -99,18 +98,18 @@ describe('shouldShowComposerPromptRecommendation', () => {
       editorEnterEnd,
     );
     const windowEnterEnd = CHAT_INPUT_SOURCE.indexOf(
-      "if (\n        currentState === 'listening'",
+      "window.addEventListener('keydown', handleKeyDown, true);",
       windowEnterStart,
     );
     const windowEnterBlock = CHAT_INPUT_SOURCE.slice(windowEnterStart, windowEnterEnd);
 
     expect(editorEnterStart).toBeGreaterThanOrEqual(0);
     expect(editorEnterBlock).toContain("if (enterIntent === 'native') return false;");
-    expect(editorEnterBlock).toContain('void voiceInputStopAndSendRef.current(enterIntent);');
+    expect(editorEnterBlock).toContain('void composerRequestSendRef.current(enterIntent);');
     expect(editorEnterBlock).not.toContain('void dispatchSendRef.current(enterIntent);');
     expect(windowEnterStart).toBeGreaterThan(editorEnterEnd);
     expect(windowEnterBlock).toContain('panelBridgeRef.current?.captureKey(event)');
-    expect(windowEnterBlock).toContain('void voiceInputStopAndSendRef.current(enterIntent);');
+    expect(windowEnterBlock).toContain('void composerRequestSendRef.current(enterIntent);');
     expect(windowEnterBlock).not.toContain('void dispatchSendRef.current(enterIntent);');
   });
 
@@ -118,12 +117,6 @@ describe('shouldShowComposerPromptRecommendation', () => {
     expect(CHAT_INPUT_SOURCE).toContain('storageKeyForDraftRef.current === storageKey');
     expect(CHAT_INPUT_SOURCE).toContain(
       'setComposerHydrationGeneration((generation) => generation + 1);',
-    );
-  });
-
-  it('只让当前 session 拥有的语音草稿暂停推荐', () => {
-    expect(CHAT_INPUT_SOURCE).toContain(
-      'voiceBusyOnCurrentComposer && voiceInput.draftText.trim().length > 0',
     );
   });
 
@@ -143,7 +136,6 @@ describe('shouldShowComposerPromptRecommendation', () => {
     ['没有推荐', { prompt: null }],
     ['存在附件', { hasAttachments: true }],
     ['存在浏览器评论', { hasBrowserComments: true }],
-    ['存在语音草稿', { hasVoiceDraftText: true }],
     ['输入框锁定', { mutationLocked: true }],
   ])('%s 时不显示，也不会允许隐藏推荐被 Tab 接受', (_label, patch) => {
     expect(

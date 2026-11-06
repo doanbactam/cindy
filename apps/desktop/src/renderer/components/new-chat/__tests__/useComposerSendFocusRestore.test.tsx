@@ -12,7 +12,7 @@ import { useComposerSendFocusRestore } from '../useComposerSendFocusRestore';
 interface HarnessProps {
   sendDispatchInFlight: boolean;
   allowTypeDuringSend: boolean;
-  voiceLocked: boolean;
+  externalLocked: boolean;
 }
 
 let createdEditors: Editor[] = [];
@@ -74,8 +74,8 @@ describe('useComposerSendFocusRestore', () => {
   const typingLocked = ({
     sendDispatchInFlight,
     allowTypeDuringSend,
-    voiceLocked,
-  }: HarnessProps) => voiceLocked || (sendDispatchInFlight && !allowTypeDuringSend);
+    externalLocked,
+  }: HarnessProps) => externalLocked || (sendDispatchInFlight && !allowTypeDuringSend);
 
   const renderRestoreHook = (editor: Editor) =>
     renderHook(
@@ -90,7 +90,7 @@ describe('useComposerSendFocusRestore', () => {
         initialProps: {
           sendDispatchInFlight: false,
           allowTypeDuringSend: false,
-          voiceLocked: false,
+          externalLocked: false,
         },
       },
     );
@@ -114,7 +114,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: true,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     act(() => editor.view.dom.blur());
     expect(document.activeElement).toBe(document.body);
@@ -122,7 +122,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: false,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     flushAnimationFrames();
 
@@ -142,7 +142,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: true,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     act(() => editor.view.dom.blur());
     // dispatchSend captures a second time after the lock stole focus; this must
@@ -153,7 +153,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: false,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     flushAnimationFrames();
 
@@ -171,15 +171,15 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: true,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     act(() => editor.view.dom.blur());
 
-    // The send lock has settled, but voice input still owns the typing lock.
+    // The send lock has settled, but another lock still owns typing.
     hook.rerender({
       sendDispatchInFlight: false,
       allowTypeDuringSend: false,
-      voiceLocked: true,
+      externalLocked: true,
     });
     flushAnimationFrames();
     expect(document.activeElement).toBe(document.body);
@@ -187,7 +187,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: false,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     flushAnimationFrames();
     expect(document.activeElement).toBe(editor.view.dom);
@@ -206,13 +206,13 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: true,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     act(() => button.focus());
     hook.rerender({
       sendDispatchInFlight: false,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     flushAnimationFrames();
 
@@ -234,7 +234,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: true,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     act(() => {
       editor.view.dom.blur();
@@ -249,7 +249,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: false,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     flushAnimationFrames();
 
@@ -272,7 +272,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: true,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     act(() => {
       editor.view.dom.blur();
@@ -288,7 +288,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: false,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     flushAnimationFrames();
 
@@ -308,7 +308,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: true,
       allowTypeDuringSend: false,
-      voiceLocked: false,
+      externalLocked: false,
     });
     act(() => editor.view.dom.blur());
     expect(document.activeElement).toBe(document.body);
@@ -316,7 +316,7 @@ describe('useComposerSendFocusRestore', () => {
     hook.rerender({
       sendDispatchInFlight: true,
       allowTypeDuringSend: true,
-      voiceLocked: false,
+      externalLocked: false,
     });
     flushAnimationFrames();
 

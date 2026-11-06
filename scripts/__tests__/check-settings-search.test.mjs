@@ -128,7 +128,7 @@ describe("settings search coverage gate", () => {
       ).length,
       1,
     );
-    const extra = direct + "\nconst unbound = <VoiceInputSelect />;";
+    const extra = direct + "\nconst unbound = <PillSelect />;";
     assert.equal(inspectSettingsControls(extra, extra, registered).length, 1);
   });
   // Guard regression (#8481): generated shortcut maps must remain tied to a
@@ -150,13 +150,13 @@ describe("settings search coverage gate", () => {
     );
   });
   it("accepts forwarded IDs only inside checked controls and still checks their callers", () => {
-    const wrapper = `function VoiceInputSelect({ value, 'data-setting-id': settingId }) {
+    const wrapper = `function PillSelect({ value, 'data-setting-id': settingId }) {
       return <button data-setting-id={settingId} />;
     }`;
-    const source = `${imports}\n${wrapper}\nconst page = <VoiceInputSelect data-setting-id={settings.enabled.id} />;`;
+    const source = `${imports}\n${wrapper}\nconst page = <PillSelect data-setting-id={settings.enabled.id} />;`;
     assert.deepEqual(inspectSettingsControls(source, "", registered), []);
     assert.equal(inspectSettingsControls(source.replace('data-setting-id={settings.enabled.id}', ''), "", registered).length, 1);
-    assert.equal(inspectSettingsControls(wrapper.replace('VoiceInputSelect', 'UntrackedControl')).length, 1);
+    assert.equal(inspectSettingsControls(wrapper.replace('PillSelect', 'UntrackedControl')).length, 1);
     assert.equal(inspectSettingsControls(wrapper.replace('data-setting-id={settingId}', 'data-setting-id={unrelated}')).length, 1);
   });
   it("recognizes aliased controls and native form controls", () => {

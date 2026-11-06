@@ -174,10 +174,6 @@ mountPage({
       }] }),
       onChanged: subscription('shortcutsChanged'),
     },
-    voiceInput: {
-      getDataSnapshot: () => ({ settings: { shortcut: null } }),
-      onDataChanged: subscription('voiceChanged'),
-    },
     ghosts: {
       listSync: () => ({ ghosts: [{ instanceKey: 'writer', manifest: { id: 'writer' },
         iconDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGMIqDjxnxLMMGrAqAGjBgwXAwCbb48ftfSEpgAAAABJRU5ErkJggg==' }] }),

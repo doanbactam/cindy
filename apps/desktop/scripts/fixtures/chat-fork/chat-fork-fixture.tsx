@@ -1,21 +1,12 @@
-import { useState } from 'react';
 import { mountPage } from '../../ui-page/harness';
 import { UserMessage } from '../../../src/renderer/components/chat/UserMessage';
 import { AssistantMessage } from '../../../src/renderer/components/chat/AssistantMessage';
-import { MessageReadAloudContext } from '../../../src/renderer/components/chat/MessageReadAloudContext';
 import { ThreadPanel } from '../../../src/renderer/features/bots/ThreadPanel';
 
 function CompanionReply() {
-  const [reading, setReading] = useState(false);
-  return <MessageReadAloudContext.Provider value={{
-    sessionId: 'shared-task', available: true, disabled: false,
-    messageId: reading ? 'reply-2' : null, phase: reading ? 'playing' : 'idle',
-    canRead: () => true, toggle: () => setReading(value => !value),
-  }}>
-    <AssistantMessage workingDir="/project" currentSessionId="shared-task" messageClientId="reply-2"
-      content="先收好桌面上的文件，再把常用物品放回顺手的位置。整理完成后，记得留出一块空白的工作区域。"
-      agentKind="cc" simplifiedBotConversation showActionBar />
-  </MessageReadAloudContext.Provider>;
+  return <AssistantMessage workingDir="/project" currentSessionId="shared-task" messageClientId="reply-2"
+    content="先收好桌面上的文件，再把常用物品放回顺手的位置。整理完成后，记得留出一块空白的工作区域。"
+    agentKind="cc" simplifiedBotConversation showActionBar />;
 }
 
 void mountPage({

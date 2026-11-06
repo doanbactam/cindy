@@ -278,7 +278,7 @@ describe('scopes and equality', () => {
   });
 });
 
-describe('shared reserved-shortcut tables (extracted from voice-input)', () => {
+describe('shared reserved-shortcut tables', () => {
   it('keeps the same mac verdicts as the pre-extraction implementation', () => {
     expect(isMacReservedShortcut({ code: 'KeyC', meta: true, ctrl: false, alt: false, shift: false })).toBe(true);
     expect(isMacReservedShortcut({ code: 'Comma', meta: true, ctrl: false, alt: false, shift: false })).toBe(true);
@@ -364,17 +364,6 @@ describe('switch-session slots (mod+1..9)', () => {
 
   it('binding onto an un-overridden hidden slot default is not a conflict', () => {
     expect(findAppShortcutConflict('toggle-sidebar', combo('Digit1', { meta: true }), {}, 'darwin')).toBeNull();
-  });
-
-  // registry 之外体系(语音输入)的历史键位同样让隐藏槽位默认让位 ——
-  // 消费端把语音快捷键转成 combo 后经 yieldToCombos 传入。
-  it('hidden slot defaults yield to external combos (voice input shortcut)', () => {
-    const voiceCombo = combo('Digit3', { ctrl: true });
-    const effective = getEffectiveAppShortcuts({}, 'win32', [voiceCombo]);
-    expect(effective.get('switch-session-3')).toEqual([]);
-    expect(effective.get('switch-session-4')).toEqual([combo('Digit4', { ctrl: true })]);
-    // 可见条目不受 yieldToCombos 影响
-    expect(effective.get('toggle-sidebar')).toEqual([combo('KeyB', { ctrl: true })]);
   });
 
   it('visible defaults still conflict as before', () => {

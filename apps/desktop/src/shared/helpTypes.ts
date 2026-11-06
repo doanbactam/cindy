@@ -22,7 +22,6 @@ export type HelpTabId =
   | 'personalization'
   | 'api-keys'
   | 'providers'
-  | 'voice-input'
   | 'import'
   | 'connections'
   | 'im-bot'

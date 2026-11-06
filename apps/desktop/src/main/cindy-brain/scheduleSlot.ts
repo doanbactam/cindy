@@ -77,9 +77,9 @@ function fail(
  * 该窗口是否是**能承载自动化页的主窗口**。投给别的窗口要么静默丢失,要么落错地方。
  *
  * ⚠️ 本判据被 review 连着推了三轮(面板窗 → 会话副窗 → utility 窗),所以这一版**按
- * 窗口约定收口,不再逐个枚举**:main 侧全部 `new BrowserWindow` 的位置只有 7 处
+ * 窗口约定收口,不再逐个枚举**:main 侧全部 `new BrowserWindow` 的位置只有 6 处
  * (secondary-windows / bootstrap / 插件沙箱 / sidebar-tab-window /
- * right-sidebar-window / computer-permission-guide / voice-input),下面四条把它们
+ * right-sidebar-window / computer-permission-guide),下面四条把它们
  * 全覆盖了,**只有 bootstrap 建的主窗口不带任何标识** —— 新增窗口类型只要沿用现有
  * 约定(utility 窗带 `?view=`),就自动落在排除侧,不需要再改这里。
  *
@@ -87,8 +87,7 @@ function fail(
  *    还没 load,它本身是合法 URL 且不带任何标识,不显式挡会被误判);以及**插件沙箱
  *    窗** —— 它用自定义 scheme 加载插件内容(runtime/electronSandboxAdapter.ts),
  *    往那边推主机 UI 事件本就不该发生。
- * 2. **utility 窗**统一带 `?view=<名字>`:语音浮窗 `voice-input-overlay`、词典 toast
- *    `voice-input-dictionary-toast`、权限引导 `computer-permission-guide` 与它的
+ * 2. **utility 窗**统一带 `?view=<名字>`:权限引导 `computer-permission-guide` 与它的
  *    backdrop。这里按 **`view` 这个 key** 排除而不是枚举取值 —— 它是 app 的 utility
  *    窗约定,枚举取值就等着下一个新窗口再漏一次(review 第三轮)。
  * 3. **右侧栏独立窗**(`?sidebarWindow=1`,含整栏子窗口与单页签弹出窗口):与 MainLayout

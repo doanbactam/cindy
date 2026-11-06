@@ -57,8 +57,6 @@ import {
   getAppShortcutPlatform,
   subscribeAppShortcuts,
 } from '@/lib/appShortcutStore';
-import { getVoiceInputSettings } from '@/hooks/useVoiceInputSettings';
-import { voiceInputShortcutToAppShortcutCombo } from '@/voice-input/appShortcutConflict';
 import { usePluginShortcutDefinitions } from '@/cindy-brain/usePluginShortcutDefinitions';
 import { useWorkLouderCodex } from '@/hooks/useWorkLouderCodex';
 import { useXboxGamepad } from '@/hooks/useXboxGamepad';
@@ -134,13 +132,11 @@ export function KeyboardShortcutsSection() {
     JSON.stringify({
       overrides: getAppShortcutOverrides(),
       globalFailures: getAppShortcutGlobalFailures(),
-      voiceShortcut: getVoiceInputSettings().shortcut,
     }),
   );
-  const { overrides, globalFailures, voiceShortcut } = useMemo(() => JSON.parse(snapshotJson) as {
+  const { overrides, globalFailures } = useMemo(() => JSON.parse(snapshotJson) as {
     overrides: AppShortcutOverrides;
     globalFailures: AppShortcutId[];
-    voiceShortcut: ReturnType<typeof getVoiceInputSettings>['shortcut'];
   }, [snapshotJson]);
   const [recordingId, setRecordingId] = useState<ShortcutId | null>(null);
   const [hardwarePane, setHardwarePane] = useState<HardwarePane>('list');
@@ -255,10 +251,10 @@ export function KeyboardShortcutsSection() {
       'pluginName' in def ? def.label : t(def.labelKey, { defaultValue: def.id }),
     [t],
   );
-  const pluginCombos = useMemo(() => {
-    const voiceCombo = voiceShortcut ? voiceInputShortcutToAppShortcutCombo(voiceShortcut) : null;
-    return getEffectivePluginShortcuts(pluginDefs, overrides, platform, voiceCombo ? [voiceCombo] : []);
-  }, [pluginDefs, overrides, platform, voiceShortcut]);
+  const pluginCombos = useMemo(
+    () => getEffectivePluginShortcuts(pluginDefs, overrides, platform),
+    [pluginDefs, overrides, platform],
+  );
   const combosFor = useCallback(
     (id: ShortcutId) => isPluginShortcutId(id) ? pluginCombos.get(id) ?? [] : getAppShortcutCombos(id),
     [pluginCombos],
@@ -299,19 +295,6 @@ export function KeyboardShortcutsSection() {
             ? itemLabel(getAppShortcutDefinition(conflictId))
             : pluginDefs.find((def) => def.id === conflictId)?.label ?? conflictId,
         });
-      }
-      // 语音输入全局快捷键是独立体系, 这里只做占用提示级别的冲突阻断。
-      const voice = getVoiceInputSettings().shortcut;
-      if (
-        voice &&
-        voice.trigger !== 'modifier' &&
-        voice.code === combo.code &&
-        voice.modifiers.meta === combo.meta &&
-        voice.modifiers.ctrl === combo.ctrl &&
-        voice.modifiers.alt === combo.alt &&
-        voice.modifiers.shift === combo.shift
-      ) {
-        return t('settings.shortcuts.errors.voiceConflict');
       }
       return null;
     },
@@ -550,7 +533,7 @@ export function KeyboardShortcutsSection() {
                   'inline-flex min-w-[72px] items-center justify-center rounded-[4px] px-2 py-1',
                   // 不用 font-mono: 项目的 mono 映射到 --app-font-code (代码字体),
                   // 普遍缺 ⌘⇧⌥⌃ 字形, 会 fallback 渲染得又小又不协调。系统 UI
-                  // 字体自带这些符号的正确字形 (与 VoiceInputSection 显示一致)。
+                  // 字体自带这些符号的正确字形。
                   'border text-12 font-medium',
                   isRecording
                     ? 'border-[var(--focus-ring)] text-[var(--text-primary)] bg-[var(--surface-chip)]'

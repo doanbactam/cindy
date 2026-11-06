@@ -56,8 +56,7 @@
  *   SDK 发送层已核实(vendored 1.0.0):未配置 batch 时无 BatchConsumer,每条
  *   事件独立 AjaxTask 即发即弃(失败至多原地重试 3 次后丢弃),不存在堆积面。
  *
- * Overlay 窗口(voice-input-overlay / voice-input-dictionary-toast)不引入此模块,
- * 避免一次浮窗弹出被算成一次 PV。
+ * Overlay 等 utility 窗口(?view=<名字>)不引入此模块,避免一次浮窗弹出被算成一次 PV。
  */
 
 import type { CindyRegion } from '@cindy/maker-shared/brand-identity';

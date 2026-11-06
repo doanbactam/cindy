@@ -4,11 +4,9 @@ import { ctx, mountPage, subscription, forbid } from '../../ui-page/harness';
 import { WallpaperSettingsProvider } from '../../../src/renderer/hooks/useWallpaperSettings';
 import { SUBAGENT_MODEL_SETTINGS_DEFAULTS } from '../../../src/shared/subagentModelSettings';
 import { VISION_BRIDGE_SETTINGS_DEFAULTS } from '../../../src/shared/visionBridgeSettings';
-import { getDefaultVoiceInputSettings } from '../../../src/shared/voiceInputData';
 
 const read = <T,>(value: T) => async () => value;
 const state = <T extends object>(defaults: T) => ({ ...defaults, defaults, isCustomized: false, customizedKeys: [] });
-const voiceSettings = getDefaultVoiceInputSettings(ctx.platform);
 Object.assign(window, { settingsFixtureEntries: SETTINGS_SEARCH_ENTRIES });
 const zeroMoney = { amount: 0, currency: 'USD', approximate: false, kind: 'actual-cost' };
 const creditPool = { remaining: '0', used: '0', total: '0' };
@@ -77,16 +75,6 @@ void mountPage({
     terminal: { listAvailableShells: read([]), getDefaultShellPref: read('auto') },
     worktreeRecycle: { list: read([]) },
     cindyMediaStorage: { stats: read({ success: true, blobs: { totalCount: 0, totalBytes: 0, cacheCount: 0, cacheBytes: 0 }, legacy: emptyDirectory, fixedCaches: { legacyImages: emptyDirectory, chatAttachments: emptyDirectory }, deadDirs: [] }) },
-    voiceInput: {
-      getDataSnapshot: () => ({ settings: voiceSettings, dictionaryEntries: [], history: [], usageStats: {} }),
-      getHistory: () => [], setGlobalShortcut: read({ ok: true }),
-      speakerFilter: { getStatus: read({ supported: true, modelState: 'missing', downloadedBytes: 0, totalBytes: 28925018, enrolled: false }), onStatusChanged: subscription('speaker-status') },
-      getSystemPermissions: read({ microphone: { ok: true }, accessibility: { ok: true } }),
-      onDataChanged: subscription('voice-data'),
-      getSystemPermissionsCached: () => ({ microphone: { ok: true }, accessibility: { ok: true } }),
-      getModelSelection: read({ selection: { serviceMode: 'byok', asrProvider: '', refinerProvider: '' }, asrProfiles: [], refinerProfiles: [], readiness: { ok: true, provider: 'openai' }, customAsrApiKeyConfigured: false }),
-      getReadinessCached: read({ ok: true }), getMicrophonePermissionCached: read({ ok: true, status: 'granted' }),
-    },
     openExternal: forbid('openExternal'),
   },
   render: () => <WallpaperSettingsProvider><div className="h-screen"><SettingsView /></div></WallpaperSettingsProvider>,

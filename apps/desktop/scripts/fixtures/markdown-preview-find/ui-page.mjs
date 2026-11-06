@@ -4,31 +4,13 @@ export default {
   name: 'markdown-preview-find',
   entry: './markdown-preview-find-fixture.tsx',
   viewport: { width: 1040, height: 760 },
-  real: 'TextLightbox, MarkdownRenderer, FindInPageBar, FileBodyView, WorkdirBrowseSidebar, ChatInput and AskUserQuestionPrompt keyboard handling, fullscreen video menus and shortcut ownership',
-  notCovered: 'Installed release, native menus/IME, PDF/draw.io, file/search backends, microphone capture and ASR; file/search data, video bytes and voice state are controlled fixtures',
+  real: 'TextLightbox, MarkdownRenderer, FindInPageBar, FileBodyView, WorkdirBrowseSidebar, keyboard handling, fullscreen video menus and shortcut ownership',
+  notCovered: 'Installed release, native menus/IME, PDF/draw.io, file/search backends; file/search data and video bytes are controlled fixtures',
   stubs: {
-    'src/renderer/voice-input/workletUrl': 'export function getVoiceInputWorkletUrl() { return "/fixture-worklet.js"; }',
-    'src/renderer/voice-input/captureSession': `export async function startVoiceInputCaptureSession(options) {
-      options.setEngine({ drainBufferedAudio: async () => {}, stop: async () => {} });
-      options.onCaptureReady?.();
-      return { ok: true, drainPendingChunks: () => {} };
-    }`,
     'src/renderer/features/cc-agent/workdir-browse/PdfPreview':
       'export function PdfPreview() { throw new Error("PDF is outside this Markdown fixture"); }',
     'src/renderer/features/cc-agent/workdir-browse/DrawioPreview':
       'export function DrawioPreview() { throw new Error("draw.io is outside this Markdown fixture"); }',
-    'src/renderer/voice-input/useVoiceInput': `
-      import { useState } from 'react';
-      export function useVoiceInput() {
-        const [state, setState] = useState('listening');
-        window.__fixtureVoiceState = state;
-        return { state, isListening: state === 'listening', isBusy: state !== 'idle',
-          draftText: state === 'idle' ? '' : '保留的语音草稿', draftSource: 'partial', draftRange: null,
-          getState: () => state, prepare: async () => {},
-          start: async () => setState('listening'), stop: async () => setState('idle'),
-          cancel: async () => { window.__fixtureVoiceCancels = (window.__fixtureVoiceCancels || 0) + 1; setState('idle'); },
-          getLastRefinement: () => null, getLastSubmittedText: () => '' };
-      }`,
   },
   cases: {
     default: { about: 'Document-only matching, visible pointer targets, table navigation and Escape order' },
@@ -39,8 +21,6 @@ export default {
     'ime-escape': { about: 'An IME-cancelling Escape and its repeats keep search open until a new press' },
     'outside-focus': { about: 'Focus stays in the preview; Escape closes find first from the document body' },
     'background-project-search': { about: 'The covered project-search sidebar retains its mode and query until the document closes' },
-    'background-ask-voice': { about: 'Preview Escape preserves question-card dictation and its answer draft' },
-    'background-voice': { about: 'Preview Escape leaves the real composer voice-cancel handler untouched until the document closes' },
     'fullscreen-video': { about: 'Fullscreen video exit and menus preserve search until a fresh Escape' },
     'toolbar-tooltip': { about: 'Focused and hovered toolbar tooltips own Escape before document find' },
   },
@@ -58,15 +38,6 @@ export default {
       await page.keyboard.press(findKey);
       if (editor) await page.locator('[data-doc-search-bar]').waitFor();
       else await page.getByRole('searchbox').waitFor();
-    }
-    if (ui.case === 'background-ask-voice') {
-      await page.getByRole('textbox').fill('已有回答');
-      await page.getByTestId('ask-user-voice').click();
-      await page.waitForFunction(() => document.querySelector('[data-testid="ask-user-voice"]')?.getAttribute('aria-pressed') === 'true');
-      await page.waitForFunction(() => document.querySelector('[data-testid="ask-user-voice"]')?.getAttribute('aria-busy') === 'false');
-      await page.evaluate(() => window.__uiPage.emit('voice-dictation', {
-        type: 'draft', runId: 'fixture-ask-voice', text: '保留的回答语音', source: 'partial',
-      }));
     }
     await page.getByTestId('open-preview').click();
     const card = page.locator('[data-text-lightbox-card]');
@@ -322,14 +293,6 @@ export default {
       assert.equal(await projectInput.isVisible(), true);
       assert.equal(await projectInput.inputValue(), 'needle');
     }
-    if (ui.case === 'background-ask-voice') {
-      assert.equal(await page.evaluate(() => Number(document.body.dataset.askVoiceCancels ?? 0)), 0);
-      assert.equal(await page.getByTestId('ask-user-voice').getAttribute('aria-pressed'), 'true');
-    }
-    if (ui.case === 'background-voice') {
-      assert.equal(await page.evaluate(() => window.__fixtureVoiceCancels || 0), 0);
-      assert.equal(await page.evaluate(() => window.__fixtureVoiceState), 'listening');
-    }
     if (ui.case === 'focus-restore') {
       assert.equal(await opener.evaluate(el => document.activeElement === el), true);
       // A toolbar tooltip owns its own Escape before the document. Reopen it
@@ -352,21 +315,6 @@ export default {
       assert.equal(await projectInput.inputValue(), 'needle');
       await page.keyboard.press('Escape');
       await projectInput.waitFor({ state: 'hidden' });
-    }
-    if (ui.case === 'background-ask-voice') {
-      assert.equal(await page.evaluate(() => Number(document.body.dataset.askVoiceCancels ?? 0)), 0);
-      assert.equal(await page.getByTestId('ask-user-voice').getAttribute('aria-pressed'), 'true');
-    }
-    if (ui.case === 'background-voice') {
-      assert.equal(await page.evaluate(() => window.__fixtureVoiceCancels || 0), 0);
-      await page.keyboard.press('Escape');
-      assert.equal(await page.evaluate(() => window.__fixtureVoiceCancels), 1);
-      assert.equal(await page.evaluate(() => window.__fixtureVoiceState), 'idle');
-    }
-    if (ui.case === 'background-ask-voice') {
-      await page.keyboard.press('Escape');
-      await page.waitForFunction(() => document.body.dataset.askVoiceCancels === '1');
-      assert.equal(await page.getByRole('textbox').inputValue(), '已有回答');
     }
     await page.keyboard.press(findKey);
     if (editor) await page.locator('[data-doc-search-bar] input').fill('苹果');

@@ -50,10 +50,6 @@ vi.mock('@/cindy-brain/usePluginShortcutDefinitions', () => ({
   usePluginShortcutDefinitions: () => mocks.pluginDefinitions,
 }));
 
-vi.mock('@/hooks/useVoiceInputSettings', () => ({
-  getVoiceInputSettings: () => ({ shortcut: null }),
-}));
-
 vi.mock('@/hooks/useWorkLouderCodex', async () => {
   const { WORKLOUDER_CODEX_EMPTY_DEVICE_STATE, createWorkLouderCodexDefaultSettings } =
     await import('../../../../shared/workLouderCodex');

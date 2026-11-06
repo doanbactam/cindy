@@ -26,8 +26,7 @@ export const DEFAULT_UTILITY_MODEL_PROVIDER_KIND = 'codex-gpt-5.4-mini';
 export const DEFAULT_UTILITY_MODEL = 'gpt-5.4-mini';
 
 // Default lightweight-model candidate pool, highest priority first when no
-// runtime-specific policy is applied. Voice input refinement may reorder this
-// built-in pool after credential readiness is known.
+// runtime-specific policy is applied.
 export const DEFAULT_UTILITY_MODEL_PROVIDER_CHAIN = [
   'codex-gpt-5.4-mini',
   'litellm-gpt-5.4-mini',

@@ -83,7 +83,6 @@ override 仍然优先。供应商／模型停用、退役、付费准入和凭�
 原样读取，不迁移或重排。候选和执行共用逐模型 HTTP 协议解析，未支持的 SDK 协议不列出。
 插件自行钉选继续沿用既有候选规则（含主干已支持的 Pi 路由）；上述直接调用的默认准入
 只用于辅助模型。插件跟随辅助模型链时使用用户已经保存的选择。
-语音润色继续遵循现有的 OpenAI / Cindy AI 白名单，不因辅助模型候选扩大而新增通道。
 
 实现与回归：`apps/desktop/src/main/utility-model/directTextRoute.ts`、
 `__tests__/auxiliaryDirectRoutes.test.ts`、`__tests__/oneShotCandidates.test.ts`。

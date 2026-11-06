@@ -760,10 +760,11 @@ describe('WorkLouderCodexSettings', () => {
     mocks.layout = createWorkLouderCodexDefaultSettings('creator-micro-2').layout;
     render(<WorkLouderCodexSettings model="creator-micro-2" onBack={vi.fn()} />);
 
+    // ACT10 is the first unmapped blank key; it can merge right with ACT11.
     fireEvent.click(
-      screen.getByRole('button', {
-        name: /settings\.shortcuts\.workLouderCodex\.actions\.voice/,
-      }),
+      screen.getAllByRole('button', {
+        name: /settings\.shortcuts\.workLouderCodex\.commandKeys\.unmapped/,
+      })[0],
     );
     expect(
       screen.getByRole('button', {

@@ -78,7 +78,7 @@ import { PrivacyScreen } from './privacyScreen';
 import { ControlledOverlay } from './controlledOverlay';
 import { LinuxPrivacyScreen, supportsLinuxPrivacy, prepareLinuxPrivacy } from './linuxPrivacy';
 import { LinuxWindowActions, supportsOmarchyMenu } from './linuxWindowActions';
-import { systemAudioMuteGuard } from '../voice-input/SystemAudioMuteGuard.js';
+import { systemAudioMuteGuard } from './SystemAudioMuteGuard.js';
 import {
   readWindowsDesktopSupport,
   configureWindowsDesktopSupport,
@@ -1097,13 +1097,12 @@ export const remoteDesktop: RemoteDesktopController = new RemoteDesktopControlle
 });
 
 export function registerRemoteDesktopIpc(
-  isVoiceInputOwner?: Parameters<typeof denyAppDesktopCapture>[1],
   controllers?: RemoteDesktopControllerDirectory,
   liveScreens?: () => LiveScreenProvider,
 ): void {
   controllerDirectory = controllers ?? null;
   liveScreenProvider = liveScreens ?? null;
-  denyAppDesktopCapture(session.defaultSession, isVoiceInputOwner);
+  denyAppDesktopCapture(session.defaultSession);
   const timer = setInterval(() => {
     remoteDesktop.tick();
     // Device names can arrive after the lease starts (presence refresh).

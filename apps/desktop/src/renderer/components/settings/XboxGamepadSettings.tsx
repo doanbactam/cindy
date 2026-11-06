@@ -279,9 +279,7 @@ export function XboxGamepadSettings({ family, onBack }: { family: GamepadFamily;
       description:
         binding?.type === 'command'
           ? workLouderCodexCommandDescription(t, binding.commandId)
-          : binding?.type === 'voice'
-            ? t('settings.shortcuts.xboxGamepad.actions.voiceDescription')
-            : t('settings.shortcuts.xboxGamepad.layout.clickToEdit'),
+          : t('settings.shortcuts.xboxGamepad.layout.clickToEdit'),
     };
   };
 
@@ -405,7 +403,6 @@ export function XboxGamepadSettings({ family, onBack }: { family: GamepadFamily;
                 binding={settings.layout.buttons[editing]}
                 skills={enabledSkills}
                 disabled={!state || saving}
-                allowVoice
                 onChange={(binding) =>
                   patchLayout((layout) => {
                     layout.buttons[editing] = binding;
@@ -491,8 +488,7 @@ export function XboxGamepadSettings({ family, onBack }: { family: GamepadFamily;
                   binding={settings.layout.buttons[stickClickButton(editing)]}
                   skills={enabledSkills}
                   disabled={!state || saving}
-                  allowVoice
-                  onChange={(binding) =>
+                    onChange={(binding) =>
                     patchLayout((layout) => {
                       layout.buttons[stickClickButton(editing)] = binding;
                     })
@@ -573,24 +569,17 @@ function BindingSelect({
   binding,
   skills,
   disabled,
-  allowVoice = false,
   onChange,
 }: {
   binding: XboxGamepadBinding | null;
   skills: Array<{ id: string; name: string }>;
   disabled: boolean;
-  allowVoice?: boolean;
   onChange(binding: XboxGamepadBinding | null): void;
 }) {
   const { t } = useTranslation();
   const groups: SelectOptionGroup[] = [
     { options: [{ value: 'none', label: t('settings.shortcuts.xboxGamepad.actions.none') }] },
   ];
-  if (allowVoice) {
-    groups.push({
-      options: [{ value: 'voice', label: t('settings.shortcuts.xboxGamepad.actions.voice') }],
-    });
-  }
   groups.push({
     label: t('settings.shortcuts.xboxGamepad.actions.commands'),
     options: INPUT_DEVICE_COMMAND_IDS.map((commandId) => ({
@@ -781,15 +770,13 @@ function bindingLabel(
 ): string | null {
   if (!binding) return null;
   if (binding.type === 'command') return workLouderCodexCommandName(t, binding.commandId);
-  if (binding.type === 'skill') return binding.name;
-  return t('settings.shortcuts.xboxGamepad.actions.voice');
+  return binding.name;
 }
 
 function bindingValue(binding: XboxGamepadBinding | null): string {
   if (!binding) return 'none';
   if (binding.type === 'command') return `command:${binding.commandId}`;
-  if (binding.type === 'skill') return `skill:${binding.skillId}`;
-  return 'voice';
+  return `skill:${binding.skillId}`;
 }
 
 function parseBindingValue(
@@ -797,7 +784,6 @@ function parseBindingValue(
   skills: Array<{ id: string; name: string }>,
 ): XboxGamepadBinding | null {
   if (value === 'none') return null;
-  if (value === 'voice') return { type: 'voice' };
   if (value.startsWith('command:')) {
     return { type: 'command', commandId: value.slice(8) as InputDeviceCommandId };
   }

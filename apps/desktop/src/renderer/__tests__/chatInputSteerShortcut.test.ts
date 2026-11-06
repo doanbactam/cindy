@@ -26,17 +26,15 @@ describe('ChatInput steer shortcut contract', () => {
     const windowKeydownBlock = extractBetween(
       chatInputSource,
       'const handleKeyDown = (event: KeyboardEvent) => {',
-      'const handleKeyUp = (event: KeyboardEvent) => {',
+      "window.addEventListener('keydown', handleKeyDown, true);",
     );
     const editorEnterBlock = extractBetween(
       chatInputSource,
       '// Resolve the configurable send shortcut after structured list handling.',
       'return false;\n      },\n    },',
     );
-    const windowComposerCaptureBlock = extractBetween(
-      windowKeydownBlock,
-      'const enterIntent = resolveComposerEnterIntent(',
-      "if (\n        currentState === 'listening'",
+    const windowComposerCaptureBlock = windowKeydownBlock.slice(
+      windowKeydownBlock.indexOf('const enterIntent = resolveComposerEnterIntent('),
     );
     // Send readiness belongs to automatic actions, not keyboard steering.
     // chatInputModelLoading.test.tsx exercises its gates through real ChatInput.
@@ -49,13 +47,12 @@ describe('ChatInput steer shortcut contract', () => {
       'const isModifiedEnter = hasComposerModifier(event, platform);',
     );
     expect(windowKeydownBlock).toContain("(enterIntent === 'queue' || enterIntent === 'steer')");
-    expect(windowKeydownBlock).toContain("currentState !== 'listening'");
-    expect(windowKeydownBlock).toContain('void voiceInputStopAndSendRef.current(enterIntent);');
+    expect(windowKeydownBlock).toContain('void composerRequestSendRef.current(enterIntent);');
     const paletteGuard = windowComposerCaptureBlock.indexOf(
       'panelBridgeRef.current?.captureKey(event)',
     );
     const modifiedSend = windowComposerCaptureBlock.indexOf(
-      'void voiceInputStopAndSendRef.current(enterIntent);',
+      'void composerRequestSendRef.current(enterIntent);',
     );
     expect(paletteGuard).toBeGreaterThan(-1);
     expect(paletteGuard).toBeLessThan(modifiedSend);
@@ -69,7 +66,7 @@ describe('ChatInput steer shortcut contract', () => {
     expect(editorEnterBlock).toContain('platform: window.electronAPI?.platform');
     expect(editorEnterBlock).toContain("if (enterIntent === 'native') return false;");
     expect(editorEnterBlock).toContain("if (enterIntent === 'ignore')");
-    expect(editorEnterBlock).toContain('void voiceInputStopAndSendRef.current(enterIntent);');
+    expect(editorEnterBlock).toContain('void composerRequestSendRef.current(enterIntent);');
     // Tiptap's document can change before React renders the Send state.
     // Keyboard intent must use the live editor rather than the UI readiness ref.
     expect(windowComposerCaptureBlock).not.toContain('composerCanSubmitRef.current');

@@ -4,7 +4,6 @@ import { usageHistorySettings } from './usage/UsageHistorySection.settings-searc
 import { appearanceSettings } from './AppearanceSection.settings-search';
 import { personalizationSettings } from './PersonalizationSettings.settings-search';
 import { personalizationDetailsSettings } from './PersonalizationDetails.settings-search';
-import { voiceInputSettings } from './VoiceInputSection.settings-search';
 import { keyboardShortcutsSettings } from './KeyboardShortcutsSection.settings-search';
 import { providersSettings } from './ProvidersSection.settings-search';
 import { remoteControlSettings } from './RemoteControlSection.settings-search';
@@ -43,7 +42,6 @@ import type { SettingsSearchContext } from './settingsSearchTypes';
 import { useSettingsSectionTarget } from './useSettingsSectionTarget';
 import { useSettingsEscape } from './useSettingsEscape';
 import { UserProfileCard } from './UserProfileCard';
-import { VoiceInputSection } from './VoiceInputSection';
 import { AppearanceSection } from './AppearanceSection';
 import { SubagentModelSection } from './SubagentModelSection';
 import { AuxiliaryModelSection } from './AuxiliaryModelSection';
@@ -94,15 +92,10 @@ import { canAccessBillingSettings } from './billingVisibility';
 import { canAccessUsageSettings } from './usageVisibility';
 import { UsageHistorySection } from './usage/UsageHistorySection';
 import { CURRENT_CINDY_REGION } from '../../../shared/brandRegion';
-import { useVoiceInputModelSelection } from '@/hooks/useVoiceInputModelSelection';
-import { useVoiceSpeakerFilterStatus } from '@/hooks/useVoiceSpeakerFilterStatus';
-import { getVoiceInputSettings } from '@/hooks/useVoiceInputSettings';
 import { getAgentIslandEnabled, getAgentIslandSoundSettings, isAgentIslandSupported, subscribeAgentIslandSettings } from '@/hooks/useAgentIslandSettings';
 
 const DEFAULT_SETTINGS_MENU_WIDTH = 260;
 
-const subscribeVoiceSettings = (onChange: () => void) => window.electronAPI.voiceInput.onDataChanged(onChange);
-const getVoiceRefinementEnabled = () => getVoiceInputSettings().refinementEnabled;
 const getAgentIslandSoundEnabled = () => getAgentIslandSoundSettings().enabled;
 
 interface SettingsOutletContext {
@@ -111,7 +104,7 @@ interface SettingsOutletContext {
 
 export function SettingsView() {
   const { mode, dataOwnerId } = useAuth();
-  // Share one live voice selection with search and the page; discard it on account changes.
+  // Discard per-account page state on account changes.
   return <SettingsViewContent key={`${mode}:${dataOwnerId ?? 'none'}`} />;
 }
 
@@ -120,12 +113,6 @@ function SettingsViewContent() {
   const { wallpaperId, customWallpaperUrl } = useWallpaperSettings();
   const wallpaperMotionAvailable = isSceneWallpaper(wallpaperId) ||
     (wallpaperId === 'custom' && isCustomWallpaperVideo(customWallpaperUrl));
-  const voiceModelSelection = useVoiceInputModelSelection();
-  const { status: speakerFilterStatus } = useVoiceSpeakerFilterStatus(
-    (window.electronAPI?.platform === 'darwin' || window.electronAPI?.platform === 'win32') &&
-    Boolean(window.electronAPI?.voiceInput?.speakerFilter),
-  );
-  const voiceRefinementEnabled = useSyncExternalStore(subscribeVoiceSettings, getVoiceRefinementEnabled);
   const agentIslandEnabled = useSyncExternalStore(subscribeAgentIslandSettings, getAgentIslandEnabled);
   const agentIslandSoundEnabled = useSyncExternalStore(subscribeAgentIslandSettings, getAgentIslandSoundEnabled);
   const agentIslandSupported = isAgentIslandSupported();
@@ -169,15 +156,6 @@ function SettingsViewContent() {
     if (isLegacyAppearanceDeepLink(raw, rawSection)) return 'appearance';
     return isSettingsTab(raw) ? raw : 'general';
   }, [canAccessBilling, canAccessUsage, isMac, rawSection, rawTab]);
-  const previousTabRef = useRef(activeTab);
-  const refreshVoiceModelSelection = voiceModelSelection.refresh;
-  useEffect(() => {
-    // The shared hook outlives each tab; restore the old voice-page remount refresh.
-    if (previousTabRef.current !== activeTab && activeTab === 'voice-input') {
-      void refreshVoiceModelSelection();
-    }
-    previousTabRef.current = activeTab;
-  }, [activeTab, refreshVoiceModelSelection]);
 
   const piExtensionsPanelOpen =
     activeTab === 'general' &&
@@ -311,16 +289,8 @@ function SettingsViewContent() {
     membershipKind: user?.membershipKind ?? null,
     platform: window.electronAPI?.platform ?? '',
     supportsBetaUpdateChannel: window.electronAPI?.supportsBetaUpdateChannel,
-    voiceRefinementEnabled,
-    speakerFilter: speakerFilterStatus ? {
-      supported: speakerFilterStatus.supported, enrolled: speakerFilterStatus.enrolled,
-    } : undefined,
     agentIsland: { enabled: agentIslandEnabled, supported: agentIslandSupported, soundEnabled: agentIslandSoundEnabled },
-    voiceInput: voiceModelSelection.ready && voiceModelSelection.selection ? {
-      serviceMode: voiceModelSelection.selection.serviceMode,
-      asrProvider: voiceModelSelection.selection.asrProvider,
-    } : undefined,
-  }), [locale, wallpaperMotionAvailable, mode, user?.membershipKind, voiceModelSelection.ready, voiceModelSelection.selection, voiceRefinementEnabled, speakerFilterStatus?.supported, speakerFilterStatus?.enrolled, agentIslandEnabled, agentIslandSupported, agentIslandSoundEnabled]);
+  }), [locale, wallpaperMotionAvailable, mode, user?.membershipKind, agentIslandEnabled, agentIslandSupported, agentIslandSoundEnabled]);
   const requestedEntry = resolveSettingsSearchEntry(activeTab, searchParams.get('section'));
   const searchEntry = piExtensionsPanelOpen || (requestedEntry?.isVisible && !requestedEntry.isVisible(searchContext))
     ? null : requestedEntry;
@@ -623,18 +593,6 @@ function SettingsViewContent() {
                     形态跟 MemorySection 对齐 (单标题 + 多 cell + divider)。 */}
                 <section id={personalizationDetailsSettings.compatModeTitle.targetId} className="pb-[18px]" aria-label={t(personalizationSettings.tips.titleKey)}>
                   <TipsSection />
-                </section>
-              </div>
-            )}
-
-            {activeTab === 'voice-input' && (
-              <div
-                role="tabpanel"
-                id={voiceInputSettings.voiceInput.targetId}
-                aria-labelledby="settings-tab-voice-input"
-              >
-                <section aria-label={t(voiceInputSettings.voiceInput.sectionKey)}>
-                  <VoiceInputSection key={`voice-input:${mode}:${dataOwnerId ?? 'none'}`} modelSelection={voiceModelSelection} />
                 </section>
               </div>
             )}

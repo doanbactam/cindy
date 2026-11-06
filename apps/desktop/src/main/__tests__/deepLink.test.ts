@@ -45,7 +45,7 @@ import {
   OPEN_SHARE_FILE_FLAG,
   focusMainWindow,
   handleIncomingDeepLink,
-  openMainWindowVoiceSettings,
+  openMainWindowProviderSettings,
   openMainWindowSession,
   openMainWindowRemoteControlSettings,
   setDeepLinkMainWindow,
@@ -318,7 +318,7 @@ describe('internal main-window navigation', () => {
     setDeepLinkMainWindow(mainWindow as unknown as BrowserWindow);
 
     if (tab === 'remote-control') openMainWindowRemoteControlSettings();
-    else openMainWindowVoiceSettings(tab);
+    else openMainWindowProviderSettings();
 
     expect(mainWindow.show).toHaveBeenCalledOnce();
     expect(mainWindow.restore).toHaveBeenCalledOnce();
@@ -498,7 +498,7 @@ describe('parseDeepLink', () => {
   });
 
   it('rejects settings deep links outside the providers tab', () => {
-    // voice-input 仍是主进程内部专用 payload,不开放给外部 URL 注入
+    // 已下线的 voice-input 等未知页签一律不开放给外部 URL
     expect(parseDeepLink('hana://settings/voice-input')).toBeNull();
     expect(parseDeepLink('hana://settings/anything-else')).toBeNull();
     expect(parseDeepLink('hana://settings/providers/anything-else')).toBeNull();

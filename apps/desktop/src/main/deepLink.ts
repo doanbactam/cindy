@@ -105,7 +105,7 @@ export type DeepLinkPayload =
    *      供应商接入流程)。URL 域只开放 tab=providers;connect 是可选的内置
    *      provider / preset id,经白名单校验后透传给 renderer 已有的消费逻辑。
    */
-  | { type: 'settings'; tab: 'voice-input' | 'providers' | 'billing' | 'remote-control' | 'builtin-tools'; connect?: string; intent?: 'topup' }
+  | { type: 'settings'; tab: 'providers' | 'billing' | 'remote-control' | 'builtin-tools'; connect?: string; intent?: 'topup' }
   /**
    * cindy://plugins[/<ghostId>] —— 打开已安装插件列表,带 id 时直达该插件详情页
    * (随包浏览器扩展等外部表面把用户带回对应插件的启用 / 连接设置)。id 须过
@@ -457,12 +457,9 @@ export function focusMainWindow(platform: NodeJS.Platform = process.platform): b
   return true;
 }
 
-/**
- * 从独立窗口把用户带回主窗口中的语音相关设置页。
- * tab 是封闭联合类型，避免 IPC 调用方把任意 renderer 路由注入主窗口。
- */
-export function openMainWindowVoiceSettings(tab: 'voice-input' | 'providers'): void {
-  dispatchDeepLink({ type: 'settings', tab });
+/** Internal entry (menu-bar quota panel) to the provider settings in the main window. */
+export function openMainWindowProviderSettings(): void {
+  dispatchDeepLink({ type: 'settings', tab: 'providers' });
 }
 
 /** Internal menu-bar entry; reuse the existing main-window navigation queue. */

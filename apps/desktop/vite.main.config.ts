@@ -76,11 +76,12 @@ export default defineConfig(({ mode }) => {
       'process.env.CINDY_WEBAUTHN_APPLE_TEAM_ID': JSON.stringify(
         readMainEnvPreservingEmpty('CINDY_WEBAUTHN_APPLE_TEAM_ID').trim(),
       ),
-      'process.env.XDT_VOICE_INPUT_DICTIONARY_TEXT_DEBUG': JSON.stringify(
-        readMainEnv('XDT_VOICE_INPUT_DICTIONARY_TEXT_DEBUG'),
+      // Legacy utility-model fallbacks (named after the retired voice refiner).
+      'process.env.XDT_VOICE_INPUT_REFINER_PROVIDER': JSON.stringify(
+        readMainEnv('XDT_VOICE_INPUT_REFINER_PROVIDER'),
       ),
-      'process.env.XDT_VOICE_INPUT_ASR_PROVIDER': JSON.stringify(
-        readMainEnv('XDT_VOICE_INPUT_ASR_PROVIDER'),
+      'process.env.XDT_VOICE_INPUT_REFINER_MODEL': JSON.stringify(
+        readMainEnv('XDT_VOICE_INPUT_REFINER_MODEL'),
       ),
       'process.env.XDT_UTILITY_MODEL_PROVIDER': JSON.stringify(
         readMainEnv('XDT_UTILITY_MODEL_PROVIDER'),
@@ -88,24 +89,6 @@ export default defineConfig(({ mode }) => {
       'process.env.XDT_UTILITY_MODEL': JSON.stringify(readMainEnv('XDT_UTILITY_MODEL')),
       'process.env.XDT_UTILITY_MODEL_PROVIDER_CHAIN': JSON.stringify(
         readMainEnv('XDT_UTILITY_MODEL_PROVIDER_CHAIN'),
-      ),
-      'process.env.XDT_VOICE_INPUT_REFINER_PROVIDER': JSON.stringify(
-        readMainEnv('XDT_VOICE_INPUT_REFINER_PROVIDER'),
-      ),
-      'process.env.XDT_VOICE_INPUT_REFINER_MODEL': JSON.stringify(
-        readMainEnv('XDT_VOICE_INPUT_REFINER_MODEL'),
-      ),
-      'process.env.XDT_VOICE_INPUT_REFINER_KEEPALIVE_MS': JSON.stringify(
-        readMainEnv('XDT_VOICE_INPUT_REFINER_KEEPALIVE_MS'),
-      ),
-      'process.env.XDT_VOICE_INPUT_DISABLE_REFINER_PREWARM': JSON.stringify(
-        readMainEnv('XDT_VOICE_INPUT_DISABLE_REFINER_PREWARM'),
-      ),
-      'process.env.XDT_VOICE_INPUT_REFINER_TIMING': JSON.stringify(
-        readMainEnv('XDT_VOICE_INPUT_REFINER_TIMING'),
-      ),
-      'process.env.XDT_VOICE_INPUT_DISABLE_PRECONNECT': JSON.stringify(
-        readMainEnv('XDT_VOICE_INPUT_DISABLE_PRECONNECT'),
       ),
     },
     build: {
@@ -168,7 +151,7 @@ export default defineConfig(({ mode }) => {
           // .node 原生模块 + 平台子包 (@img/sharp-${platform}-${arch} 和
           // @img/sharp-libvips-${platform}-${arch}), 必须运行时 require, 不能 bundle。
           'sharp',
-          // loudness: voice-input 录音时静音用 (Windows-only path)。包内 Windows
+          // loudness: 远程桌面受控时静音用 (Windows-only path)。包内 Windows
           // 后端通过 __dirname 拼到自带的 adjust_get_current_system_volume_vista_plus.exe,
           // bundle 化会破坏路径解析。Mac 不走这里 (我们继续用 osascript), packaged
           // Mac 版本根本不会带上这个包。

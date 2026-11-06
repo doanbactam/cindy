@@ -12,6 +12,8 @@
 
 ## 2026-11
 
+- **11-06 语音输入与伙伴语音对话下线**——用户裁决移除听写、语音浮窗与伙伴通话。取代 10-22「伙伴输入框双按钮切换」与 10-23 伙伴语音操作条：一对一伙伴输入框只保留发送、停止、排队与待发内容编辑，`SendButton` 不再承载听写／通话图标；`DESIGN.md §14.4` 的对应原型段落已删除，产品记录见 `docs/product-rules/feature-retirements.md`。
+
 - **11-04 规范内部矛盾第二轮清理，纯文档**——对最新 main 通读后，修正能从日期、代码和产品规则直接判定的矛盾，不改任何界面数值。其中 `Desktop group progress capsule` 从 `DESIGN.md §5` 退役：群聊进度已于 10-31 改为时间线内的过程记录入口（`BotGroupLiveStatus.tsx`、`bot-group-chat.md §5`），胶囊外框不再存在。隐藏渠道记录改为打开普通任务页（`cindy-bots-runtime.md`）。文字层级收窄：10-22 裁决针对 Cindy，其他内置主题只要求不倒置。阴影与渐变清单、CTA 按下色等需要裁决的项未动。落点：`DESIGN.md` 与各专题文件；清单见 `cindy-design-system.md` 版本记录。
 
 ## 2026-10

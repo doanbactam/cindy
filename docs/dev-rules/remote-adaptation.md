@@ -458,7 +458,7 @@ Desktop 同账号互控的双向请求共用一个 peer 链路。对端 relay �
 入站触发沿用 ordinary peer 通知，不扩大供应商分享或共享任务访客的权限方向；
 不重启共享 relay、不重放其他 peer。入站 accept 尚待确认时，发送路径仍可复用
 既有单飞建链完成恢复，不把 accept 已发出误当成双向业务已经就绪。
-接线与注册恢复回归见 Desktop `deviceLinkVoiceCredentialBootstrap.test.ts`，
+接线与注册恢复回归见 Desktop `deviceLinkVoiceCredentialBootstrap.test.ts`（文件名沿用旧称，内容是通用启动接线），
 入站准入边界见 `deviceLinkDispatch.test.ts`。
 
 Desktop 向曾协商可靠传输、当前发送链路未就绪的设备发起新 invoke、订阅或响应性探测时，

@@ -33,10 +33,7 @@ describe('workLouderCodexActionWindowTarget', () => {
     ).toBe('task-switch');
   });
 
-  it('sends voice, send, and scroll to the system frontmost app when Cindy is not focused', () => {
-    expect(workLouderCodexActionWindowTarget({ type: 'voice', phase: 'press' })).toBe(
-      'system-frontmost',
-    );
+  it('sends send and scroll to the system frontmost app when Cindy is not focused', () => {
     expect(
       workLouderCodexActionWindowTarget({ type: 'command', commandId: 'composer.submit' }),
     ).toBe('system-frontmost');
@@ -76,7 +73,7 @@ describe('createWorkLouderCodexActiveWindowRouter', () => {
     expect(router.resolve({ type: 'command', commandId: 'composer.submit' })).toBeNull();
   });
 
-  it('leaves voice, send, and scroll on the system frontmost app when Cindy is not focused', () => {
+  it('leaves send and scroll on the system frontmost app when Cindy is not focused', () => {
     const main = fakeWindow('main');
     const utility = fakeWindow('utility');
     const router = createWorkLouderCodexActiveWindowRouter({
@@ -85,27 +82,10 @@ describe('createWorkLouderCodexActiveWindowRouter', () => {
       isActionWindow: (win) => win?.id === 'main',
     });
 
-    expect(router.resolve({ type: 'voice', phase: 'press' })).toBeNull();
     expect(router.resolve({ type: 'command', commandId: 'composer.submit' })).toBeNull();
     expect(
       router.resolve({ type: 'scroll', direction: 'down', intensity: 0.8 }),
     ).toBeNull();
-  });
-
-  it('keeps a voice release on the window that received the press', () => {
-    const main = fakeWindow('main');
-    const secondary = fakeWindow('secondary');
-    let focused = secondary;
-    const router = createWorkLouderCodexActiveWindowRouter({
-      getFocusedWindow: () => focused,
-      getMainWindow: () => main,
-      isActionWindow: (win) => win?.id === 'main' || win?.id === 'secondary',
-    });
-
-    expect(router.resolve({ type: 'voice', phase: 'press' })).toBe(secondary);
-    focused = main;
-    expect(router.resolve({ type: 'voice', phase: 'release' })).toBe(secondary);
-    expect(router.resolve({ type: 'command', commandId: 'composer.submit' })).toBe(main);
   });
 
   it('keeps joystick scroll on the window that started the push', () => {
@@ -128,24 +108,5 @@ describe('createWorkLouderCodexActiveWindowRouter', () => {
     expect(router.resolve(scroll)).toBe(secondary);
     expect(router.resolve({ type: 'scroll-stop' })).toBe(secondary);
     expect(router.resolve({ type: 'command', commandId: 'composer.submit' })).toBe(main);
-  });
-
-  it('does not let a scroll-stop steal the in-flight voice window', () => {
-    const main = fakeWindow('main');
-    const secondary = fakeWindow('secondary');
-    let focused = secondary;
-    const router = createWorkLouderCodexActiveWindowRouter({
-      getFocusedWindow: () => focused,
-      getMainWindow: () => main,
-      isActionWindow: (win) => win?.id === 'main' || win?.id === 'secondary',
-    });
-
-    expect(router.resolve({ type: 'voice', phase: 'press' })).toBe(secondary);
-    expect(
-      router.resolve({ type: 'scroll', direction: 'down', intensity: 0.8 }),
-    ).toBe(secondary);
-    focused = main;
-    expect(router.resolve({ type: 'scroll-stop' })).toBe(secondary);
-    expect(router.resolve({ type: 'voice', phase: 'release' })).toBe(secondary);
   });
 });

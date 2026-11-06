@@ -1293,115 +1293,7 @@ describe('WorkLouderCodexLightingController', () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it('releases a held microphone when the account suspends or the key is later released', async () => {
-    const hidRef: { current: ((event: { key: string; act: number }) => void) | null } = {
-      current: null,
-    };
-    const dispatch = vi.fn();
-    const sink = {
-      update: vi.fn(),
-      setAgentKeyPressHandler: vi.fn(),
-      setDeviceActivityHandler: vi.fn(),
-      setConnectionStatusHandler: vi.fn(),
-      setHidInputHandler: vi.fn((handler: typeof hidRef.current) => {
-        hidRef.current = handler;
-      }),
-      dispose: vi.fn(async () => undefined),
-    };
-    const controller = new WorkLouderCodexLightingController(sink, vi.fn(), undefined, dispatch);
-    controller.start();
-    await controller.resumeTaskSlots();
-    hidRef.current?.({ key: 'ACT10', act: 1 });
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'press' });
-
-    dispatch.mockClear();
-    controller.suspendTaskSlots();
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'release' });
-
-    dispatch.mockClear();
-    hidRef.current?.({ key: 'ACT10', act: 0 });
-    expect(dispatch).not.toHaveBeenCalledWith({ type: 'voice', phase: 'press' });
-    expect(dispatch).not.toHaveBeenCalledWith({ type: 'voice', phase: 'release' });
-  });
-
-  it('treats a bound voice action as hold-to-talk on Creator Micro 2', async () => {
-    const hidRef: { current: ((event: { key: string; act: number }) => void) | null } = {
-      current: null,
-    };
-    const dispatch = vi.fn();
-    const sink = {
-      update: vi.fn(),
-      setAgentKeyPressHandler: vi.fn(),
-      setDeviceActivityHandler: vi.fn(),
-      setConnectionStatusHandler: vi.fn(),
-      setHidInputHandler: vi.fn((handler: typeof hidRef.current) => {
-        hidRef.current = handler;
-      }),
-      dispose: vi.fn(async () => undefined),
-    };
-    const controller = new WorkLouderCodexLightingController(sink, vi.fn(), undefined, dispatch);
-    controller.start();
-    controller.applySettings(settings(createWorkLouderCodexDefaultSettings('creator-micro-2')));
-    await controller.resumeTaskSlots();
-
-    // ACT10 is one of Creator's blank caps with a bound voice action — no
-    // printed MIC keycap is involved, unlike Codex's merged microphone key.
-    expect(controller.getState().settings.layout.slots.ACT10).toEqual({
-      keycapId: 'EMPT1',
-      action: { type: 'voice' },
-    });
-    hidRef.current?.({ key: 'ACT10', act: 1 });
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'press' });
-    hidRef.current?.({ key: 'ACT10', act: 0 });
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'release' });
-
-    // The neighbouring blank key stays inert: EMPT has no built-in action.
-    dispatch.mockClear();
-    hidRef.current?.({ key: 'ACT11', act: 1 });
-    expect(dispatch).not.toHaveBeenCalled();
-  });
-
-  it('lets the first switch under a 2U microphone own press and release', async () => {
-    const hidRef: { current: ((event: { key: string; act: number }) => void) | null } = {
-      current: null,
-    };
-    const dispatch = vi.fn();
-    const sink = {
-      update: vi.fn(),
-      setAgentKeyPressHandler: vi.fn(),
-      setDeviceActivityHandler: vi.fn(),
-      setConnectionStatusHandler: vi.fn(),
-      setHidInputHandler: vi.fn((handler: typeof hidRef.current) => {
-        hidRef.current = handler;
-      }),
-      dispose: vi.fn(async () => undefined),
-    };
-    const controller = new WorkLouderCodexLightingController(sink, vi.fn(), undefined, dispatch);
-    controller.start();
-    await controller.resumeTaskSlots();
-    const voiceCalls = () => dispatch.mock.calls.filter((call) => call[0]?.type === 'voice');
-
-    hidRef.current?.({ key: 'ACT10', act: 1 });
-    hidRef.current?.({ key: 'ACT11', act: 1 });
-    hidRef.current?.({ key: 'ACT10', act: 0 });
-    hidRef.current?.({ key: 'ACT11', act: 0 });
-    expect(voiceCalls()).toEqual([
-      [{ type: 'voice', phase: 'press' }],
-      [{ type: 'voice', phase: 'release' }],
-    ]);
-
-    dispatch.mockClear();
-    hidRef.current?.({ key: 'ACT11', act: 1 });
-    hidRef.current?.({ key: 'ACT10', act: 1 });
-    hidRef.current?.({ key: 'ACT11', act: 0 });
-    hidRef.current?.({ key: 'ACT10', act: 0 });
-    expect(voiceCalls()).toEqual([
-      [{ type: 'voice', phase: 'press' }],
-      [{ type: 'voice', phase: 'release' }],
-    ]);
-  });
-
-  it('releases held voice and scroll when this instance turns the keyboard off', async () => {
+  it('releases held scroll when this instance turns the keyboard off', async () => {
     const hidRef: { current: ((event: { key: string; act: number }) => void) | null } = {
       current: null,
     };
@@ -1427,18 +1319,16 @@ describe('WorkLouderCodexLightingController', () => {
     controller.start();
     controller.applySettings(settings({ deviceEnabled: true }));
     await controller.resumeTaskSlots();
-    hidRef.current?.({ key: 'ACT10', act: 1 });
     joystickRef.current?.({ angle: 0.25, distance: 1 });
     dispatch.mockClear();
 
     controller.applySettings(settings({ deviceEnabled: false }));
 
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'release' });
     expect(dispatch).toHaveBeenCalledWith({ type: 'scroll-stop' });
     expect(sink.setDeviceEnabled).toHaveBeenLastCalledWith(false);
   });
 
-  it('releases held voice and scroll when the layout editor opens', async () => {
+  it('releases held scroll when the layout editor opens', async () => {
     const hidRef: { current: ((event: { key: string; act: number }) => void) | null } = {
       current: null,
     };
@@ -1462,13 +1352,11 @@ describe('WorkLouderCodexLightingController', () => {
     const controller = new WorkLouderCodexLightingController(sink, vi.fn(), undefined, dispatch);
     controller.start();
     await controller.resumeTaskSlots();
-    hidRef.current?.({ key: 'ACT10', act: 1 });
     joystickRef.current?.({ angle: 0.25, distance: 1 });
     dispatch.mockClear();
 
     controller.setLayoutPreviewActive(true);
 
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'release' });
     expect(dispatch).toHaveBeenCalledWith({ type: 'scroll-stop' });
   });
 
@@ -1587,38 +1475,6 @@ describe('WorkLouderCodexLightingController', () => {
     hidRef.current?.({ key: 'ACT06', act: 1 });
     hidRef.current?.({ key: 'ENC_CW', act: 2 });
     expect(dispatch).not.toHaveBeenCalled();
-  });
-
-  it('releases a held microphone when the keyboard disappears', async () => {
-    const hidRef: { current: ((event: { key: string; act: number }) => void) | null } = {
-      current: null,
-    };
-    const statusRef: { current: ((status: 'connected' | 'not-detected') => void) | null } = {
-      current: null,
-    };
-    const dispatch = vi.fn();
-    const sink = {
-      update: vi.fn(),
-      setAgentKeyPressHandler: vi.fn(),
-      setDeviceActivityHandler: vi.fn(),
-      setConnectionStatusHandler: vi.fn((handler: typeof statusRef.current) => {
-        statusRef.current = handler;
-      }),
-      setHidInputHandler: vi.fn((handler: typeof hidRef.current) => {
-        hidRef.current = handler;
-      }),
-      dispose: vi.fn(async () => undefined),
-    };
-    const controller = new WorkLouderCodexLightingController(sink, vi.fn(), undefined, dispatch);
-    controller.applySettings(settings({ deviceEnabled: true }));
-    controller.start();
-    await controller.resumeTaskSlots();
-    hidRef.current?.({ key: 'ACT10', act: 1 });
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'press' });
-
-    dispatch.mockClear();
-    statusRef.current?.('not-detected');
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'release' });
   });
 
   it('keeps empty custom slots as new-task and only fills extra keys from the catalog', async () => {

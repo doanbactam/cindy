@@ -44,9 +44,6 @@ function settingsFileName(model: WorkLouderModel): string {
 function normalizeAction(raw: unknown): WorkLouderCodexAction | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const value = raw as Record<string, unknown>;
-  if (value.type === 'voice') {
-    return { type: 'voice' };
-  }
   if (value.type === 'command' && isWorkLouderCodexCommandId(value.commandId)) {
     return { type: 'command', commandId: value.commandId };
   }

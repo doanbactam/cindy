@@ -24,8 +24,8 @@
  * - IME 组合期 (用户打 pinyin 还没选字): 保留组合开始前已有的 decoration,
  *   只随 transaction 映射其位置,compositionend 后再按当前 doc 补算。这样既不
  *   重建输入法维护的 DOM,也不会让已有标点在每次组字时切回另一套字形。
- * - 性能: chat input 文本量很小,正常 doc 变化、slash roster 或 voice replacement
- *   range 变化时采用全量重扫;只有组合期为保持已有 DOM 稳定才映射旧 decoration。
+ * - 性能: chat input 文本量很小,正常 doc 变化或 slash roster 变化时
+ *   采用全量重扫;只有组合期为保持已有 DOM 稳定才映射旧 decoration。
  * - 不污染源数据: decoration 只是渲染层,doc JSON 里没有 span,copy/paste/save
  *   拿到的都是纯文本
  *
@@ -48,10 +48,6 @@ import {
   type SlashCommandMatch,
 } from './SlashCommandDecoration';
 import {
-  resolveVoiceInputReplacementRange,
-  type VoiceInputReplacementRange,
-} from './VoiceInputDraftDecoration';
-import {
   hasCjkContextPunctuation,
   isCjkContextPunctuation,
 } from './CjkPunctuationUtils';
@@ -72,7 +68,6 @@ type ListLineRange = { from: number; to: number };
 function listLineRanges(
   doc: PMNode,
   slashCommandMatches: ReadonlyArray<Pick<SlashCommandMatch, 'from' | 'to'>> = [],
-  voiceReplacementRange: VoiceInputReplacementRange | null = null,
 ): ListLineRange[] {
   const ranges: ListLineRange[] = [];
   doc.descendants((block, blockPos) => {
@@ -122,7 +117,7 @@ function listLineRanges(
     }));
     // ComposerListIndentDecoration switches the entire paragraph to its
     // prefix-only fallback when any list row contains an atom, a recognized
-    // slash pill, voice replacement, or CJK punctuation. Its unindented sibling
+    // slash pill, or CJK punctuation. Its unindented sibling
     // wrapper must remain one inline-block, so those rows opt out of nested
     // punctuation spans and use a Unicode-scoped composite font class instead.
     const hasFallbackLine = lineMatches.some(({ line, match }) => {
@@ -131,15 +126,11 @@ function listLineRanges(
         (slashMatch) =>
           slashMatch.from < contentBase + line.end && slashMatch.to > contentBase + line.start,
       );
-      const overlapsVoiceReplacement =
-        voiceReplacementRange !== null &&
-        voiceReplacementRange.from < contentBase + line.end &&
-        voiceReplacementRange.to > contentBase + line.start;
       const hasCjkPunctuation = hasCjkContextPunctuation(line.text);
       return (
         line.hasInlineAtom ||
         overlapsSlashCommandPill ||
-        (lines.length > 1 && (overlapsVoiceReplacement || hasCjkPunctuation))
+        (lines.length > 1 && hasCjkPunctuation)
       );
     });
     lineMatches.forEach(({ line, match }) => {
@@ -201,13 +192,12 @@ const CJK_FONT_STACK =
 function buildDecorations(
   doc: PMNode,
   slashCommandMatches: ReadonlyArray<Pick<SlashCommandMatch, 'from' | 'to'>> = [],
-  voiceReplacementRange: VoiceInputReplacementRange | null = null,
   ignoreListRanges = false,
 ): DecorationSet {
   const decorations: Decoration[] = [];
   const listRanges = ignoreListRanges
     ? []
-    : listLineRanges(doc, slashCommandMatches, voiceReplacementRange);
+    : listLineRanges(doc, slashCommandMatches);
 
   doc.descendants((node, pos) => {
     if (!node.isText || !node.text) return;
@@ -267,7 +257,6 @@ export const CjkPunctDecoration = Extension.create({
                 decorations: buildDecorations(
                   tr.doc,
                   findSlashCommandMatches(tr.doc, roster),
-                  resolveVoiceInputReplacementRange(tr, oldState).range,
                   true,
                 ),
                 suspendedForComposition: true,
@@ -275,7 +264,6 @@ export const CjkPunctDecoration = Extension.create({
             }
 
             const rosterUpdate = getSlashCommandRosterUpdate(tr);
-            const voiceReplacement = resolveVoiceInputReplacementRange(tr, oldState);
             if (old.suspendedForComposition && compositionMeta !== 'resume') {
               return {
                 decorations: tr.docChanged
@@ -284,17 +272,16 @@ export const CjkPunctDecoration = Extension.create({
                 suspendedForComposition: true,
               };
             }
-            // doc、命令 roster 和 voice replacement 都没变 → decoration 位置不变,
+            // doc 和命令 roster 都没变 → decoration 位置不变,
             // 直接复用;任一输入变化都需要重新扫描。
             if (
               compositionMeta !== 'resume' &&
               !tr.docChanged &&
-              rosterUpdate === undefined &&
-              !voiceReplacement.changed
+              rosterUpdate === undefined
             ) {
               return old;
             }
-            // doc、命令 roster 或 voice replacement 变化 → 全量重算。
+            // doc 或命令 roster 变化 → 全量重算。
             // 之前考虑过用 old.map(tr.mapping, tr.doc) 做增量, 但 chat input
             // 文本量很小 (< 1KB 常见), 全量重扫成本可忽略, 而增量映射要额外
             // 处理"变化范围内新增/删除的 CJK 标点", 代码复杂度上升不划算。
@@ -303,7 +290,6 @@ export const CjkPunctDecoration = Extension.create({
               decorations: buildDecorations(
                 tr.doc,
                 findSlashCommandMatches(tr.doc, roster),
-                voiceReplacement.range,
               ),
               suspendedForComposition: false,
             };

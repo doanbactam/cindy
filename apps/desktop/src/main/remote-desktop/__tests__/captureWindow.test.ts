@@ -221,9 +221,9 @@ it('denies app display/legacy capture while preserving physical microphone and c
     setPermissionRequestHandler: vi.fn(),
   };
   const owner = { kind: 'app', mainFrame: { url: 'file:///app/index.html' }, isDestroyed: () => false };
-  const voice = { ...owner, kind: 'voice' };
+  const utility = { ...owner, kind: 'utility' };
   const details = { isMainFrame: true, requestingUrl: owner.mainFrame.url };
-  denyAppDesktopCapture(ses as any, (candidate) => candidate === voice as any);
+  denyAppDesktopCapture(ses as any);
   const check = ses.setPermissionCheckHandler.mock.calls[0][0];
   const request = ses.setPermissionRequestHandler.mock.calls[0][0];
   for (const mediaType of ['unknown', undefined])
@@ -238,16 +238,16 @@ it('denies app display/legacy capture while preserving physical microphone and c
   const reply = vi.fn();
   request(owner, 'media', reply, { ...details, mediaTypes: ['audio'] });
   expect(reply).toHaveBeenLastCalledWith(true);
-  request(voice, 'media', reply, { ...details, mediaTypes: ['audio'] });
-  expect(reply).toHaveBeenLastCalledWith(true);
+  request(utility, 'media', reply, { ...details, mediaTypes: ['audio'] });
+  expect(reply).toHaveBeenLastCalledWith(false);
   // Regression: the capture filter also denied the native video Fullscreen API.
   // Tier 1: real permission handlers must allow host playback but keep automatic
-  // entry, foreign frames, voice windows and desktop capture denied.
+  // entry, foreign frames, utility windows and desktop capture denied.
   expect(check(owner, 'fullscreen', '', details)).toBe(true);
   request(owner, 'fullscreen', reply, details);
   expect(reply).toHaveBeenLastCalledWith(true);
-  expect(check(voice, 'fullscreen', '', details)).toBe(false);
-  request(voice, 'fullscreen', reply, details);
+  expect(check(utility, 'fullscreen', '', details)).toBe(false);
+  request(utility, 'fullscreen', reply, details);
   expect(reply).toHaveBeenLastCalledWith(false);
   for (const permission of ['automatic-fullscreen', 'notifications', 'geolocation', 'midi', 'hid', 'display-capture', 'unknown']) {
     expect(check(owner, permission, '', details)).toBe(false);
@@ -259,7 +259,7 @@ it('denies app display/legacy capture while preserving physical microphone and c
     [{ ...owner, kind: 'foreign' }, details],
     [owner, { ...details, isMainFrame: false }],
     [owner, { ...details, requestingUrl: 'https://evil.example/' }],
-    [{ ...voice, mainFrame: { url: 'https://evil.example/' } }, details],
+    [{ ...utility, mainFrame: { url: 'https://evil.example/' } }, details],
   ]) {
     expect(check(candidate, 'media', '', { ...requestDetails, mediaType: 'audio' })).toBe(false);
     request(candidate, 'media', reply, { ...requestDetails, mediaTypes: ['audio'] });
@@ -278,7 +278,7 @@ it('denies app display/legacy capture while preserving physical microphone and c
 });
 
 // User regression: the recording preview's native fullscreen button did nothing.
-// Existing permission cases only cover app/voice owners, not playback-only windows.
+// Existing permission cases only cover app/utility owners, not playback-only windows.
 // Minimal input: registered preview top frame requests fullscreen; both production
 // handlers must allow it without granting capture or trusting a foreign frame. Tier: unit.
 it('grants registered playback windows only user-initiated fullscreen', () => {

@@ -1,6 +1,5 @@
 import { parseOutputLimitDetails, type OutputLimitDetails } from '@cindy/maker-shared';
 import { pendingGhostCardFormDelivery } from '@cindy/maker-shared/ghost-card-form';
-import { isVoiceCallTaskMessage } from '../../shared/voiceConversation';
 import { remoteAgentLimitErrorKey } from '../../shared/remoteAgentLimits';
 import { readBotTaskResults } from '@cindy/maker-shared/botCollaboration';
 import { asyncQuestionNeedsSupplement, formatAsyncQuestionSupplement } from '@cindy/maker-shared/interaction';
@@ -588,8 +587,8 @@ export interface ChatMessage {
    */
   systemCardType?:
     | 'plugin-model-route'
+    /** Retired companion call transcript; kept only so MessageStream can hide it. */
     | 'voice-call'
-    | 'voice-call-task'
     | 'cindy-make-doctor'
     | 'cindy-make'
     | 'help'
@@ -19319,7 +19318,7 @@ function mapServerMessages(serverMsgs: Message[]): ChatMessage[] {
   const ordered = filtered.sort(compareMessageTimeline);
   const legacyUserTurnCosts = projectLegacyUserTurnCosts(ordered);
   const mapped = ordered.map((m) => {
-    if (m.role === 'assistant' && m.agentMeta?.voiceCall?.version === 1) return {
+    if (m.role === 'assistant' && m.agentMeta?.voiceCall) return {
       clientId: m.clientId, role: 'assistant' as const, content: '', isStreaming: false,
       systemCardType: 'voice-call' as const, systemCardData: { record: m.agentMeta.voiceCall },
       createdAt: new Date(m.createdAt).toISOString(),
@@ -19739,9 +19738,6 @@ function mapServerMessages(serverMsgs: Message[]): ChatMessage[] {
         role: m.role,
         content: parsed.text,
         isStreaming: false,
-        ...(isVoiceCallTaskMessage(m.clientId, m.sessionId, parsed.text, m.agentMeta?.autoReviewUserText)
-          ? { systemCardType: 'voice-call-task' as const, systemCardData: { text: parsed.text } }
-          : {}),
         ...(m.agentMeta?.autoResumeInfo?.reason === 'usage-limit-reset'
           ? { usageLimitAutoResumeInfo: { ...m.agentMeta.autoResumeInfo } }
           : {}),

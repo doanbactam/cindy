@@ -9,8 +9,7 @@ import { deriveNavRailEntries } from '../components/chat/messageNavRailModel';
 import { collectAssistantTurnUsageDetails } from '../lib/userTurnUsage';
 import { buildTurnUsageDetails } from '../../shared/turnUsageDetails';
 import type { HistoryChatMessage } from '../lib/makerChatStore';
-import type { VoiceCallRecord } from '@cindy/maker-core';
-import { BOT_MESSAGE_TIME_GROUP_MS, collectBotMessageTimeGroups } from '../features/bots/botConversationTimeline';
+import { BOT_MESSAGE_TIME_GROUP_MS } from '../features/bots/botConversationTimeline';
 import { confirmRemoteUsers, projectRemoteUsers, reserveRemoteUser } from '../lib/remoteUserHandoff';
 
 const row = (clientId: string, isStreaming = false): HistoryChatMessage => ({
@@ -19,35 +18,18 @@ const row = (clientId: string, isStreaming = false): HistoryChatMessage => ({
   createdAt: clientId === 'user' ? '2026-09-08T00:00:01Z' : '2026-09-08T00:00:00Z',
 });
 
-// Regression: filtering the raw list in CCAgentSessionView did not cover the
-// independently loaded history snapshot, so a saved seven-second empty call
-// reappeared after reopening the task. Exercise the production render boundary.
+// Companion voice calls were retired; their saved transcript rows stay in the
+// database but must not surface as empty bubbles on any history path.
 it.each(['raw', 'render-cache', 'history', 'cache', 'older-page'] as const)(
-  'omits empty/live call cards from %s without removing saved content or handoffs',
+  'omits retired call cards from %s without removing saved rows',
   async (source) => {
-    const call = (
-      id: string,
-      turns: VoiceCallRecord['turns'] = [],
-      handoffs: VoiceCallRecord['handoffs'] = [],
-    ): HistoryChatMessage => ({
+    const call = (id: string): HistoryChatMessage => ({
       ...row(id),
       content: '',
       systemCardType: 'voice-call',
-      systemCardData: { record: {
-        version: 1, callId: id, startedAt: 1000, endedAt: 8241, turns, handoffs,
-      } satisfies VoiceCallRecord },
+      systemCardData: { record: { version: 1, callId: id, startedAt: 1000, endedAt: 8241, turns: [], handoffs: [] } },
     });
-    const turn = (text: string, failed = false): VoiceCallRecord['turns'] => [
-      { id: 'turn', role: 'user', text, complete: true, failed, createdAt: 1100 },
-    ];
-    const rows = [
-      call('empty'), call('whitespace', turn(' \n\t')),
-      call('spoken', turn('你好')),
-      call('failed', turn('请保留原句', true)),
-      call('interrupted', [{ id: 'reply', role: 'assistant', text: '还没说完', complete: false, createdAt: 1200 }]),
-      call('handoff', [], [{ id: 'task', inputId: 'request', text: '后台继续', state: 'accepted' }]),
-      call('live', turn('这通电话还在继续')),
-    ].map((message, index) => ({
+    const rows = [call('first-call'), row('answer'), call('second-call')].map((message, index) => ({
       ...message,
       createdAt: new Date(Date.UTC(2026, 9, 20) + index * BOT_MESSAGE_TIME_GROUP_MS * 2).toISOString(),
     }));
@@ -72,21 +54,15 @@ it.each(['raw', 'render-cache', 'history', 'cache', 'older-page'] as const)(
         await view.refresh();
         if (source === 'older-page') await view.refresh(true);
       }
-      const render = (activeVoiceCallId: string | null) => {
-        const renderOptions = { botSessionId: 'voice-owner', activeVoiceCallId };
-        return buildMessageStreamRenderProjection({
-          historyView: view, historySnapshot: view.getSnapshot(), historyLiveMessages: [],
-          isSessionStreaming: false, generatedFilesItemCache: new Map(), renderOptions,
-          buildRaw: () => (source === 'render-cache' ? buildCachedRenderItems : buildRenderItems)(
-            rows, undefined, undefined, renderOptions,
-          ),
-        }).items.flatMap(item => item.type === 'message' ? [item.message] : []);
-      };
-      const visible = render('live');
-      expect(visible.map(message => message.clientId)).toEqual(['spoken', 'failed', 'interrupted', 'handoff']);
-      expect([...collectBotMessageTimeGroups(visible).keys()]).toEqual(['spoken', 'failed', 'interrupted', 'handoff']);
-      // Ending a nonempty call reveals its existing card, without a new row.
-      expect(render(null).map(message => message.clientId)).toEqual(['spoken', 'failed', 'interrupted', 'handoff', 'live']);
+      const renderOptions = { botSessionId: 'call-owner' };
+      const visible = buildMessageStreamRenderProjection({
+        historyView: view, historySnapshot: view.getSnapshot(), historyLiveMessages: [],
+        isSessionStreaming: false, generatedFilesItemCache: new Map(), renderOptions,
+        buildRaw: () => (source === 'render-cache' ? buildCachedRenderItems : buildRenderItems)(
+          rows, undefined, undefined, renderOptions,
+        ),
+      }).items.flatMap(item => item.type === 'message' ? [item.message] : []);
+      expect(visible.map(message => message.clientId)).toEqual(['answer']);
       expect(rows).toEqual(saved);
     } finally {
       view.setActive(false);

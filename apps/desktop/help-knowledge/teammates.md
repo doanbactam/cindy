@@ -1,7 +1,7 @@
 ---
 id: teammates
 title: Teammates (Cindy and custom companions)
-summary: Teammates are long-lived AI companions (the built-in Cindy plus ones you create) listed at the top of the left sidebar. Chat with them, set their profile, model, memory, capabilities, projects, voice, messaging platforms, and routines; let them run background tasks, follow up on your sessions, and keep todos; put several in a group chat; choose which computer runs them.
+summary: Teammates are long-lived AI companions (the built-in Cindy plus ones you create) listed at the top of the left sidebar. Chat with them, set their profile, model, memory, capabilities, projects, messaging platforms, and routines; let them run background tasks, follow up on your sessions, and keep todos; put several in a group chat; choose which computer runs them.
 ---
 A **teammate** is a long-lived AI companion with its own name, avatar, personality, memory, skills, and one continuous conversation. **Cindy** is built in and is added automatically the first time you use teammates; you can create more. A teammate belongs to your account, not to one computer: you see the same teammate on every computer, but it runs on one **main computer**.
 
@@ -38,7 +38,6 @@ A **teammate** is a long-lived AI companion with its own name, avatar, personali
 - **Memory** — **Use memory** toggle (off: memories aren't read or saved), **What you know about me**, and the teammate's saved memories grouped as About you / Your preferences / Projects / References. Search, edit, or delete them. Each teammate's memory is its own, separate from Settings > Personalization > Memory.
 - **Linked Projects** — projects the teammate may read for background when needed (**Choose a project**, **Add**). Linking doesn't assign the project's sessions or start background work.
 - **Model** — **Primary Model** with up to 5 candidates (**Add fallback model**; **Backup models (N)**). If one is unavailable, it automatically continues with the next. **Task Model** is the model for new background tasks; by default it uses **Inherit Primary Model**. **Restore default model** goes back to the shared default.
-- **Voice** — speech model, voice, speech speed, and **Read by sentence** for voice conversations (see below).
 - **Capabilities** — choose which **Built-in tools**, **MCP** servers, and **Skills** this teammate may use (items unavailable on this computer are marked). By default it follows the tools enabled on this computer; turning one off switches to an explicit list. **Input Handoff** lets it ask you to type a password or code on any of your devices; it never sees the value.
 - **Messaging platforms** — give the teammate its own bot (see below).
 - **Routines** — follow-ups, built-in routines, nightly learning, and your own routines (see below).
@@ -70,11 +69,6 @@ A **teammate** is a long-lived AI companion with its own name, avatar, personali
 - You can also link this computer's **Personal WeChat** to one teammate at a time. Where available, you can assign the official X bot (@askmycindy) to it; X replies are public.
 - Anyone who messages the bot is talking to the teammate. Your own messages go into its main conversation with its permissions. Each group, topic, and DM from someone else gets its own hidden task with restricted permissions; risky actions there need your confirmation. If other people can reach the bot, prefer **Auto-review** or **Default permissions** over **Full access**.
 - Each connection lists its **… tasks**; **Start over** gives one a clean context while keeping history. For Telegram groups, choose **@ only** or **Always** (reads every message and decides whether to chime in; each one costs tokens). **Remove** stops the bot and deletes its credentials. Memory is shared across all of a teammate's channels.
-
-**Voice conversations (desktop):**
-
-- Set up **Voice** in the teammate's settings (needs a text-to-speech model from a connected provider). Then click **Start voice conversation** in the message box. Speak; it sends after a pause and reads replies aloud. Speak again to interrupt; **Mute** and **End** are on the call bar.
-- Work you ask for during a call is handed to the teammate's main conversation ("Work from this call"). A record of the call is saved as a card. Voice mode works for teammates on this computer, one-on-one only.
 
 **Group chats:**
 

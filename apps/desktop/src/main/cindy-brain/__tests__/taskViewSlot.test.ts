@@ -123,7 +123,7 @@ describe('taskViewSlot', () => {
         window('cindy-ghost://sim/__boot__'),
         window('file:///app/index.html?secondaryWindow=1#/cc-agent'),
         window('file:///app/index.html?sidebarWindow=1#/sidebar-window'),
-        window('file:///app/index.html?view=voice-input-overlay'),
+        window('file:///app/index.html?view=computer-permission-guide'),
         window('about:blank'),
       ];
       const main = window('file:///app/index.html#/cc-agent', true);

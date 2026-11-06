@@ -92,7 +92,6 @@
     "restart:desktop:local": "node scripts/desktop-restart-runner.mjs --local --wait-ready",
     "desktop:whoami": "node scripts/desktop-whoami.mjs",
     "dev:desktop:inspect": "node scripts/ensure-deps.mjs && node scripts/ensure-dev-runtime-assets.mjs && pnpm --filter desktop dev:inspect",
-    "benchmark:voice-input": "node scripts/voice-input-benchmark.mjs",
     "benchmark:browser": "node --import tsx scripts/browser-capability-benchmark.mjs",
     "benchmark:desktop-workers": "node scripts/desktop-worker-benchmark.mjs",
     "dev:embed:search": "node scripts/dev-embed-search.mjs",

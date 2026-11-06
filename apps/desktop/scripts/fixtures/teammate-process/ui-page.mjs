@@ -3,7 +3,6 @@ export default {
   name: 'teammate-process', entry: './process-fixture.tsx', viewport: { width: 720, height: 850 },
   stubs: {
     'src/renderer/components/chat/GhostToolCard': 'export const GhostToolCard = () => null; export const MailCardEditor = () => null; export const CARD_EXPAND_TOGGLE_EVENT = "xdt-card-expand-toggle";',
-    'src/renderer/voice-input/workletUrl': 'export const getVoiceInputWorkletUrl = () => "";',
     'src/renderer/contexts/AuthContext': { partial: 'export const useAuth = () => ({ dataOwnerId: "fixture", isAuthenticated: false });' },
   },
   real: 'MessageStream, ThreadPanel with compact styles, BotSessionTaskResultCard, teammate grouping, WorkGroupBlock, GeneratedFilesCard and SheetPreview, Markdown, theme and i18n',

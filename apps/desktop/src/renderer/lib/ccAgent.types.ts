@@ -228,8 +228,8 @@ export interface CcMeta {
   sourceGroup?: MessageSourceGroup;
   /** Guest-safe independent assistant delivery; does not seal a model turn. */
   explicitDelivery?: boolean;
-  /** UI-only call transcript. Never replay as model messages or memory. */
-  voiceCall?: import("@cindy/maker-core").VoiceCallRecord;
+  /** Retired companion call transcript. Never replay as model messages or memory; hidden in the UI. */
+  voiceCall?: unknown;
 
   /** 历史 per-turn USD；新数据以 turnCost 为区域金额事实。 */
   turnCostUsd?: number;

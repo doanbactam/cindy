@@ -35,5 +35,4 @@ Cindy has several places that answer "how much have I used?". Pick the one that 
 
 **Other usage views:**
 
-- Voice input usage (duration, count, estimated cost): **Settings > Voice Input** (see the voice input topic).
 - A plugin's own calls: **Your calls** on its page under **Settings > Plugins**; a skill's recent use: its **Usage** panel on the skill detail page.

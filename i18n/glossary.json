@@ -20,9 +20,6 @@
     {"id": "group-personal-mask", "status": "proposed", "en": "AI reply mode", "translations": {"zh-CN": "AI 代答模式", "zh-TW": "AI 代答模式", "ja": "AI代理返信モード", "ko": "AI 대신 답장 모드"}, "checkCase": false, "note": "A teammate replies on behalf of a group member. Chinese name approved as AI 代答模式 on 2026-10-29; internal personal-mask identifiers remain unchanged."},
     {"id":"scrolling-screenshot","status":"proposed","en":"Scrolling Screenshot","translations":{"zh-CN":"滚动截图","zh-TW":"捲動截圖","ja":"スクロールスクリーンショット","ko":"스크롤 스크린샷"},"checkCase":false,"note":"2026-10-26 用户指定截图功能统一称为滚动截图，突出滚动操作，不再使用长截图作为功能名称。"},
     {"id": "archive-task", "status": "proposed", "en": "Archive", "translations": {"zh-CN": "归档", "zh-TW": "歸檔", "ja": "アーカイブ", "ko": "보관"}, "checkCase": false, "note": "任务归档动作。灵动岛完成卡按钮沿用既有任务归档确认框的译法，避免同一操作链路混用存档／归档或封存／歸檔；不在此条目裁决或批量修改其它语境。"},
-    {"id": "speech-speed", "status": "proposed", "en": "Speech speed", "translations": {"zh-CN": "语速", "zh-TW": "語速", "ja": "読み上げ速度", "ko": "읽기 속도"}, "checkCase": false, "note": "伙伴语音设置的合成语速；按伙伴保存，通话朗读、消息朗读和试听共用。区别于播放器倍速和语音输入停顿时间。"},
-    {"id": "read-by-sentence", "status": "proposed", "en": "Read by sentence", "translations": {"zh-CN": "按句朗读", "zh-TW": "逐句朗讀", "ja": "文ごとに読み上げ", "ko": "문장별로 읽기"}, "checkCase": false, "note": "伙伴语音设置：默认在最终答复生成过程中按完整句子提前朗读；关闭后等待完整回复。需要回复后处理或无法识别最终答复阶段时延后。"},
-    {"id": "voice-mode", "status": "proposed", "en": "Voice Mode", "translations": {"zh-CN": "语音模式", "zh-TW": "語音模式", "ja": "音声モード", "ko": "음성 모드"}, "checkCase": false, "note": "桌面伙伴一对一的连续语音交互方式；停顿发送、最终回复朗读和插话，沿用伙伴主任务。"},
     {"id":"connection-code","status":"proposed","en":"Connection code","translations":{"zh-CN":"连接码","zh-TW":"連線碼","ja":"接続コード","ko":"연결 코드"},"checkCase":false,"note":"本机应用临时连接的端点定位文本，不是授权令牌；连接仍需目标 Cindy 原生确认。"},
     {"id":"side-chat","status":"proposed","en":"Side chat","translations":{"zh-CN":"侧边追问","zh-TW":"側邊追問","ja":"サイドチャット","ko":"사이드 채팅"},"checkCase":false,"note":"在右侧独立提问，继承主任务已完成的上下文；追问不自动写回主任务。"},
     {"id": "detached-head", "status": "proposed", "en": "Detached HEAD", "translations": {"zh-CN": "分离 HEAD", "zh-TW": "分離 HEAD", "ja": "Detached HEAD", "ko": "Detached HEAD"}, "checkCase": false, "note": "沿用会话顶栏分支徽标现有译法"},
@@ -762,10 +759,9 @@
         ]
       },
       "exempt": [
-        "desktop:settings.about.debugLogDescription",
-        "desktop:settings.voiceInput.permissions.inputMonitoring.tooltip"
+        "desktop:settings.about.debugLogDescription"
       ],
-      "note": "dev 版登录页区域徽标上的标签值（DESIGN.md §16.3），四语同值、不翻译，理由同 region-code-cn。与 CN 不同的是 dev 还是个普通技术词：豁免的两条文案里“Always on in dev mode.”“dev builds may be authorized…”“dev 模式下始终开启”指的是开发模式而非本区域标签，小写本就正确（四语同 key 一并覆盖）。用 exempt 精确豁免这两条、而不是整条关掉 checkCase，是为了保住徽标值本身的大小写约束——这正是本条存在的意义。2026-07-28 起同一代号也用于 submit_github_issue 的提交确认卡片与 issue 正文（`issueAgent.confirm.regionCodeDev`）与侧栏用户卡片版本行（`sidebar.user.regionCodeDev`），口径与徽标完全一致：global 不标；「哪些区域要标」的唯一事实源是 `apps/desktop/src/shared/regionCode.ts`。2026-08-26 起 HanaDev 内部的业务服务器环境切换也沿用 Dev 标签；这里只表示所连接的服务环境，不能据此改变安装包区域或身份。"
+      "note": "dev 版登录页区域徽标上的标签值（DESIGN.md §16.3），四语同值、不翻译，理由同 region-code-cn。与 CN 不同的是 dev 还是个普通技术词：豁免的文案里“Always on in dev mode.”“dev 模式下始终开启”指的是开发模式而非本区域标签，小写本就正确（四语同 key 一并覆盖）。用 exempt 精确豁免这条、而不是整条关掉 checkCase，是为了保住徽标值本身的大小写约束——这正是本条存在的意义。2026-07-28 起同一代号也用于 submit_github_issue 的提交确认卡片与 issue 正文（`issueAgent.confirm.regionCodeDev`）与侧栏用户卡片版本行（`sidebar.user.regionCodeDev`），口径与徽标完全一致：global 不标；「哪些区域要标」的唯一事实源是 `apps/desktop/src/shared/regionCode.ts`。2026-08-26 起 HanaDev 内部的业务服务器环境切换也沿用 Dev 标签；这里只表示所连接的服务环境，不能据此改变安装包区域或身份。"
     },
     {
       "id": "agent",
@@ -2077,38 +2073,6 @@
       }
     },
     {
-      "id": "shortcut-listener-permission",
-      "status": "proposed",
-      "en": "shortcut listener permission",
-      "translations": {
-        "zh-CN": "监听权限",
-        "ja": "ショートカット監視の許可",
-        "ko": "단축키 감지 권한"
-      },
-      "checkCase": false,
-      "forbidden": {
-        "zh-CN": [
-          {
-            "text": "输入监控",
-            "whenEn": "shortcut listener permission"
-          }
-        ],
-        "ja": [
-          {
-            "text": "入力監視",
-            "whenEn": "shortcut listener permission"
-          }
-        ],
-        "ko": [
-          {
-            "text": "입력 모니터링",
-            "whenEn": "shortcut listener permission"
-          }
-        ]
-      },
-      "note": "macOS TCC 的 kTCCServiceListenEvent(系统设置里叫「输入监控」)在 Cindy 内的对外称法。产品侧只按用途讲: 这个权限只服务语音输入快捷键的监听, 不讲系统实现, 所以 zh-CN 沿用设置页权限项已有的「监听权限」(settings.voiceInput.permissions.inputMonitoring.label), 不引入「输入监控」这个直译——后者听起来像 Cindy 在监控用户的全部输入, 与实际能力(只识别快捷键按键组合)不符, 反而制造隐私误解。禁用项都挂 whenEn 条件: 要引用 macOS 系统设置面板名本身时那是 OS 的 UI 名称, 不受本条约束。四语的比喻不统一(en listener / ja 監視 / ko 감지)是现状登记而非裁决——各语言内部一致但跨语言不同, 保持 proposed 等产品拍板, 先把清单摆出来防止继续在 listener / monitoring / detection 之间漂移。"
-    },
-    {
       "id": "skill",
       "status": "decided",
       "en": "Skill",
@@ -2336,17 +2300,6 @@
           }
         ]
       }
-    },
-    {
-      "id": "voice-dictionary",
-      "status": "proposed",
-      "en": "Voice dictionary",
-      "translations": {
-        "zh-CN": "语音词典",
-        "ja": "音声辞書",
-        "ko": "음성 사전"
-      },
-      "note": "语音输入的用户自定义术语表(人名、产品名、代号与其常见误识别写法),在同账号的电脑之间自动同步、手机只读查看。当前先采用四语直译并登记为待讨论术语,避免与「自定义词典」「术语表」「用户词库」等说法混用。"
     },
     {
       "id": "end-to-end-encryption",
@@ -3363,19 +3316,6 @@
       },
       "checkCase": false,
       "note": "伙伴独立事务清单，含交办与获准信息中的主动发现；项目、执行任务与PR仅可选关联。不替代Session任务生命周期。"
-    },
-    {
-      "id": "voiceprint",
-      "status": "proposed",
-      "en": "Voiceprint",
-      "translations": {
-        "zh-CN": "声纹",
-        "zh-TW": "聲紋",
-        "ja": "声紋",
-        "ko": "성문"
-      },
-      "checkCase": false,
-      "note": "语音输入「识别我的声音」录入的本人声音特征，只存在本机、不同步。可写「录入声纹」「删除声纹」；不要写成声音指纹、声音模板。"
     },
     {
       "id": "companion-main-computer",

@@ -2,8 +2,8 @@
  * composerDraftMountRace.test.ts
  * ---------------------------------------------------------------------------
  * 回归 issue #40:协同 ↔ 普通 session 切换时,ChatInput 整体 unmount/remount,
- * Tiptap useEditor 在 mount 阶段会因 decoration 扩展 (CjkPunctDecoration /
- * VoiceInputDraftDecoration) 提前 fire 一次 onUpdate —— 比 React 的 useEffect
+ * Tiptap useEditor 在 mount 阶段会因 decoration 扩展 (CjkPunctDecoration)
+ * 提前 fire 一次 onUpdate —— 比 React 的 useEffect
  * 早大约 4ms 拿到的是初始空 editor,把 composerDraftStore 里已有的草稿覆盖成
  * 空文档,等 hydration 跑时已经没东西可恢复。
  *

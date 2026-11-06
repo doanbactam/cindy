@@ -4,7 +4,7 @@ title: Providers and Cindy AI
 summary: Model sources live in Settings > Providers — Cindy AI is provisioned automatically after sign-in for pay-per-token model access; add, reorder, disable, and share other providers (subscription accounts, API keys, local models, custom endpoints) there.
 tab: providers
 ---
-A provider is a source of models (with its own billing). Every model you can pick in the composer comes from a provider connected in **Settings > Providers**. Voice input is included for signed-in Cindy users and uses the separate voice service; it does not require or receive a Cindy AI key.
+A provider is a source of models (with its own billing). Every model you can pick in the composer comes from a provider connected in **Settings > Providers**.
 
 **The Providers page:**
 

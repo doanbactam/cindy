@@ -626,7 +626,7 @@ describe('remote optimistic draft recovery', () => {
     clearDraft(key);
   });
 
-  it('preserves recoveries when the same async editor transition reruns while voice settles', () => {
+  it('preserves recoveries when the same async editor transition reruns', () => {
     const key = 'session-remote-recovery-async-transition';
     const attachmentA = attachment('attachment-a');
     const attachmentB = attachment('attachment-b');

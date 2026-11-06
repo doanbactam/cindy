@@ -230,9 +230,6 @@ export class XboxGamepadController {
 
   private emitActions(origin: AccessorySlot, actions: InputDeviceRendererAction[]): void {
     for (const action of actions) {
-      if (action.type === 'voice' && action.phase === 'release' && this.otherVoiceHeld(origin)) {
-        continue;
-      }
       if (action.type === 'scroll-stop') {
         const remaining = this.otherScroll(origin);
         if (remaining) {
@@ -242,15 +239,6 @@ export class XboxGamepadController {
       }
       this.deps.dispatch(action);
     }
-  }
-
-  private otherVoiceHeld(except: AccessorySlot): boolean {
-    for (const family of GAMEPAD_FAMILIES) {
-      const slot = this.slots[family];
-      if (slot === except || !this.shouldDispatch(slot)) continue;
-      if (xboxGamepadActiveHolds(slot.previousFrame, slot.settings.layout).voice) return true;
-    }
-    return false;
   }
 
   private otherScroll(

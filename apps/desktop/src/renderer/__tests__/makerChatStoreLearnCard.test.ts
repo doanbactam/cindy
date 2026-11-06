@@ -123,36 +123,8 @@ describe('learn 状态卡 store 行为', () => {
   });
 });
 
-describe('voice call history projection', () => {
-  // Real history ingress: a handoff must have a distinct entry even when its
-  // call card is outside the loaded page. Prefix-only lookalikes stay ordinary.
-  it('labels a host-receipted voice handoff without rewriting its original or role', async () => {
-    const id = sid('voice-handoff-history');
-    const original = '请在后台整理计划，然后退出语音模式。';
-    const clientId = 'voice-task:call:u1';
-    transportMocks.listMessages.mockResolvedValueOnce([
-      {
-        id: 'handoff-row', clientId, sessionId: id, role: 'user', content: original,
-        agentMeta: { autoReviewUserText: {
-          kind: 'agent-request', request: { userText: original, sessionId: id, clientId: 'u1' },
-        } }, createdAt: 1000,
-      },
-      {
-        id: 'ordinary-row', clientId: 'voice-task:call:u2', sessionId: id,
-        role: 'user', content: original, createdAt: 2000,
-      },
-    ] as never);
-    makerChatStore.ensureInitialMessages(id);
-    await vi.waitFor(() => expect(makerChatStore.getSnapshot(id).historyLoaded).toBe(true));
-    const [handoff, ordinary] = makerChatStore.getSnapshot(id).messages;
-    expect(handoff).toMatchObject({
-      clientId, role: 'user', content: original,
-      systemCardType: 'voice-call-task', systemCardData: { text: original },
-    });
-    expect(ordinary.systemCardType).toBeUndefined();
-  });
-
-  it('restores the call as one expandable card without projecting turns as main messages', async () => {
+describe('retired voice call history projection', () => {
+  it('keeps a saved call as one card for MessageStream to hide, without projecting turns as main messages', async () => {
     const id = sid('voice-call-history');
     const record = {
       version: 1, callId: 'call', startedAt: 1000, endedAt: 2000, handoffs: [],

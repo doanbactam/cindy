@@ -19,31 +19,19 @@ import type { scanAtResources } from '@/lib/atResourceService';
 import type { ExtraDirsButton } from '../ExtraDirsButton';
 import type { PermissionSelector } from '../PermissionSelector';
 import type { ModelSelector } from '../ModelSelector';
-import type { UseVoiceInputResult } from '@/voice-input/useVoiceInput';
 import { useAttachments } from '@/hooks/useAttachments';
 import { dispatchInputDeviceAction } from '@/lib/inputDeviceActions';
-import { makerChatStore } from '@/lib/makerChatStore';
-import {
-  __testing as promptRecommendations,
-  beginPromptRecommendationPrediction,
-  clearPromptRecommendationSession,
-  resolvePromptRecommendationPrediction,
-} from '@/lib/promptRecommendationStore';
 import type { InputDeviceRendererAction } from '../../../../shared/inputDevices';
 
-const h = vi.hoisted(() => ({ t: (key: string) => key, confirm: vi.fn(), editor: null as Editor | null, listening: false, stop: vi.fn().mockResolvedValue(undefined),
+const h = vi.hoisted(() => ({ t: (key: string) => key, confirm: vi.fn(),
+  // Tiptap exposes the live editor on its root node; the composer mounts one at a time.
+  get editor(): Editor | null {
+    return (document.querySelector('.ProseMirror') as (HTMLElement & { editor?: Editor }) | null)?.editor ?? null;
+  },
   setModel: vi.fn(), selectModel: undefined as ComponentProps<typeof ModelSelector>['onModelChange'] | undefined, remoteProviders: [] as ProviderView[],
   remoteStatus: 'ready' as 'ready' | 'loading' | 'error',
   scan: vi.fn<typeof scanAtResources>(),
   atPanel: null as ComponentProps<typeof AtMentionPanel> | null,
-  documentChanged: vi.fn(),
-  voiceState: null as UseVoiceInputResult['state'] | null,
-  draftText: '',
-  draftSource: null as UseVoiceInputResult['draftSource'],
-  draftRange: null as UseVoiceInputResult['draftRange'],
-  cancel: vi.fn().mockResolvedValue(undefined),
-  prepare: vi.fn(),
-  micGranted: true,
   realModelSelector: false,
   listAgentSkills: vi.fn(),
   localProviders: [] as ProviderView[],
@@ -100,16 +88,6 @@ vi.mock('../AtMentionPanel', () => ({ AtMentionPanel: (props: ComponentProps<typ
 vi.mock('@/lib/atResourceService', async (original) => ({ ...await original<typeof import('@/lib/atResourceService')>(), scanAtResources: h.scan }));
 vi.mock('../SlashCommandPalette', () => ({ SlashCommandPalette: ({ query, commands }: { query: string; commands: { name: string }[] }) =>
   <div data-testid="test-slash-palette" data-query={query} data-commands={commands.map(command => command.name).join(',')} /> }));
-vi.mock('@/voice-input/VoiceInputPointerHintLayer', () => ({ VoiceInputPointerHintLayer: ({ children }: { children: import('react').ReactNode }) => <>{children}</> }));
-vi.mock('@/voice-input/VoiceInputStatusNotice', () => ({ VoiceInputStatusNotice: () => null }));
-vi.mock('@/voice-input/useVoiceInput', () => ({ useVoiceInput: (editor: Editor | null) => {
-  // Attach before ChatInput's first hydration effect so an empty-document
-  // replacement on initial mount cannot hide from the regression assertion.
-  if (editor && editor !== h.editor) editor.on('transaction', ({ transaction }) => { if (transaction.docChanged) h.documentChanged(); });
-  h.editor = editor;
-  const state = h.voiceState ?? (h.listening ? 'listening' : 'idle');
-  return { state, prepare: h.prepare, getState: () => h.voiceState ?? (h.listening ? 'listening' : 'idle'), isListening: state === 'listening', isBusy: state === 'listening' || state === 'submitting' || state === 'refining', draftText: h.draftText, draftSource: h.draftSource, draftRange: h.draftRange, start: () => { h.listening = true; return true; }, stop: h.stop, cancel: h.cancel };
-} }));
 vi.mock('@/hooks/useProviders', () => ({ useProviders: () => ({ providers: h.localProviders, providerOrder: [], loading: false }) }));
 vi.mock('@/hooks/useDeviceProviders', () => ({ useDeviceProviders: () => ({ providers: [], loading: false, unsupported: false }) }));
 vi.mock('@/hooks/useConnectedSource', () => ({ useConnectedSource: () => ({ hasConnectedSource: true, loading: false }) }));
@@ -126,9 +104,6 @@ const api: any = new Proxy({}, { get: (_obj, key) => {
   if (key === 'listAgentSkills') return h.listAgentSkills;
   if (key === 'listAgentCommands' || key === 'listDesktopCommands') return async () => ({ success: true, commands: [] });
   if (key === 'listSync') return () => ({ ghosts: [] });
-  if (key === 'getDataSnapshot') return () => { throw new Error('test bridge unavailable'); };
-  if (key === 'setGlobalShortcut') return () => Promise.resolve({ ok: true });
-  if (key === 'getMicrophonePermissionCached') return () => ({ ok: h.micGranted, status: h.micGranted ? 'granted' : 'not-determined' });
   if (key === 'platform') return 'darwin';
   if (key === 'modelAccess') return undefined;
   if (key === 'then') return undefined;
@@ -154,18 +129,7 @@ beforeEach(() => {
   h.cacheImageFromBuffer.mockReset().mockResolvedValue(undefined);
   h.listAgentSkills.mockReset().mockResolvedValue({ success: true, skills: [] });
   h.localProviders = [];
-  h.editor = null;
-  h.documentChanged.mockClear();
-  h.listening = false;
-  h.voiceState = null;
-  h.draftText = '';
-  h.draftSource = null;
-  h.draftRange = null;
-  h.stop.mockClear();
-  h.prepare.mockClear();
-  h.micGranted = true;
   h.realModelSelector = false;
-  h.cancel.mockReset().mockResolvedValue(undefined);
   h.atPanel = null;
   h.scan.mockReset().mockResolvedValue({ success: true, items: [], truncated: false });
   window.electronAPI = api;
@@ -203,7 +167,7 @@ function supplyRangeGeometry() {
 
 // Replaces the source-only guards with real editor transactions at the two
 // external-draft boundaries. Empty paragraph JSON is the minimal #720 input;
-// a document replacement would remap the live voice insertion anchor.
+// a document replacement would move the caret.
 it('does not replace the empty editor after an external empty-draft notification', async () => {
   renderComposer();
   await waitFor(() => expect(h.editor).not.toBeNull());
@@ -280,220 +244,6 @@ it('focuses the editor for each new focus request, not on mount or a repeated va
   outside.remove();
 });
 
-it('does not rehydrate an empty stored document when voice busy state changes', async () => {
-  saveDraft('composer-regression', { text: { type: 'doc', content: [{ type: 'paragraph' }] }, attachments: [] });
-  const view = renderComposer();
-  await waitFor(() => expect(h.editor).not.toBeNull());
-  expect(h.documentChanged).not.toHaveBeenCalled();
-  const changed = vi.fn();
-  h.editor!.on('transaction', ({ transaction }) => { if (transaction.docChanged) changed(); });
-  h.listening = true;
-  view.rerender(<ChatInput {...view.props} />);
-  h.listening = false;
-  view.rerender(<ChatInput {...view.props} />);
-  expect(changed).not.toHaveBeenCalled();
-  expect(h.editor!.state.selection.from).toBe(1);
-});
-
-// Replaces voiceInputEditorEditability's source guard (PR #6196, section 3.2).
-// The voice hook is an external boundary; the editor and ChatInput lock effects
-// are real. Existing hydration tests never observe editability, attachment
-// controls, permission availability or Escape ownership; #1663 also requires
-// the real stop button to stay usable under the recording's own lock. Minimal unit inputs:
-// one idle -> listening -> submitting -> refining -> idle run and Escape on
-// two top-level surfaces followed by the same editor. Reuse this jsdom harness.
-it('locks editor and attachments for the whole voice run, but keeps permissions available', async () => {
-  const view = renderComposer();
-  await waitFor(() => expect(h.editor).not.toBeNull());
-  for (const state of ['idle', 'listening', 'submitting', 'refining', 'idle'] as const) {
-    h.voiceState = state;
-    view.rerender(<ChatInput {...view.props} />);
-    const busy = state !== 'idle';
-    expect(h.editor!.isEditable, state).toBe(!busy);
-    expect((screen.getByRole('button', { name: 'test-suggestions' }) as HTMLButtonElement).disabled, state).toBe(busy);
-    expect((screen.getByTestId('permission-selector') as HTMLButtonElement).disabled, state).toBe(false);
-    if (state === 'listening') {
-      // #1663: the recording's own lock must still leave its stop control usable.
-      const stop = screen.getByRole('button', { name: 'newChat.chatInput.voiceInput.stop' }) as HTMLButtonElement;
-      expect(stop.disabled).toBe(false);
-      await act(async () => { fireEvent.click(stop); });
-      expect(h.stop).toHaveBeenCalledExactlyOnceWith({ waitForRefinement: true, onReadyForEndCue: expect.any(Function) });
-    }
-  }
-});
-
-// User request 2026-10-24: empty composer hints must follow hover/hold/click,
-// and native selection must not take over a recording. Existing voice tests
-// only cover editability; minimal inputs below drive real DOM handlers (unit/jsdom).
-// 2026-10-26 Bluetooth regression: preparation must also wait for the hold
-// threshold; even a microphone opened without recording changes headset audio.
-it('shows voice guidance only in an empty composer and distinguishes holding from clicking', async () => {
-  const view = renderComposer();
-  await waitFor(() => expect(h.editor).not.toBeNull());
-  const area = view.container.querySelector('[data-recommendation-active]')
-    ?? h.editor!.view.dom.parentElement!.parentElement!;
-  vi.useFakeTimers();
-  try {
-    fireEvent.pointerEnter(area);
-    await act(async () => { await vi.advanceTimersByTimeAsync(499); });
-    expect(screen.queryByTestId('composer-voice-hint')).toBeNull();
-    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
-    expect(screen.getByTestId('composer-voice-hint').textContent).toBe('newChat.chatInput.voiceInput.holdComposer');
-    fireEvent.pointerLeave(area);
-    expect(screen.queryByTestId('composer-voice-hint')).toBeNull();
-    fireEvent.pointerEnter(area);
-    await act(async () => { await vi.advanceTimersByTimeAsync(250); });
-    fireEvent.pointerLeave(area);
-    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
-    expect(screen.queryByTestId('composer-voice-hint')).toBeNull();
-    // jsdom has no hit-testing; returning null leaves ProseMirror's ordinary
-    // mousedown path inert while the real composer handler still receives it.
-    Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => null });
-    fireEvent.mouseDown(h.editor!.view.dom, { button: 0, detail: 1, clientX: 10, clientY: 10 });
-    expect(h.prepare).not.toHaveBeenCalled();
-    expect(h.listening).toBe(false);
-    await act(async () => { await vi.advanceTimersByTimeAsync(599); });
-    expect(h.prepare).not.toHaveBeenCalled();
-    expect(h.listening).toBe(false);
-    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
-    expect(h.prepare).toHaveBeenCalledOnce();
-    view.rerender(<ChatInput {...view.props} />);
-    expect(screen.getByTestId('composer-voice-hint').textContent).toBe('newChat.chatInput.voiceInput.speakRelease');
-    for (const type of ['selectstart', 'dragstart', 'mousemove']) {
-      const event = new Event(type, { bubbles: true, cancelable: true });
-      h.editor!.view.dom.dispatchEvent(event);
-      expect(event.defaultPrevented, type).toBe(true);
-    }
-    await act(async () => { fireEvent.mouseUp(window, { button: 0 }); });
-    expect(h.stop).toHaveBeenCalledOnce();
-    const selection = new Event('selectstart', { bubbles: true, cancelable: true });
-    h.editor!.view.dom.dispatchEvent(selection);
-    expect(selection.defaultPrevented).toBe(true);
-    const releaseClick = new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 });
-    h.editor!.view.dom.dispatchEvent(releaseClick);
-    expect(releaseClick.defaultPrevented).toBe(true);
-    fireEvent.pointerDown(document.body, { button: 0 });
-    const nextSelection = new Event('selectstart', { bubbles: true, cancelable: true });
-    h.editor!.view.dom.dispatchEvent(nextSelection);
-    expect(nextSelection.defaultPrevented).toBe(false);
-  } finally {
-    Reflect.deleteProperty(document, 'elementFromPoint');
-    vi.useRealTimers();
-  }
-
-  h.listening = false;
-  view.rerender(<ChatInput {...view.props} />);
-  fireEvent.click(screen.getByRole('button', { name: 'newChat.chatInput.voiceInput.start' }));
-  view.rerender(<ChatInput {...view.props} />);
-  expect(screen.getByTestId('composer-voice-hint').textContent).toBe('newChat.chatInput.voiceInput.speakPressAgain');
-  h.draftText = 'hello';
-  view.rerender(<ChatInput {...view.props} />);
-  expect(screen.queryByTestId('composer-voice-hint')).toBeNull();
-  h.draftText = '';
-  h.listening = false;
-  await act(async () => { h.editor!.commands.setContent('<p>Existing text</p>'); });
-  view.rerender(<ChatInput {...view.props} />);
-  fireEvent.pointerEnter(area);
-  expect(screen.queryByTestId('composer-voice-hint')).toBeNull();
-});
-
-// 2026-10-30 Slack report: an accidental hold before voice input was ever
-// enabled popped the microphone permission dialog. The hint test above runs
-// granted; here the cached permission is missing (unit/jsdom).
-it('leaves hold-to-talk and its hint off until the microphone is authorized', async () => {
-  h.micGranted = false;
-  const view = renderComposer();
-  await waitFor(() => expect(h.editor).not.toBeNull());
-  const area = view.container.querySelector('[data-recommendation-active]')
-    ?? h.editor!.view.dom.parentElement!.parentElement!;
-  vi.useFakeTimers();
-  try {
-    fireEvent.pointerEnter(area);
-    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
-    expect(screen.queryByTestId('composer-voice-hint')).toBeNull();
-    Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => null });
-    fireEvent.mouseDown(h.editor!.view.dom, { button: 0, detail: 1, clientX: 10, clientY: 10 });
-    await act(async () => { await vi.advanceTimersByTimeAsync(600); });
-    expect(h.prepare).not.toHaveBeenCalled();
-    expect(h.listening).toBe(false);
-    fireEvent.mouseUp(window, { button: 0 });
-  } finally {
-    Reflect.deleteProperty(document, 'elementFromPoint');
-    vi.useRealTimers();
-  }
-});
-
-// 2026-10-26 regression (unit/jsdom): existing guidance must survive the 500ms
-// voice hover delay. The empty-composer test above has no recommendation/preview.
-it.each(['recommendation', 'preview'] as const)('keeps %s visible while hovering the empty composer', async kind => {
-  const sessionId = 'voice-hint-priority';
-  const prompt = 'Continue with this plan';
-  const view = renderComposer({ sessionId, previewPrompt: kind === 'preview' ? prompt : undefined });
-  await waitFor(() => expect(h.editor).not.toBeNull());
-  vi.spyOn(makerChatStore, 'getPromptRecommendationCompletionStatus').mockReturnValue({
-    turnStoppedByUser: false, hasTerminalError: false, sideTask: false,
-    hasBackgroundAgentWork: false, hasAutoDrainingQueue: false,
-  });
-  if (kind === 'recommendation') {
-    await act(async () => {
-      promptRecommendations.applyRunningSnapshot(new Map([[sessionId, { isRunning: true }]]));
-      promptRecommendations.noteTurnEnded(sessionId, 200);
-      promptRecommendations.applyRunningSnapshot(new Map());
-      promptRecommendations.settleCompletion(sessionId);
-      const seq = beginPromptRecommendationPrediction(sessionId, 200)!;
-      resolvePromptRecommendationPrediction(sessionId, 200, seq, prompt);
-    });
-  }
-  expect(screen.getByText(prompt)).toBeTruthy();
-  vi.useFakeTimers();
-  try {
-    fireEvent.pointerEnter(h.editor!.view.dom.parentElement!.parentElement!);
-    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
-    expect(screen.queryByTestId('composer-voice-hint')).toBeNull();
-    expect(screen.getByText(prompt)).toBeTruthy();
-    if (kind === 'recommendation') {
-      supplyRangeGeometry();
-      await act(async () => { fireEvent.keyDown(h.editor!.view.dom, { key: 'Tab' }); });
-      expect(h.editor!.getText()).toBe(prompt);
-    }
-  } finally {
-    vi.useRealTimers();
-    clearPromptRecommendationSession(sessionId);
-  }
-});
-
-// #374 / voiceInputButtonAnchor: the real toolbar must keep the voice control
-// immediately beside the main action while listening, submitting, refining,
-// and returning to idle. A source-text guard could miss a misplaced rendered
-// control or a state branch that reintroduces the button jump.
-it('keeps the voice button anchored beside the main action through its lifecycle', async () => {
-  const view = renderComposer({ isAgentBusy: true });
-  await waitFor(() => expect(h.editor).not.toBeNull());
-
-  for (const state of ['listening', 'submitting', 'refining', 'idle'] as const) {
-    h.voiceState = state;
-    await act(async () => { view.rerender(<ChatInput {...view.props} isAgentBusy />); });
-    const root = document.querySelector<HTMLElement>('[data-chat-input-root]')!;
-    expect(root).not.toBeNull();
-    const voice = root.querySelector<HTMLButtonElement>('button[aria-pressed]')!;
-    expect(voice).not.toBeNull();
-    const actions = [...root.querySelectorAll('button')]
-      .filter((button) => {
-        const label = button.getAttribute('aria-label') ?? '';
-        return button === voice || label.startsWith('newChat.sendButton.');
-      });
-    const voiceIndex = actions.indexOf(voice);
-    expect(voiceIndex, state).toBeGreaterThanOrEqual(0);
-    expect(actions.slice(voiceIndex + 1), state).toHaveLength(1);
-    expect(actions[voiceIndex + 1]?.getAttribute('aria-label'), state)
-      .toMatch(/^newChat\.sendButton\.(queue|send|stop)$/);
-    if (state !== 'idle') {
-      expect(actions[voiceIndex - 1]?.getAttribute('aria-label'), state)
-        .toBe('newChat.sendButton.stop');
-    }
-  }
-});
-
 // 9bc20cf894 / composerMorphScope: choosing a model used to drop focus to body.
 // Generic MorphPopover tests supply their own target and miss ChatInput's wiring.
 // Minimal unit input: one real selector choice, then focus returns to the live editor.
@@ -516,27 +266,6 @@ it('returns focus to the editor after choosing a model from the real selector', 
   await waitFor(() => expect(screen.queryByRole('listbox', { name: 'newChat.modelSelector.modelListAria' })).toBeNull());
   await waitFor(() => expect(onModelDidChange).toHaveBeenCalledExactlyOnceWith('remote-new'));
   await waitFor(() => expect(document.activeElement).toBe(h.editor!.view.dom));
-});
-
-it('defers Escape on top-level surfaces and cancels voice once from the editor', async () => {
-  h.listening = true;
-  renderComposer();
-  await waitFor(() => expect(h.editor).not.toBeNull());
-  const surfaces = render(<>
-    <div role="alertdialog"><button>Dialog action</button></div>
-    <div data-morph-side="bottom"><button>Permission action</button></div>
-  </>);
-  for (const name of ['Dialog action', 'Permission action']) {
-    expect(fireEvent.keyDown(screen.getByRole('button', { name }), { key: 'Escape', code: 'Escape' })).toBe(true);
-    expect(h.cancel).not.toHaveBeenCalled();
-  }
-  surfaces.unmount();
-  let allowed = true;
-  await act(async () => {
-    allowed = fireEvent.keyDown(h.editor!.view.dom, { key: 'Escape', code: 'Escape' });
-  });
-  expect(allowed).toBe(false);
-  expect(h.cancel).toHaveBeenCalledExactlyOnceWith();
 });
 
 // A prompt preview hides the old draft. Its first key must only dismiss the
@@ -581,53 +310,6 @@ it.each([
     expect(h.editor!.getText()).toContain(action.type === 'skill' ? '$example' : 'hardware text');
     expect(view.props.onSend).not.toHaveBeenCalled();
   }
-});
-
-// Observe ChatInput's real voice effect, decoration and scroller together.
-// The selection stays elsewhere; only a changed saved range must move the
-// ghost caret and scroll it into view, without scrolling to the document end.
-it('scrolls to the saved voice draft range and reacts to range-only changes', async () => {
-  supplyRangeGeometry();
-  const view = renderComposer();
-  await waitFor(() => expect(h.editor).not.toBeNull());
-  const editor = h.editor!;
-  await act(async () => {
-    editor.commands.setContent('<p>first</p><p>middle</p><p>last</p>');
-    editor.commands.setTextSelection(18);
-  });
-  await act(async () => { await new Promise<void>(resolve => requestAnimationFrame(() => resolve())); });
-  const scroller = editor.view.dom;
-  const paragraphs = scroller.querySelectorAll('p');
-  Object.defineProperties(scroller, {
-    scrollHeight: { configurable: true, value: 1000 },
-    clientHeight: { configurable: true, value: 100 },
-  });
-  scroller.scrollTop = 200;
-  const originalRect = HTMLElement.prototype.getBoundingClientRect;
-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-    if (this === scroller) return new DOMRect(0, 0, 200, 100);
-    if (this.matches('[data-voice-caret], [data-voice-draft-inline]')) {
-      const bottom = this.closest('p') === paragraphs[1] ? 160 : 140;
-      return new DOMRect(0, bottom - 10 - (scroller.scrollTop - 200), 10, 10);
-    }
-    return originalRect.call(this);
-  });
-  h.voiceState = 'listening';
-  h.draftText = 'spoken words';
-  h.draftSource = 'partial';
-  h.draftRange = { from: 10, to: 10 };
-  view.rerender(<ChatInput {...view.props} />);
-  await waitFor(() => expect(scroller.scrollTop).toBe(264));
-  expect(scroller.querySelector('[data-voice-caret]')?.closest('p')).toBe(paragraphs[1]);
-  expect(editor.state.selection.from).toBe(18);
-
-  scroller.scrollTop = 200;
-  h.draftRange = { from: 3, to: 3 };
-  view.rerender(<ChatInput {...view.props} />);
-  await waitFor(() => expect(scroller.scrollTop).toBe(244));
-  expect(scroller.querySelector('[data-voice-caret]')?.closest('p')).toBe(paragraphs[0]);
-  await act(async () => { editor.commands.setTextSelection(18); });
-  expect(scroller.querySelector('[data-voice-caret]')?.closest('p')).toBe(paragraphs[0]);
 });
 
 // The removed source guard did not prove the editor consumed the key. Mount the

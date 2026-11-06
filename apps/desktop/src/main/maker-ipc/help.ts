@@ -37,7 +37,6 @@ const ALLOWED_TABS = new Set<HelpTabId>([
   'personalization',
   'api-keys',
   'providers',
-  'voice-input',
   'import',
   'connections',
   'im-bot',

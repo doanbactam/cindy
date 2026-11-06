@@ -25,10 +25,6 @@ type CustomProviderUpdateOptions =
 type CustomProviderUpdateResult =
   import('../shared/customProviderUpdate').CustomProviderUpdateResult;
 type RsbWindowCommand = import('../shared/rightSidebarWindow').RsbWindowCommand;
-type VoiceInputPowerStatePayload =
-  import('../shared/voiceInputPowerIpc').VoiceInputPowerStatePayload;
-type VoiceInputConnectionTestResult =
-  import('../shared/voiceInputConnectionTest').VoiceInputConnectionTestResult;
 type UtilityTextFailure = import('../shared/utilityTextResult').UtilityTextFailure;
 type ProviderRoutingPayload = import('@cindy/model-providers').Provider['routing'];
 type MakerSessionTreeSnapshot = import('@cindy/maker-core').SessionTreeSnapshot;
@@ -80,9 +76,6 @@ interface EnvCheckResult {
   platform: 'darwin' | 'win32' | 'linux';
 }
 
-// Voice-input wire types: re-export from voice-input-core to keep the IPC
-// surface and the core package's contract in sync. `VoiceInputShortcut` is
-// renderer-only (defined in voice-input/shortcut.ts) so it stays inline.
 // Renderer 只声明 Main 明确投影的 SSH 视图字段。transport package 内的
 // IdentityAgent、IdentityFile 累积列表和指纹属于 main-only 认证元数据，不能因
 // HostSnapshot 结构扩展而自动穿过 preload。Desktop 偏好字段在同一 payload 附加。
@@ -223,77 +216,6 @@ interface RemoteAgentOneShotResult extends RemoteAgentExecResult {
   durationMs: number;
 }
 
-type VoiceInputState = import('@cindy/voice-input-core').VoiceInputState;
-type VoiceAudioTrace = import('@cindy/voice-input-core').AudioTrace;
-type VoiceSpeechSegment = import('@cindy/voice-input-core').SpeechSegment;
-type VoiceInputGlobalErrorCode =
-  'empty' | 'unavailable' | 'unconfirmed' | 'permission' | 'failed' | 'superseded';
-type VoiceInputGlobalResult =
-  { ok: true } | { ok: false; error: string; errorCode?: VoiceInputGlobalErrorCode };
-type VoiceEditableRange = import('@cindy/voice-input-core').EditableRange;
-type VoiceRefinementContext = import('@cindy/voice-input-core').DictationRefinementContext;
-type VoiceInputDraftSource = import('@cindy/voice-input-core').VoiceInputDraftSource;
-type VoiceInputRendererEvent = import('@cindy/voice-input-core').VoiceInputRendererEvent;
-type VoiceInputDictionaryAdviceInput =
-  import('@cindy/voice-input-core').DictationDictionaryAdviceInput;
-type VoiceInputDictionaryLearningAction =
-  import('@cindy/voice-input-core').DictationDictionaryLearningAction;
-type VoiceInputSettingsData = import('../shared/voiceInputData').VoiceInputSettings;
-type VoiceSpeakerFilterStatusData = import('../shared/voiceSpeakerFilter').VoiceSpeakerFilterStatus;
-type VoiceSpeakerEnrollResultData = import('../shared/voiceSpeakerFilter').VoiceSpeakerEnrollResult;
-type VoiceInputSettingsPatchData = import('../shared/voiceInputData').VoiceInputSettingsPatch;
-type VoiceInputHistoryEntryData = import('../shared/voiceInputData').VoiceInputHistoryEntry;
-type VoiceInputDataSnapshot = import('../shared/voiceInputData').VoiceInputDataSnapshot;
-type VoiceInputProviderKindData = import('../shared/voiceInputAsrProfiles').VoiceInputProviderKind;
-type VoiceInputAsrModeData = import('../shared/voiceInputAsrProfiles').VoiceInputAsrMode;
-type VoiceInputRefinerProviderKindData =
-  import('../shared/voiceInputRefinerProfiles').VoiceInputRefinerProviderKind;
-type VoiceInputRefinerTransportData =
-  import('../shared/voiceInputRefinerProfiles').VoiceInputRefinerTransport;
-type VoiceInputServiceModeData = 'cindy' | 'byok';
-type VoiceInputModelSelectionResultData = {
-  selection: {
-    serviceMode: VoiceInputServiceModeData;
-    serviceModeConfigured: boolean;
-    asrProvider: VoiceInputProviderKindData;
-    asrProviderChain: VoiceInputProviderKindData[];
-    asrProviderChainSource: 'default' | 'configured';
-    customAsr?: {
-      protocol: 'openai-realtime' | 'qwen-realtime';
-      websocketUrl: string;
-      model: string;
-    };
-    refinerProvider: VoiceInputRefinerProviderKindData;
-    refinerModel?: string;
-    /** Effective refiner chain, head first; length 1 = no fallback (BYOK default). */
-    refinerProviderChain: VoiceInputRefinerProviderKindData[];
-    refinerProviderChainSource: 'default' | 'configured';
-    configPath: string;
-  };
-  asrProfiles: Array<{
-    id: VoiceInputProviderKindData;
-    model: string;
-    mode: VoiceInputAsrModeData;
-    auth: 'api-key' | 'codex';
-  }>;
-  refinerProfiles: Array<{
-    id: VoiceInputRefinerProviderKindData;
-    model: string;
-    transport: VoiceInputRefinerTransportData;
-    auth: 'api-key' | 'codex';
-  }>;
-  readiness: {
-    ok: boolean;
-    provider: VoiceInputProviderKindData;
-    providerModel: string;
-    auth: 'api-key' | 'codex';
-    settingsTab: 'api-keys' | 'connections' | 'providers';
-    error?: string;
-    failureReason?:
-      'custom-asr-config-missing' | 'custom-asr-key-missing' | 'codex-realtime-unsupported';
-  };
-  customAsrApiKeyConfigured: boolean;
-};
 type LocalThemeOpenDirResult = import('../shared/local-themes').LocalThemeOpenDirResult;
 type LocalThemesResult = import('../shared/local-themes').LocalThemesResult;
 type LocalThemeWriteRequest = import('../shared/local-themes').LocalThemeWriteRequest;
@@ -328,19 +250,6 @@ type AgentResourceSettingsWire = {
     capToolchainThreads: boolean;
   };
 };
-
-interface VoiceInputShortcut {
-  trigger?: 'keyboard' | 'modifier';
-  code: string;
-  key: string;
-  modifiers: {
-    meta: boolean;
-    ctrl: boolean;
-    alt: boolean;
-    shift: boolean;
-    fn: boolean;
-  };
-}
 
 interface ComputerDriverStatus {
   installed: boolean;
@@ -1775,210 +1684,6 @@ interface ElectronAPI {
     onConfirm: (callback: (request: unknown) => void) => () => void;
     resolveConfirm: (requestId: string, confirmed: boolean) => Promise<{ handled: boolean }>;
   };
-  voiceConversation: import('../shared/voiceConversation').VoiceConversationApi;
-  voiceInput: {
-    prewarm: (payload?: {
-      sourceLanguage?: string;
-      refinementEnabled?: boolean;
-    }) => Promise<{ ok: true }>;
-    getBenchmarkFixtureAudio: () => Promise<
-      { ok: true; path: string; wav: ArrayBuffer } | { ok: false }
-    >;
-    getMicrophonePermissionCached: () =>
-      { ok: true; status: string } | { ok: false; status: string; error: string };
-    getSystemPermissionsCached: () => {
-      microphone: { ok: true; status: string } | { ok: false; status: string; error: string };
-      inputMonitoring: { ok: true; status: string } | { ok: false; status: string; error: string };
-      accessibility: { ok: true; status: string } | { ok: false; status: string; error: string };
-    };
-    requestMicrophonePermission: () => Promise<{ ok: true } | { ok: false; error: string }>;
-    setRendererMicrophonePermissionVerified: (verified: boolean) => Promise<{ ok: true }>;
-    getSystemPermissions: () => Promise<{
-      microphone: { ok: true; status: string } | { ok: false; status: string; error: string };
-      inputMonitoring: { ok: true; status: string } | { ok: false; status: string; error: string };
-      accessibility: { ok: true; status: string } | { ok: false; status: string; error: string };
-    }>;
-    openMicrophoneSettings: () => Promise<{ ok: true } | { ok: false; error: string }>;
-    openInputMonitoringSettings: () => Promise<VoiceInputGlobalResult>;
-    /**
-     * 失败走统一 IPC 错误协议（reject），成功路径只有 ok:true + 权限状态。
-     * status 与 getSystemPermissions 的各项同为 string 形状（granted / denied / …）。
-     */
-    requestInputMonitoringPermission: () => Promise<{ ok: true; status: string }>;
-    muteSystemAudio: () => Promise<{ ok: true } | { ok: false; error: string }>;
-    restoreSystemAudio: () => Promise<{ ok: true } | { ok: false; error: string }>;
-    testConnection: () => Promise<VoiceInputConnectionTestResult>;
-    getReadiness: () => Promise<{
-      ok: boolean;
-      serviceMode: VoiceInputServiceModeData;
-      provider:
-        | 'custom-realtime-asr'
-        | 'elevenlabs-scribe-realtime'
-        | 'openai-realtime-whisper'
-        | 'litellm-gpt-realtime-whisper'
-        | 'litellm-qwen3-asr-flash-realtime'
-        | 'litellm-volcengine-sauc-asr'
-        | 'litellm-batch';
-      providerModel: string;
-      auth: 'api-key' | 'codex';
-      settingsTab: 'api-keys' | 'connections' | 'providers';
-      error?: string;
-      authErrorReason?: string;
-      failureReason?:
-        'custom-asr-config-missing' | 'custom-asr-key-missing' | 'codex-realtime-unsupported';
-    }>;
-    getReadinessCached: () => {
-      ok: boolean;
-      serviceMode: VoiceInputServiceModeData;
-      provider:
-        | 'custom-realtime-asr'
-        | 'elevenlabs-scribe-realtime'
-        | 'openai-realtime-whisper'
-        | 'litellm-gpt-realtime-whisper'
-        | 'litellm-qwen3-asr-flash-realtime'
-        | 'litellm-volcengine-sauc-asr'
-        | 'litellm-batch';
-      providerModel: string;
-      auth: 'api-key' | 'codex';
-      settingsTab: 'api-keys' | 'connections' | 'providers';
-      error?: string;
-      authErrorReason?: string;
-      failureReason?:
-        'custom-asr-config-missing' | 'custom-asr-key-missing' | 'codex-realtime-unsupported';
-    } | null;
-    getModelSelection: () => Promise<VoiceInputModelSelectionResultData>;
-    setModelSelection: (patch: {
-      serviceMode?: VoiceInputServiceModeData | null;
-      asrProvider?: string | null;
-      refinerProvider?: string | null;
-      refinerModel?: string | null;
-      customAsr?: {
-        protocol: 'openai-realtime' | 'qwen-realtime';
-        websocketUrl: string;
-        model: string;
-      } | null;
-      customAsrApiKey?: string | null;
-      /** BYOK fallback tail; null clears the override (primary runs alone). */
-      refinerProviderChain?: string[] | null;
-    }) => Promise<VoiceInputModelSelectionResultData>;
-    reloadModelSelection: () => Promise<VoiceInputModelSelectionResultData>;
-    openSettings: (tab: 'voice-input' | 'providers') => Promise<{ ok: true }>;
-    start: (params?: {
-      sourceLanguage?: string;
-      refinementEnabled?: boolean;
-      refinementCacheScope?: string;
-      refinementContext?: VoiceRefinementContext;
-    }) => Promise<{ ok: true; runId: string } | { ok: false; error: string }>;
-    appendAudio: (chunk: { pcm16k: ArrayBuffer; trace?: VoiceAudioTrace }) => void;
-    drainAudioQueue: () => Promise<{ ok: true }>;
-    stop: () => Promise<{ ok: true } | { ok: false; error: string }>;
-    cancel: (params?: { runId?: string }) => Promise<{ ok: true }>;
-    onEvent: (callback: (event: VoiceInputRendererEvent) => void) => () => void;
-    getDataSnapshot: () => VoiceInputDataSnapshot;
-    migrateLegacyRendererData: (payload: {
-      settingsRaw?: string | null;
-      historyRaw?: string | null;
-    }) => VoiceInputDataSnapshot;
-    updateSettings: (patch: VoiceInputSettingsPatchData) => Promise<VoiceInputSettingsData>;
-    updateShortcutSetting: (shortcut: VoiceInputShortcut | null) => Promise<
-      | {
-          ok: true;
-          settings: VoiceInputSettingsData;
-          /** 已存盘但 macOS 监听权限未授权，快捷键要等授权后才生效。 */
-          pendingInputMonitoring?: boolean;
-        }
-      | { ok: false; error: string; errorCode?: VoiceInputGlobalErrorCode }
-    >;
-    deleteDictionaryEntries: (entryIds: string[]) => Promise<VoiceInputSettingsData>;
-    addDictionaryEntry: (text: string) => Promise<VoiceInputSettingsData>;
-    importDictionaryEntries: (texts: string[]) => Promise<VoiceInputSettingsData>;
-    renameDictionaryEntry: (entryId: string, text: string) => Promise<VoiceInputSettingsData>;
-    editDictionaryEntry: (
-      entryId: string,
-      text: string,
-      aliases: string[],
-    ) => Promise<VoiceInputSettingsData>;
-    recordDictionaryLearningActions: (actions: VoiceInputDictionaryLearningAction[]) => Promise<{
-      settings: VoiceInputSettingsData;
-      newAutomaticEntries: Array<{ id: string; text: string }>;
-    }>;
-    getHistory: (limit?: number) => VoiceInputHistoryEntryData[];
-    getHistoryForRefinement: () => VoiceInputHistoryEntryData[];
-    recordHistory: (text: string) => string | null;
-    updateHistoryEntry: (id: string, text: string) => void;
-    deleteHistoryEntry: (id: string) => void;
-    onDataChanged: (callback: (payload: VoiceInputDataSnapshot) => void) => () => void;
-    /** 「识别我的声音」:模型与声纹都留在本机,Renderer 只拿到状态。 */
-    speakerFilter: {
-      getStatus: () => Promise<VoiceSpeakerFilterStatusData>;
-      downloadModels: () => Promise<VoiceSpeakerFilterStatusData>;
-      cancelDownload: () => Promise<VoiceSpeakerFilterStatusData>;
-      /** PCM16 单声道 16 kHz 朗读片段,数量固定为 VOICE_SPEAKER_ENROLLMENT_CLIP_COUNT。 */
-      enroll: (clips: ArrayBuffer[]) => Promise<VoiceSpeakerEnrollResultData>;
-      deleteProfile: () => Promise<VoiceSpeakerFilterStatusData>;
-      onStatusChanged: (callback: (status: VoiceSpeakerFilterStatusData) => void) => () => void;
-    };
-    /** options.suspend = 录制期挂起（故意与存盘不同）；不带它的请求会被 main 按存盘校验。 */
-    setGlobalShortcut: (
-      shortcut: VoiceInputShortcut | null,
-      options?: { suspend?: true },
-    ) => Promise<VoiceInputGlobalResult>;
-    startModifierShortcutRecording: () => Promise<VoiceInputGlobalResult>;
-    stopModifierShortcutRecording: () => Promise<VoiceInputGlobalResult>;
-    onModifierShortcutKeys: (callback: (payload: { keys: string[] }) => void) => () => void;
-    /** 「待授权」快捷键在设置页之外自动恢复失败（helper 起不来）。 */
-    onShortcutRecoveryFailed: (callback: () => void) => () => void;
-    /**
-     * 取走「自动恢复失败」这条待通知状态（取走即清，一次 App 运行只提示一次）。
-     * 挂载时也要主动取一次：失败可能发生在常挂载 UI 之前，那时推送没有订阅者。
-     */
-    consumeShortcutRecoveryFailure: () => Promise<{ failed: boolean }>;
-    onGlobalShortcutTrigger: (
-      callback: (payload?: { id?: string; phase?: 'start' | 'tap' | 'end' }) => void,
-    ) => () => void;
-    claimGlobalShortcutTrigger: (id: string) => void;
-    onGlobalOverlayCommand: (
-      callback: (command: { type: 'start' | 'submit' | 'cancel' }) => void,
-    ) => () => void;
-    adviseDictionaryLearning: (payload: VoiceInputDictionaryAdviceInput) => Promise<
-      | {
-          ok: true;
-          actions: VoiceInputDictionaryLearningAction[];
-          elapsedMs: number;
-          ignoreReason?: string | null;
-        }
-      | { ok: false; error: string }
-    >;
-    onDictionaryLearningEvidence: (
-      callback: (payload: {
-        evidence: Pick<
-          VoiceInputDictionaryAdviceInput,
-          'source' | 'rawTranscriptText' | 'beforeText' | 'afterText' | 'context'
-        >;
-      }) => void,
-    ) => () => void;
-    /** 系统挂起/锁屏 → 释放 fast activation 的保活麦克风。 */
-    onPowerStateChange: (callback: (payload: VoiceInputPowerStatePayload) => void) => () => void;
-    notifyGlobalOverlayReady: () => void;
-    pasteIntoFocusedTarget: (
-      text: string,
-      rawTranscriptText?: string,
-    ) => Promise<VoiceInputGlobalResult>;
-    restoreGlobalPasteTargetFocus: () => Promise<VoiceInputGlobalResult>;
-    closeGlobalOverlay: (options?: { preservePasteTarget?: boolean }) => Promise<{ ok: true }>;
-    showGlobalOverlay: () => Promise<VoiceInputGlobalResult>;
-    beginGlobalOverlayDrag: () => void;
-    moveGlobalOverlayDrag: () => void;
-    endGlobalOverlayDrag: () => void;
-    resetGlobalOverlayPosition: () => Promise<{ ok: true }>;
-    openAccessibilitySettings: () => Promise<VoiceInputGlobalResult>;
-    showDictionaryToast: (payload: {
-      entryId?: string;
-      term?: string;
-      entries?: Array<{ entryId: string; term: string }>;
-    }) => Promise<{ ok: true } | { ok: false; error: string }>;
-    closeDictionaryToast: () => Promise<{ ok: true }>;
-  };
 
   windowBehavior: {
     getLoginItem: () => Promise<import('../shared/loginItem').LoginItemState>;
@@ -3141,7 +2846,7 @@ interface ElectronAPI {
         | { type: 'plugin'; pluginId: string }
         | { type: 'local-plugin-share'; snapshotId: string }
         | { type: 'installed-plugin'; ghostId?: string }
-        | { type: 'settings'; tab: 'voice-input' | 'providers' | 'billing' | 'remote-control' | 'builtin-tools'; connect?: string; intent?: 'topup' },
+        | { type: 'settings'; tab: 'providers' | 'billing' | 'remote-control' | 'builtin-tools'; connect?: string; intent?: 'topup' },
     ) => void,
   ) => () => void;
 
@@ -3165,7 +2870,7 @@ interface ElectronAPI {
     | { type: 'plugin'; pluginId: string }
     | { type: 'local-plugin-share'; snapshotId: string }
     | { type: 'installed-plugin'; ghostId?: string }
-    | { type: 'settings'; tab: 'voice-input' | 'providers' | 'billing' | 'remote-control' | 'builtin-tools'; connect?: string; intent?: 'topup' }
+    | { type: 'settings'; tab: 'providers' | 'billing' | 'remote-control' | 'builtin-tools'; connect?: string; intent?: 'topup' }
     | null
   >;
 

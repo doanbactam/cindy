@@ -12,8 +12,7 @@
  *
  *   - `outboundFetch`:签名与 `globalThis.fetch` 对齐的替换品,per-request 现取代理。
  *     现存 `fetchImpl: typeof fetch` / `fetchFn: typeof fetch` 注入点可直接换默认值。
- *   - `resolveOutboundDispatcher`:给已有自建 dispatcher 的调用点(voice-input 的
- *     keepalive 池)用 —— 有代理时返回代理 dispatcher,直连时返回调用方的 fallback。
+ *   - `resolveOutboundDispatcher`:给已有自建 dispatcher 的调用点用 —— 有代理时返回代理 dispatcher,直连时返回调用方的 fallback。
  *   - `createOutboundHttpAgent`:给 `ws` 用(`new WebSocket(url, { agent })`)。
  *
  * 语义与 loopback proxy host 那两处完全一致:loopback 上游恒直连;代理解析失败
@@ -58,8 +57,7 @@ import { resolveDesktopOutboundProxy } from './outbound-proxy-resolver.js';
 const log = createMakerLogger('outbound-fetch');
 
 /**
- * Happy Eyeballs 单地址握手超时。与 `main/index.ts` 的进程级默认值、
- * `voice-input/refinerHttpDispatcher.ts` 的 per-pool 值同为 2500ms:代理软件背后可能
+ * Happy Eyeballs 单地址握手超时。与 `main/index.ts` 的进程级默认值同为 2500ms:代理软件背后可能
  * 现拨远端节点,Node 默认的 250ms 会把合法握手全掐掉,只剩一个裸 'fetch failed'。
  */
 const CONNECT_ATTEMPT_TIMEOUT_MS = 2500;
@@ -393,7 +391,7 @@ function createSocks5Connector(
 
 /**
  * 合并握手配置:调用方给的 `agentOptions.connect` 优先,只在它没给某项时补默认。
- * 无条件覆盖会让调用方的调优失效(voice-input 允许用 env 调
+ * 无条件覆盖会让调用方的调优失效(例如调用方自定
  * autoSelectFamilyAttemptTimeout),而该字段又参与 dispatcherKey —— 那就白白多分一个
  * 语义相同的池(review 2026-07-27)。调用方传的是自定义 connector 函数时原样保留。
  *
@@ -843,7 +841,7 @@ function noteProxyAuthRequired(url: string, status: number): void {
  * 而第一次访问某个重定向目标时我们的同步快照里通常没有它 —— 那一跳就会被塞进原来的
  * 代理隧道,PAC / NO_PROXY 判定形同虚设(review 2026-07-27 P1)。这里逐跳 `await` 解析,
  * 结论精确;两个 fetch 入口都走它,`OriginRoutingDispatcher` 只剩「调用方自带 dispatcher」
- * (voice-input 的 keepalive 池)那条路径的兜底。
+ * 那条路径的兜底。
  *
  * 跳转语义按 fetch 规范的子集:303、以及 301/302 上的非 GET/HEAD → 转 GET 并丢 body;
  * 307/308 原样重放(body 已是 Buffer,可重放);跨 origin 去掉凭证类头。

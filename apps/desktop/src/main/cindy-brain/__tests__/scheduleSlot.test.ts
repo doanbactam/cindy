@@ -403,8 +403,6 @@ describe('isMainShellWindowUrl（投给哪个窗口的判据）', () => {
     ['右侧栏独立窗(query)', 'file:///app/index.html?sidebarWindow=1#/sidebar-window'],
     ['右侧栏独立窗(仅 hash)', 'file:///app/index.html#/sidebar-window'],
     // utility 窗:统一带 ?view=<名字>,一律接不住草稿(review 第三轮)。
-    ['语音浮窗', 'file:///app/index.html?view=voice-input-overlay'],
-    ['词典 toast', 'file:///app/index.html?view=voice-input-dictionary-toast'],
     ['权限引导窗', 'file:///app/index.html?view=computer-permission-guide'],
     ['权限引导 backdrop', 'file:///app/index.html?view=computer-permission-backdrop'],
     // 按 key 排除而非枚举取值:将来任何新 utility 窗只要沿用 ?view= 约定就自动落在排除侧。

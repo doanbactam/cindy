@@ -8,7 +8,7 @@ const log = createLogger('app-presence');
  * Keeps the primary desktop app visible in platform-native launch surfaces.
  *
  * Design rule:
- * - Main app presence is an app-level invariant, not a voice-input detail.
+ * - Main app presence is an app-level invariant, not a feature-window detail.
  * - Feature windows may be transient/tool-like, but they must never make the
  *   primary app disappear from the Dock/taskbar.
  * - Any code that needs to restore or intentionally change app presence should
@@ -18,11 +18,6 @@ const log = createLogger('app-presence');
  * - macOS Dock visibility is controlled by the process activation policy.
  * - Windows taskbar visibility is window-level, so we keep the main window out
  *   of skip-taskbar mode while allowing tool overlays to hide themselves.
- *
- * Global voice input uses transient, non-activating overlay windows. Those
- * windows must not leak their tool-window behavior into the whole Electron
- * process: macOS should keep the app as a regular Dock app, while Windows
- * should keep the main window visible in the taskbar.
  */
 export async function ensureMainAppPresence(
   reason: string,

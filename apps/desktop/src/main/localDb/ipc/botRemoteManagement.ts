@@ -152,13 +152,6 @@ const routineTools = async () => (await import('../../routines/service.js')).rou
 /** The messaging stack is only needed by a remote Desktop's channels page. */
 const imRuntime = () => import('../../im/shared/botImConnectionRuntime.js');
 
-/** Loaded on use: the voice stack is large and only a voice page of a remote Desktop needs it. */
-async function settingsVoice() {
-  const api = (await import('../../voice-conversation/index.js')).getVoiceSettingsHostApi();
-  if (!api) throwIpcError('PRECONDITION_FAILED', 'Voice conversation is unavailable.');
-  return api!;
-}
-
 /**
  * The teammate settings pages of a remote Desktop (`management:settings`): the same pages, with every read and
  * write executed here by the services the local IPC handlers call.
@@ -226,12 +219,6 @@ const settingsHost = createBotRemoteSettingsHost({
         summary: async () => (await import('../../hook-control/ipc.js')).readXCompanionSummary(),
         setCompanion: async (botId, expected) => (await import('../../hook-control/ipc.js')).changeXCompanionBinding(botId, expected),
       },
-    },
-    voice: {
-      models: async () => (await settingsVoice()).models(),
-      voices: async selection => (await settingsVoice()).voices(selection),
-      preference: async botId => (await settingsVoice()).preference(botId),
-      setPreference: async (botId, selection, playback) => (await settingsVoice()).setPreference(botId, selection, playback),
     },
   }),
 });

@@ -29,11 +29,10 @@ import { isDangerousAttachmentName } from '../../../shared/attachmentSafety';
 // ── Attachment rejection strip ──
 //
 // Replacement for the old top-center toast.warning on attachment rejection
-// (oversize / blocked type / read failure). Floats ABOVE the input card (same
-// slot as the voice-input error notice) so it doesn't shrink the typing area,
-// and persists until the next add attempt or manual dismiss (no auto-hide).
-// Visually mirrors VoiceInputStatusNotice: a neutral rounded pill with a red
-// warning icon + a dismiss button, stacked one per rejected file.
+// (oversize / blocked type / read failure). Floats ABOVE the input card so it
+// doesn't shrink the typing area, and persists until the next add attempt or
+// manual dismiss (no auto-hide). A neutral rounded pill with a red warning
+// icon + a dismiss button, stacked one per rejected file.
 export function AttachmentRejectionStrip({
   rejections,
   onDismiss,

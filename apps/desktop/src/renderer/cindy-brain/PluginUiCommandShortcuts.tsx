@@ -4,14 +4,11 @@ import type { PluginUiView } from '@cindy/maker-shared';
 import {
   getEffectivePluginShortcuts,
   matchesKeyboardEvent,
-  type AppShortcutCombo,
   type AppShortcutOverrides,
   type PluginShortcutDefinition,
 } from '../../shared/appShortcuts';
 import { useAppShortcutEvents } from '@/hooks/useAppShortcut';
 import { getAppShortcutOverrides, getAppShortcutPlatform } from '@/lib/appShortcutStore';
-import { getVoiceInputSettings } from '@/hooks/useVoiceInputSettings';
-import { voiceInputShortcutToAppShortcutCombo } from '@/voice-input/appShortcutConflict';
 import { usePluginShortcutDefinitions } from './usePluginShortcutDefinitions';
 import { usePluginUiContributions } from './usePluginUiContributions';
 
@@ -25,7 +22,6 @@ type SelectionInput = {
   views: readonly PluginUiView[];
   overrides: AppShortcutOverrides;
   platform: string;
-  voiceCombo?: AppShortcutCombo | null;
   pending: ReadonlySet<string>;
   disabled: boolean;
 };
@@ -68,8 +64,7 @@ export function selectPluginShortcutView(input: SelectionInput): PluginUiView | 
   const editingKey = /^(KeyA|KeyC|KeyV|KeyX|KeyZ|KeyY|ArrowLeft|ArrowRight|ArrowUp|ArrowDown|Home|End|Backspace|Delete)$/.test(event.code);
   if ((event.ctrlKey || event.metaKey) && !event.altKey &&
       ((editable && editingKey) || (event.code === 'KeyC' && !window.getSelection()?.isCollapsed))) return undefined;
-  const effective = getEffectivePluginShortcuts(input.definitions, input.overrides, input.platform,
-    input.voiceCombo ? [input.voiceCombo] : []);
+  const effective = getEffectivePluginShortcuts(input.definitions, input.overrides, input.platform);
   for (const view of input.views) {
     const definition = input.definitions.find(item => item.id === view.command?.shortcutId);
     if (!definition || !acceptsEntry(definition, input.entry) || input.pending.has(view.viewId) ||
@@ -109,12 +104,11 @@ function BoundCommandShortcuts(props: Props & { definitions: PluginShortcutDefin
     selected.current = undefined;
     const root = marker.current?.closest('[data-plugin-ui-session]');
     if (!root) return false;
-    const voice = getVoiceInputSettings().shortcut;
     selected.current = selectPluginShortcutView({
       event, root, entry: props.entry,
       ...(props.entry === 'session' ? {} : { focusMessageId: props.focusMessageId }),
       definitions: props.definitions, views: state.views, overrides: getAppShortcutOverrides(),
-      platform: getAppShortcutPlatform(), voiceCombo: voice ? voiceInputShortcutToAppShortcutCombo(voice) : null,
+      platform: getAppShortcutPlatform(),
       pending: state.pending, disabled: state.disabled,
     });
     return !!selected.current;

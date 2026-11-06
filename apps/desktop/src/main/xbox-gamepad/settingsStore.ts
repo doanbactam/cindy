@@ -25,6 +25,11 @@ function settingsFileName(family: GamepadFamily): string {
   return family === 'xbox' ? 'xbox-gamepad-settings.json' : `${family}-gamepad-settings.json`;
 }
 
+/** Voice bindings were retired with voice input; a saved one now means unbound. */
+function isRetiredVoiceBinding(raw: unknown): boolean {
+  return Boolean(raw && typeof raw === 'object' && (raw as { type?: unknown }).type === 'voice');
+}
+
 function normalizeStick(raw: unknown, fallback: XboxGamepadStickBinding): XboxGamepadStickBinding {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return fallback;
   const value = raw as Record<string, unknown>;
@@ -40,11 +45,13 @@ function normalizeStick(raw: unknown, fallback: XboxGamepadStickBinding): XboxGa
           return [direction, cloneXboxGamepadBinding(fallback.directions[direction])];
         }
         const rawDirection = directionsRaw[direction];
-        if (rawDirection === null) return [direction, null];
-        const binding = cloneXboxGamepadBinding(
-          isXboxGamepadBinding(rawDirection) ? rawDirection : fallback.directions[direction],
-        );
-        return [direction, binding?.type === 'voice' ? null : binding];
+        if (rawDirection === null || isRetiredVoiceBinding(rawDirection)) return [direction, null];
+        return [
+          direction,
+          cloneXboxGamepadBinding(
+            isXboxGamepadBinding(rawDirection) ? rawDirection : fallback.directions[direction],
+          ),
+        ];
       }),
     ) as XboxGamepadStickBinding['directions'],
   };
@@ -68,7 +75,7 @@ function normalizeLayout(raw: unknown): XboxGamepadLayout {
       XBOX_GAMEPAD_BUTTON_IDS.map((id) => [
         id,
         cloneXboxGamepadBinding(
-          buttonsRaw[id] === null
+          buttonsRaw[id] === null || isRetiredVoiceBinding(buttonsRaw[id])
             ? null
             : isXboxGamepadBinding(buttonsRaw[id])
               ? buttonsRaw[id]

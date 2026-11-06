@@ -2717,10 +2717,8 @@ async function runAuthRefreshWithReplacementRetry(
 /**
  * 广播到所有未销毁的 BrowserWindow。
  *
- * 不能用 `BrowserWindow.getAllWindows()[0]` —— voice-input overlay
- * (`voice-input/global.ts:prewarmGlobalVoiceInputOverlay`) 启动期就 prewarm
- * 出一个 hidden + skipTaskbar + focusable:false 的 BrowserWindow,[0] 经常
- * 是它。这条踩坑在 `bootstrap-electron.ts:557-559` 已经为 `focusMainWindow`
+ * 不能用 `BrowserWindow.getAllWindows()[0]` —— 隐藏的辅助窗口
+ * (hidden + skipTaskbar + focusable:false)可能排在 [0]。这条踩坑在 `bootstrap-electron.ts:557-559` 已经为 `focusMainWindow`
  * 显式记录过;这里曾经用 [0] 发 'auth:state-change',结果是登出后真正的
  * 主窗 renderer 永远收不到 state-change,`isAuthenticated` 留在 true,
  * ProtectedRoute 不跳 /login —— 表现就是"settings 里点退出后界面没反应"。

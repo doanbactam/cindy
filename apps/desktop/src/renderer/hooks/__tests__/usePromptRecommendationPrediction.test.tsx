@@ -28,7 +28,7 @@ import { usePromptRecommendationPrediction } from '../usePromptRecommendationPre
 
 const READY = {
   enabled: true, hydrated: true, hasMessage: false, hasAttachments: false,
-  hasBrowserComments: false, hasVoiceDraftText: false, mutationLocked: false,
+  hasBrowserComments: false, mutationLocked: false,
 };
 
 function complete(): void {
@@ -59,7 +59,7 @@ afterEach(() => {
 describe('composer prediction lifecycle', () => {
   it.each([
     { hasMessage: true }, { hasAttachments: true }, { hasBrowserComments: true },
-    { hasVoiceDraftText: true }, { mutationLocked: true }, { hydrated: false },
+    { mutationLocked: true }, { hydrated: false },
   ])('暂态 %j 期间保留候选，恢复后只生成一次', async (blocked) => {
     const predict = vi.fn(async () => '继续测试');
     const hook = renderHook(({ ready }) => useHarness('a', ready, predict), {

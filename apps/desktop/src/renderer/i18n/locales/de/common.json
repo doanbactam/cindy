@@ -1776,7 +1776,6 @@
       "usage": "Nutzungsverlauf",
       "personalization": "Personalisierung",
       "apiKeys": "Tool-Schlüssel",
-      "voiceInput": "Spracheingabe",
       "shortcuts": "Tastenkombinationen",
       "agentIsland": "Agent Island",
       "import": "Sitzungsimport",
@@ -1819,7 +1818,6 @@
       "linkOpen": "Links öffnen",
       "streamFade": "Antwortanimation",
       "compatMode": "Tipps",
-      "voiceInput": "Spracheingabe",
       "import": "Sitzungsimport",
       "providers": "Anbieter",
       "remote": "Remote-Rechner",
@@ -2842,392 +2840,6 @@
     "apiKey": {
       "showKey": "Schlüssel anzeigen",
       "hideKey": "Schlüssel ausblenden"
-    },
-    "voiceInput": {
-      "title": "Spracheingabe",
-      "description": "Sprache, Mikrofon, Tastenkürzel, Überarbeitung und Stummschaltung während der Spracheingabe festlegen.",
-      "saveFailed": "Spracheingabe-Einstellungen konnten nicht gespeichert werden: {{message}}",
-      "sections": {
-        "serviceSource": "Dienstquelle",
-        "basics": "Grundlagen",
-        "refinement": "Nachbearbeitung",
-        "preferences": "Einstellungen",
-        "usageData": "Nutzung",
-        "speakerFilter": "Stimmabdruckfilter"
-      },
-      "serviceSource": {
-        "label": "Sprachdienst",
-        "hint": "Verwendet standardmäßig den Sprachdienst von {{appName}}. Du kannst stattdessen einen Echtzeit-ASR-Dienst mit separaten Zugangsdaten für die Spracheingabe verbinden.",
-        "localHint": "Diese Version von {{appName}} enthält keinen eigenen Sprachdienst. Verbinde einen Echtzeit-ASR-Dienst mit eigenen Sprachzugangsdaten.",
-        "ariaLabel": "Quelle des Sprachdienstes",
-        "options": {
-          "cindy": "Offizieller {{appName}}-Dienst",
-          "byok": "Benutzerdefinierter Sprachdienst"
-        },
-        "optionDescriptions": {
-          "cindy": "Verwendet deine {{appName}}-Anmeldung, keine Schlüssel einzurichten",
-          "byok": "Verwendet einen ASR-fähigen Dienst mit eigenen Sprachdienst-Zugangsdaten"
-        },
-        "asr": {
-          "label": "Erkennungsmodell",
-          "hint": "ASR-Modell zur Umwandlung von Sprache in Text.",
-          "ariaLabel": "Spracherkennungsmodell"
-        },
-        "connectionTest": {
-          "action": "Verbindung testen",
-          "testing": "Test läuft",
-          "testingStatus": "Verbindung zum ausgewählten Echtzeit-ASR-Dienst wird hergestellt…",
-          "success": "Verbunden. Die ausgewählte Echtzeit-ASR-Route ist verfügbar.",
-          "saveBeforeTest": "Speichere die Änderungen an der benutzerdefinierten ASR-Konfiguration, bevor du die Verbindung testest.",
-          "failure": {
-            "credentialsMissing": "Erforderliche Zugangsdaten fehlen. Schließe zuerst die Einrichtung ab.",
-            "authenticationFailed": "Authentifizierung fehlgeschlagen. Prüfe die Zugangsdaten für diesen Dienst.",
-            "routeUnavailable": "Das KI-Gateway unterstützt diese Echtzeit-ASR-Route nicht oder hat sie nicht aktiviert.",
-            "timeout": "Zeitüberschreitung bei der Verbindung. Prüfe das Netzwerk und den Dienststatus und versuch es erneut.",
-            "network": "Verbindung konnte nicht hergestellt werden. Prüfe das Netzwerk, die Adresse und die Zertifikatseinstellungen.",
-            "serviceError": "Der Handshake mit dem Dienst ist fehlgeschlagen. Versuch es später erneut oder prüfe die Diensteinrichtung.",
-            "unsupportedProvider": "Für dieses Erkennungsmodell wird kein Verbindungstest unterstützt."
-          }
-        },
-        "refiner": {
-          "label": "Nachbearbeitungsmodell",
-          "hint": "Verwendet das Hilfsmodell.",
-          "followAuxiliary": "Hilfsmodell folgen",
-          "followHint": "Die Verfeinerung folgt Einstellungen → Personalisierung → Hilfsmodelle. Die von {{appName}} gehostete Stimme bleibt unverändert. Die Verfeinerung läuft weiterhin auf dem Server.",
-          "openAuxiliary": "Hilfsmodelle öffnen",
-          "cannotRefine": "Die aktuellen Hilfsmodelle können Sprache nicht verfeinern (z. B. nur Claude-Nachrichten), daher wird dieses Diktat nicht verfeinert.",
-          "ariaLabel": "Modell zur Sprachnachbearbeitung"
-        },
-        "customAsr": {
-          "optionLabel": "Benutzerdefinierte Echtzeit-ASR",
-          "optionDescription": "Verwendet einen eigenen WebSocket und API-Schlüssel zur Spracherkennung",
-          "notice": "Gib die vollständige WebSocket-Adresse eines ASR-fähigen Dienstes ein. {{appName}} verwendet den Endpunkt deines Chatmodells nicht wieder und hängt keine Pfade daran an.",
-          "protocol": {
-            "label": "Echtzeitprotokoll",
-            "hint": "Das vom ASR-Dienst implementierte Nachrichtenformat auswählen.",
-            "ariaLabel": "Benutzerdefiniertes Echtzeit-ASR-Protokoll",
-            "openai": "OpenAI-Transkription",
-            "qwen": "Qwen-Echtzeit-ASR"
-          },
-          "websocketUrl": {
-            "label": "WebSocket-URL",
-            "hint": "Eine vollständige wss://-URL. Lokale Loopback-Dienste können ws:// verwenden.",
-            "placeholder": "wss://asr.example.com/v1/realtime",
-            "invalid": "Gib eine gültige wss://-URL ohne eingebettete Zugangsdaten ein. Nur lokale Loopback-Dienste dürfen ws:// verwenden."
-          },
-          "model": {
-            "label": "ASR-Modell",
-            "hint": "Das genaue Spracherkennungsmodell, das dieser Dienst akzeptiert.",
-            "placeholder": "Spracherkennungsmodell-ID"
-          },
-          "apiKey": {
-            "label": "ASR-API-Schlüssel",
-            "hint": "Wird lokal mit Systemverschlüsselung gespeichert und nur für diesen Sprachdienst verwendet.",
-            "savedHint": "Ein Schlüssel ist lokal gespeichert. Lass dieses Feld leer, um ihn beizubehalten.",
-            "endpointChangedHint": "Der Ursprung des Dienstes hat sich geändert. Gib einen neuen Schlüssel ein oder entferne den gespeicherten Schlüssel vor dem Speichern.",
-            "placeholder": "ASR-API-Schlüssel eingeben",
-            "savedPlaceholder": "Schlüssel gespeichert – neuen Wert eingeben, um ihn zu ersetzen",
-            "clear": "Schlüssel entfernen"
-          },
-          "save": "Sprachdienst speichern"
-        },
-        "credential": {
-          "gatewayKey": "Dein KI-Gateway muss diese Echtzeit-ASR-Route unterstützen",
-          "codexLogin": "Verwendet deine Codex-Anmeldung",
-          "elevenlabsKey": "Verwendet deinen ElevenLabs-Schlüssel (Umgebungsvariable)",
-          "codexRealtimeUnsupported": "Nicht verfügbar: Die Codex-Anmeldung ist kein Zugangsnachweis für OpenAI API Realtime"
-        },
-        "credentialError": {
-          "gatewayMissing": "Kein KI-Gateway-Schlüssel gefunden; dieses Modell ist nicht verfügbar.",
-          "codexMissing": "Du bist nicht bei Codex angemeldet; dieses Modell ist nicht verfügbar.",
-          "elevenlabsMissing": "Kein ElevenLabs-Schlüssel konfiguriert (Umgebungsvariable); dieses Modell ist nicht verfügbar.",
-          "customAsrConfigMissing": "Vervollständige und speichere die Einstellungen des Echtzeit-ASR-Dienstes, bevor du die Spracheingabe startest.",
-          "customAsrKeyMissing": "Füge einen API-Schlüssel für den benutzerdefinierten Echtzeit-ASR-Dienst hinzu und speichere ihn.",
-          "codexRealtimeUnsupported": "Die Codex-Anmeldung kann nicht für die Echtzeit-Spracherkennung verwendet werden. Wähle einen unterstützten ASR-Dienst."
-        },
-        "manageProviders": "Modellanbieter öffnen",
-        "reset": "Auf Standard zurücksetzen"
-      },
-      "historyToggle": {
-        "show": "Letzten Verlauf anzeigen",
-        "hide": "Letzten Verlauf ausblenden"
-      },
-      "language": {
-        "label": "Sprache",
-        "hint": "Erkennt die gesprochene Sprache automatisch. Wähle eine Sprache, um Verwechslungen zwischen Sprachen zu reduzieren.",
-        "ariaLabel": "Sprachauswahl",
-        "options": {
-          "auto": "Automatisch",
-          "es": "Español"
-        },
-        "optionDescriptions": {
-          "auto": "Vom Erkennungsdienst erkennen lassen",
-          "zh-CN": "Chinesisch, vereinfacht (Festlandchina)",
-          "zh-TW": "Chinesisch, traditionell (Taiwan)",
-          "en": "Englisch",
-          "ja": "Japanisch",
-          "ko": "Koreanisch",
-          "es": "Spanisch"
-        }
-      },
-      "shortcut": {
-        "label": "Tastenkombination",
-        "hint": "Verwende eine Tastenkombination, eine einzelne Taste von F1-F24 oder halte die linke/rechte Command-, Option-, Control- oder Fn-Taste gedrückt.",
-        "linuxUnsupported": "Die erste Linux-Version unterstützt das globale Tastenkürzel für die Spracheingabe noch nicht. Verwende stattdessen die Schaltfläche für die Spracheingabe in der App.",
-        "ariaLabel": "Tastenkombination festlegen",
-        "recording": "Neues Tastenkürzel drücken",
-        "none": "Nicht festgelegt",
-        "clear": "Leeren",
-        "fnNeedsInputMonitoring": "Fn-basierte Verknüpfungen benötigen die Berechtigung zum Zuhören von Verknüpfungen. Andere Verknüpfungen zeichnen normal auf.",
-        "awaitingInputMonitoring": "Diese Verknüpfung wartet auf die Berechtigung des Verknüpfungslisteners und wird wirksam, sobald sie erteilt wird.",
-        "toast": {
-          "needsModifier": "Verwende eine Tastenkombination, eine einzelne Taste von F1-F24 oder die linke/rechte Command-, Option-, Control- oder Fn-Taste.",
-          "fnUnavailable": "Verwende eine Tastenkombination, eine einzelne Taste von F1-F24 oder die linke/rechte Command-, Option-, Control- oder Fn-Taste.",
-          "systemReserved": "Diese Tastenkombination steht im Konflikt mit einer System- oder gängigen Bearbeitungstastenkombination",
-          "registrationFailed": "Diese Tastenkombination konnte nicht registriert werden: {{error}}",
-          "recordingFailed": "Die Aufzeichnung der Tastenkombination konnte nicht gestartet werden: {{error}}",
-          "listenerUnavailable": "Die Tastenkürzelerfassung konnte nicht gestartet werden – starte {{appName}} neu und versuche es erneut",
-          "pendingInputMonitoring": "Tastenkürzel gespeichert – es wird wirksam, sobald du die Berechtigung zur Tastenkürzelerfassung erteilst"
-        }
-      },
-      "permissions": {
-        "granted": "Erteilt",
-        "grant": "Erteilen",
-        "openFailed": "Systemeinstellungen können nicht geöffnet werden",
-        "microphone": {
-          "label": "Mikrofon"
-        },
-        "inputMonitoring": {
-          "label": "Tastenkombinationserkennung",
-          "tooltip": "Wird verwendet, um auf Fn, eigenständige Befehle/Optionen/Steuerung, Fn-basierte Verknüpfungen und eigenständige F1-F24-Push-to-Talk-Freigabeereignisse zu warten. Normale Tastenkombinationen benötigen es nicht. Zugegeben bedeutet, dass die aktuell ausgeführte App auf Verknüpfungen warten kann; Entwickler-Builds können über das Terminal autorisiert werden."
-        },
-        "accessibility": {
-          "label": "Automatische Eingabe",
-          "tooltip": "Mit der Bedienungshilfen-Berechtigung kann die Spracheingabe Text in andere Apps eingeben, Text nahe dem Cursor als Kontext für die Überarbeitung lesen und externe Änderungen zum Lernen für das Wörterbuch erkennen."
-        }
-      },
-      "interactionSound": {
-        "label": "Signaltöne",
-        "hint": "Kurze Signaltöne beim Start und Ende der Spracheingabe abspielen.",
-        "ariaLabel": "Signaltöne umschalten"
-      },
-      "fastActivation": {
-        "label": "Schnelle Sprachaktivierung",
-        "hint": "Hält das Mikrofon nach der Verwendung kurzzeitig bereit, sodass die Aufnahme nach dem Drücken der Tastenkombination oder Taste früher beginnt; normalerweise etwa 100 ms schneller. Das Mikrofon wird nach 30 Minuten ohne Nutzung automatisch freigegeben.",
-        "ariaLabel": "Schnelle Sprachaktivierung umschalten"
-      },
-      "composerLongPress": {
-        "label": "Eingabefeld für Spracheingabe gedrückt halten",
-        "hint": "Halte die linke Maustaste im Eingabefeld kurz gedrückt, um die Spracheingabe zu starten. Lass sie los, um die Eingabe zu beenden und den Text einzufügen.",
-        "ariaLabel": "Spracheingabe durch Gedrückthalten des Eingabefelds umschalten"
-      },
-      "refinement": {
-        "enabled": {
-          "label": "Sprachoptimierung",
-          "hint": "Wenn diese Option aktiviert ist, wird der erkannte Text hinsichtlich Zeichensetzung, Terminologie und gesprochener Formulierung bereinigt. Wenn deaktiviert, wird das ASR-Ergebnis direkt verwendet.",
-          "ariaLabel": "Sprachoptimierung umschalten"
-        },
-        "instructions": {
-          "label": "Optimierungsregeln",
-          "hint": "Diese Standardregeln können bearbeitet werden. Sie steuern nur die Bereinigung; das Modell beantwortet oder erweitert keine Inhalte.",
-          "edit": "Bearbeiten",
-          "collapse": "Einklappen",
-          "ariaLabel": "Optimierungsregeln",
-          "placeholder": "Schreibe Regeln für deinen Ausdrucksstil."
-        },
-        "dictionary": {
-          "label": "Benutzerdefiniertes Wörterbuch",
-          "hint": "Füge Namen, Produktbegriffe, Fachbegriffe oder häufige Erkennungsfehler hinzu, die bei der Überarbeitung priorisiert werden sollen.",
-          "ariaLabel": "Benutzerdefiniertes Wörterbuch",
-          "autoLearning": {
-            "label": "Automatisches Lernen",
-            "hint": "Wenn du diktierte Wörter manuell korrigierst, werden Kandidaten erfasst und bei wiederholter Bestätigung ins Wörterbuch übernommen.",
-            "externalAppMacOnly": "Das automatische Lernen nach dem Einfügen in externe Apps ist derzeit nur macOS möglich. Die In-App-Spracheingabe ist davon nicht betroffen.",
-            "ariaLabel": "Automatisches Lernen des Wörterbuchs umschalten"
-          },
-          "deviceSync": {
-            "label": "Auf meinen Geräten synchronisieren",
-            "hint": "Dein Wörterbuch wird automatisch zwischen Computern zusammengeführt, die gleichzeitig online sind. Einträge werden direkt zwischen Geräten übertragen und niemals auf einem Server gespeichert.",
-            "ariaLabel": "Geräteübergreifende Wörterbuchsynchronisierung umschalten"
-          },
-          "add": "Neuer Begriff",
-          "save": "Speichern",
-          "cancel": "Abbrechen",
-          "edit": "Bearbeiten",
-          "delete": "Löschen",
-          "termLabel": "Begriff",
-          "aliasSeparator": ", ",
-          "aliases": "Oft falsch erkannt als: {{aliases}}",
-          "aliasesEditLabel": "Oft falsch erkannt als",
-          "aliasesEditAriaLabel": "Häufige Erkennungsfehler bearbeiten",
-          "aliasesPlaceholder": "Eine Fehlerkennung pro Zeile",
-          "aliasesEditHint": "Einen Eintrag pro Zeile verwenden. Leere das Feld, um alle zu entfernen.",
-          "searchAriaLabel": "Wörterbuch durchsuchen",
-          "closeSearch": "Suche schließen",
-          "searchPlaceholder": "Wörterbuch durchsuchen",
-          "newAriaLabel": "Neuer Wörterbucheintrag",
-          "newPlaceholder": "Neuen Begriff hinzufügen",
-          "addDialog": {
-            "title": "Zum Wörterbuch hinzufügen",
-            "description": "Gib einen Begriff ein und füge ihn dem Wörterbuch für die Spracheingabe hinzu.",
-            "submit": "Begriff hinzufügen"
-          },
-          "csvImport": {
-            "label": "CSV importieren",
-            "tooltip": "Verwende eine einspaltige CSV-Datei mit einem Begriff pro Zeile.",
-            "success": "{{count}} Begriffe importiert",
-            "successWithSkipped": "{{count}} Begriffe importiert, {{skipped}} übersprungen",
-            "errors": {
-              "fileType": "CSV-Datei auswählen.",
-              "fileTooLarge": "Die CSV-Datei ist zu groß. Die maximale Größe beträgt 5 MB.",
-              "readFailed": "Die Datei konnte nicht gelesen werden. Versuche es mit einer anderen CSV-Datei.",
-              "empty": "Keine importierbaren Begriffe in {{fileName}} gefunden.",
-              "invalidCsv": "Das CSV-Format ist ungültig. Verwende eine Spalte mit einem Begriff pro Zeile.",
-              "capacityFull": "Das Wörterbuch ist voll. Es können keine weiteren Begriffe importiert werden.",
-              "allDuplicate": "Diese Begriffe sind bereits im Wörterbuch."
-            }
-          },
-          "editAriaLabel": "Wörterbucheintrag bearbeiten",
-          "emptyAll": "Noch keine Wörterbucheinträge.",
-          "emptyManual": "Noch keine manuell hinzugefügten Begriffe.",
-          "emptyAutomatic": "Noch keine automatisch hinzugefügten Begriffe.",
-          "filters": {
-            "all": "Alle",
-            "automatic": "Automatisch hinzugefügt",
-            "manual": "Manuell"
-          },
-          "sources": {
-            "automatic": "Automatisch",
-            "manual": "Manuell"
-          },
-          "toast": {
-            "title": "Zum Wörterbuch hinzugefügt",
-            "termsSummary": "{{terms}} und insgesamt {{count}} Begriffe",
-            "automaticAdded": "Automatisch zum Wörterbuch hinzugefügt: {{term}}",
-            "automaticAddedMultiple": "{{count}} Begriffe automatisch hinzugefügt, darunter {{term}}",
-            "delete": "Löschen",
-            "deleteAriaLabel": "Automatisch hinzugefügten Begriff löschen: {{term}}"
-          }
-        }
-      },
-      "microphone": {
-        "label": "Mikrofon",
-        "hint": "„Automatisch“ verwendet den Systemstandard. Wähle für ein externes Mikrofon oder Headset ein Gerät aus.",
-        "ariaLabel": "Mikrofonauswahl",
-        "options": {
-          "auto": "Automatisch",
-          "autoDetail": "Standard-Eingabegerät des Systems",
-          "unnamed": "Mikrofon {{index}}",
-          "unavailable": "Ausgewähltes Mikrofon nicht verfügbar",
-          "unavailableDetail": "Erneut verbinden, um es automatisch wiederherzustellen"
-        },
-        "errors": {
-          "selectedUnavailable": "Das ausgewählte Mikrofon ist nicht verfügbar. Verbinde es erneut oder wähle in den Einstellungen für die Spracheingabe „Automatisch“.",
-          "deviceUnavailable": "Kein Mikrofon verfügbar. Schließe ein Mikrofon an oder wähle ein anderes Eingabegerät und versuche es erneut.",
-          "fallbackToAuto": "Das ausgewählte Mikrofon ist nicht verfügbar, daher wird für diese Aufnahme das automatische Mikrofon verwendet."
-        }
-      },
-      "muteSystemAudio": {
-        "label": "Während der Spracheingabe stummschalten",
-        "hint": "Schaltet die Systemausgabe während der Spracheingabe vorübergehend stumm und stellt sie dann wieder her, wenn die Eingabe endet.",
-        "ariaLabel": "Stummschalten des Systemtons während der Spracheingabe umschalten",
-        "linuxUnsupported": "Die erste Linux-Version unterstützt das Stummschalten des Systemtons während der Spracheingabe nicht."
-      },
-      "usage": {
-        "duration": "Dauer",
-        "estimatedCost": "Geschätzte Kosten",
-        "costBreakdown": "ASR {{asr}} · Optimierung {{refine}} · Anhand gesendeter Audiodaten geschätzt",
-        "sessions": "Anzahl",
-        "outcomes": "Keine Sprache {{noSpeech}} · Fehlgeschlagen {{failed}}",
-        "reset": "Statistik zurücksetzen"
-      },
-      "history": {
-        "label": "Letzte Transkripte",
-        "empty": "Noch keine Transkripte.",
-        "copy": "Kopieren",
-        "delete": "Löschen",
-        "copyAria": "Transkript kopieren",
-        "deleteAria": "Transkript löschen",
-        "toast": {
-          "copied": "Kopiert",
-          "copyFailed": "Kopieren fehlgeschlagen"
-        }
-      },
-      "speakerFilter": {
-        "label": "Meine Stimme erkennen",
-        "hint": "Blendet andere Personen während der Spracheingabe aus, sodass nur deine Worte transkribiert werden. Erfordert ein aufgezeichnetes Stimmprofil; Sprache, die sich mit deiner überschneidet, kann nicht vollständig entfernt werden.",
-        "ariaLabel": "Erkennung meiner Stimme umschalten",
-        "unsupported": "Die Stimmabdruckerkennung ist auf diesem Computer nicht verfügbar.",
-        "privacy": "Dein Stimmprofil bleibt verschlüsselt auf diesem Computer. Es wird niemals hochgeladen oder mit anderen Geräten synchronisiert.",
-        "actionFailed": "Etwas ist schiefgelaufen. Versuche es später erneut.",
-        "model": {
-          "needed": "Bei der ersten Verwendung wird ein Erkennungsmodell mit etwa {{size}} heruntergeladen.",
-          "download": "Herunterladen",
-          "downloading": "Erkennungsmodell wird heruntergeladen ({{done}} / {{total}})",
-          "cancel": "Abbrechen",
-          "retry": "Erneut versuchen",
-          "failed": {
-            "network": "Das Erkennungsmodell konnte nicht heruntergeladen werden. Prüfe dein Netzwerk und versuche es erneut.",
-            "disk": "Das Spracherkennungsmodell konnte nicht gespeichert werden. Prüfe den freien Speicherplatz und versuche es erneut.",
-            "checksum": "Das heruntergeladene Erkennungsmodell konnte nicht verifiziert werden. Versuche es erneut.",
-            "unavailable": "Das Erkennungsmodell ist derzeit nicht verfügbar. Versuche es später erneut."
-          }
-        },
-        "profile": {
-          "missing": "Noch kein Stimmprofil",
-          "missingHint": "Nimm dein Stimmprofil auf, um die Filterung zu aktivieren.",
-          "enrolled": "Stimmprofil aufgenommen",
-          "enrolledAt": "Aufgenommen am {{date}}",
-          "enroll": "Stimmprofil aufnehmen",
-          "reenroll": "Erneut aufnehmen",
-          "delete": "Stimmprofil löschen",
-          "deleted": "Stimmprofil gelöscht",
-          "deleteConfirm": {
-            "title": "Stimmprofil löschen?",
-            "description": "Die Spracheingabe filtert andere Personen erst wieder heraus, wenn du dein Stimmprofil erneut aufnimmst.",
-            "confirm": "Löschen",
-            "cancel": "Abbrechen"
-          }
-        },
-        "strictness": {
-          "label": "Strenge",
-          "hint": "Eine strengere Einstellung lässt weniger fremde Stimmen durch, kann in lauter Umgebung aber auch mehr deiner eigenen Wörter abschneiden.",
-          "options": {
-            "relaxed": "Locker",
-            "standard": "Standard",
-            "strict": "Streng"
-          }
-        },
-        "enroll": {
-          "title": "Stimmprofil aufnehmen",
-          "description": "Lies die {{clips}} Textabschnitte unten mit deiner normalen Stimme vor. Jede Aufnahme dauert bis zu {{seconds}} Sekunden; beende die Aufnahme, wenn du mit dem Vorlesen fertig bist. Nimm dort auf, wo du die Spracheingabe normalerweise nutzt, ohne dass andere Personen sprechen.",
-          "stepsAriaLabel": "Vorzulesende Passagen",
-          "step": "{{current}} von {{total}}",
-          "record": "Vorlesen starten",
-          "stop": "Aufnahme beenden",
-          "rerecord": "Diesen Abschnitt erneut aufnehmen",
-          "recording": "Aufnahme läuft, noch {{seconds}} s",
-          "recorded": "Aufgenommen",
-          "cancel": "Abbrechen",
-          "submit": "Fertig",
-          "done": "Stimmprofil aufgenommen",
-          "passages": {
-            "p1": "Heute Morgen werde ich den Plan für die Woche durchgehen und am Nachmittag werde ich die Fragen auflisten, die wir besprechen müssen, und sie verschicken, damit jeder sie zuerst lesen kann.",
-            "p2": "Wenn das Wetter morgen schön ist, können wir etwas früher aufbrechen, unterwegs Obst und Snacks mitnehmen und im Park zu Mittag essen.",
-            "p3": "Bitte kürze diesen Text, behalte die wichtigsten Zahlen und Schlussfolgerungen bei und fasse dann die Kernaussagen in drei bis fünf Sätzen zusammen."
-          },
-          "errors": {
-            "too_short": "In Abschnitt {{index}} wurde zu wenig Sprache erkannt. Nimm ihn erneut auf.",
-            "no_embedding": "Aus Abschnitt {{index}} konnte kein Stimmprofil ermittelt werden. Nimm ihn erneut auf.",
-            "inconsistent": "Passage {{index}} klingt nicht nach derselben Person wie die anderen; möglicherweise wurde eine andere Stimme oder ein Geräusch aufgenommen. Nimm sie erneut auf.",
-            "models_missing": "Das Erkennungsmodell ist noch nicht vollständig heruntergeladen. Versuche es gleich noch einmal.",
-            "storage_unavailable": "Der Systemschlüsselbund ist nicht verfügbar, daher kann der Stimmabdruck nicht verschlüsselt gespeichert werden. Versuche es später erneut.",
-            "failed": "Der Stimmabdruck konnte nicht erstellt werden. Versuche es erneut.",
-            "microphone": "Das Mikrofon kann nicht verwendet werden. Prüfe die Mikrofonberechtigung und das Gerät.",
-            "noAudio": "Das Mikrofon hat keinen Ton aufgenommen. Prüfe das Gerät und versuche es erneut."
-          }
-        }
-      }
     },
     "sessionImport": {
       "title": "Sitzungen importieren",
@@ -4424,7 +4036,7 @@
         "more": "Weitere Sprachmodelle ({{count}})",
         "manual": "ID eines Sprachmodells eingeben",
         "modelId": "Sprachmodell-ID",
-        "modelsHint": "Das Speichern von Sprachmodellen startet keine Sprachsynthese. Stimme und Satzwiedergabe wählst du in den Spracheinstellungen des Teammitglieds.",
+        "modelsHint": "Das Speichern von Sprachmodellen startet keine Sprachsynthese.",
         "otherModels": "Chat und andere Modelle",
         "separateKey": "Für die Sprachausgabe ist ein API-Schlüssel erforderlich. Dadurch wird eine separate Verbindung erstellt; deine Abonnement- oder Gerätecode-Verbindung bleibt erhalten.",
         "fetchFailed": "Der Modellkatalog ist nicht verfügbar. Du kannst weiterhin Referenzmodelle hinzufügen.",
@@ -6755,13 +6367,6 @@
           "builtIn": "Integrierte Aktion der Tastenkappe verwenden",
           "unmapped": "Diese Tastenkappe hat keine Aktion"
         },
-        "microphone": {
-          "title": "Mikrofon",
-          "separate": {
-            "label": "Separate Mikrofontasten verwenden",
-            "description": "Durch kurzes Drücken startest du eine fortlaufende Aufnahme. Drücke erneut zum Stoppen oder halte die Taste gedrückt und lasse sie zum Stoppen los."
-          }
-        },
         "analog": {
           "title": "Joystick",
           "description": "Wähle die Aktion für jede Joystick-Richtung.",
@@ -6799,8 +6404,7 @@
           "tasks": "Aufgaben",
           "commands": "Befehle",
           "keycaps": "Tastenkappen",
-          "skills": "Skills",
-          "voice": "Spracheingabe"
+          "skills": "Skills"
         },
         "layout": {
           "editor": {
@@ -6884,8 +6488,6 @@
         "notBindable": "Diese Tastenkombination kann nicht verwendet werden",
         "systemReserved": "Vom Betriebssystem reserviert",
         "conflict": "Konflikt mit „{{name}}“",
-        "voiceConflict": "Konflikt mit dem Tastenkürzel für die Spracheingabe",
-        "composerVoiceConflict": "Konflikt mit dem Tastenkürzel für die Spracheingabe. Ändere entweder das Tastenkürzel zum Senden im Eingabefeld oder das für die Spracheingabe.",
         "menuAccelerator": "Diese Kombination kann nicht als Menü-Tastenkürzel registriert werden",
         "globalUnusable": "Diese Kombination kann nicht als systemweites Tastenkürzel verwendet werden",
         "globalOccupied": "Bereits von einer anderen App verwendet. Wähle eine andere Kombination."
@@ -7167,8 +6769,6 @@
         },
         "actions": {
           "none": "Nicht zugewiesen",
-          "voice": "Spracheingabe",
-          "voiceDescription": "Für Spracheingabe gedrückt halten, zum Beenden loslassen.",
           "commands": "Befehle",
           "skills": "Skills",
           "choose": "Aktion auswählen"
@@ -11428,135 +11028,6 @@
         "riskBody": "Fragen über X nutzen den gemeinsamen Speicher, die Tools und den Arbeitsbereich des Teammitglieds. Antworten sind öffentlich. Nutze X nicht für private Informationen. Der X-Thread greift nicht direkt auf deinen privaten Chatverlauf zu."
       }
     },
-    "voiceMode": {
-      "openConversation": "Unterhaltung öffnen",
-      "inCallWith": "Im Anruf mit {{name}}",
-      "showDetails": "Anruftranskript anzeigen",
-      "hideDetails": "Anruftranskript ausblenden",
-      "transcriptTitle": "Aktuelle Transkription",
-      "transcriptEmpty": "Dein Gesprochenes erscheint hier.",
-      "composerPaused": "Beende den Sprachmodus, um weiterzutippen…",
-      "microphoneMuted": "Mikrofon aus",
-      "exit": {
-        "idle": "Seit Längerem kein Gespräch. Der Sprachmodus endet bald.",
-        "farewell": "Verabschiedung erkannt. Der Sprachmodus endet bald.",
-        "semantic": "Der Sprachmodus endet gleich",
-        "sending": "Deine Nachricht wird gesendet, bevor der Sprachmodus endet…",
-        "countdown": "Der Sprachmodus endet in {{seconds}} Sekunden",
-        "cancel": "Sprachmodus geöffnet lassen",
-        "hint": "Sprich erneut oder lass den Sprachmodus geöffnet, um das Beenden abzubrechen. Laufende Arbeiten werden fortgesetzt.",
-        "mutedHint": "Dein Mikrofon ist noch stummgeschaltet. Lass den Sprachmodus geöffnet, um das Beenden abzubrechen. Laufende Arbeiten werden fortgesetzt."
-      },
-      "settingsTitle": "Stimme",
-      "openSettings": "Stimmeinstellungen",
-      "startConversation": "Sprachgespräch starten",
-      "settingsHint": "Wähle das Sprachmodell und die Stimme dieses Teammitglieds und starte dann ein Sprachgespräch über das Nachrichtenfeld.",
-      "previewNeedsChat": "Starte ein Gespräch mit diesem Teammitglied, um eine Stimme anzuhören.",
-      "voiceId": "Stimmen-ID",
-      "manualVoice": "Stimmen-ID eingeben",
-      "refreshVoices": "Stimmen aktualisieren",
-      "voicesLoading": "Stimmen werden geladen…",
-      "voicesError": "Stimmen konnten nicht geladen werden. Versuch es erneut oder gib eine Stimmen-ID ein.",
-      "voicesCustomError": "Nicht alle benutzerdefinierten Stimmen konnten geladen werden. Versuch es erneut oder gib eine Stimmen-ID ein.",
-      "voicesReference": "Dies sind Referenzstimmen für dieses Modell. Kompatible Dienste unterstützen möglicherweise andere Stimmen.",
-      "voicesTruncated": "Ein Teil der Stimmenliste wird angezeigt. Gib eine ID ein, um eine nicht aufgeführte Stimme zu verwenden.",
-      "voicesManual": "Für diese Schnittstelle ist keine Stimmenliste verfügbar. Gib eine Stimmen-ID ein.",
-      "preview": "Vorschau",
-      "stopPreview": "Vorschau stoppen",
-      "previewVoice": "{{voice}} anhören",
-      "stopPreviewVoice": "Vorschau von {{voice}} stoppen",
-      "previewText": "Hallo, das ist meine Stimme. Schön, mit dir zu sprechen.",
-      "previewStatus": {
-        "idle": "Die Vorschau nutzt das ausgewählte Modell und kann Nutzungskosten verursachen.",
-        "preparing": "Vorschau wird erstellt…",
-        "playing": "Vorschau wird abgespielt…",
-        "complete": "Vorschau beendet.",
-        "error": "Diese Stimme konnte nicht angehört werden"
-      },
-      "readAloud": "Vorlesen",
-      "stopReadAloud": "Vorlesen stoppen",
-      "finishBeforeReadAloud": "Beende den Sprachmodus, bevor du eine Nachricht vorlesen lässt.",
-      "readAloudFailed": "Diese Antwort konnte nicht vorgelesen werden",
-      "finishBeforeDictation": "Beende den Sprachmodus, bevor du das Diktieren startest.",
-      "title": "Sprachmodus",
-      "model": "Sprachmodell",
-      "refresh": "Modelle aktualisieren",
-      "voice": "Stimme",
-      "voiceHint": "Verwende einen vom ausgewählten Modell unterstützten Stimmennamen, z. B. alloy.",
-      "modelUnavailable": "Das gespeicherte Sprachmodell ist nicht verfügbar. Wähle ein anderes Modell.",
-      "noModels": "Keine Text-to-Speech-Modelle verfügbar.",
-      "noModelsSupportedProtocols": "Unterstützt MiniMax, ElevenLabs, Qwen / CosyVoice HTTP APIs und OpenAI-kompatible Text-to-Speech-Anbieter.",
-      "noModelsSetupHint": "Verbinde einen Anbieter und aktiviere ein Sprachmodell, um die Stimme deines Teammitglieds einzurichten.",
-      "openProviders": "Modellanbieter öffnen",
-      "catalogError": "Spracheinstellungen konnten nicht geladen oder gespeichert werden. Versuch es erneut.",
-      "start": "Jetzt sprechen",
-      "resume": "Fortsetzen",
-      "retrySend": "Erneut verbinden und senden",
-      "mute": "Stummschalten",
-      "interrupt": "Vorlesen stoppen",
-      "send": "Senden",
-      "end": "Beenden",
-      "unsent": "Nicht gesendet · Text zum Kopieren auswählen",
-      "hint": "Mach eine Sprechpause zum Senden. Antworten werden mit einer KI-Stimme vorgelesen. Sprich jederzeit, um zu unterbrechen.",
-      "status": {
-        "questionElsewhere": "Eine Frage wartet in der Aufgabe · Anruf läuft weiter",
-        "idle": "Bereit, wenn du es bist",
-        "connecting": "Verbindung zur Spracherkennung wird hergestellt…",
-        "listening": "Hört zu",
-        "thinking": "Denkt nach…",
-        "speaking": "Spricht…",
-        "paused": "Pausiert · Mikrofon aus",
-        "error": "Pausiert · Mikrofon aus",
-        "question": "Wähle eine Option · sag ihre Nummer oder ihren Namen",
-        "confirmation": "Wartet auf deine Bestätigung · Mikrofon aus",
-        "preparing": "Stimme wird vorbereitet…",
-        "loading": "Stimmeinstellungen werden geladen…",
-        "microphone": "Mikrofon wird eingeschaltet…",
-        "muted": "Mikrofon aus · Du kannst weiter zuhören"
-      },
-      "errors": {
-        "busy": "Die Sprachfunktion wird von einem anderen Anruf, Vorlesen, einer Hörprobe oder Diktat verwendet. Beende diese und versuche es erneut.",
-        "connection": "Sprachverbindung unterbrochen. Dein ungesendeter Text bleibt unten erhalten.",
-        "microphone": "Mikrofon gestoppt. Prüfe Berechtigung und Verbindung und fahre dann fort.",
-        "send": "Diese Nachricht wurde nicht angenommen. Dein Text bleibt unten erhalten.",
-        "speech": "Die Antwort konnte nicht vorgelesen werden. Die Textantwort bleibt im Gespräch.",
-        "speechTimeout": "Zeitüberschreitung bei der Sprachantwort"
-      },
-      "voiceIdHint": "Gib eine Stimmen-ID ein, die für dieses Anbieterkonto verfügbar ist.",
-      "speed": "Sprechgeschwindigkeit",
-      "speedAdjusted": "Für das ausgewählte Modell auf {{speed}}× angepasst.",
-      "speedUnavailable": "Dieses Modell unterstützt derzeit keine Anpassung der Sprechgeschwindigkeit.",
-      "speedValue": "{{speed}}×",
-      "sentencePlayback": "Satzweise vorlesen",
-      "sentencePlaybackHint": "Lies vollständige Sätze vor, sobald die Antwort eintrifft. Deaktiviere diese Option, um auf die vollständige Antwort zu warten. Das Vorlesen pausiert, wenn die Antwort verarbeitet werden muss.",
-      "preferenceHint": "Stimmeinstellungen werden nur für dieses Teammitglied gespeichert.",
-      "resetPreference": "Standardwerte verwenden",
-      "preferenceError": "Stimmeinstellungen konnten nicht geladen oder gespeichert werden. Versuch es erneut.",
-      "protocol": "Sprach-API",
-      "protocolOpenai": "OpenAI-kompatibel",
-      "protocolHint": "Wähle die Sprach-API, die diese Adresse unterstützt. Der Anbieter wird dadurch nicht gewechselt.",
-      "protocolCorrectedHint": "Die API entspricht jetzt der offiziellen Adresse. Wähle erneut eine Stimme.",
-      "unmute": "Stummschaltung aufheben",
-      "mutedHint": "Dein Mikrofon ist aus. Antworten werden weiterhin abgespielt. Hebe die Stummschaltung auf, um weiterzusprechen.",
-      "microphoneResumeError": "Das Mikrofon konnte nicht aktiviert werden. Du kannst weiter zuhören. Prüfe die Berechtigungen und dein Gerät und versuche dann erneut, die Stummschaltung aufzuheben.",
-      "callRecord": "Sprachanruf",
-      "callHistoryTitle": "Sprachanruf",
-      "you": "Du",
-      "companion": "Teammitglied",
-      "callInProgress": "Im Anruf",
-      "callSendFailed": "Senden fehlgeschlagen. Dein Gesprochenes wurde beibehalten.",
-      "handoff": {
-        "sending": "Wird übergeben…",
-        "accepted": "An dein Teammitglied übergeben",
-        "failed": "Übergabe fehlgeschlagen. Dein Gesprochenes wurde beibehalten.",
-        "completed": "Ergebnis erhalten"
-      },
-      "callSaved": "Aufzeichnung gespeichert",
-      "taskFromCall": "Arbeit aus diesem Anruf",
-      "viewTaskProgress": "Fortschritt anzeigen",
-      "liveDraft": "Wird transkribiert",
-      "questionDraft": "Wartet auf Bestätigung"
-    },
     "dmThread": {
       "newReply": "Neue Antwort",
       "you": "Du",
@@ -12322,23 +11793,6 @@
       "defaultPlaceholder": "Woran wollen wir heute arbeiten~",
       "createAgentPlaceholder": "Hallo {{appName}}!",
       "recommendationShortcut": "Tab",
-      "voiceInput": {
-        "start": "Spracheingabe starten",
-        "stop": "Spracheingabe beenden",
-        "releaseToStop": "Aufnahme läuft. Zum Beenden loslassen.",
-        "holdComposer": "Eingabefeld zum Diktieren gedrückt halten",
-        "speakRelease": "Sprich jetzt. Zum Beenden loslassen.",
-        "speakPressAgain": "Sprich jetzt. Zum Beenden erneut drücken.",
-        "releaseToSend": "Zum Senden loslassen",
-        "finishAndSend": "Spracheingabe beenden und senden",
-        "refining": "Wird verfeinert",
-        "permissionDialog": {
-          "title": "Mikrofonberechtigung erforderlich",
-          "description": "Erlaube den Mikrofonzugriff und klicke dann erneut auf Spracheingabe.",
-          "confirm": "Berechtigung erteilen",
-          "cancel": "Abbrechen"
-        }
-      },
       "remoteSwitchFailed": "Einstellung auf entferntem Gerät konnte nicht geändert werden; nicht angewendet",
       "switchFailed": "Einstellung konnte nicht geändert werden; nicht angewendet",
       "modelWindowUnknown": {
@@ -12589,59 +12043,6 @@
       "oauthSub": "Öffnet eine Bestätigungsseite in deinem Browser — verbindet sich automatisch"
     }
   },
-  "voiceInputOverlay": {
-    "rateLimited": "Zu viele Sprachanfragen. Warte kurz und versuche es erneut.",
-    "status": {
-      "listening": "Spracheingabe",
-      "submitting": "Wird abgeschlossen",
-      "refining": "Wird verfeinert",
-      "result": "Spracheingabe",
-      "inputFailed": "Eingabe fehlgeschlagen",
-      "transcriptKept": "Erkannter Text beibehalten",
-      "permissionRequired": "Berechtigung erforderlich",
-      "error": "Spracheingabe fehlgeschlagen"
-    },
-    "hint": "Tastenkürzel erneut drücken, um Text einzugeben",
-    "placeholder": "Sprich jetzt…",
-    "pasteHint": "Automatische Eingabe fehlgeschlagen. Kopiere das Transkript und gib es manuell ein.",
-    "pasteErrors": {
-      "empty": "Kein Text aus der Spracheingabe zum Eingeben vorhanden.",
-      "unavailable": "Automatische Eingabe ist in der aktuellen App nicht verfügbar. Kopiere das Transkript und gib es manuell ein.",
-      "unconfirmed": "Es konnte nicht bestätigt werden, ob die automatische Eingabe erfolgreich war. Kopiere bei Bedarf das Transkript.",
-      "permission": "Für die Spracheingabe in der aktuellen App ist die Bedienungshilfen-Berechtigung erforderlich. Erteile sie und versuche es erneut.",
-      "failed": "Automatische Eingabe fehlgeschlagen. Kopiere das Transkript und gib es manuell ein."
-    },
-    "permissionPrompts": {
-      "microphone": {
-        "message": "Für die Spracheingabe ist die Mikrofonberechtigung erforderlich.",
-        "hint": "Erteile die Berechtigung und drücke das Tastenkürzel erneut, um die Aufnahme zu starten."
-      },
-      "accessibility": {
-        "message": "Zum Eingeben von Text in der aktuellen App ist die Bedienungshilfen-Berechtigung erforderlich.",
-        "hint": "Erteile die Berechtigung und drücke das Tastenkürzel erneut, um den Text automatisch einzugeben."
-      }
-    },
-    "copy": "Kopieren",
-    "retry": "Erneut versuchen",
-    "openPermissionSettings": "Berechtigung erteilen",
-    "openSettings": "Einstellungen öffnen",
-    "settingsRecoveryHint": "Schließe die Einrichtung ab und drücke das Tastenkürzel erneut.",
-    "settingsOpenFailed": "Einstellungen konnten nicht geöffnet werden. Öffne sie manuell über das Hauptfenster.",
-    "close": "Schließen",
-    "submit": "Beenden und eingeben",
-    "submitWithShortcut": "Beenden und eingeben ({{shortcut}})",
-    "closeWithShortcut": "Schließen und verwerfen ({{shortcut}})",
-    "codexRequired": "Verbinde Codex in {{appName}}, bevor du die Spracheingabe nutzt.",
-    "apiKeyRequired": "Konfiguriere einen API-Schlüssel, bevor du die Spracheingabe nutzt.",
-    "cindyServiceUnavailable": "Der {{appName}}-Sprachdienst ist nicht verfügbar. Prüfe dein Netzwerk oder wechsle die Dienstquelle.",
-    "asrServiceUnavailable": "Verbindung zum Spracherkennungsdienst fehlgeschlagen. Prüfe dein Netzwerk und versuche es erneut.",
-    "emptyTranscript": "Sprache wurde erkannt, aber kein Text. Versuche es erneut.",
-    "speakerFiltered": "Stimme einer anderen Person ignoriert",
-    "connectionInterrupted": "Die Sprachverbindung wurde unterbrochen. Prüfe dein Netzwerk und versuche es erneut.",
-    "recognitionStalled": "Die Spracherkennung liefert keine Ergebnisse mehr. Versuche es erneut.",
-    "transcriptKept": "{{message}} Der bisher erkannte Text wurde beibehalten — du kannst ihn direkt bearbeiten.",
-    "transcriptKeptOverlay": "{{message}} Der bisher erkannte Text wurde beibehalten — kopiere ihn, um fortzufahren."
-  },
   "chatgptAuthRecovery": {
     "title": "ChatGPT-Anmeldung nicht mehr gültig",
     "systemSharedInvalidated": "{{appName}} nutzt die ChatGPT-Anmeldung dieses Computers. Stelle sie zuerst in der ChatGPT App wieder her. So vermeidest du, dass zweite Zugangsdaten erstellt werden oder dieser Computer abgemeldet wird.",
@@ -12682,14 +12083,6 @@
     "prevMessageJump": "Zum vorherigen Prompt springen: {{preview}}",
     "sessionLoading": "Aufgabe wird geladen",
     "askUserQuestion": {
-      "voice": {
-        "hint": "Sag die Nummer oder den Namen einer Option. Sag bei Mehrfachauswahl anschließend „Auswahl bestätigen“.",
-        "freeTextHint": "Sag deine Antwort, prüfe sie und sag dann „Auswahl bestätigen“, um sie abzusenden.",
-        "confirm": "Prüfe deine Auswahl und sag dann „Auswahl bestätigen“ zum Absenden oder „Auswahl abbrechen“, um erneut zu wählen.",
-        "ambiguous": "Deine Auswahl ist unklar. Sag die Nummer oder den vollständigen Namen einer Option oder wähle manuell.",
-        "unknown": "Keine eindeutige Option erkannt. Sag die Nummer oder den vollständigen Namen einer Option oder wähle manuell.",
-        "cancelled": "Sprachauswahl abgebrochen. Bitte wähle erneut."
-      },
       "skippedAnswer": "Übersprungen",
       "pendingTitle": "Frage offen",
       "restoreAriaLabel": "Frage wiederherstellen",
@@ -16799,12 +16192,6 @@
         "device-mismatch": "Deine Anmeldung passt nicht mehr zu diesem Gerät. Bitte melde dich erneut an.",
         "account-unavailable": "Dein Konto ist nicht verfügbar (es wurde möglicherweise deaktiviert oder gelöscht). Wende dich bei Bedarf an deinen Administrator."
       },
-      "voiceApiKeyAuthTitle": "{{appName}} AI erforderlich",
-      "voiceApiKeyAuthDescription": "Der aktuelle Anbieter für Spracheingabe verwendet {{appName}} AI. {{appName}} AI ist noch nicht verbunden, daher kann die Spracheingabe nicht starten. Modellanbieter öffnen, um die Verbindung herzustellen?",
-      "voiceDirectApiKeyAuthTitle": "API-Schlüssel für Spracheingabe erforderlich",
-      "voiceDirectApiKeyAuthDescription": "Der aktuelle Anbieter für Spracheingabe benötigt einen direkten API-Schlüssel. Unter API-Schlüssel hinzufügen, um die Spracheingabe zu starten?",
-      "codexVoiceAuthTitle": "ChatGPT-Verbindung erforderlich",
-      "codexVoiceAuthDescription": "Die Spracheingabe verwendet ein verbundenes ChatGPT-Konto für die GPT-Echtzeit-Spracherkennung. Das Konto ist nicht verbunden oder muss aktualisiert werden. Modellanbieter öffnen, um ChatGPT zu verbinden?",
       "codexBinaryMissingTitle": "Codex-Komponente nicht bereit",
       "codexBinaryMissingDescription": "Die Codex-Komponente ist noch nicht bereit, daher ist diese Funktion nicht verfügbar. Versuche es später erneut oder prüfe die Codex-Verbindung unter Einstellungen → Anbieter.",
       "piBinaryMissingTitle": "Pi-Komponente nicht bereit",

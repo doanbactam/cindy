@@ -231,7 +231,7 @@ describe('Work Louder Codex settings store', () => {
       type: 'command',
       commandId: 'composer.submit',
     });
-    expect(next.layout.slots.ACT10.action).toEqual({ type: 'voice' });
+    expect(next.layout.slots.ACT10.action).toBeNull();
   });
 
   it('keeps a Creator layout that is blank on purpose after the new schema exists', () => {
@@ -304,7 +304,10 @@ describe('Work Louder Codex settings store', () => {
           slots: {
             ACT10: { keycapId: 'MIC', action: null },
             ACT11: { keycapId: 'EMPT1', action: null },
-            ACT10_ACT11: { keycapId: 'EMPT5', action: { type: 'voice' } },
+            ACT10_ACT11: {
+              keycapId: 'EMPT5',
+              action: { type: 'command', commandId: 'newTask' },
+            },
             ACT12: {
               keycapId: 'EMPT3',
               action: { type: 'command', commandId: 'composer.submit' },
@@ -318,7 +321,7 @@ describe('Work Louder Codex settings store', () => {
 
     expect(next.layout.slots.ACT10).toEqual({
       keycapId: 'EMPT5',
-      action: { type: 'voice' },
+      action: { type: 'command', commandId: 'newTask' },
     });
   });
 
@@ -347,8 +350,8 @@ describe('Work Louder Codex settings store', () => {
     expect(next.layout.slots.ACT10_ACT11.keycapId).toBe('MIC');
   });
 
-  it('persists bound voice actions and drops unknown fields', () => {
-    expect(__testing.normalizeAction({ type: 'voice', junk: true })).toEqual({ type: 'voice' });
+  it('unbinds a saved legacy voice action', () => {
+    expect(__testing.normalizeAction({ type: 'voice', junk: true })).toBeNull();
     const next = __testing.normalize(
       {
         layout: {
@@ -360,6 +363,6 @@ describe('Work Louder Codex settings store', () => {
       },
       'creator-micro-2',
     );
-    expect(next.layout.slots.ACT10.action).toEqual({ type: 'voice' });
+    expect(next.layout.slots.ACT10.action).toBeNull();
   });
 });

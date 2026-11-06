@@ -20,8 +20,6 @@ export default {
       partial:
         'export const makerChatStore={subscribe:()=>()=>{},getSnapshot:()=>window.__threadRoot,getAgentSwitchIntent:()=>null,getAgentSwitchIntentRev:()=>0};',
     },
-    'src/renderer/voice-input/workletUrl':
-      'export const getVoiceInputWorkletUrl=()=>{throw new Error("not covered")};',
   },
   cases: {
     default: { about: 'No topic: quote/copy always visible, create topic in More' },

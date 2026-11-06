@@ -1,5 +1,4 @@
 import { APP_PREFERENCE_REQUEST, APP_PREFERENCE_REPLY, APP_SETTINGS_CHANGED, type AppPreferenceControlBridge } from '../shared/appPreferenceControl.js';
-import type { VoiceConversationApi } from '../shared/voiceConversation';
 import { PLUGIN_UI_VISIBILITY_GET, PLUGIN_UI_VISIBILITY_RELEASE, PLUGIN_UI_VISIBILITY_APPLY, PLUGIN_UI_VISIBILITY_APPLIED, type PluginUiVisibilityApplication } from '../shared/pluginUiVisibility';
 import type { PluginUiVisibilityValues } from '@cindy/maker-shared/plugin-ui';
 import { PLUGIN_APPEARANCE_FONT, PLUGIN_APPEARANCE_APPLY, PLUGIN_APPEARANCE_APPLIED,
@@ -11,9 +10,6 @@ import { PLUGIN_TAB_VIEW_HOST, PLUGIN_TAB_VIEW_NAVIGATE, PLUGIN_TAB_VIEW_REQUEST
   type PluginTabViewMountRequest, type PluginTabViewMountResult } from '../shared/pluginUi';
 import { PERFORMANCE_TRACE_CHANNEL, PERFORMANCE_TRACE_EVENTS_CHANNEL, PERFORMANCE_TRACE_STATE_CHANNEL, type PerformanceTraceAPI, type PerformanceTraceState } from '../shared/performanceTrace';
 import { createAccessibilitySupportBridge } from './accessibilitySupport';
-import { createMicrophonePermissionSnapshot } from './microphonePermissionSnapshot';
-import { createVoiceInputDataSnapshot } from './voiceInputDataSnapshot';
-import type { VoiceInputDataSnapshot } from '../shared/voiceInputData';
 import { createWallpaperAssetsBridge } from './wallpaperAssets';
 import type { CompanionImportApi, CompanionImportSelection } from '@cindy/maker-shared/companion-import';
 import { TASK_MIGRATION_LOCAL_CHANNEL } from '@cindy/device-link';
@@ -63,11 +59,6 @@ import { SELF_HOSTED_RELAY_IPC, type SelfHostedRelayApi } from '../shared/selfHo
 import { DEVICE_LINK_PUSH } from '../shared/deviceLinkIpc';
 import { PROVIDER_SHARE_IPC, type ProviderShareCommand } from '../shared/providerShare';
 import { PROVIDER_GROUP_IPC, type ProviderGroupCommand } from '../shared/providerGroup';
-import {
-  VOICE_SPEAKER_FILTER_CHANNELS,
-  type VoiceSpeakerEnrollResult,
-  type VoiceSpeakerFilterStatus,
-} from '../shared/voiceSpeakerFilter';
 import type { MobileCodexRateLimitsResult, MobileCodexRateLimitResetResult } from '@cindy/maker-shared/device-link-contract';
 import type { AppearanceSettings } from '../shared/appearanceSettings';
 import type { DialogueWorkspaceSettingsState } from '../shared/dialogueWorkspaceSettings';
@@ -203,11 +194,6 @@ import {
   APP_ATTENTION_COUNT_CHANNEL,
   SESSION_ATTENTION_CLEARED_CHANNEL,
 } from '../shared/sessionAttention';
-import { VOICE_INPUT_POWER_STATE_CHANNEL } from '../shared/voiceInputPowerIpc';
-import {
-  VOICE_INPUT_TEST_CONNECTION_CHANNEL,
-  type VoiceInputConnectionTestResult,
-} from '../shared/voiceInputConnectionTest';
 import {
   type ApplicationMenuCommand,
   isApplicationMenuCommand,
@@ -243,12 +229,6 @@ import {
   isModelVisibilityLegacyOwnerClaim,
   type ModelVisibilityLegacyOwnerClaim,
 } from '../shared/modelVisibility';
-import type { VoiceInputAsrMode, VoiceInputProviderKind } from '../shared/voiceInputAsrProfiles';
-import type {
-  VoiceInputRefinerProviderKind,
-  VoiceInputRefinerTransport,
-} from '../shared/voiceInputRefinerProfiles';
-import { isIpcErrorCode, type IpcErrorCode } from '../shared/ipc-errors';
 import {
   isSidebarGhostId,
   isSidebarLegacyRendererOwnerClaim,
@@ -258,7 +238,6 @@ import {
   type SidebarSettingsSnapshot,
 } from '../shared/sidebarSettings';
 import { isDataOwnerPushStamp, type DataOwnerPushStamp } from '../shared/dataOwnerPush';
-import type { VoiceInputSyncErrorResult } from '../shared/voiceInputData';
 import type { UtilityTextFailure } from '../shared/utilityTextResult';
 import { DB_SLIMMING_STARTUP_PROGRESS_CHANGED_CHANNEL } from '../shared/localDbMaintenance';
 import type { BrowserBackendHealth, BrowserBackendRecoveryResult } from '../shared/browserBackend';
@@ -345,16 +324,6 @@ import {
 
 type IpcCallback = (data: unknown, ownerStamp?: unknown) => void;
 
-function throwVoiceInputSyncError(result: unknown): void {
-  if (!result || typeof result !== 'object' || (result as { ok?: unknown }).ok !== false) return;
-  const candidate = result as Partial<VoiceInputSyncErrorResult>;
-  if (!isIpcErrorCode(candidate.code)) return;
-  const error = new Error(
-    `[${candidate.code}] ${candidate.message ?? 'voice input data operation failed'}`,
-  );
-  (error as { code?: IpcErrorCode }).code = candidate.code;
-  throw error;
-}
 
 // ApplicationMenuCommand 从 ../shared/applicationMenuCommands 单点导入。
 type ApplicationMenuLocale = SupportedLocale;
@@ -372,96 +341,6 @@ function readInitialPreferredSystemLocale(): ApplicationMenuLocale {
   }
 }
 
-type VoiceInputShortcutWire = {
-  trigger?: 'keyboard' | 'modifier';
-  code: string;
-  key: string;
-  modifiers: {
-    meta: boolean;
-    ctrl: boolean;
-    alt: boolean;
-    shift: boolean;
-    fn: boolean;
-  };
-};
-type VoiceInputGlobalResult =
-  | { ok: true }
-  | {
-      ok: false;
-      error: string;
-      errorCode?: 'empty' | 'unavailable' | 'unconfirmed' | 'permission' | 'failed' | 'superseded';
-    };
-type VoiceInputSettingsUpdateResult =
-  | {
-      ok: true;
-      settings: import('../shared/voiceInputData').VoiceInputSettings;
-      /** 已存盘但 macOS 监听权限未授权，快捷键要等授权后才生效。 */
-      pendingInputMonitoring?: boolean;
-    }
-  | {
-      ok: false;
-      error: string;
-      errorCode?: 'empty' | 'unavailable' | 'unconfirmed' | 'permission' | 'failed' | 'superseded';
-    };
-type VoiceInputReadinessWire = {
-  ok: boolean;
-  serviceMode: 'cindy' | 'byok';
-  provider: VoiceInputProviderKind;
-  providerModel: string;
-  auth: 'api-key' | 'codex';
-  settingsTab: 'api-keys' | 'connections' | 'providers';
-  error?: string;
-  authErrorReason?: string;
-  failureReason?:
-    'custom-asr-config-missing' | 'custom-asr-key-missing' | 'codex-realtime-unsupported';
-};
-type VoiceInputModelSelectionWire = {
-  serviceMode: 'cindy' | 'byok';
-  serviceModeConfigured: boolean;
-  asrProvider: VoiceInputProviderKind;
-  refinerProvider: VoiceInputRefinerProviderKind;
-  refinerModel?: string;
-  asrProviderChain: VoiceInputProviderKind[];
-  asrProviderChainSource: 'default' | 'configured';
-  customAsr?: {
-    protocol: 'openai-realtime' | 'qwen-realtime';
-    websocketUrl: string;
-    model: string;
-  };
-  refinerProviderChain: VoiceInputRefinerProviderKind[];
-  refinerProviderChainSource: 'default' | 'configured';
-  configPath: string;
-};
-type VoiceInputModelSelectionResultWire = {
-  selection: VoiceInputModelSelectionWire;
-  asrProfiles: Array<{
-    id: VoiceInputProviderKind;
-    model: string;
-    mode: VoiceInputAsrMode;
-    auth: 'api-key' | 'codex';
-  }>;
-  refinerProfiles: Array<{
-    id: VoiceInputRefinerProviderKind;
-    model: string;
-    transport: VoiceInputRefinerTransport;
-    auth: 'api-key' | 'codex';
-  }>;
-  readiness: VoiceInputReadinessWire;
-  customAsrApiKeyConfigured: boolean;
-};
-type VoiceInputModelSelectionPatchWire = {
-  serviceMode?: 'cindy' | 'byok' | null;
-  asrProvider?: string | null;
-  refinerProvider?: string | null;
-  refinerModel?: string | null;
-  customAsr?: {
-    protocol: 'openai-realtime' | 'qwen-realtime';
-    websocketUrl: string;
-    model: string;
-  } | null;
-  customAsrApiKey?: string | null;
-  refinerProviderChain?: string[] | null;
-};
 type DiscordBotSessionAuthCheckWire = {
   ok: boolean;
   missing: 'gateway-key' | 'agent-oauth' | 'provider-key' | 'provider-disconnected' | null;
@@ -729,18 +608,6 @@ const fanOutWecomBotStatusChange = createIpcFanOut('wecomBot:status-changed');
 // Personal WeChat: main owns auth/polling and broadcasts a credential-free state snapshot.
 const fanOutWechatBotStateChange = createIpcFanOut('wechatBot:state-changed');
 const fanOutWechatChannelSettingsChange = createIpcFanOut('wechatBot:channel-settings-changed');
-const fanOutVoiceInputEvent = createIpcFanOut('voice-input:event');
-const fanOutVoiceInputGlobalShortcutTrigger = createIpcFanOut(
-  'voice-input:global-shortcut-trigger',
-);
-const fanOutVoiceInputGlobalOverlayCommand = createIpcFanOut('voice-input:global-overlay-command');
-const fanOutVoiceInputDictionaryLearningEvidence = createIpcFanOut(
-  'voice-input:dictionary-learning-evidence',
-);
-const fanOutVoiceInputDataChanged = createIpcFanOut('voice-input:data-changed');
-const fanOutVoiceSpeakerStatusChanged = createIpcFanOut(VOICE_SPEAKER_FILTER_CHANNELS.statusChanged);
-// 挂起/锁屏 → renderer 释放 fast activation 的保活麦克风(见 shared/voiceInputPowerIpc)。
-const fanOutVoiceInputPowerStateChange = createIpcFanOut(VOICE_INPUT_POWER_STATE_CHANNEL);
 // 应用级快捷键 override 变化广播 (设置页改绑 / reset 后 main 推全量 overrides,
 // renderer 侧 appShortcutStore 订阅热更新)。
 const fanOutAppShortcutsChanged = createIpcFanOut('app-shortcuts:changed');
@@ -802,12 +669,6 @@ const fanOutGhostPreviewOpen = createIpcFanOut('ghosts:preview-open');
 const fanOutGhostTaskViewOpen = createIpcFanOut('ghosts:task-view-open');
 // 插件自动化草稿(agent 槽 schedule 加档:renderer 开自动化创建面板并预填)。
 const fanOutGhostScheduleDraft = createIpcFanOut('ghosts:schedule-draft');
-const fanOutVoiceInputModifierShortcutKeys = createIpcFanOut('voice-input:modifier-shortcut-keys');
-// 「待授权」快捷键在设置页之外自动恢复失败（helper 起不来）。设置页不在,它的 toast 也就
-// 不在,所以由常挂载的 MainLayout 接这条并提示。main 侧一次 App 运行只推一次。
-const fanOutVoiceInputShortcutRecoveryFailed = createIpcFanOut(
-  'voice-input:shortcut-recovery-failed',
-);
 // Remote SSH (Phase A) — host status fan-out. Channel literal kept in
 // sync with REMOTE_SSH_PUSH.STATUS_CHANGED in main/remote-ssh/index.ts;
 // preload can't import from main due to vite chunking.
@@ -1134,9 +995,6 @@ let appearanceSettingsInfo = ipcRenderer.sendSync(
 ipcRenderer.on('appearance-settings:changed', (_event, settings: AppearanceSettings) => {
   appearanceSettingsInfo = settings;
 });
-
-const readMicrophonePermissionSnapshot = createMicrophonePermissionSnapshot();
-const voiceInputDataSnapshot = createVoiceInputDataSnapshot();
 
 contextBridge.exposeInMainWorld('electronAPI', {
   appPreferenceControl: {
@@ -1857,242 +1715,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onConfirm: fanOutPluginPublisherConfirm,
     resolveConfirm: (requestId: string, confirmed: boolean): Promise<{ handled: boolean }> =>
       ipcRenderer.invoke('plugin-publisher:resolve-confirm', { requestId, confirmed }),
-  },
-  voiceConversation: {
-    promoteTurn: (callId, inputId) => ipcRenderer.invoke("voice-conversation:promote-turn", callId, inputId),
-    submitTurn: (callId, inputId, text, forceHandoff) => ipcRenderer.invoke("voice-conversation:submit-turn", callId, inputId, text, forceHandoff),
-    models: () => ipcRenderer.invoke('voice-conversation:models'),
-    voices: (selection) => ipcRenderer.invoke('voice-conversation:voices', selection),
-    preview: (input) => ipcRenderer.invoke('voice-conversation:preview', input),
-    readPreview: (previewId) => ipcRenderer.invoke('voice-conversation:read-preview', previewId),
-    stopPreview: (previewId) => ipcRenderer.invoke('voice-conversation:stop-preview', previewId),
-    preference: (botId) => ipcRenderer.invoke('voice-conversation:preference', botId),
-    setPreference: (botId, selection, sentencePlayback) => ipcRenderer.invoke('voice-conversation:set-preference', botId, selection, sentencePlayback),
-    start: (input) => ipcRenderer.invoke('voice-conversation:start', input),
-    startPlayback: (input) => ipcRenderer.invoke('voice-conversation:start-playback', input),
-    classifyExit: (callId, utteranceId, inputGeneration) => ipcRenderer.invoke('voice-conversation:classify-exit', callId, utteranceId, inputGeneration),
-    audio: (input) => ipcRenderer.send('voice-conversation:audio', input),
-    finishUtterance: (callId) => ipcRenderer.invoke('voice-conversation:finish-utterance', callId),
-    setInputMuted: (callId, muted) => ipcRenderer.invoke('voice-conversation:set-input-muted', callId, muted),
-    end: (callId) => ipcRenderer.invoke('voice-conversation:end', callId),
-    speak: (input) => ipcRenderer.invoke('voice-conversation:speak', input),
-    readSpeech: (callId, requestId) => ipcRenderer.invoke('voice-conversation:read-speech', callId, requestId),
-    interrupt: (callId) => ipcRenderer.invoke('voice-conversation:interrupt', callId),
-    callStatus: () => ipcRenderer.invoke('voice-conversation:call-status'),
-    publishCallStatus: (update) => ipcRenderer.send('voice-conversation:call-publish', update),
-    callCommand: (command) => ipcRenderer.invoke('voice-conversation:call-command', command),
-    onCallStatus: (callback) => {
-      const listener = (_event: unknown, update: Parameters<typeof callback>[0]) => callback(update);
-      ipcRenderer.on('voice-conversation:call-status-changed', listener);
-      return () => ipcRenderer.removeListener('voice-conversation:call-status-changed', listener);
-    },
-    onCallCommand: (callback) => {
-      const listener = (_event: unknown, command: Parameters<typeof callback>[0]) => callback(command);
-      ipcRenderer.on('voice-conversation:call-command', listener);
-      return () => ipcRenderer.removeListener('voice-conversation:call-command', listener);
-    },
-    onEvent: (callback) => {
-      const listener = (_event: Electron.IpcRendererEvent, payload: Parameters<typeof callback>[0]) => callback(payload);
-      ipcRenderer.on('voice-conversation:event', listener);
-      return () => ipcRenderer.removeListener('voice-conversation:event', listener);
-    },
-  } satisfies VoiceConversationApi,
-  voiceInput: {
-    prewarm: (payload?: {
-      sourceLanguage?: string;
-      refinementEnabled?: boolean;
-    }): Promise<{ ok: true }> => ipcRenderer.invoke('voice-input:prewarm', payload),
-    getBenchmarkFixtureAudio: (): Promise<
-      { ok: true; path: string; wav: ArrayBuffer } | { ok: false }
-    > => ipcRenderer.invoke('voice-input:benchmark-fixture-audio'),
-    getMicrophonePermissionCached: readMicrophonePermissionSnapshot,
-    getSystemPermissionsCached: (): {
-      microphone: { ok: true; status: string } | { ok: false; status: string; error: string };
-      inputMonitoring: { ok: true; status: string } | { ok: false; status: string; error: string };
-      accessibility: { ok: true; status: string } | { ok: false; status: string; error: string };
-    } => ipcRenderer.sendSync('voice-input:get-system-permissions-cached'),
-    requestMicrophonePermission: (): Promise<{ ok: true } | { ok: false; error: string }> =>
-      ipcRenderer.invoke('voice-input:request-microphone-permission'),
-    setRendererMicrophonePermissionVerified: (verified: boolean): Promise<{ ok: true }> =>
-      ipcRenderer.invoke('voice-input:set-renderer-microphone-permission-verified', verified),
-    getSystemPermissions: (): Promise<{
-      microphone: { ok: true; status: string } | { ok: false; status: string; error: string };
-      inputMonitoring: { ok: true; status: string } | { ok: false; status: string; error: string };
-      accessibility: { ok: true; status: string } | { ok: false; status: string; error: string };
-    }> => ipcRenderer.invoke('voice-input:get-system-permissions'),
-    openMicrophoneSettings: (): Promise<{ ok: true } | { ok: false; error: string }> =>
-      ipcRenderer.invoke('voice-input:open-microphone-settings'),
-    openInputMonitoringSettings: (): Promise<VoiceInputGlobalResult> =>
-      ipcRenderer.invoke('voice-input:open-input-monitoring-settings'),
-    // 失败走统一 IPC 错误协议（reject），所以成功路径只有 ok:true + 权限状态。
-    // status 沿用 VoiceInputPermissionSnapshot 的 string 形状（granted / denied / …）：
-    // 那是 microphone、accessibility 共用的既有类型，单独在这里收成字面量联合会与它们
-    // 不一致，收紧要整条一起动，超出本次改动范围。
-    requestInputMonitoringPermission: (): Promise<{ ok: true; status: string }> =>
-      ipcRenderer.invoke('voice-input:request-input-monitoring-permission'),
-    muteSystemAudio: (): Promise<{ ok: true } | { ok: false; error: string }> =>
-      ipcRenderer.invoke('voice-input:mute-system-audio'),
-    restoreSystemAudio: (): Promise<{ ok: true } | { ok: false; error: string }> =>
-      ipcRenderer.invoke('voice-input:restore-system-audio'),
-    testConnection: (): Promise<VoiceInputConnectionTestResult> =>
-      ipcRenderer.invoke(VOICE_INPUT_TEST_CONNECTION_CHANNEL),
-    getReadiness: (): Promise<VoiceInputReadinessWire> =>
-      ipcRenderer.invoke('voice-input:get-readiness'),
-    getReadinessCached: (): VoiceInputReadinessWire | null =>
-      ipcRenderer.sendSync('voice-input:get-readiness-cached'),
-    getModelSelection: (): Promise<VoiceInputModelSelectionResultWire> =>
-      ipcRenderer.invoke('voice-input:model-selection:get'),
-    setModelSelection: (
-      patch: VoiceInputModelSelectionPatchWire,
-    ): Promise<VoiceInputModelSelectionResultWire> =>
-      ipcRenderer.invoke('voice-input:model-selection:set', patch),
-    reloadModelSelection: (): Promise<VoiceInputModelSelectionResultWire> =>
-      ipcRenderer.invoke('voice-input:model-selection:reload'),
-    openSettings: (tab: 'voice-input' | 'providers'): Promise<{ ok: true }> =>
-      ipcRenderer.invoke('voice-input:open-settings', tab),
-    start: (params?: {
-      sourceLanguage?: string;
-      refinementEnabled?: boolean;
-      refinementCacheScope?: string;
-      refinementContext?: {
-        uiLanguage?: string;
-        sourceLanguage?: string;
-        userRefinementInstructions?: string;
-        userDictionary?: string;
-        voiceInputHistory?: string;
-        selectionBefore?: string;
-        selectedText?: string;
-        selectionAfter?: string;
-        replyToMessage?: string;
-      };
-    }): Promise<
-      { ok: true; runId: string } | { ok: false; error: string; authErrorReason?: string }
-    > => ipcRenderer.invoke('voice-input:start', params),
-    appendAudio: (chunk: { pcm16k: ArrayBuffer; trace?: unknown }): void =>
-      ipcRenderer.send('voice-input:audio', chunk),
-    drainAudioQueue: (): Promise<{ ok: true }> => ipcRenderer.invoke('voice-input:audio-drain'),
-    stop: (): Promise<{ ok: true } | { ok: false; error: string }> =>
-      ipcRenderer.invoke('voice-input:stop'),
-    cancel: (params?: { runId?: string }): Promise<{ ok: true }> =>
-      ipcRenderer.invoke('voice-input:cancel', params),
-    onEvent: fanOutVoiceInputEvent,
-    getDataSnapshot: voiceInputDataSnapshot.read,
-    migrateLegacyRendererData: (payload: {
-      settingsRaw?: string | null;
-      historyRaw?: string | null;
-    }): unknown => {
-      const result = ipcRenderer.sendSync('voice-input:data:migrate-legacy', payload);
-      throwVoiceInputSyncError(result);
-      voiceInputDataSnapshot.replace(result as VoiceInputDataSnapshot);
-      return result;
-    },
-    updateSettings: (patch: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('voice-input:settings:update', patch),
-    updateShortcutSetting: (
-      shortcut: VoiceInputShortcutWire | null,
-    ): Promise<VoiceInputSettingsUpdateResult> =>
-      ipcRenderer.invoke('voice-input:settings:update-shortcut', shortcut),
-    deleteDictionaryEntries: (entryIds: string[]): Promise<unknown> =>
-      ipcRenderer.invoke('voice-input:dictionary:delete-entries', entryIds),
-    addDictionaryEntry: (text: string): Promise<unknown> =>
-      ipcRenderer.invoke('voice-input:dictionary:add-entry', text),
-    importDictionaryEntries: (texts: string[]): Promise<unknown> =>
-      ipcRenderer.invoke('voice-input:dictionary:import-entries', texts),
-    renameDictionaryEntry: (entryId: string, text: string): Promise<unknown> =>
-      ipcRenderer.invoke('voice-input:dictionary:rename-entry', { entryId, text }),
-    editDictionaryEntry: (entryId: string, text: string, aliases: string[]): Promise<unknown> =>
-      ipcRenderer.invoke('voice-input:dictionary:edit-entry', { entryId, text, aliases }),
-    recordDictionaryLearningActions: (actions: unknown[]): Promise<unknown> =>
-      ipcRenderer.invoke('voice-input:dictionary-learning:record-actions', actions),
-    getHistory: (limit?: number): unknown => {
-      const result = ipcRenderer.sendSync('voice-input:history:get', limit);
-      throwVoiceInputSyncError(result);
-      return result;
-    },
-    getHistoryForRefinement: (): unknown => {
-      const result = ipcRenderer.sendSync('voice-input:history:get-for-refinement');
-      throwVoiceInputSyncError(result);
-      return result;
-    },
-    recordHistory: (text: string): string | null => {
-      const result = ipcRenderer.sendSync('voice-input:history:record', text);
-      throwVoiceInputSyncError(result);
-      return result as string | null;
-    },
-    updateHistoryEntry: (id: string, text: string): void => {
-      const result = ipcRenderer.sendSync('voice-input:history:update', { id, text });
-      throwVoiceInputSyncError(result);
-    },
-    deleteHistoryEntry: (id: string): void => {
-      const result = ipcRenderer.sendSync('voice-input:history:delete', id);
-      throwVoiceInputSyncError(result);
-    },
-    onDataChanged: fanOutVoiceInputDataChanged,
-    speakerFilter: {
-      getStatus: (): Promise<VoiceSpeakerFilterStatus> =>
-        ipcRenderer.invoke(VOICE_SPEAKER_FILTER_CHANNELS.getStatus),
-      downloadModels: (): Promise<VoiceSpeakerFilterStatus> =>
-        ipcRenderer.invoke(VOICE_SPEAKER_FILTER_CHANNELS.downloadModels),
-      cancelDownload: (): Promise<VoiceSpeakerFilterStatus> =>
-        ipcRenderer.invoke(VOICE_SPEAKER_FILTER_CHANNELS.cancelDownload),
-      enroll: (clips: ArrayBuffer[]): Promise<VoiceSpeakerEnrollResult> =>
-        ipcRenderer.invoke(VOICE_SPEAKER_FILTER_CHANNELS.enroll, { clips }),
-      deleteProfile: (): Promise<VoiceSpeakerFilterStatus> =>
-        ipcRenderer.invoke(VOICE_SPEAKER_FILTER_CHANNELS.deleteProfile),
-      onStatusChanged: fanOutVoiceSpeakerStatusChanged,
-    },
-    // options.suspend 表示「录制期挂起」这个意图。main 侧会丢掉与存盘不一致的同步请求
-    // (过时的广播回声),而挂起传的 null 恰恰故意与存盘不同,必须能区分开。
-    setGlobalShortcut: (
-      shortcut: VoiceInputShortcutWire | null,
-      options?: { suspend?: true },
-    ): Promise<VoiceInputGlobalResult> =>
-      ipcRenderer.invoke('voice-input:global-shortcut:set', shortcut, options),
-    startModifierShortcutRecording: (): Promise<VoiceInputGlobalResult> =>
-      ipcRenderer.invoke('voice-input:modifier-shortcut-recording:start'),
-    stopModifierShortcutRecording: (): Promise<VoiceInputGlobalResult> =>
-      ipcRenderer.invoke('voice-input:modifier-shortcut-recording:stop'),
-    onModifierShortcutKeys: fanOutVoiceInputModifierShortcutKeys,
-    onShortcutRecoveryFailed: fanOutVoiceInputShortcutRecoveryFailed,
-    consumeShortcutRecoveryFailure: () =>
-      ipcRenderer.invoke('voice-input:consume-shortcut-recovery-failure'),
-    onGlobalShortcutTrigger: fanOutVoiceInputGlobalShortcutTrigger,
-    claimGlobalShortcutTrigger: (id: string): void =>
-      ipcRenderer.send('voice-input:global-shortcut-claim', { id }),
-    onGlobalOverlayCommand: fanOutVoiceInputGlobalOverlayCommand,
-    adviseDictionaryLearning: (payload: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('voice-input:dictionary-learning:advise', payload),
-    onDictionaryLearningEvidence: fanOutVoiceInputDictionaryLearningEvidence,
-    onPowerStateChange: fanOutVoiceInputPowerStateChange,
-    notifyGlobalOverlayReady: (): void => ipcRenderer.send('voice-input:global-overlay-ready'),
-    pasteIntoFocusedTarget: (
-      text: string,
-      rawTranscriptText?: string,
-    ): Promise<VoiceInputGlobalResult> =>
-      ipcRenderer.invoke('voice-input:global-paste', { text, rawTranscriptText }),
-    restoreGlobalPasteTargetFocus: (): Promise<VoiceInputGlobalResult> =>
-      ipcRenderer.invoke('voice-input:global-restore-target-focus'),
-    closeGlobalOverlay: (options?: { preservePasteTarget?: boolean }): Promise<{ ok: true }> =>
-      ipcRenderer.invoke('voice-input:global-overlay-close', options),
-    showGlobalOverlay: (): Promise<VoiceInputGlobalResult> =>
-      ipcRenderer.invoke('voice-input:global-overlay-show-passive'),
-    // 浮窗自定义拖动:renderer 只报告手势相位,坐标由 main 读系统光标位置;
-    // send(fire-and-forget)保证 move tick 不阻塞渲染帧。
-    beginGlobalOverlayDrag: (): void => ipcRenderer.send('voice-input:global-overlay-drag-start'),
-    moveGlobalOverlayDrag: (): void => ipcRenderer.send('voice-input:global-overlay-drag-move'),
-    endGlobalOverlayDrag: (): void => ipcRenderer.send('voice-input:global-overlay-drag-end'),
-    resetGlobalOverlayPosition: (): Promise<{ ok: true }> =>
-      ipcRenderer.invoke('voice-input:global-overlay-position-reset'),
-    openAccessibilitySettings: (): Promise<VoiceInputGlobalResult> =>
-      ipcRenderer.invoke('voice-input:open-accessibility-settings'),
-    showDictionaryToast: (payload: {
-      entryId?: string;
-      term?: string;
-      entries?: Array<{ entryId: string; term: string }>;
-    }): Promise<{ ok: true } | { ok: false; error: string }> =>
-      ipcRenderer.invoke('voice-input:dictionary-toast-show', payload),
-    closeDictionaryToast: (): Promise<{ ok: true }> =>
-      ipcRenderer.invoke('voice-input:dictionary-toast-close'),
   },
 
   windowBehavior: {
@@ -4228,7 +3850,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         | { type: 'provider-share-join'; link: string }
         | { type: 'chat-invite'; token: string }
         | { type: 'chat-invite-malformed' }
-        | { type: 'settings'; tab: 'voice-input' | 'providers' | 'remote-control' | 'builtin-tools'; connect?: string },
+        | { type: 'settings'; tab: 'providers' | 'remote-control' | 'builtin-tools'; connect?: string },
     ) => void,
   ): (() => void) =>
     fanOutDeepLinkNavigate((payload) => {
@@ -4282,7 +3904,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         && [p.groupId, p.messageId, ...(p.threadRootId === undefined ? [] : [p.threadRootId])].every(value => typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value))) {
         callback({ type: 'chat-message', groupId: p.groupId, messageId: p.messageId,
           ...(typeof p.threadRootId === 'string' ? { threadRootId: p.threadRootId } : {}) });
-      } else if (p.type === 'settings' && (p.tab === 'voice-input' || p.tab === 'providers' || p.tab === 'remote-control' || p.tab === 'builtin-tools')) {
+      } else if (p.type === 'settings' && (p.tab === 'providers' || p.tab === 'remote-control' || p.tab === 'builtin-tools')) {
         // connect 只对 providers 页有意义;主进程已做 id 白名单,这里按纵深防御
         // 原样复用同一规则。字段存在但不合法时丢弃整个 payload,不降级成半执行。
         if (
@@ -4352,7 +3974,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     | { type: 'provider-share-join'; link: string }
     | { type: 'chat-invite'; token: string }
     | { type: 'chat-invite-malformed' }
-    | { type: 'settings'; tab: 'voice-input' | 'providers' | 'remote-control' | 'builtin-tools'; connect?: string }
+    | { type: 'settings'; tab: 'providers' | 'remote-control' | 'builtin-tools'; connect?: string }
     | null
   > => ipcRenderer.invoke('deep-link:take-pending'),
 

@@ -62,10 +62,4 @@ describe('empty composer task switch', () => {
       expect(editor.state.doc.eq(editor.schema.nodeFromJSON(content))).toBe(true);
     }
   });
-  it('retains the reset for voice and other explicit transition state', () => {
-    const editor = create();
-    const transaction = vi.fn(); editor.on('transaction', transaction);
-    restoreComposerDocument(editor, undefined, true);
-    expect(transaction).toHaveBeenCalled();
-  });
 });

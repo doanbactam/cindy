@@ -109,10 +109,7 @@ const desktopGuardInclude = [
   'src/renderer/components/settings/__tests__/settingsSearchCatalog.guard.test.ts',
   // Cross-file host/engine prompt ownership and remote-authorization isolation.
   'src/main/plugin-oauth/__tests__/runtimePrompt.test.ts',
-  // Cross-hook voice stop/refine ownership and composer hydration race wiring.
-  'src/renderer/__tests__/voiceInputEnterToSend.test.ts',
   'src/renderer/__tests__/sessionAgentSwitchRemoteRouting.contract.test.ts',
-  'src/main/__tests__/deviceLinkVoiceCredentialBootstrap.test.ts',
   'src/main/__tests__/discordExternalization.test.ts',
   'src/main/__tests__/sessionRuntimeControlWiring.test.ts',
   // Orca queued acceptance must keep using delivery-scoped authority, not the round guard.
@@ -503,7 +500,6 @@ export default {
     },
     noCollectableWorkspace('project-context', 'packages/project-context'),
     requiredUnitWorkspace('@cindy/remote-file-service', 'packages/remote-file-service'),
-    requiredUnitWorkspace('@cindy/voice-input-core', 'packages/voice-input-core'),
     requiredUnitWorkspace('@cindy/wechat-ilink', 'packages/wechat-ilink'),
     noCollectableWorkspace('@cindy/device-link-protocol', 'packages/device-link-protocol'),
     requiredUnitWorkspace('@cindy/plugin-protocol', 'packages/plugin-protocol'),

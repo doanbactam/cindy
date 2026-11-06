@@ -32,7 +32,6 @@ const sent = (call = 0) => host.invoke.mock.calls[call][2][0] as { input: { op: 
 const ALL_OPS = ['caps', 'profile.get', 'profile.update', 'profile.chooseAvatar', 'profile.retryInvitation', 'lifecycle.run', 'models.default',
   'memory.list', 'memory.read', 'memory.update', 'memory.delete', 'capabilities.catalog', 'autonomy.get', 'autonomy.set', 'autonomy.reset', 'history.search',
   'routines.list', 'routines.sources', 'routines.history', 'routines.save', 'routines.runNow', 'routines.remove',
-  'voice.models', 'voice.voices', 'voice.preference', 'voice.setPreference',
   'channels.im.list', 'channels.im.remove', 'channels.wechat.get', 'channels.x.get'] as BotSettingsOp[];
 
 function create(ops: BotSettingsOp[] = ALL_OPS) {
@@ -250,7 +249,7 @@ it('never takes credentials and leaves browser sign-in and folder choosing to th
 });
 
 it('offers only the pages whose operations the host implements', () => {
-  expect([...remoteBotSettingsPages(new Set(ALL_OPS))].sort()).toEqual(['capabilities', 'channels', 'history', 'memory', 'model', 'personality', 'profile', 'routines', 'voice']);
+  expect([...remoteBotSettingsPages(new Set(ALL_OPS))].sort()).toEqual(['capabilities', 'channels', 'history', 'memory', 'model', 'personality', 'profile', 'routines']);
   expect([...remoteBotSettingsPages(new Set<BotSettingsOp>(['caps', 'profile.get', 'profile.update']))].sort()).toEqual(['personality', 'profile']);
   // The Home folder is a path on the teammate's computer: no remote host ever offers it.
   expect(remoteBotSettingsPages(new Set(ALL_OPS)).has('advanced')).toBe(false);

@@ -35,6 +35,8 @@
 
 已迁出：智能通讯录（2026-11-01）→ 官方插件「通讯录」（`cindy-contacts`）。按 Chris 裁决不做 Core 内下线提示。Core 不读、不写、不清理旧数据：`<userData>/owners/<ownerId>/maker-contacts/contacts.db` 保留给插件首次启动时只读导入（`ownerNamespaceMigration` 仍负责把旧布局的该目录迁进 owner 目录）；插件电脑间同步沿用原同步的设备密钥文件 `contacts-device-sync-key.v1.enc`（实现位于 `apps/desktop/src/main/device-sync-keys/`，文件名与派生参数不得改）。旧版 Cindy 发来的 `device-link:contacts:sync:v1` 帧直接丢弃。
 
+已下线：语音输入（听写）与伙伴语音对话（2026-11-06，用户裁决）。不提供替代插件，也不接下线通知。Core 已删除听写、语音浮窗与词典、声纹、伙伴通话与消息朗读的运行实现、设置页、快捷键、IPC、远程伙伴设置的 `voice.*` 操作和 `voice-input-core` 包。旧数据不读、不写、不清理：`voice-input-*.json`、`voice-asr` 密钥、声纹与识别模型文件保留在原位置（见 `docs/dev-rules/credentials-and-local-storage.md`）；`voice-input-models.json` 与 `XDT_VOICE_INPUT_REFINER_*` 仍作为辅助模型链的旧配置来源。兼容面：已保存的伙伴通话记录行（`agentMeta.voiceCall`）在消息流里隐藏；旧电脑发来的 `device-link:voice:dictionary:sync-state` 帧直接丢弃；Work Louder 与游戏手柄已保存的 voice 按键按未绑定读取，原先默认的 voice 键（Creator ACT10、手柄 LT/RT）改为未绑定；`VOICE_CONVERSATION_BUSY` 错误码保留以识别旧版主机。
+
 ## 验证范围
 
 定向用例覆盖首次扫描、跨版本升级、停用与未安装、重复启动、账号隔离、写入失败、拒绝旧能力执行、三种 Agent 的插件发现、历史页签、迁移详情和通用插件回归。保留既有设备数据，不通过启动模拟器做验证。

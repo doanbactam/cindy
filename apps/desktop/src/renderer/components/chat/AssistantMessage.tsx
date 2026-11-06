@@ -364,9 +364,6 @@ export const AssistantMessage = memo(function AssistantMessage({
       align="left"
       hovered={hovered}
       simplifiedBotConversation={simplifiedBotConversation}
-      readAloudMessage={simplifiedBotConversation && !ghostReplyPending && currentSessionId && messageClientId
-        ? { sessionId: currentSessionId, messageId: messageClientId }
-        : undefined}
       companionFooter={botBubble}
       replyAction={dmThread && botBubble ? {
         onClick: dmThread.open,

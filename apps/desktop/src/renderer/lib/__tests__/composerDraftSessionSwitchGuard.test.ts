@@ -7,16 +7,15 @@ import { createComposerDraftSaveScheduler } from '@/lib/composerDraftSaveSchedul
 import { getDraft, saveDraft } from '@/lib/composerDraftStore';
 
 /**
- * Regression test for the voice-input/session-switch draft corruption fix in
+ * Regression test for the session-switch draft corruption fix in
  * ChatInput.tsx's Tiptap `onUpdate` handler.
  *
  * Background: to avoid serializing the editor's JSON on every keystroke,
  * `onUpdate` captures the storage key (`sk`) eagerly but defers the
  * `editor.getJSON()` read into a short debounce, via the real
- * `createComposerDraftSaveScheduler` (perf win this suite must keep). During a
- * voice-input stop/refine/send transaction, ChatInput intentionally lets
- * `storageKeyForDraftRef` lag behind the `storageKey` prop until that async
- * work settles. ChatInput reuses a single Tiptap editor instance across
+ * `createComposerDraftSaveScheduler` (perf win this suite must keep). During an
+ * async editor transition, `storageKeyForDraftRef` can lag behind the
+ * `storageKey` prop until that work settles. ChatInput reuses a single Tiptap editor instance across
  * session switches, so if the debounce timer for an old-session update is
  * still pending when the async transition finishes and swaps that same
  * editor over to the next session's document, a naive scheduled task would
@@ -59,7 +58,7 @@ describe('ChatInput scheduled draft-save session-switch guard', () => {
     );
   });
 
-  it('does not corrupt the old session draft when the debounce timer fires after a session switch completed mid-flight (voice-input stop/refine/send race)', () => {
+  it('does not corrupt the old session draft when the debounce timer fires after a session switch completed mid-flight', () => {
     const timers: Array<() => void> = [];
     const scheduler = createComposerDraftSaveScheduler({
       setTimer: (callback) => {
@@ -96,8 +95,8 @@ describe('ChatInput scheduled draft-save session-switch guard', () => {
     // Seed the "new" session's own, independent draft.
     saveDraft(newKey, { text: newSessionDoc, attachments: [], quotes: [], browserComments: [] });
 
-    // onUpdate fires once more for the OLD session right before the voice
-    // stop/refine/send transaction resolves: capture `sk` eagerly, schedule
+    // onUpdate fires once more for the OLD session right before the editor
+    // transition resolves: capture `sk` eagerly, schedule
     // the deferred read/write — exactly the production `onUpdate` shape.
     const sk = storageKeyForDraftRef.current;
     expect(sk).toBe(oldKey);
@@ -117,7 +116,7 @@ describe('ChatInput scheduled draft-save session-switch guard', () => {
     });
     expect(timers).toHaveLength(1);
 
-    // The async voice transition now finishes: production's
+    // The transition now finishes: production's
     // `restoreNextDraft()` swaps the shared editor's content over to the
     // next session's document and flips the tracked storage key — all
     // BEFORE the debounce timer above has fired.

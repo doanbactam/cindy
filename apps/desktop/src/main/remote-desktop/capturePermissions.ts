@@ -12,19 +12,17 @@ export function markPlaybackFullscreenWindow(window: BrowserWindow): void {
 /** Remove desktop capture from the app session, including Chromium's legacy
  * chromeMediaSource path (reported as media with no physical mediaTypes).
  * Keep physical media and clipboard writes confined to trusted top-level pages. */
-export function denyAppDesktopCapture(
-  ses: Session,
-  isVoiceInputOwner: (owner: WebContents) => boolean = () => false,
-): void {
+export function denyAppDesktopCapture(ses: Session): void {
   const trusted = (owner: WebContents | null, details: { isMainFrame: boolean; requestingUrl?: string }, permission: string) => {
     if (!owner || owner.isDestroyed() || !details.isMainFrame || details.requestingUrl !== owner.mainFrame.url)
       return false;
     const win = BrowserWindow.fromWebContents(owner);
-    return isTrustedAppRendererWindow(win) || (isTrustedCindyRendererWindow(win) && (
-      permission === 'fullscreen'
-        ? !!win && playbackFullscreenWindows.has(win)
-        : isVoiceInputOwner(owner)
-    ));
+    return isTrustedAppRendererWindow(win) || (
+      isTrustedCindyRendererWindow(win) &&
+      permission === 'fullscreen' &&
+      !!win &&
+      playbackFullscreenWindows.has(win)
+    );
   };
   ses.setDisplayMediaRequestHandler((_request, callback) => callback({}));
   ses.setPermissionCheckHandler((owner, permission, _origin, details) => {

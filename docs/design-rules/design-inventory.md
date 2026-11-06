@@ -11,7 +11,7 @@
 
 可达组件、样式来源与 Token / 裸颜色 / 裸圆角统计不入库：需要时运行 `pnpm design:inventory:report`，输出到 `tmp/design-inventory-report.md`；要看某次提交时的数字，在该提交上重跑。
 
-登记 surface 数：39。静态入口发现不表示已迁移或已实机验证。
+登记 surface 数：37。静态入口发现不表示已迁移或已实机验证。
 
 | ID | 平台 | 标题 | 生产入口 |
 | --- | --- | --- | --- |
@@ -38,7 +38,7 @@
 | `desktop.overlay.toast` | desktop | Toast | App 常驻 ToastContainer（用户可见出口，不展开业务逻辑） |
 | `desktop.plugins.app-main` | desktop | 插件主视图 | hash `/apps/:ghostId`（GhostMainViewFeatureLayout） |
 | `desktop.plugins.installed` | desktop | 已装插件 | hash `/plugins`（GhostPluginPage） |
-| `desktop.settings` | desktop | 设置 | hash `/settings`（SettingsView；tab 含 general / personalization / providers / billing / usage / voice-input / im-bot / shortcuts / agent-island / import / remote-control / ghosts / builtin-tools / computer-use / help / about） |
+| `desktop.settings` | desktop | 设置 | hash `/settings`（SettingsView；tab 含 general / personalization / providers / billing / usage / im-bot / shortcuts / agent-island / import / remote-control / ghosts / builtin-tools / computer-use / help / about） |
 | `desktop.shell.main-layout` | desktop | 主窗口壳（标题栏 / 左右栏 / 内容区） | main BrowserWindow → renderer/index.tsx → main-entry.tsx → App → MainLayout (`#/` 受保护壳) |
 | `desktop.skillhub.local` | desktop | SkillHub 本地技能 | hash `/skillhub/local` 及统一详情 `/skillhub/detail`（旧详情链接重定向） |
 | `desktop.skillhub.market` | desktop | SkillHub 市场 | hash `/skillhub/market`（SkillhubMarketListView） |
@@ -52,8 +52,6 @@
 | `desktop.window.review-artifact-confirm` | desktop | Review 成果确认窗 | main/reviewer/reviewArtifactConfirmWindow.ts 内联 HTML/CSS（不走 renderer 路由） |
 | `desktop.window.session-drag-preview` | desktop | 会话拖拽预览 | main/session-drag-preview.ts 透明预览窗 |
 | `desktop.window.sidebar` | desktop | 右侧栏独立窗口 | `?sidebarWindow=1` → renderer/sidebar-window-entry.tsx；hash `/sidebar-window` |
-| `desktop.window.voice-dictionary-toast` | desktop | 语音词典 Toast 窗 | `?view=voice-input-dictionary-toast` → main-entry.tsx → VoiceInputDictionaryToast |
-| `desktop.window.voice-overlay` | desktop | 语音输入浮窗 | `?view=voice-input-overlay` → main-entry.tsx → VoiceInputOverlay |
 
 ### 生产路由覆盖
 
@@ -164,8 +162,6 @@ DS-9（2026-09-11，本地候选）：用户已决定桌面授权三项，聊天
 | `desktop.window.review-artifact-confirm` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | — | DS-9 保留现有专属表面；未改全局 Button/主题源，按共享依赖核影响 | 本批未直接改该入口；无真实实例的独立/原生/账号/插件场景保留原合同，未作完整运行验收；kirozeng 安排所需环境，Codex 核对，2026-09-17 或 DS-10 开工前复查 |
 | `desktop.window.session-drag-preview` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | — | DS-9 保留现有专属表面；未改全局 Button/主题源，按共享依赖核影响 | 本批未直接改该入口；无真实实例的独立/原生/账号/插件场景保留原合同，未作完整运行验收；kirozeng 安排所需环境，Codex 核对，2026-09-17 或 DS-10 开工前复查 |
 | `desktop.window.sidebar` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | DESIGN.md §15 CINDY 皮肤族 | DS-9 保留现有专属表面；未改全局 Button/主题源，按共享依赖核影响 | 本批未直接改该入口；无真实实例的独立/原生/账号/插件场景保留原合同，未作完整运行验收；kirozeng 安排所需环境，Codex 核对，2026-09-17 或 DS-10 开工前复查 |
-| `desktop.window.voice-dictionary-toast` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | — | DS-9 保留现有专属表面；未改全局 Button/主题源，按共享依赖核影响 | 本批未直接改该入口；无真实实例的独立/原生/账号/插件场景保留原合同，未作完整运行验收；kirozeng 安排所需环境，Codex 核对，2026-09-17 或 DS-10 开工前复查 |
-| `desktop.window.voice-overlay` | Codex（DS-9 影响核对）/ kirozeng（验收协调） | legacy | — | DS-9 保留现有专属表面；未改全局 Button/主题源，按共享依赖核影响 | 本批未直接改该入口；无真实实例的独立/原生/账号/插件场景保留原合同，未作完整运行验收；kirozeng 安排所需环境，Codex 核对，2026-09-17 或 DS-10 开工前复查 |
 
 ### Usage History category colors (2026-09-09)
 
@@ -174,8 +170,6 @@ DS-9（2026-09-11，本地候选）：用户已决定桌面授权三项，聊天
 - `usageHistoryColors.ts` derives OKLCH hues from existing `--usage-model-*` seeds at runtime (governance §3.4), outside static token migration.
 - Geometry, hit testing and filtering retain their existing contracts. Light/Dark evidence and designer acceptance are recorded separately.
 
-伙伴语音操作条：`CompanionVoiceToolbar.tsx` 复用原通话控制器，输入框保留草稿并锁定，操作条与详情预留布局空间；窄窗换行，Light/Dark 语义 token，退出及后台任务边界见 `docs/product-rules/companion-voice-mode.md`。
+伙伴输入框发送按钮（2026-11-06 语音输入与伙伴语音对话下线后）：`ChatInput` / `SendButton` 只保留发送、停止、排队与待发内容编辑，不再显示听写或语音对话入口；Light/Dark 语义 token 不变。验证入口 `ui:check --page companion-composer`。
 
-伙伴输入框双按钮（2026-10-22，用户确认原型）：`ChatInput` / `SendButton` 在空输入时显示听写与语音对话；推荐输入出现时仍保留语音入口，采纳推荐为正文或输入正文、添加附件／浏览器评论后同槽位切换为发送（2026-10-29 用户裁决）；30px 固定命中区，250ms 图标缩放与淡切，Light/Dark 语义 token，减弱动效即时切换。保留停止、排队、待发内容编辑和听写发送。规范见 `DESIGN.md §14.4`，验证入口 `ui:check --page companion-composer`；截图证据随 #6768 发布，不等同真实 ASR/TTS 验收。
-
-语音型号管理（2026-10-23，#6768 评审修复）：`desktop.settings` 的 TTS 行复用显示开关与未显示分区，支持重新选回首次未勾选的目录型号；Main 的可用性投影复用伙伴朗读目录资格。北京 Token Plan 独立推荐 Qwen-Audio，两个添加入口同源。沿用 `DESIGN.md §4` 标准控件、`§5` 点击目标与 `§10` 双主题语义 token；双主题单页证据随 PR 提供，不等同真实套餐合成验收。
+语音型号管理（2026-10-23，#6768 评审修复）：`desktop.settings` 的 TTS 行复用显示开关与未显示分区，支持重新选回首次未勾选的目录型号；北京 Token Plan 独立推荐 Qwen-Audio，两个添加入口同源。沿用 `DESIGN.md §4` 标准控件、`§5` 点击目标与 `§10` 双主题语义 token；双主题单页证据随 PR 提供，不等同真实套餐合成验收。

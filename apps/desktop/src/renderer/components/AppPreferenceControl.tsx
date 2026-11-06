@@ -44,8 +44,7 @@ export function AppPreferenceControl() {
   const current = useRef<{ state: Required<AppPreferencePatch>; apply: (patch: AppPreferencePatch) => void }>({ state, apply: () => {} });
   current.current = { state, apply: patch => {
     if (patch.themeFamily !== undefined && !tryGetFamily(patch.themeFamily)) throw new Error('UNKNOWN_THEME');
-    // The shortcut setter can reject a voice-input conflict, before other fields change.
-    if (patch.sendShortcut !== undefined && !shortcut.setPreference(patch.sendShortcut).ok) throw new Error('SHORTCUT_CONFLICT');
+    if (patch.sendShortcut !== undefined) shortcut.setPreference(patch.sendShortcut);
     if (patch.theme !== undefined) theme.setTheme(patch.theme);
     if (patch.themeFamily !== undefined) theme.setFamily(patch.themeFamily);
     if (patch.language !== undefined) locale.setLocale(patch.language);

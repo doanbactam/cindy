@@ -7,7 +7,6 @@ import { BUILTIN_SECRET_NAMES, type SetupMigrationChecklistItem } from '../../..
 const BUILTIN_KEY_TABS: Record<string, string> = {
   brave: 'builtin-tools',
   tavily: 'builtin-tools',
-  'voice-asr': 'voice-input',
 };
 
 export function checklistRoute(item: SetupMigrationChecklistItem): string {

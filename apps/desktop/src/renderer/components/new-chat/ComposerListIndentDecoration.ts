@@ -36,10 +36,6 @@ import {
   getSlashCommandRosterUpdate,
   type SlashCommandMatch,
 } from './SlashCommandDecoration';
-import {
-  resolveVoiceInputReplacementRange,
-  type VoiceInputReplacementRange,
-} from './VoiceInputDraftDecoration';
 import { hasCjkContextPunctuation } from './CjkPunctuationUtils';
 
 const TAB_SIZE = 8;
@@ -148,7 +144,6 @@ export function listPrefixIndentStyle(prefix: string): string {
 export function buildListIndentDecorations(
   doc: PMNode,
   slashCommandMatches: ReadonlyArray<Pick<SlashCommandMatch, 'from' | 'to'>> = [],
-  voiceReplacementRange: VoiceInputReplacementRange | null = null,
 ): DecorationSet {
   const decorations: Decoration[] = [];
 
@@ -213,15 +208,11 @@ export function buildListIndentDecorations(
         (slashMatch) =>
           slashMatch.from < contentBase + line.end && slashMatch.to > contentBase + line.start,
       );
-      const overlapsVoiceReplacement =
-        voiceReplacementRange !== null &&
-        voiceReplacementRange.from < contentBase + line.end &&
-        voiceReplacementRange.to > contentBase + line.start;
       const hasCjkPunctuation = hasCjkContextPunctuation(line.text);
       return (
         line.hasInlineAtom ||
         overlapsSlashCommandPill ||
-        (lines.length > 1 && (overlapsVoiceReplacement || hasCjkPunctuation))
+        (lines.length > 1 && hasCjkPunctuation)
       );
     });
     const fallbackPrefixes = lineMatches
@@ -419,7 +410,6 @@ export const ComposerListIndentDecoration = Extension.create({
               decorations: buildListIndentDecorations(
                 state.doc,
                 findSlashCommandMatches(state.doc, roster),
-                null,
               ),
               suspendedForComposition: false,
             };
@@ -434,15 +424,13 @@ export const ComposerListIndentDecoration = Extension.create({
             }
 
             const rosterUpdate = getSlashCommandRosterUpdate(tr);
-            const voiceReplacement = resolveVoiceInputReplacementRange(tr, oldState);
             if (old.suspendedForComposition && compositionMeta !== 'resume') {
               return old;
             }
             if (
               compositionMeta !== 'resume' &&
               !tr.docChanged &&
-              rosterUpdate === undefined &&
-              !voiceReplacement.changed
+              rosterUpdate === undefined
             ) {
               return old;
             }
@@ -451,7 +439,6 @@ export const ComposerListIndentDecoration = Extension.create({
               decorations: buildListIndentDecorations(
                 tr.doc,
                 findSlashCommandMatches(tr.doc, roster),
-                voiceReplacement.range,
               ),
               suspendedForComposition: false,
             };

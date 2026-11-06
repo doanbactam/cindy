@@ -18,7 +18,6 @@ const ALLOWED_TABS = new Set([
   'personalization',
   'api-keys',
   'providers',
-  'voice-input',
   'import',
   'connections',
   'im-bot',

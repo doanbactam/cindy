@@ -27,7 +27,7 @@
  *     the default Copy icon again).
  */
 
-import { useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { PluginUiCommandMenuItems, PluginUiCommandMenuStatus, usePluginUiCommandMenu } from '@/cindy-brain/PluginUiCommandMenu';
 import { useSessionFileOrigin } from './ChatSessionFileContext';
 import { originDeviceId } from '@/lib/sessionFileOrigin';
@@ -44,14 +44,11 @@ import {
   Split,
   Trash2,
   Undo2,
-  Volume2,
-  Square,
 } from 'lucide-react';
 import { useStableTranslation as useTranslation } from '@/hooks/useStableTranslation';
 import { cn } from '@/lib/utils';
 import { MENU_ITEM_CLASS } from '@/features/cc-agent/sidebar/menuStyles';
 import { CHAT_COLOR_TRANSITION_CLASS, CHAT_ICON_BUTTON_CLASS } from './chatChrome';
-import { MessageReadAloudContext } from './MessageReadAloudContext';
 import { ChatReplyIcon } from './ChatReplyIcon';
 import { Spinner } from '@/components/ui/spinner';
 import type { ForkAtMessageRunOptions } from './useForkAtMessage';
@@ -95,8 +92,6 @@ interface MessageActionBarProps {
   hovered: boolean;
   /** 伙伴对话专属精简态：操作栏常显，隐藏费用和 Fork，并把引用入口外显为“回复”。 */
   simplifiedBotConversation?: boolean;
-  /** Only completed companion replies opt in; ordinary task/user messages do not. */
-  readAloudMessage?: { sessionId: string; messageId: string };
   /**
    * 贴在气泡旁的紧凑栏（群聊）：外露引用回复、话题、表情和更多；复制、分享为图片与准确
    * 时间收进更多菜单，让整栏窄到能放在气泡外侧。话题保持外露：关闭话题面板后焦点要回到
@@ -176,7 +171,6 @@ export function MessageActionBar({
   align,
   hovered,
   simplifiedBotConversation = false,
-  readAloudMessage,
   compact = false,
   companionFooter = false,
   onFork,
@@ -209,7 +203,6 @@ export function MessageActionBar({
     ...(pluginUiTarget ? { target: { kind: 'message', id: pluginUiTarget.id } } : {}),
     active: !!pluginUiTarget,
   });
-  const readAloud = useContext(MessageReadAloudContext);
   const [copied, setCopied] = useState(false);
   const [forking, setForking] = useState(false);
   // 用户确认开启新任务后，到创建结束前提示与操作栏常驻，不随鼠标移开消失；
@@ -829,49 +822,15 @@ export function MessageActionBar({
     </DropdownMenu>
   );
 
-  const canReadAloud = simplifiedBotConversation && readAloudMessage && readAloud?.available
-    && readAloud.sessionId === readAloudMessage.sessionId && readAloud.canRead(copyText);
-  const reading = canReadAloud && readAloud.messageId === readAloudMessage.messageId;
-  const readAloudLabel = t(reading ? 'bots.voiceMode.stopReadAloud' : 'bots.voiceMode.readAloud');
-  const readAloudBtn = canReadAloud && (
-    <Tooltip.Root key="read-aloud">
-      <Tooltip.Trigger asChild>
-        <button
-          type="button"
-          className={actionButtonClass}
-          aria-label={readAloudLabel}
-          aria-pressed={Boolean(reading)}
-          aria-busy={Boolean(reading && readAloud.phase === 'preparing')}
-          disabled={readAloud.disabled && !reading}
-          onClick={(event) => {
-            event.stopPropagation();
-            readAloud.toggle(readAloudMessage.messageId, copyText);
-          }}
-        >
-          {reading && readAloud.phase === 'preparing' ? (
-            <Spinner size={14} strokeWidth={2} className={actionIconClass} />
-          ) : reading ? (
-            <Square size={14} strokeWidth={2} className={actionIconClass} />
-          ) : (
-            <Volume2 size={14} strokeWidth={2} className={actionIconClass} />
-          )}
-        </button>
-      </Tooltip.Trigger>
-      <Tooltip.Content>
-        {readAloud.disabled && !reading ? t('bots.voiceMode.finishBeforeReadAloud') : readAloudLabel}
-      </Tooltip.Content>
-    </Tooltip.Root>
-  );
-
   // 普通任务:
   // align='left'  → [copy][share][fork][edit][more][time][cost]
   // align='right' → [time][copy][share][fork][edit][more]   (user)
   // 伙伴对话:[copy][share][reply][more][time] / [time][copy][share][reply][edit][more]
-  // 贴在气泡旁（compact，群聊）:[引用回复][话题][朗读][表情][编辑][more]，复制、分享与时间收进 more
+  // 贴在气泡旁（compact，群聊）:[引用回复][话题][表情][编辑][more]，复制、分享与时间收进 more
   const items = companionFooter
-    ? [copyBtn, quoteBtn || replyBtn, readAloudBtn, editBtn, moreMenu]
+    ? [copyBtn, quoteBtn || replyBtn, editBtn, moreMenu]
     : compact
-    ? align === 'left' ? [quoteBtn || botReplyBtn, replyBtn, readAloudBtn, reactionBtn, editBtn, moreMenu] : [moreMenu, editBtn, reactionBtn, readAloudBtn, replyBtn, quoteBtn || botReplyBtn]
+    ? align === 'left' ? [quoteBtn || botReplyBtn, replyBtn, reactionBtn, editBtn, moreMenu] : [moreMenu, editBtn, reactionBtn, replyBtn, quoteBtn || botReplyBtn]
     : align === 'left'
       ? [
           copyBtn,
@@ -879,14 +838,13 @@ export function MessageActionBar({
           forkBtn,
           quoteBtn,
           replyBtn,
-          readAloudBtn,
           reactionBtn,
           editBtn,
           moreMenu,
           timeText,
           simplifiedBotConversation ? null : costText || tokensText,
         ]
-      : [timeText, copyBtn, shareBtn, forkBtn, quoteBtn, replyBtn, readAloudBtn, reactionBtn, editBtn, moreMenu];
+      : [timeText, copyBtn, shareBtn, forkBtn, quoteBtn, replyBtn, reactionBtn, editBtn, moreMenu];
 
   return (
     <div

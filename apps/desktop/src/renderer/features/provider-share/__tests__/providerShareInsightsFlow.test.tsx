@@ -52,7 +52,6 @@ vi.mock('../../../../main/task-migration/service', () => ({}));
 vi.mock('../../../../main/device-link/filePeer', () => ({}));
 vi.mock('../../../../main/remote-desktop', () => ({}));
 vi.mock('../../../../main/device-link/sharedTaskFileAccess.js', () => ({}));
-vi.mock('../../../../main/voice-input/index.js', () => ({}));
 vi.mock('../../../../main/cindy-brain/ghostSetupInteractionBridge.js', () => ({}));
 vi.mock('../../../../main/maker-host/index.js', () => ({}));
 vi.mock('../../../../main/maker-ipc/register.js', () => ({}));

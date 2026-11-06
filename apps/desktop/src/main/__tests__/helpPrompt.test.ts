@@ -44,11 +44,11 @@ describe('parseAssistantOutput', () => {
   });
 
   it('is case-insensitive and tolerates extra whitespace', () => {
-    const r = parseAssistantOutput('Go there. <ACTION   tab="voice-input"/>');
+    const r = parseAssistantOutput('Go there. <ACTION   tab="providers"/>');
     expect(r).toEqual({
       kind: 'ai',
       answer: 'Go there.',
-      action: { kind: 'settings-tab', tab: 'voice-input' },
+      action: { kind: 'settings-tab', tab: 'providers' },
     });
   });
 
@@ -76,7 +76,7 @@ describe('buildHelpPrompt', () => {
 
   it('lists every allowed tab id', () => {
     const p = buildHelpPrompt(history, 'en', 'claude-code', []);
-    for (const tab of ['import', 'providers', 'im-bot', 'voice-input', 'personalization']) {
+    for (const tab of ['import', 'providers', 'im-bot', 'personalization']) {
       expect(p).toContain(tab);
     }
   });

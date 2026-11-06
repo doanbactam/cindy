@@ -55,10 +55,10 @@ describe('主 BrowserWindow 后台节流', () => {
 
   it('active turn 期间通过 webContents 运行态切换后台节流', () => {
     expect(source).toContain('function setMainWindowBackgroundThrottlingForActiveTurn(hasRunningTurn: boolean): void');
-    expect(source).toContain('const nextAllowed = !mainWindowHasRunningTurn && !mainWindowHasVoiceCall;');
+    expect(source).toContain('const nextAllowed = !mainWindowHasRunningTurn;');
     expect(source).toMatch(/setBackgroundThrottling\(\s*mainWindowBackgroundThrottlingAllowed,?\s*\)/);
     expect(source).not.toContain('isRemoteDesktopVideoActive');
-    expect(source).toMatch(/registerRemoteDesktopIpc\(\s*isGlobalVoiceInputOverlaySender,\s*\{/);
+    expect(source).toMatch(/registerRemoteDesktopIpc\(\s*\{/);
     expect(source).toContain('onAnySessionTurnKeepaliveChange: (isRunning) => {');
     expect(source).toContain('setMainWindowBackgroundThrottlingForActiveTurn(isRunning);');
     expect(source).toContain('notifyUpdateAutoRelaunchBusyStateChanged();');
@@ -223,8 +223,8 @@ describe('窗口可见性广播（装饰动画闸门的兜底信号）', () => {
       return out;
     };
 
-    // 按「窗口」计数而不是「文件是否提到过」：voice-input/global.ts 里有两个关掉节流的
-    // 窗口(浮窗 + 词典 toast)，只看 includes 的话第一个装了就把第二个放过去了。
+    // 按「窗口」计数而不是「文件是否提到过」：同一文件可能有多个关掉节流的窗口，
+    // 只看 includes 的话第一个装了就把第二个放过去了。
     // 计数前先剥注释：这些关键字在说明性注释里也会出现，不剥的话数目虚高。
     // 调用点用带实参的形式计数，避免把 import 语句算进去。
     const countMatches = (text: string, re: RegExp): number => [...text.matchAll(re)].length;
@@ -252,15 +252,8 @@ describe('窗口可见性广播（装饰动画闸门的兜底信号）', () => {
     ).toEqual([]);
   });
 
-  it('主窗、语音浮窗与词典 toast 都装了广播', () => {
+  it('主窗装了广播', () => {
     expect(source).toContain('installWindowHiddenBroadcast(mainWindow);');
-
-    // 同一文件里两个窗口各装一份：overlay 与 dictionary toast 的局部变量都叫 window。
-    const overlaySource = stripComments(
-      readFileSync(resolve(__dirname, '..', 'voice-input', 'global.ts'), 'utf8').replace(/\r\n?/g, '\n'),
-    );
-    expect([...overlaySource.matchAll(/backgroundThrottling:\s*false/g)]).toHaveLength(2);
-    expect([...overlaySource.matchAll(/installWindowHiddenBroadcast\(window\);/g)]).toHaveLength(2);
   });
 
   it('豁免清单里的文件确实存在且确实关闭了节流（防止豁免过期后静默失效）', () => {

@@ -191,11 +191,11 @@ describe('WorkLouderCodexKeyboardLayout', () => {
 });
 
 describe('WorkLouderCodexKeyboardLayout — Creator Micro 2', () => {
-  it('binds push-to-talk to a blank cap on ACT10 and keeps the bottom row split', () => {
+  it('leaves ACT10 as an unbound blank cap and keeps the bottom row split', () => {
     const { layout } = createWorkLouderCodexDefaultSettings('creator-micro-2');
 
     expect(layout.separateMicrophoneKeys).toBe(true);
-    expect(layout.slots.ACT10).toEqual({ keycapId: 'EMPT1', action: { type: 'voice' } });
+    expect(layout.slots.ACT10).toEqual({ keycapId: 'EMPT1', action: null });
     expect(layout.slots.ACT11).toEqual({ keycapId: 'EMPT2', action: null });
     expect(layout.slots.ACT12.action).toEqual({
       type: 'command',

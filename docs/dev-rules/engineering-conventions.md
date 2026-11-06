@@ -298,8 +298,8 @@ PR 门禁必须在 Windows 上用多个并行分片（当前为 4 个）完整�
 - **有些 locale 文案是 package 源的镜像**：改 locale 时必须同步改源，否则镜像断言会红。
   已知一处：`packages/maker-scheduler/src/builtin-templates.ts`（desktop locale 的 scheduler 模板块要求与
   package 源逐字一致）。这类断言不是碍事，正是它们保证了跨端文案不漂移。
-- **标点可能不在 locale 里**：部分错误消息由代码拼接（如 `cloudVoiceHttpErrorMessage()`
-  给 `composer.voice.refineFailed` 补半角冒号），guard 只扫 locale JSON，改不到也管不到。
+- **标点可能不在 locale 里**：部分错误消息由代码拼接（例如在 locale 文案后补半角冒号），
+  guard 只扫 locale JSON，改不到也管不到。
   批量改标点后若测试断言与实际值方向相反，先查该文案的冒号究竟来自 locale 还是代码，
   别顺手把断言改成"看起来一致"的那个。
 - **术语表是参考，不是替换表**：它回答「这个词该不该用」，不回答「该换成哪个」。

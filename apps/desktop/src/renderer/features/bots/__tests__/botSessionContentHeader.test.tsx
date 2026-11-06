@@ -60,10 +60,8 @@ afterEach(() => {
 });
 
 describe('BotSessionContentHeader', () => {
-  it('keeps voice startup in the composer and configuration behind settings', () => {
+  it('keeps configuration behind settings', () => {
     render(<BotSessionContentHeader bot={bot} />);
-    expect(screen.queryByRole('button', { name: 'bots.voiceMode.title' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'bots.voiceMode.startConversation' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'bots.settings' }));
     expect(navigate).toHaveBeenCalledWith('/bots/bot-1/session/sess-1?settings=1');
   });
