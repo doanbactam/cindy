@@ -6279,13 +6279,12 @@ function isReliableKind(kind: Envelope['kind']): kind is 'invoke' | 'invoke-resu
 
 /**
  * 这些调用属于 listing/control tier，不需要 streaming link-open。
- * 显式 closeLink() 只应撤掉可靠 streaming 层；列表刷新、能力探针、词典
- * 快照和 topic 订阅仍要沿用旧 envelope 路径，兼容 link-open 之前的既有语义。
+ * 显式 closeLink() 只应撤掉可靠 streaming 层；列表刷新、能力探针
+ * 和 topic 订阅仍要沿用旧 envelope 路径，兼容 link-open 之前的既有语义。
  */
 const UNLINKED_LEGACY_INVOKE_CHANNELS = new Set([
   'device-link:subscribe',
   'device-link:unsubscribe',
-  'device-link:voice:dictionary:get',
   'maker:provider:list',
   'maker:get-capabilities',
   'maker:get-new-maker-defaults',

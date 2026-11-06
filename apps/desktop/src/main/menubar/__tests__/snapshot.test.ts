@@ -12,7 +12,6 @@ import {
   type MenubarSubscriptionInput,
 } from '../snapshot';
 import { buildMenubarUiStrings, createMenubarTranslate, fillTemplate } from '../strings';
-import { buildUsageWidgetSnapshot } from '../../quota-overview/widgetSnapshot';
 
 const NOW = Date.UTC(2026, 9, 11, 3, 0, 0);
 const HOUR = 3_600_000;
@@ -363,38 +362,4 @@ it('projects OpenCode Go rolling and monthly windows under its own provider', ()
   })]));
   expect(view.sources[0]).toMatchObject({ id: 'opencode', name: 'OpenCode Go', value: '70', valueUnit: '%' });
   expect(JSON.stringify(view.details.opencode)).toContain('Monthly Total');
-});
-
-// iPhone widgets show the panel's tubes only: rows without a level stay out, and the reset
-// time travels with each tube so the widget can keep the countdown current between refreshes.
-describe('buildUsageWidgetSnapshot', () => {
-  it('keeps measured sources in panel order with their logo and reset time', () => {
-    const payg: MenubarSourceInput = { kind: 'payg', id: 'glm', providerId: 'glm', logoSvg: '', name: 'GLM', billing: 'api' };
-    const view = buildMenubarView(input([codex('alpha', 30), payg, codex('beta', 95)]));
-    const snapshot = buildUsageWidgetSnapshot(view, NOW, (key) => rawMainString(key, 'en'));
-    expect(snapshot?.sources.map((s) => [s.id, s.logo, s.value, s.level, s.resetsAtMs])).toEqual([
-      ['alpha', 'codex', '70', 'normal', NOW + 3 * DAY],
-      ['beta', 'codex', '5', 'error', NOW + 3 * DAY],
-    ]);
-    expect(snapshot?.usage.days).toHaveLength(30);
-    expect(snapshot?.usage.days.at(-1)).toBe(view.usage.days.at(-1));
-    expect(snapshot?.strings['durationShort.daysHours']).toContain('{{d}}');
-  });
-
-  it('carries a period quota reset so the widget counts it down like the subscriptions', () => {
-    const quota: MenubarSourceInput = {
-      kind: 'balance', id: 'cindy', logoSvg: MENUBAR_CINDY_LOGO, available: 20, fullAmount: 40, burnPerDay: null,
-      observedAtMs: NOW, currency: 'USD', quota: { resetsAtMs: NOW + DAY, todaySpend: null },
-    };
-    const view = (source: MenubarSourceInput) => buildMenubarView(input([source]));
-    const snapshot = buildUsageWidgetSnapshot(view(quota), NOW, () => null);
-    expect(snapshot?.sources[0]).toMatchObject({ logo: 'cindy', resetsAtMs: NOW + DAY });
-    // A lone source is drawn as the panel's detail ring.
-    expect(snapshot?.sources[0].detail).toMatchObject({ bigValue: view(quota).details.cindy.bigValue, rings: [{ fraction: 0.5 }] });
-  });
-
-  it('has nothing to show behind the sign-in gate', () => {
-    const view = buildMenubarView({ ...input([]), gate: 'sign-in' });
-    expect(buildUsageWidgetSnapshot(view, NOW, () => null)).toBeNull();
-  });
 });

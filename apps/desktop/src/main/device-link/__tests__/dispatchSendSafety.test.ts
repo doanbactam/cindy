@@ -11,7 +11,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   DeviceLinkError,
-  DEVICE_LINK_CAPABILITY_COMPACT_MESSAGE_HISTORY_V1,
   CONTROLLER_CAPABILITY_SET_MODEL_EXPLICIT_PROVIDER_NULL_V1,
   DEVICE_LINK_CAPABILITY_BACKGROUND_LINK_V1,
   DL_SUBSCRIBE_CHANNEL,
@@ -135,46 +134,6 @@ it('strips Desktop credential links from authorization history and live metadata
     expect(JSON.stringify(result)).not.toContain('externalLink');
   }
   expect(row.agentMeta.botAuthorization.snapshot.steps[0].action.form.fields[0].externalLink.url).toBe('https://example.com/keys');
-});
-
-describe('negotiated mobile tool projection', () => {
-  const input = { command: 'echo ' + 'x'.repeat(40_000) };
-  const row = { id: 'row', clientId: 'persist', sessionId: 's1', role: 'tool_use',
-    content: { toolUseId: 'use', toolName: 'Bash', input } };
-  function subscribe() {
-    subscriptions.subscribe('mobile', ['session:s1'], 'mobile', [DEVICE_LINK_CAPABILITY_COMPACT_MESSAGE_HISTORY_V1]);
-    subscriptions.subscribe('legacy', ['session:s1'], 'legacy', []);
-  }
-
-  it('projects new Mobile list reads but leaves old clients and radius-0 details intact', () => {
-    subscribe();
-    const client = mkClient();
-    for (const [dst, channel] of [['mobile', 'local-db:messages:list'], ['legacy', 'local-db:messages:list'],
-      ['mobile', 'local-db:messages:around']]) {
-      __testing.sendInvokeResultSafe(client as never, dst, channel, { ok: true, result: [row] }, channel);
-    }
-    expect(client.sendInvokeResult.mock.calls[0][2].result[0]).toHaveProperty('mobileToolInputProjection');
-    expect(client.sendInvokeResult.mock.calls[1][2].result[0]).toEqual(row);
-    expect(client.sendInvokeResult.mock.calls[2][2].result[0]).toEqual(row);
-  });
-
-  it('projects single live/created pushes per peer without changing the host broadcast', () => {
-    subscribe();
-    const client = mkClient();
-    __testing.setActiveClient(client as never);
-    const text = 'result'.repeat(30_000);
-    const payload = { sessionId: 's1', persistId: 'p', resolvedContent: text,
-      event: { type: 'tool_result_full', data: { toolUseId: 'use', fullText: text, isError: false } } };
-    __testing.forwardPush('maker:event', payload);
-    const calls = client.sendPush.mock.calls;
-    expect(calls.find((c) => c[0] === 'mobile')![2]).not.toHaveProperty('resolvedContent');
-    expect(calls.find((c) => c[0] === 'legacy')![2]).toEqual(payload);
-    __testing.forwardPush('local-db:messages:created', { sessionId: 's1', message: row });
-    expect(client.sendPush.mock.calls.find((c) => c[0] === 'mobile' && c[1] === 'local-db:messages:created')![2].message)
-      .toHaveProperty('mobileToolInputProjection');
-    expect(payload.resolvedContent).toBe(text);
-    expect(row.content.input).toBe(input);
-  });
 });
 
 describe('history detail interest', () => {

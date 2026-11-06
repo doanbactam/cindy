@@ -66,22 +66,12 @@ describe("task copy protocol", () => {
     expect(isCompletedInvokeRetryableReadChannel(TASK_MIGRATION_CHANNEL)).toBe(
       false,
     );
-    for (const platform of ["desktop", "mobile"] as const) {
-      expect(
-        resolveRemoteInvokeTimeoutMs(
-          TASK_MIGRATION_CHANNEL,
-          [{ action: "receive" }],
-          platform,
-        ),
-      ).toBe(30 * 60_000);
-      expect(
-        resolveRemoteInvokeTimeoutMs(
-          TASK_MIGRATION_CHANNEL,
-          [{ action: "status" }],
-          platform,
-        ),
-      ).toBe(30_000);
-    }
+    expect(
+      resolveRemoteInvokeTimeoutMs(TASK_MIGRATION_CHANNEL, [{ action: "receive" }]),
+    ).toBe(30 * 60_000);
+    expect(
+      resolveRemoteInvokeTimeoutMs(TASK_MIGRATION_CHANNEL, [{ action: "status" }]),
+    ).toBe(30_000);
   });
   it("rejects unsafe identifiers and invalid sizes without a fixed total limit", () => {
     for (const sessionId of ["../other", "", "a/b", "a\\b"])

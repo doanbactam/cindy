@@ -53,7 +53,7 @@ vi.mock('../MacMenubarNativeHost.js', () => ({ MacMenubarNativeHost: class {
 vi.mock('../creditSamples.js', () => ({ CreditSampleStore: class { record() { return []; } }, estimateDailyBurn: () => null }));
 vi.mock('../collect.js', async (importOriginal) => ({ ...await importOriginal<typeof import('../collect')>(), collectMenubarInputs: (...args: unknown[]) => mocks.collect(...args) }));
 import { MenubarService } from '../service';
-import { getQuotaOverviewService, QuotaOverviewService, readUsageWidgetSnapshot } from '../../quota-overview/service';
+import { getQuotaOverviewService, QuotaOverviewService } from '../../quota-overview/service';
 let overview: QuotaOverviewService;
 beforeEach(() => {
   overview = new QuotaOverviewService();
@@ -233,33 +233,17 @@ it('rebuilds when finite quota arrives after invalidation cached a temporary nul
   service.stop();
 });
 
-// Regression: the widgets only had data while the macOS panel ran, so other platforms and a
-// disabled panel answered nothing. A request alone now collects, then stops after its lease.
-it('answers a widget request with no panel running and stops collecting when the lease ends', async () => {
-  mocks.collect.mockResolvedValue(emptyMenubarInputs(Date.now(), 'Fixture'));
-  const pending = readUsageWidgetSnapshot();
-  await vi.advanceTimersByTimeAsync(0);
-  expect(await pending).toMatchObject({ ok: true, snapshot: { version: 1, sources: [] } });
-  expect(mocks.collect).toHaveBeenCalledOnce();
-  await vi.advanceTimersByTimeAsync(30 * 60_000);
-  expect(getQuotaOverviewService().latest()).toBeNull();
-});
-
-// Regression: a build is the account's data; after a switch a phone must get nothing rather than it.
+// Regression: a build is the account's data; after a switch no surface may get it.
 it('never serves a build read for the previous account', async () => {
   mocks.collect.mockResolvedValue(emptyMenubarInputs(Date.now(), 'Fixture'));
-  const pending = readUsageWidgetSnapshot();
-  await vi.advanceTimersByTimeAsync(0);
-  expect(await pending).toMatchObject({ ok: true });
-  const old = getQuotaOverviewService().latest();
-  expect(old).not.toBeNull();
-  mocks.auth.dataOwnerId = 'other';
+  const release = getQuotaOverviewService().acquire();
   try {
+    await vi.advanceTimersByTimeAsync(0);
+    expect(getQuotaOverviewService().latest()).not.toBeNull();
+    mocks.auth.dataOwnerId = 'other';
     expect(getQuotaOverviewService().latest()).toBeNull();
-    const next = getQuotaOverviewService().fresh(0);
-    await vi.advanceTimersByTimeAsync(1);
-    expect(await next).not.toBe(old);
   } finally {
     mocks.auth.dataOwnerId = 'owner';
+    release();
   }
 });

@@ -61,7 +61,6 @@ import {
   DeviceLinkError,
   resolveRemoteInvokeTimeoutMs,
 } from '@cindy/device-link';
-import { DEVICE_LINK_VOICE_DICTIONARY_SNAPSHOT_CHANNEL } from '@cindy/maker-shared/device-link-contract';
 import { sanitizeSourceName, type MessageSourceHostDevice } from '@cindy/maker-shared/message-source';
 import * as authManager from '../authManager';
 import { remoteCredentialHost } from '../remote-desktop/credentialHost';
@@ -116,7 +115,6 @@ import {
 import {
   clearControllerPlatforms,
   getControllerPlatform,
-  isMobilePlatform,
   setControllerPlatform,
 } from './controllerPlatform';
 import {
@@ -147,7 +145,6 @@ import {
   broadcastDictionaryNow,
   handleDesktopPeerOnline,
   handleIncomingDictionaryState,
-  handleMobilePeerOnline,
   initVoiceDictionarySync,
   notifyLocalDictionaryChanged,
   shouldExchangeDictionaryWith,
@@ -310,12 +307,11 @@ export function applyControllerPresenceListSnapshot(
     shouldNotifyPeerOnline: ({ deviceId, online, platform }) =>
       online &&
       !isDeviceRevoked(deviceId) &&
-      (isMobilePlatform(platform) ||
-        shouldExchangeDictionaryWith({
-          online,
-          platform,
-          revoked: false,
-        })),
+      shouldExchangeDictionaryWith({
+        online,
+        platform,
+        revoked: false,
+      }),
     onPeerControlEnabled: (deviceId) => {
       client?.noteRemoteControlEnabled(deviceId);
       presenceOnlineByDevice.set(deviceId, true);
@@ -331,8 +327,7 @@ export function applyControllerPresenceListSnapshot(
     },
     onPeerControlEvidence: (deviceId, item) => evidence.set(deviceId, item),
     onPeerBecameOnline: (deviceId, platform) => {
-      if (isMobilePlatform(platform)) handleMobilePeerOnline(deviceId);
-      else handleDesktopPeerOnline(deviceId);
+      handleDesktopPeerOnline(deviceId);
       replayActiveSubscriptions('directory-online', deviceId);
     },
   });
@@ -935,7 +930,7 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
         () => openRemoteLink(deviceId, { observed: false }),
         assertCurrent,
       );
-      return probeClient.invoke(deviceId, { channel, args }, resolveRemoteInvokeTimeoutMs(channel, args, 'desktop'),
+      return probeClient.invoke(deviceId, { channel, args }, resolveRemoteInvokeTimeoutMs(channel, args),
         { preSend: assertCurrent });
     },
     onUnresponsiveChanged: (deviceId, unresponsive, recovered) => {
@@ -1172,16 +1167,6 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
     ) {
       handleDesktopPeerOnline(snap.deviceId);
     }
-    // 手机只接收只读投影:push 不属于 relay 的 CONTROL_KINDS,因此不要求桌面
-    // 打开「允许被控」。来源平台只用于体验分流,撤销状态仍是实际准入边界。
-    if (
-      wasOnline !== true &&
-      snap.online &&
-      isMobilePlatform(snap.platform) &&
-      !isDeviceRevoked(snap.deviceId)
-    ) {
-      handleMobilePeerOnline(snap.deviceId);
-    }
   });
 
   let updateRelaunchControllersBusy = false;
@@ -1335,18 +1320,6 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
             platform: getControllerPlatform(deviceId),
             revoked: isDeviceRevoked(deviceId),
           }),
-        )
-        .map(([deviceId]) => deviceId),
-    sendMobileSnapshot: (deviceId, payload) => {
-      client?.sendPush(deviceId, DEVICE_LINK_VOICE_DICTIONARY_SNAPSHOT_CHANNEL, payload);
-    },
-    listOnlineMobileDevices: () =>
-      [...presenceOnlineByDevice.entries()]
-        .filter(
-          ([deviceId, online]) =>
-            online &&
-            isMobilePlatform(getControllerPlatform(deviceId)) &&
-            !isDeviceRevoked(deviceId),
         )
         .map(([deviceId]) => deviceId),
   });
@@ -2147,7 +2120,7 @@ async function remoteInvokeLive(
     preSend();
     if (!client?.isLinkReady(deviceId))
       throw new DeviceLinkError('LINK_NOT_OPEN', 'file cleanup requires an existing link');
-    return client.invoke(deviceId, { channel, args }, resolveRemoteInvokeTimeoutMs(channel, args, 'desktop'), { ...options, preSend });
+    return client.invoke(deviceId, { channel, args }, resolveRemoteInvokeTimeoutMs(channel, args), { ...options, preSend });
   }
   const invoke = async (): Promise<InvokeResultPayload> => {
     // 熔断门禁(外层 guardInvoke)在连接等待之前:open 态快速失败,不消耗 1.5s 等待。
@@ -2173,7 +2146,7 @@ async function remoteInvokeLive(
       () => openRemoteLink(deviceId, { observed: false }),
       preSend,
     );
-    return invokeClient.invoke(deviceId, { channel, args }, resolveRemoteInvokeTimeoutMs(channel, args, 'desktop'), { ...options, preSend });
+    return invokeClient.invoke(deviceId, { channel, args }, resolveRemoteInvokeTimeoutMs(channel, args), { ...options, preSend });
   };
   const run = (): Promise<InvokeResultPayload> =>
     invokeWithClosedLinkRecovery(
@@ -2237,7 +2210,7 @@ export async function remoteBackgroundInvoke(
   try {
     // 跨区域分享：分享者电脑在另一个区域的 relay 上，经那条连接发送。
     const result = isCrossRegionProviderShareTarget(deviceId)
-      ? await crossRegionInvoke(deviceId, channel, args, resolveRemoteInvokeTimeoutMs(channel, args, 'desktop'), options)
+      ? await crossRegionInvoke(deviceId, channel, args, resolveRemoteInvokeTimeoutMs(channel, args), options)
       : await backgroundInvokeDevice(deviceId, channel, args, options);
     assertCurrent();
     options?.preSend?.();

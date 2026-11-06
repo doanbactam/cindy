@@ -8,37 +8,34 @@ import {
 } from '../index.js';
 
 describe('remote invoke policy boundaries', () => {
-  it.each(['desktop', 'mobile'] as const)('budgets MCP App loading on %s without replaying any operation', (platform) => {
+  it('budgets MCP App loading without replaying any operation', () => {
     const channel = 'maker:mcp-apps:v1';
-    expect(resolveRemoteInvokeTimeoutMs(channel, ['task', { op: 'open' }], platform)).toBe(120_000);
+    expect(resolveRemoteInvokeTimeoutMs(channel, ['task', { op: 'open' }])).toBe(120_000);
     for (const op of ['poll', 'message', 'cancel-open', 'teardown'])
-      expect(resolveRemoteInvokeTimeoutMs(channel, ['task', { op }], platform)).toBeUndefined();
+      expect(resolveRemoteInvokeTimeoutMs(channel, ['task', { op }])).toBeUndefined();
     expect(isPeerResetRetryableReadChannel(channel)).toBe(false);
     expect(isCompletedInvokeRetryableReadChannel(channel)).toBe(false);
     expect(canCoalesceRemoteListing({ channel, args: ['task', { op: 'open' }] })).toBe(false);
   });
-  it('keeps mobile history recovery within the fork budget without retrying writes', () => {
+  it('keeps history recovery on the default budget without retrying writes', () => {
     const channel = 'maker:fork-strip-encrypted';
-    expect(resolveRemoteInvokeTimeoutMs(channel, ['source'], 'mobile')).toBe(30_000);
-    expect(resolveRemoteInvokeTimeoutMs(channel, ['source'], 'desktop')).toBeUndefined();
-    expect(resolveRemoteInvokeTimeoutMs('maker:list-active', [], 'mobile')).toBeUndefined();
+    expect(resolveRemoteInvokeTimeoutMs(channel, ['source'])).toBeUndefined();
     expect(isPeerResetRetryableReadChannel(channel)).toBe(false);
     expect(isCompletedInvokeRetryableReadChannel(channel)).toBe(false);
     expect(canCoalesceRemoteListing({ channel, args: ['source'] })).toBe(false);
   });
 
-  it.each(['desktop', 'mobile'] as const)('waits for group sends only on %s without replaying writes', (platform) => {
+  it('waits for group sends without replaying writes', () => {
     const channel = 'maker:remote-resources:invoke';
-    expect(resolveRemoteInvokeTimeoutMs(channel, [{ collectionId: 'bot-groups', actionId: 'send' }], platform)).toBe(180_000);
-    expect(resolveRemoteInvokeTimeoutMs(channel, [{ collectionId: 'bot-groups', actionId: 'update' }], platform)).not.toBe(180_000);
-    expect(resolveRemoteInvokeTimeoutMs(channel, [{ collectionId: 'teammates', actionId: 'send' }], platform)).not.toBe(180_000);
+    expect(resolveRemoteInvokeTimeoutMs(channel, [{ collectionId: 'bot-groups', actionId: 'send' }])).toBe(180_000);
+    expect(resolveRemoteInvokeTimeoutMs(channel, [{ collectionId: 'bot-groups', actionId: 'update' }])).not.toBe(180_000);
+    expect(resolveRemoteInvokeTimeoutMs(channel, [{ collectionId: 'teammates', actionId: 'send' }])).not.toBe(180_000);
     expect(isPeerResetRetryableReadChannel(channel)).toBe(false);
     expect(isCompletedInvokeRetryableReadChannel(channel)).toBe(false);
   });
 
-  it('gives predictions the host budget on both controllers without automatic link retries', () => {
-    expect(resolveRemoteInvokeTimeoutMs('maker:predict-prompt', [], 'mobile')).toBe(45_000);
-    expect(resolveRemoteInvokeTimeoutMs('maker:predict-prompt', [], 'desktop')).toBe(45_000);
+  it('gives predictions the host budget without automatic link retries', () => {
+    expect(resolveRemoteInvokeTimeoutMs('maker:predict-prompt', [])).toBe(45_000);
     expect(isPeerResetRetryableReadChannel('maker:predict-prompt')).toBe(false);
     expect(isCompletedInvokeRetryableReadChannel('maker:predict-prompt')).toBe(false);
   });
@@ -81,17 +78,13 @@ describe('remote invoke policy boundaries', () => {
     expect(isPeerResetRetryableReadChannel(channel)).toBe(false);
   });
 
-  it('keeps mobile execution budgets and desktop defaults separate', () => {
-    expect(resolveRemoteInvokeTimeoutMs('maker:send', [], 'mobile')).toBe(30_000);
-    expect(resolveRemoteInvokeTimeoutMs('maker:send', [], 'desktop')).toBeUndefined();
-    expect(resolveRemoteInvokeTimeoutMs('maker:schedule:list', [], 'mobile')).toBe(40_000);
-    expect(resolveRemoteInvokeTimeoutMs('device-link:remote-desktop:v1', [{ op: 'heartbeat' }], 'mobile')).toBe(5_000);
-    expect(resolveRemoteInvokeTimeoutMs('device-link:remote-desktop:v1', [{ op: 'heartbeat' }], 'desktop')).toBe(59_000);
-    expect(resolveRemoteInvokeTimeoutMs('unknown:read', [], 'mobile')).toBeUndefined();
+  it('keeps desktop defaults for ordinary and heartbeat calls', () => {
+    expect(resolveRemoteInvokeTimeoutMs('maker:send', [])).toBeUndefined();
+    expect(resolveRemoteInvokeTimeoutMs('device-link:remote-desktop:v1', [{ op: 'heartbeat' }])).toBe(59_000);
   });
   it('gives the read-only task copy estimate a longer budget than other copy requests', () => {
     const budget = (action: string) =>
-      resolveRemoteInvokeTimeoutMs(TASK_MIGRATION_CHANNEL, [{ action, sessionId: 's' }], 'desktop');
+      resolveRemoteInvokeTimeoutMs(TASK_MIGRATION_CHANNEL, [{ action, sessionId: 's' }]);
     expect(budget('estimate')).toBe(3 * 60_000);
     expect(budget('receive')).toBe(30 * 60_000);
     expect(budget('status')).toBe(30_000);

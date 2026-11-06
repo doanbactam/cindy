@@ -2,9 +2,8 @@
  * Quota and usage overview: what every subscription has left, the Cindy balance and recent
  * usage, collected once and shared by every surface that shows it.
  *
- * Platform independent. The macOS menu bar panel holds it while it is enabled; the iPhone
- * widgets lease it for a while each time a phone asks (on any platform, panel or not); a
- * future tray panel on another platform holds it the same way. Nothing is read while nobody
+ * Platform independent. The macOS menu bar panel holds it while it is enabled; a future tray
+ * panel on another platform holds it the same way. Nothing is read while nobody
  * holds it.
  *
  * Rebuilds are debounced and coalesced. They run on usage broadcasts, running-task
@@ -17,7 +16,6 @@
 import { isSessionActivityRunning } from '@cindy/maker-shared/session-activity';
 import type {
   MobileCodexRateLimitsResult,
-  MobileUsageWidgetSnapshotResult,
 } from '@cindy/maker-shared/device-link-contract';
 
 import type { ModelAccessCreditUsage } from '../../shared/modelAccess.js';
@@ -77,7 +75,6 @@ import {
   type MenubarSubscriptionInput,
 } from '../menubar/snapshot.js';
 import { buildMenubarUiStrings, createMenubarTranslate } from '../menubar/strings.js';
-import { buildUsageWidgetSnapshot } from './widgetSnapshot.js';
 
 const log = createLogger('quota-overview');
 
@@ -106,12 +103,6 @@ const REMOTE_FRESH_WHILE_CLOSED_MS = 10 * 60_000;
 const REMOTE_RETRY_MS = 60_000;
 const RESETS_FRESH_WHILE_OPEN_MS = 3 * 60_000;
 const RESETS_FRESH_WHILE_CLOSED_MS = 30 * 60_000;
-/** A build this recent answers a remote request without waiting for another. */
-const FRESH_BUILD_MS = PERIODIC_REBUILD_MS + 30_000;
-/** Phones refresh their widgets every few minutes while open; keep collecting in between. */
-const WIDGET_LEASE_MS = 30 * 60_000;
-/** Below the phone's invoke timeout, so a slow first build still answers with what it has. */
-const WIDGET_WAIT_MS = 10_000;
 
 /** One published overview. */
 export interface QuotaOverviewBuild {
@@ -154,8 +145,6 @@ export class QuotaOverviewService {
   private currentSettings: MenubarSettings = readMenubarSettings();
   private started = false;
   private holders = 0;
-  private leaseUntilMs = 0;
-  private leaseTimer: ReturnType<typeof setTimeout> | null = null;
   private interactive = false;
   private lastBuild: QuotaOverviewBuild | null = null;
   private readonly listeners = new Set<BuildListener>();
@@ -222,20 +211,6 @@ export class QuotaOverviewService {
     };
   }
 
-  /** Keeps collecting for at least `ms` from now. */
-  lease(ms: number): void {
-    const until = Date.now() + ms;
-    if (until > this.leaseUntilMs) {
-      this.leaseUntilMs = until;
-      if (this.leaseTimer) clearTimeout(this.leaseTimer);
-      this.leaseTimer = setTimeout(() => {
-        this.leaseTimer = null;
-        this.updateRunning();
-      }, ms);
-    }
-    this.updateRunning();
-  }
-
   /** A panel is on screen: shorter cadences, and opening it refreshes every source. */
   setInteractive(open: boolean): void {
     this.interactive = open;
@@ -245,25 +220,6 @@ export class QuotaOverviewService {
   /** Locale or presentation changed; rebuild from the caches. */
   rebuildSoon(): void {
     this.scheduleRebuild(0);
-  }
-
-  /** A recent settled build, building one if needed; resolves with whatever exists after `timeoutMs`. */
-  async fresh(timeoutMs: number): Promise<QuotaOverviewBuild | null> {
-    const build = this.currentBuild();
-    if (build && !build.stale && Date.now() - build.builtAtMs < FRESH_BUILD_MS) return build;
-    if (!this.started) return null;
-    return await new Promise((resolve) => {
-      const done = (value: QuotaOverviewBuild | null) => {
-        clearTimeout(timer);
-        off();
-        resolve(value);
-      };
-      const timer = setTimeout(() => done(this.currentBuild()), timeoutMs);
-      const off = this.subscribe((next) => {
-        if (!next.stale && next.ownerId === getActiveAppSession().dataOwnerId) done(next);
-      });
-      this.scheduleRebuild(0);
-    });
   }
 
   /** Asks every subscription reader to refresh; their broadcasts trigger the rebuild. */
@@ -290,7 +246,7 @@ export class QuotaOverviewService {
   }
 
   private updateRunning(): void {
-    const wanted = this.holders > 0 || this.leaseUntilMs > Date.now();
+    const wanted = this.holders > 0;
     if (wanted) this.start();
     else this.halt();
   }
@@ -693,21 +649,6 @@ let service: QuotaOverviewService | null = null;
 export function getQuotaOverviewService(): QuotaOverviewService {
   service ??= new QuotaOverviewService();
   return service;
-}
-
-/**
- * Read by device-link for the iPhone widgets, on every platform and whether or not a panel is
- * enabled: each request keeps the overview collecting for a while.
- */
-export async function readUsageWidgetSnapshot(): Promise<MobileUsageWidgetSnapshotResult> {
-  const overview = getQuotaOverviewService();
-  overview.lease(WIDGET_LEASE_MS);
-  const build = await overview.fresh(WIDGET_WAIT_MS);
-  if (!build) return { ok: false, reason: 'unavailable' };
-  const locale = getResolvedMainLocale();
-  const series = build.usage.scopes[build.view.settings.scope]?.modelSeries;
-  const snapshot = buildUsageWidgetSnapshot(build.view, Date.now(), key => rawMainString(key, locale), series);
-  return snapshot ? { ok: true, snapshot } : { ok: false, reason: 'unavailable' };
 }
 
 /** Signed in or sign-in skipped: there is an owner whose data may be read. */

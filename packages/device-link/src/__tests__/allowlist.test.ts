@@ -13,9 +13,6 @@ import {
   DL_SUBSCRIBE_CHANNEL,
   DL_UNSUBSCRIBE_CHANNEL,
   DL_MEDIA_FETCH_CHANNEL,
-  DL_VOICE_TRANSCRIBE_CHANNEL,
-  DL_VOICE_CREDENTIAL_SYNC_CHANNEL,
-  DL_VOICE_DICTIONARY_LEARNING_CHANNEL,
   DL_HISTORY_MESSAGES_CHANNEL,
   DL_TELEGRAM_STATUS_CHANNEL,
   DL_TELEGRAM_SET_ONLINE_CHANNEL,
@@ -195,10 +192,6 @@ describe('REMOTE_INVOKE_ALLOWLIST', () => {
     expect(REMOTE_INVOKE_ALLOWLIST.has('maker:set-session-model-pref')).toBe(true);
   });
 
-  it('放行模型单价表只读(控制端模型选择器展示被控端视角单价)', () => {
-    expect(REMOTE_INVOKE_ALLOWLIST.has('maker:usage:model-pricing')).toBe(true);
-  });
-
   it('放行用量历史跨设备合并的原始用量行只读读取', () => {
     expect(REMOTE_INVOKE_ALLOWLIST.has('maker:usage:device-rows')).toBe(true);
     // 本机聚合入口仍只对受信 renderer 开放, 不经隧道暴露。
@@ -245,13 +238,6 @@ describe('REMOTE_INVOKE_ALLOWLIST', () => {
     expect(REMOTE_INVOKE_ALLOWLIST.has('maker:git-safety:get')).toBe(true);
     expect(REMOTE_INVOKE_ALLOWLIST.has('maker:git-safety:set')).toBe(false);
     expect(REMOTE_INVOKE_ALLOWLIST.has('maker:git-safety:reset')).toBe(false);
-  });
-
-  it('放行网关 API key presence-only 探测(只回 boolean,不回密钥材料)', () => {
-    expect(REMOTE_INVOKE_ALLOWLIST.has('maker:api-key:present')).toBe(true);
-    // 真正的密钥读写仍绝不放行(下方「绝不放行」与不变式守卫共同看住)。
-    expect(REMOTE_INVOKE_ALLOWLIST.has('api-key:save')).toBe(false);
-    expect(REMOTE_INVOKE_ALLOWLIST.has('api-key:get')).toBe(false);
   });
 
   it('放行本机目录浏览(「添加远程项目」逐级选被控端项目目录:只读枚举 + mkdir -p)', () => {
@@ -307,7 +293,6 @@ describe('REMOTE_INVOKE_ALLOWLIST', () => {
       'worktree:suggest-name',
       'worktree:create',
       'worktree:discard-precreated',
-      'worktree:cancel-precreated',
       'worktree:removal-preview',
     ]) {
       expect(REMOTE_INVOKE_ALLOWLIST.has(ch)).toBe(true);
@@ -333,21 +318,6 @@ describe('REMOTE_INVOKE_ALLOWLIST', () => {
   it('放行入方向媒体取件帧(被控端 dispatch 拦截执行;契约 + 能力探测)', () => {
     expect(REMOTE_INVOKE_ALLOWLIST.has('device-link:media:fetch')).toBe(true);
     expect(DL_MEDIA_FETCH_CHANNEL).toBe('device-link:media:fetch');
-  });
-
-  it('放行手机语音转写帧(手机上传 OSS,被控端用本机 ASR 配置转写)', () => {
-    expect(REMOTE_INVOKE_ALLOWLIST.has('device-link:voice:transcribe')).toBe(true);
-    expect(DL_VOICE_TRANSCRIBE_CHANNEL).toBe('device-link:voice:transcribe');
-  });
-
-  it('放行手机语音 credential 临时同步帧(仅 voice ASR/refine 专用,非通用 key 读写)', () => {
-    expect(REMOTE_INVOKE_ALLOWLIST.has('device-link:voice:credential-sync')).toBe(true);
-    expect(DL_VOICE_CREDENTIAL_SYNC_CHANNEL).toBe('device-link:voice:credential-sync');
-  });
-
-  it('放行手机语音词典学习 evidence 回写帧(词典仍写在被控桌面)', () => {
-    expect(REMOTE_INVOKE_ALLOWLIST.has('device-link:voice:dictionary-learning')).toBe(true);
-    expect(DL_VOICE_DICTIONARY_LEARNING_CHANNEL).toBe('device-link:voice:dictionary-learning');
   });
 
   it('放行个人 Telegram bot 的跨设备上下线(窄口径例外),但本地那条 IPC 仍绝不放行', () => {
@@ -415,12 +385,9 @@ describe('REMOTE_INVOKE_ALLOWLIST', () => {
     //  - `maker:goal:set` 是 per-session 域动作(入参带 sessionId,只影响单个任务的
     //    目标状态机),与 compat-mode:set / memory:set 这类全局设置写不同类,同类的
     //    maker:set-permission-mode 本就放行;仅命名撞上 `:set$` 模式。
-    //  - `maker:api-key:present` 是 presence-only 探测:只回 { present: boolean },
-    //    不回、也永不扩展为读取密钥材料(handler 见 desktop authHandlers.ts)。密钥类
-    //    通用读写(api-key:save/get、safe-storage)仍被本模式看住,禁止再加同前缀通道。
     // 单任务迁移仅允许同账号控制端，通过校验后的快照附件与持久交接状态机执行；
     // 不提供通用导入、调用方指定任意目标路径或裸写库接口。
-    const FORBIDDEN_EXEMPT = new Set(['maker:goal:set', 'maker:api-key:present', TASK_MIGRATION_CHANNEL]);
+    const FORBIDDEN_EXEMPT = new Set(['maker:goal:set', TASK_MIGRATION_CHANNEL]);
     for (const ch of REMOTE_INVOKE_ALLOWLIST) {
       if (FORBIDDEN_EXEMPT.has(ch)) continue;
       for (const { re, why } of FORBIDDEN) {
@@ -503,7 +470,6 @@ describe('INVOKE_TIMEOUT_OVERRIDES_MS', () => {
 
   it('worktree:discard-precreated 可等待同 session 创建锁且不沿用默认 30s', () => {
     expect(INVOKE_TIMEOUT_OVERRIDES_MS['worktree:discard-precreated']).toBeGreaterThan(30_000);
-    expect(INVOKE_TIMEOUT_OVERRIDES_MS['worktree:cancel-precreated']).toBeGreaterThan(30_000);
   });
 
   it('maker:compact-session 隧道超时必须大于 pi 压缩执行预算(10min + 回程余量,不 30s 截断)', () => {

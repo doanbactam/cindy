@@ -230,19 +230,11 @@ Mobile `historyViewProvider.test.tsx` 的 offline mask / explicit-off 用例。
 Mobile 暂无此确认界面；已保存任务及 Agent 工具的授权流程不变。无数据库迁移或新增持久授权记录。
 官方及自建中转沿用通用 invoke／push 转发，没有帧、鉴权或重连协议变化，无需修改中转内核。
 
-## iPhone / Android 桌面小组件快照（新增接口，尚未发布）
+## iPhone / Android 桌面小组件快照（已下线）
 
-新增只读 invoke `device-link:usage-widget:snapshot:v1`（无参数），列入 Desktop
-`REMOTE_INVOKE_ALLOWLIST` 与 Mobile `MOBILE_REMOTE_INVOKE_CHANNELS`，由被控端 dispatch 在三道门之后拦截。
-返回 `{ ok: true, snapshot }` 或 `{ ok: false, reason: 'unavailable' }`；快照是 Desktop 余量与用量汇总
-（`apps/desktop/src/main/quota-overview/`，macOS 菜单栏面板也用它）最近一次构建的投影
-（`MobileUsageWidgetSnapshot`：有液面的来源、按面板设置范围的近 30 天每日用量、面板文案），已按「隐藏个人信息」
-打码，不含凭证。任何平台、面板开关与否都能答：请求会让汇总运行 30 分钟，首次最多等 10 秒构建；
-未登录或暂时汇总不出时为 unavailable，不进入「旧被控端」判断。
-旧被控端回 `CHANNEL_NOT_ALLOWED`：手机只在所有可达电脑都如此时让「自动」组件提示更新电脑，其他失败保留上次快照。
-其他电脑离线或单个账号读取失败时，该账号保留最后读数最多 3 天，单元格带可选 `stale` 且 `when` 写成「x 小时前」。
-单元格的可选 `resetsAtMs`、`stale` 只进 Desktop 内部视图模型与快照，菜单栏 helper 忽略未知字段。无服务端、relay
-或数据库变更。
+只读 invoke `device-link:usage-widget:snapshot:v1` 只服务手机桌面小组件，已随手机端一起从
+Desktop `REMOTE_INVOKE_ALLOWLIST` 与被控端 dispatch 删除；仍在运行的旧手机调用时收到
+`CHANNEL_NOT_ALLOWED`。官方及自建中转沿用通用 invoke 转发，无 relay、服务端或数据库变更。
 
 ## 插件与伙伴包的十语资源（2026-10-31）
 
@@ -2128,7 +2120,7 @@ Desktop 缓存入口通过现有鉴权的本地预览服务读取一次更新结
 零字节 HTML 配套资源也可按版本缓存。
 回归覆盖见 [Desktop 预览测试](../../apps/desktop/src/main/file-browser/__tests__/html-preview.test.ts)。
 音视频播放继续用保留的流式地址，不为了缓存而预先下载整份媒体；完整下载仍按上述规则。
-不可变聊天图片与目录维持已有专用缓存；Mobile 限量文本预览先显示缓存（包括绝对路径），
+不可变聊天图片与目录维持已有专用缓存；（手机端已下线，以下为当时的 Mobile 行为记录）Mobile 限量文本预览先显示缓存（包括绝对路径），
 后台读取后更新当前文本，失败不遮住已有内容，文本不改为无界整文件下载。
 主机确认 BINARY_FILE／OVERSIZE 后撤销下次打开使用的文本缓存，但不清空当前显示的快照。
 不增加缓存目录、额度、通道、服务端改动或 Mobile 原生指纹；完整优化需要两端客户端更新。
@@ -3594,6 +3586,9 @@ POSIX 大小写保留。既有分组若包含不同主机项目身份，仍显�
   分发与用户主动安装流程。
 
 ## 预创建 worktree 的终止确认
+
+> 已下线：该 channel 只由手机端调用，已随手机端从 `REMOTE_INVOKE_ALLOWLIST` 移除；旧手机调用时收到
+> `CHANNEL_NOT_ALLOWED`。Desktop 控制端继续使用 `worktree:discard-precreated`。以下为历史记录。
 
 同账号设备互联新增 `worktree:cancel-precreated`，参数仍为 `sessionId` 加 `path` 或
 `recoveryKey` 二选一，成功回执沿用严格的 `{ discarded: true, branchDeleted?: boolean }`。

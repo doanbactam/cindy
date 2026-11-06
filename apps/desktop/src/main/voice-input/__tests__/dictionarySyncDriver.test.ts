@@ -60,36 +60,27 @@ const {
   broadcastDictionaryNow,
   handleDesktopPeerOnline,
   handleIncomingDictionaryState,
-  handleMobilePeerOnline,
   initVoiceDictionarySync,
   isDesktopPlatform,
   notifyLocalDictionaryChanged,
-  buildMobileDictionarySnapshot,
-  readDictionaryProjectionForMobile,
   shouldExchangeDictionaryWith,
   stopVoiceDictionarySync,
 } = await import('../dictionarySyncDriver.js');
 
 const sendState = vi.fn();
-const sendMobileSnapshot = vi.fn();
 const onlineDesktops: string[] = [];
-const onlineMobiles: string[] = [];
 
 beforeEach(() => {
   syncEnabled.value = true;
   sendState.mockClear();
-  sendMobileSnapshot.mockClear();
   mergeRemoteDictionaryState.mockClear();
   mergeRemoteDictionaryState.mockReturnValue(true);
   onlineDesktops.length = 0;
-  onlineMobiles.length = 0;
   stateOverride.value = null;
   materialized.entries = [defaultMaterializedEntry];
   initVoiceDictionarySync({
     sendState: (deviceId, payload) => sendState(deviceId, payload),
     listOnlineDesktopDevices: () => [...onlineDesktops],
-    sendMobileSnapshot: (deviceId, payload) => sendMobileSnapshot(deviceId, payload),
-    listOnlineMobileDevices: () => [...onlineMobiles],
   });
 });
 
@@ -161,58 +152,6 @@ describe('出站', () => {
     // 合并引入新信息 → 回发;这里借回发路径触发一次广播语义的失败隔离。
     handleIncomingDictionaryState('peer-1', { frameVersion: 1, state: syncState });
     expect(() => handleDesktopPeerOnline('peer-2')).not.toThrow();
-  });
-
-  it('手机上线时主动推只读快照,不依赖远程控制开关', () => {
-    handleMobilePeerOnline('phone-1');
-    expect(sendMobileSnapshot).toHaveBeenCalledWith('phone-1', expect.objectContaining({
-      ok: true,
-      entries: [
-        { text: 'Cindy', frequency: 2, aliases: [{ text: 'sindy', count: 1 }] },
-      ],
-    }));
-    expect(sendMobileSnapshot.mock.calls[0][1].emittedAt).toEqual(expect.any(Number));
-  });
-
-  it('同步关闭时仍推空投影给手机,让旧缓存及时清空', () => {
-    syncEnabled.value = false;
-    handleMobilePeerOnline('phone-1');
-    expect(sendMobileSnapshot).toHaveBeenCalledWith(
-      'phone-1',
-      expect.objectContaining({ ok: true, entries: [] }),
-    );
-  });
-
-  it('立即广播会同时刷新所有在线手机', () => {
-    onlineMobiles.push('phone-1', 'phone-2');
-    broadcastDictionaryNow();
-    expect(sendMobileSnapshot).toHaveBeenCalledTimes(2);
-  });
-
-  it('同步关闭后本地变更不再向手机推空投影', () => {
-    syncEnabled.value = false;
-    onlineMobiles.push('phone-1');
-    notifyLocalDictionaryChanged();
-    expect(sendMobileSnapshot).not.toHaveBeenCalled();
-    expect(sendState).not.toHaveBeenCalled();
-  });
-
-  it('手机快照超过单帧上限时不发送', () => {
-    materialized.entries = Array.from({ length: 1_000 }, (_, index) => ({
-      id: `term-${index}`,
-      text: '词'.repeat(80),
-      source: 'manual' as const,
-      frequency: 1,
-      aliases: Array.from({ length: 8 }, () => ({
-        text: '别'.repeat(120),
-        count: 1,
-        lastSeenAt: 1,
-      })),
-      createdAt: 1,
-      updatedAt: 1,
-    }));
-    handleMobilePeerOnline('phone-1');
-    expect(sendMobileSnapshot).not.toHaveBeenCalled();
   });
 });
 
@@ -288,64 +227,5 @@ describe('帧大小上限', () => {
   it('正常大小的状态照常发送', () => {
     handleDesktopPeerOnline('peer-1');
     expect(sendState).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('手机只读投影', () => {
-  it('只投影润色用得上的字段,不含同步元数据', () => {
-    const projection = readDictionaryProjectionForMobile();
-    expect(projection.entries).toEqual([
-      { text: 'Cindy', frequency: 2, aliases: [{ text: 'sindy', count: 1 }] },
-    ]);
-    // 除了词条、发出时间和版本向量,不该漏出节点 id、化身、墓碑等同步内部结构。
-    expect(Object.keys(projection).sort()).toEqual(['entries']);
-  });
-
-  it('带上版本向量,让手机按包含关系而不是响应到达顺序挑快照', () => {
-    const first = addManualEntry(createEmptySyncState(), createHlcClock('node-a', 1_000), {
-      text: 'Cindy',
-      nowMs: 1_000,
-    });
-    stateOverride.value = first.state;
-    const before = readDictionaryProjectionForMobile().stateVector;
-    expect(before && Object.keys(before)).toEqual(['node-a']);
-
-    const second = addManualEntry(first.state, first.clock, { text: 'Orca', nowMs: 9_000 });
-    stateOverride.value = second.state;
-    const after = readDictionaryProjectionForMobile().stateVector!;
-    // 向量对合并单调:后一份必须包含前一份,否则手机会一直停在旧快照上。
-    expect(versionVectorDominates(after, before!)).toBe(true);
-    expect(versionVectorDominates(before!, after)).toBe(false);
-  });
-
-  it('同步关闭的空投影仍带上当前版本向量,避免晚到的空表清掉更新快照', () => {
-    const first = addManualEntry(createEmptySyncState(), createHlcClock('node-a', 1_000), {
-      text: 'Cindy',
-      nowMs: 1_000,
-    });
-    stateOverride.value = first.state;
-    syncEnabled.value = false;
-    const projection = readDictionaryProjectionForMobile();
-    expect(projection.entries).toEqual([]);
-    expect(projection.stateVector && Object.keys(projection.stateVector)).toEqual(['node-a']);
-  });
-
-  it('主动 GET 与 push 共用带 emittedAt 的投影', () => {
-    const snapshot = buildMobileDictionarySnapshot();
-    expect(snapshot.ok).toBe(true);
-    if (snapshot.ok) expect(snapshot.emittedAt).toEqual(expect.any(Number));
-  });
-
-  it('时钟回拨后同主机发出序号仍单调', () => {
-    const now = vi.spyOn(Date, 'now');
-    now.mockReturnValue(5_000);
-    const first = buildMobileDictionarySnapshot();
-    now.mockReturnValue(1_000);
-    const second = buildMobileDictionarySnapshot();
-    now.mockRestore();
-    expect(first.ok && second.ok).toBe(true);
-    if (first.ok && second.ok) {
-      expect(second.emittedAt).toBeGreaterThan(first.emittedAt ?? 0);
-    }
   });
 });

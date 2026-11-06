@@ -78,20 +78,14 @@ import {
   DL_SUBSCRIBE_CHANNEL,
   DL_UNSUBSCRIBE_CHANNEL,
   DL_MEDIA_FETCH_CHANNEL,
-  DL_VOICE_TRANSCRIBE_CHANNEL,
-  DL_VOICE_CREDENTIAL_SYNC_CHANNEL,
-  DL_VOICE_DICTIONARY_LEARNING_CHANNEL,
   CONTROLLER_CAPABILITY_PROVIDER_LOGO_KINDS_V2,
-  DL_VOICE_DICTIONARY_GET_CHANNEL,
   DL_TELEGRAM_STATUS_CHANNEL,
   DL_TELEGRAM_SET_ONLINE_CHANNEL,
-  DL_USAGE_WIDGET_SNAPSHOT_CHANNEL,
   SESSION_ACTIVITY_CHANNEL,
   SESSION_SYNC_CHANNEL,
   MAKER_EVENT_BATCH_CHANNEL,
   CONTROLLER_CAPABILITY_MAKER_EVENT_BATCH_V1,
   CONTROLLER_CAPABILITY_SESSION_TEXT_SNAPSHOT_V1,
-  DEVICE_LINK_CAPABILITY_COMPACT_MESSAGE_HISTORY_V1,
   DEVICE_LINK_CAPABILITY_HISTORY_VIEW_V1,
   DEVICE_LINK_CAPABILITY_GITHUB_READ_V1,
   DEVICE_LINK_CAPABILITY_BACKGROUND_LINK_V1,
@@ -108,10 +102,7 @@ import {
   type PushOwnerStamp,
   type Topic,
 } from '@cindy/device-link';
-import {
-  DEVICE_LINK_RECONCILIATION_PROBE_MARKER,
-  type MobileVoiceDictionaryLearningRequest,
-} from '@cindy/maker-shared/device-link-contract';
+import { DEVICE_LINK_RECONCILIATION_PROBE_MARKER } from '@cindy/maker-shared/device-link-contract';
 import {
   resolveProviderLogoKind,
   type ProviderLogoKind,
@@ -127,7 +118,6 @@ import { isDeferredHistoryPush, deferredToolBoundary, buildHistoryWorkPatch, thi
 import { HISTORY_WORK_PATCH_CHANNEL } from '@cindy/maker-shared/message-window';
 import { mapHistoryViewMessages, type HistoryMessageSource, type HistoryViewItem } from '@cindy/maker-shared/message-window';
 import { createLogger } from '../logger';
-import { projectMobileMessagePage, projectMobileToolPush } from './mobileToolProjection';
 import { normalizeSessionProviderId } from '../maker-host/session-provider-store.js';
 import { readDeviceLinkSettings } from './settings-store';
 import { noteControllerAccessAllowed, noteControllerAccessDenied, syncRemoteControlAccessGeneration } from './remoteControlAccess.js';
@@ -151,10 +141,7 @@ import { runAsBackgroundDbRpc } from '../localDb/client/rpcAdmission.js';
 import { fetchLocalMediaToOss } from './mediaFetch';
 import { MAX_SHARED_TASK_TOPICS, refreshSharedTaskPeer, releaseSharedTaskWatchesOnWorkdirChange } from './sharedTaskDispatch.js';
 import { admitSharedTaskFsWatchTopics } from './sharedTaskFileAccess.js';
-import { transcribeRemoteVoiceInput } from './voiceTranscribe';
 import { readTelegramRemoteStatus, setTelegramRemoteOnline } from './telegramRemoteControl';
-import { adviseAndRecordVoiceInputDictionaryLearning } from '../voice-input/index.js';
-import { buildMobileDictionarySnapshot } from '../voice-input/dictionarySyncDriver.js';
 import {
   setBroadcastTapListener,
 } from './broadcast-tap';
@@ -1061,7 +1048,7 @@ function outboxEntryMaxAgeMs(channel: string | undefined, args?: unknown[]): num
  */
 function remoteInvokeClientBudgetMs(channel: string | undefined, args?: unknown[]): number {
   return (
-    (channel && resolveRemoteInvokeTimeoutMs(channel, args, 'desktop')) ||
+    (channel && resolveRemoteInvokeTimeoutMs(channel, args)) ||
     DEFAULT_REMOTE_INVOKE_CLIENT_WAIT_MS
   );
 }
@@ -2264,21 +2251,9 @@ function forwardPush(channel: string, payload: unknown, ownerStamp?: PushOwnerSt
   const batchEligibleSessionId = batchTargets
     ? readPushSessionId(remotePayload)
     : null;
-  // Project lazily once, before batching/offline queueing. Another Desktop or old Mobile
-  // on the same relay must still receive its unchanged payload.
-  let mobilePayload: unknown;
-  let mobilePayloadReady = false;
-  const projectedPayloadFor = (dst: string): unknown => {
-    if (!subscriptions.controllerSupports(dst, DEVICE_LINK_CAPABILITY_COMPACT_MESSAGE_HISTORY_V1)) return remotePayload;
-    if (!mobilePayloadReady) {
-      mobilePayload = projectMobileToolPush(channel, remotePayload);
-      mobilePayloadReady = true;
-    }
-    return mobilePayload;
-  };
   // 共享任务访客只能看见本任务：新消息推送里的来源身份与 invoke 读取同口径脱敏。
   const payloadFor = (dst: string): unknown => {
-    let projected = projectedPayloadFor(dst);
+    let projected = remotePayload;
     if (listMessage && receivesListMessages(dst)) {
       if (channel === 'local-db:messages:created') {
         const push = projected as { message: Record<string, unknown> };
@@ -3615,15 +3590,11 @@ function sendInvokeResultSafe(
         ),
       }
     : speedCompatible;
-  const proactive =
-    subscriptions.controllerSupports(src, DEVICE_LINK_CAPABILITY_COMPACT_MESSAGE_HISTORY_V1) &&
-    channel === 'local-db:messages:list' && normalized.ok && Array.isArray(normalized.result)
-      ? { ...normalized, result: projectMobileMessagePage(normalized.result, args?.[1]) }
-      : normalized;
-  const encoded = proactive.ok && !isSharedTaskPeer(src)
-    ? encodeMessageBodies(channel, args, proactive.result) : undefined;
-  const reused = proactive.ok && encoded !== undefined && encoded !== proactive.result
-    ? { ...proactive, result: encoded } : proactive;
+
+  const encoded = normalized.ok && !isSharedTaskPeer(src)
+    ? encodeMessageBodies(channel, args, normalized.result) : undefined;
+  const reused = normalized.ok && encoded !== undefined && encoded !== normalized.result
+    ? { ...normalized, result: encoded } : normalized;
   const attempt = trySendInvokeResult(client, src, requestId, reused, channel, args);
   // 以真正能上 wire 的结果作为去重真相：超限原结果若被 compact/改成结构化错误，
   // 不能把缓存留在原始大对象上，否则缓存可能自淘汰且重复 requestId 会再次执行。
@@ -4869,12 +4840,6 @@ async function executeRemoteInvoke(src: string, payload: InvokePayload | undefin
     }
   }
 
-  // iPhone 桌面小组件：与菜单栏面板同一份余量与用量汇总（只读、已打码、无凭证），
-  // 任何平台、面板开关与否都能答；未登录或暂时汇总不出时回 unavailable。
-  if (payload.channel === DL_USAGE_WIDGET_SNAPSHOT_CHANNEL) {
-    const { readUsageWidgetSnapshot } = await import('../quota-overview/service.js');
-    return { ok: true, result: await readUsageWidgetSnapshot() };
-  }
   if (payload.channel === DL_TELEGRAM_STATUS_CHANNEL) {
     return { ok: true, result: readTelegramRemoteStatus() };
   }
@@ -4886,60 +4851,6 @@ async function executeRemoteInvoke(src: string, payload: InvokePayload | undefin
       const message = err instanceof Error ? err.message : String(err);
       log.warn(`telegram:set-online failed from ${shortId(src)}: ${message}`);
       return { ok: false, error: { code: 'IPC_ERROR', message } };
-    }
-  }
-
-  // Legacy device-link:voice:transcribe 不是 ipcMain handler:早期手机语音方案上传录音到 OSS 后,
-  // 被控端下载并用本机 voice-input batch ASR 配置转写。当前手机版主流程走 credential sync
-  // + 手机端实时 ASR/refine,此处仅保留协议兼容面。已过三道 gate,等同受信本地访问。
-  if (payload.channel === DL_VOICE_TRANSCRIBE_CHANNEL) {
-    try {
-      const result = await transcribeRemoteVoiceInput((payload.args ?? [])[0]);
-      return { ok: true, result };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      log.warn(`voice:transcribe failed from ${shortId(src)}: ${message}`);
-      return { ok: false, error: { code: 'VOICE_TRANSCRIBE_FAILED', message } };
-    }
-  }
-
-  // device-link:voice:credential-sync 已下线:手机语音输入改走 Cindy 官方语音服务
-  // (Cindy 登录 → voice-server 一次性票据),桌面不再向手机穿透 XD Gateway key。
-  // 保留 channel 匹配,让旧手机版拿到可读错误而不是 CHANNEL_NOT_ALLOWED。
-  if (payload.channel === DL_VOICE_CREDENTIAL_SYNC_CHANNEL) {
-    log.warn(`voice:credential-sync rejected from ${shortId(src)}: feature removed`);
-    return {
-      ok: false,
-      error: {
-        code: 'VOICE_CREDENTIAL_SYNC_REMOVED',
-        message: '手机语音输入已改用 Cindy 官方语音服务,请升级手机版。',
-      },
-    };
-  }
-
-  // device-link:voice:dictionary:get 是手机拉取本机词典的只读快照。手机在后台不维持
-  // WebSocket,拿不到桌面之间对等同步的 push 帧,所以改为需要时主动拉一份;它只读、
-  // 不参与合并,避免移动端维护一份会分叉的词典。
-  if (payload.channel === DL_VOICE_DICTIONARY_GET_CHANNEL) {
-    try {
-      return { ok: true, result: buildMobileDictionarySnapshot() };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      log.warn(`voice:dictionary:get failed from ${shortId(src)}: ${message}`);
-      return { ok: false, error: { code: 'VOICE_DICTIONARY_GET_FAILED', message } };
-    }
-  }
-
-  // device-link:voice:dictionary-learning 是手机端 voice refine 后的术语学习 evidence 回写:
-  // 手机只负责检测用户编辑,真正 advisor + 词典写入仍在被控桌面执行,避免移动端词典分叉。
-  if (payload.channel === DL_VOICE_DICTIONARY_LEARNING_CHANNEL) {
-    try {
-      const result = await handleMobileVoiceDictionaryLearning(src, (payload.args ?? [])[0]);
-      return { ok: true, result };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      log.warn(`voice:dictionary-learning failed from ${shortId(src)}: ${message}`);
-      return { ok: false, error: { code: 'VOICE_DICTIONARY_LEARNING_FAILED', message } };
     }
   }
 
@@ -5066,63 +4977,6 @@ async function executeRemoteInvoke(src: string, payload: InvokePayload | undefin
   }
 }
 
-function normalizeMobileVoiceDictionaryLearningRequest(
-  input: unknown,
-): MobileVoiceDictionaryLearningRequest {
-  if (!input || typeof input !== 'object') {
-    throw new Error('dictionary learning request is required');
-  }
-  const record = input as Partial<MobileVoiceDictionaryLearningRequest>;
-  const beforeText = typeof record.beforeText === 'string' ? record.beforeText.trim() : '';
-  const afterText = typeof record.afterText === 'string' ? record.afterText.trim() : '';
-  if (!beforeText || !afterText) {
-    throw new Error('dictionary learning request requires beforeText and afterText');
-  }
-  const rawTranscriptText = typeof record.rawTranscriptText === 'string' && record.rawTranscriptText.trim()
-    ? record.rawTranscriptText.trim()
-    : undefined;
-  const context = record.context && typeof record.context === 'object'
-    ? record.context
-    : undefined;
-  return {
-    source: 'mobile',
-    rawTranscriptText,
-    beforeText,
-    afterText,
-    context: {
-      uiLanguage: readOptionalString(context, 'uiLanguage'),
-      sourceLanguage: readOptionalString(context, 'sourceLanguage'),
-      selectionBefore: readOptionalString(context, 'selectionBefore'),
-      selectionAfter: readOptionalString(context, 'selectionAfter'),
-    },
-  };
-}
-
-async function handleMobileVoiceDictionaryLearning(
-  controllerDeviceId: string,
-  input: unknown,
-): Promise<unknown> {
-  const request = normalizeMobileVoiceDictionaryLearningRequest(input);
-  return adviseAndRecordVoiceInputDictionaryLearning(
-    {
-      source: 'in_app',
-      rawTranscriptText: request.rawTranscriptText,
-      beforeText: request.beforeText,
-      afterText: request.afterText,
-      context: request.context,
-    },
-    {
-      senderId: controllerDeviceId,
-      sourceLabel: 'mobile',
-    },
-  );
-}
-
-function readOptionalString(record: unknown, key: string): string | undefined {
-  if (!record || typeof record !== 'object') return undefined;
-  const value = (record as Record<string, unknown>)[key];
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
-}
 
 function shortId(deviceId: string): string {
   return deviceId.slice(0, 8);

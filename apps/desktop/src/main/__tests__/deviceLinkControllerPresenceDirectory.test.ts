@@ -457,12 +457,11 @@ function createPresenceListAdapter(status: 'connecting' | 'online' | 'stopped', 
     'client', 'linkTornDown', 'applyControllerPresenceDirectorySnapshot', 'controllerPresenceFreshness',
     'presenceOnlineByDevice', 'presenceAvailableByDevice', 'presenceControlDisabledByDevice',
     'hasOfflineDirectPath', 'setControllerPlatform', 'presenceNameByDevice', 'isDeviceRevoked',
-    'isMobilePlatform', 'shouldExchangeDictionaryWith', 'handleMobilePeerOnline',
-    'handleDesktopPeerOnline', 'replayActiveSubscriptions', 'retireControlOffRetention',
+    'shouldExchangeDictionaryWith', 'handleDesktopPeerOnline', 'replayActiveSubscriptions', 'retireControlOffRetention',
     compiled + '\nreturn applyPresenceList;',
   )(client, tornDown, applyControllerPresenceDirectorySnapshot, freshness, online, available, disabled,
-    () => false, vi.fn(), new Map(), () => false, (platform: string | null) => platform === 'ios' || platform === 'android',
-    () => false, vi.fn(), vi.fn(), vi.fn(), retire) as (devices: unknown[], requestEpoch: number) => Map<string, { online: boolean; enabled?: boolean }>;
+    () => false, vi.fn(), new Map(), () => false,
+    () => false, vi.fn(), vi.fn(), retire) as (devices: unknown[], requestEpoch: number) => Map<string, { online: boolean; enabled?: boolean }>;
   return { apply, client, online, available, disabled, retire, freshness };
 }
 

@@ -225,7 +225,7 @@ function recoveryDesktop(relay: RecoveryRelay, id: string) {
   return { client, context, registry, subscribed, pushes, diagnostic };
 }
 
-describe('mobile voice credential sync desktop bootstrap path', () => {
+describe('device-link desktop bootstrap path', () => {
   it('starts device-link service from Electron bootstrap', () => {
     const bootstrap = readFileSync(resolve(mainRoot, 'bootstrap-electron.ts'), 'utf8');
 
@@ -467,9 +467,6 @@ describe('mobile voice credential sync desktop bootstrap path', () => {
     expect(deviceLinkHost).toContain(
       'markControllerPresenceFresh(controllerPresenceFreshness, snap.deviceId);',
     );
-    expect(deviceLinkHost).toContain(
-      'if (isMobilePlatform(platform)) handleMobilePeerOnline(deviceId);',
-    );
   });
 
   it('presence 展示名统一走协调器，无有效权威名时保留 dispatch 回退链', () => {
@@ -493,23 +490,5 @@ describe('mobile voice credential sync desktop bootstrap path', () => {
     expect(dispatch).toContain(
       'const displayName = normalized\n    ?? reportedControllerNameByDevice.get(deviceId)\n    ?? deviceId.slice(0, 8);',
     );
-  });
-
-  it('keeps device-link:voice:credential-sync matched but rejected (feature removed, readable error for old mobile)', () => {
-    const dispatch = readFileSync(resolve(mainRoot, 'device-link/dispatch.ts'), 'utf8');
-
-    expect(dispatch).toContain('DL_VOICE_CREDENTIAL_SYNC_CHANNEL');
-    expect(dispatch).toContain('if (payload.channel === DL_VOICE_CREDENTIAL_SYNC_CHANNEL)');
-    expect(dispatch).toContain("code: 'VOICE_CREDENTIAL_SYNC_REMOVED'");
-    expect(dispatch).not.toContain('syncMobileVoiceCredential');
-  });
-
-  it('routes device-link:voice:dictionary-learning to desktop dictionary learning', () => {
-    const dispatch = readFileSync(resolve(mainRoot, 'device-link/dispatch.ts'), 'utf8');
-
-    expect(dispatch).toContain('DL_VOICE_DICTIONARY_LEARNING_CHANNEL');
-    expect(dispatch).toContain("import { adviseAndRecordVoiceInputDictionaryLearning } from '../voice-input/index.js';");
-    expect(dispatch).toContain('if (payload.channel === DL_VOICE_DICTIONARY_LEARNING_CHANNEL)');
-    expect(dispatch).toContain('handleMobileVoiceDictionaryLearning(src, (payload.args ?? [])[0])');
   });
 });

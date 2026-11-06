@@ -26,12 +26,6 @@ vi.mock('../remote-desktop/iceConfig', () => ({ loadDesktopIceServers: vi.fn(asy
 // media:fetch 拦截走 mediaFetch.fetchLocalMediaToOss;mock 掉避免拉起 OSS/cache-store 真实依赖。
 const fetchLocalMediaToOssMock = vi.hoisted(() => vi.fn());
 vi.mock('../device-link/mediaFetch', () => ({ fetchLocalMediaToOss: fetchLocalMediaToOssMock }));
-const transcribeRemoteVoiceInputMock = vi.hoisted(() => vi.fn());
-vi.mock('../device-link/voiceTranscribe', () => ({ transcribeRemoteVoiceInput: transcribeRemoteVoiceInputMock }));
-const adviseAndRecordVoiceInputDictionaryLearningMock = vi.hoisted(() => vi.fn());
-vi.mock('../voice-input/index.js', () => ({
-  adviseAndRecordVoiceInputDictionaryLearning: adviseAndRecordVoiceInputDictionaryLearningMock,
-}));
 
 import {
   markRemoteSettingPersistedInsideHandler,
@@ -68,8 +62,6 @@ beforeEach(() => {
   setRemoteReviewInputGuard(null);
   setRemoteSettingsPersist(null);
   fetchLocalMediaToOssMock.mockReset();
-  transcribeRemoteVoiceInputMock.mockReset();
-  adviseAndRecordVoiceInputDictionaryLearningMock.mockReset();
 });
 
 describe('runInvoke 双层校验', () => {
@@ -324,159 +316,6 @@ describe('runInvoke media:fetch 拦截(入方向媒体)', () => {
     const r = await runInvoke('ctrl', { channel: 'device-link:media:fetch', args: [{ url: 'x' }] });
     expect(r).toMatchObject({ ok: false, error: { code: 'REMOTE_DISABLED' } });
     expect(fetchLocalMediaToOssMock).not.toHaveBeenCalled();
-  });
-});
-
-describe('runInvoke voice:transcribe 拦截(手机语音输入)', () => {
-  it('device-link:voice:transcribe → 调 transcribeRemoteVoiceInput 并回文本,不落 ipcMain', async () => {
-    transcribeRemoteVoiceInputMock.mockResolvedValue({
-      text: '移动端语音文本',
-      provider: 'litellm-batch',
-      model: 'elevenlabs/scribe_v2',
-      audioBytes: 1024,
-    });
-    const req = { ossKey: 'cindy/device-link/u/voice.m4a', mimeType: 'audio/mp4' };
-    const r = await runInvoke('ctrl', {
-      channel: 'device-link:voice:transcribe',
-      args: [req],
-    });
-    expect(transcribeRemoteVoiceInputMock).toHaveBeenCalledWith(req);
-    expect(r).toEqual({
-      ok: true,
-      result: {
-        text: '移动端语音文本',
-        provider: 'litellm-batch',
-        model: 'elevenlabs/scribe_v2',
-        audioBytes: 1024,
-      },
-    });
-  });
-
-  it('转写失败 → VOICE_TRANSCRIBE_FAILED', async () => {
-    transcribeRemoteVoiceInputMock.mockRejectedValue(new Error('asr down'));
-    const r = await runInvoke('ctrl', {
-      channel: 'device-link:voice:transcribe',
-      args: [{ ossKey: 'k' }],
-    });
-    expect(r).toMatchObject({ ok: false, error: { code: 'VOICE_TRANSCRIBE_FAILED', message: 'asr down' } });
-  });
-
-  it('已撤销控制端 voice:transcribe → ACCESS_REVOKED,不触发转写', async () => {
-    revokedControllers = ['ctrl'];
-    const r = await runInvoke('ctrl', {
-      channel: 'device-link:voice:transcribe',
-      args: [{ ossKey: 'k' }],
-    });
-    expect(r).toMatchObject({ ok: false, error: { code: 'ACCESS_REVOKED' } });
-    expect(transcribeRemoteVoiceInputMock).not.toHaveBeenCalled();
-  });
-});
-
-describe('runInvoke voice:credential-sync 拦截(能力已下线,保留可读拒绝)', () => {
-  it('device-link:voice:credential-sync → VOICE_CREDENTIAL_SYNC_REMOVED(不再穿透桌面 key)', async () => {
-    const r = await runInvoke('ctrl', {
-      channel: 'device-link:voice:credential-sync',
-      args: [],
-    });
-    expect(r).toMatchObject({
-      ok: false,
-      error: {
-        code: 'VOICE_CREDENTIAL_SYNC_REMOVED',
-        message: '手机语音输入已改用 Cindy 官方语音服务,请升级手机版。',
-      },
-    });
-  });
-
-  it('已撤销控制端 voice:credential-sync → ACCESS_REVOKED(早于能力下线拒绝)', async () => {
-    revokedControllers = ['ctrl'];
-    const r = await runInvoke('ctrl', {
-      channel: 'device-link:voice:credential-sync',
-      args: [],
-    });
-    expect(r).toMatchObject({ ok: false, error: { code: 'ACCESS_REVOKED' } });
-  });
-});
-
-describe('runInvoke voice:dictionary-learning 拦截(手机语音词典学习回写)', () => {
-  it('device-link:voice:dictionary-learning → 调桌面词典学习 advisor 并回写桌面词典', async () => {
-    adviseAndRecordVoiceInputDictionaryLearningMock.mockResolvedValue({
-      ok: true,
-      actions: [{
-        action: 'add_entry',
-        term: 'XDMaker',
-        aliases: ['xd maker'],
-        type: 'product_name',
-        confidence: 'high',
-      }],
-      elapsedMs: 42,
-    });
-    const req = {
-      source: 'mobile',
-      rawTranscriptText: 'xd maker',
-      beforeText: 'XDMaker',
-      afterText: 'XDMaker',
-      context: {
-        uiLanguage: 'zh-CN',
-        sourceLanguage: 'zh-CN',
-        selectionBefore: '配置',
-        selectionAfter: '远程控制',
-      },
-    };
-
-    const r = await runInvoke('ctrl', {
-      channel: 'device-link:voice:dictionary-learning',
-      args: [req],
-    });
-
-    expect(adviseAndRecordVoiceInputDictionaryLearningMock).toHaveBeenCalledWith(
-      {
-        source: 'in_app',
-        rawTranscriptText: 'xd maker',
-        beforeText: 'XDMaker',
-        afterText: 'XDMaker',
-        context: req.context,
-      },
-      {
-        senderId: 'ctrl',
-        sourceLabel: 'mobile',
-      },
-    );
-    expect(r).toEqual({
-      ok: true,
-      result: {
-        ok: true,
-        actions: [{
-          action: 'add_entry',
-          term: 'XDMaker',
-          aliases: ['xd maker'],
-          type: 'product_name',
-          confidence: 'high',
-        }],
-        elapsedMs: 42,
-      },
-    });
-  });
-
-  it('词典学习失败 → VOICE_DICTIONARY_LEARNING_FAILED', async () => {
-    adviseAndRecordVoiceInputDictionaryLearningMock.mockRejectedValue(new Error('advisor down'));
-    const r = await runInvoke('ctrl', {
-      channel: 'device-link:voice:dictionary-learning',
-      args: [{ source: 'mobile', beforeText: 'a', afterText: 'b' }],
-    });
-    expect(r).toMatchObject({
-      ok: false,
-      error: { code: 'VOICE_DICTIONARY_LEARNING_FAILED', message: 'advisor down' },
-    });
-  });
-
-  it('已撤销控制端 voice:dictionary-learning → ACCESS_REVOKED,不触发词典学习', async () => {
-    revokedControllers = ['ctrl'];
-    const r = await runInvoke('ctrl', {
-      channel: 'device-link:voice:dictionary-learning',
-      args: [{ source: 'mobile', beforeText: 'a', afterText: 'b' }],
-    });
-    expect(r).toMatchObject({ ok: false, error: { code: 'ACCESS_REVOKED' } });
-    expect(adviseAndRecordVoiceInputDictionaryLearningMock).not.toHaveBeenCalled();
   });
 });
 

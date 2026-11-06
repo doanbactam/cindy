@@ -8,8 +8,7 @@
  *
  * 永不放行的类别(列在这里供 review):窗口/UI 类(window-* / page-zoom / find-in-page /
  * maker:open-session-in-new-window)、本机对话框(show-open-directory-dialog)、shell 副作用
- * (shell:* / maker:mivo:open-model-file)、账号与密钥(auth:* / safe-storage / api-key 读写;
- * 唯一例外是 presence-only 探测 maker:api-key:present,只回 boolean、不含密钥材料,见下)、
+ * (shell:* / maker:mivo:open-model-file)、账号与密钥(auth:* / safe-storage / api-key 读写)、
  * updater / release-notes、被控端全局设置写(maker:compat-mode:set 等 *_SET 设置类——
  * 远程改被控端全局设置越权)、local-db 裸写(sessions:create/update、messages:create——
  * 写库必须经业务 handler,不开裸写)、maker:execute-desktop-command(UI 副作用)、
@@ -105,32 +104,6 @@ export const DL_SESSION_REFERENCE_CAPABILITY_CHANNEL =
 export const DL_MEDIA_FETCH_CHANNEL = 'device-link:media:fetch';
 
 /**
- * iPhone 桌面小组件的余量与每日用量快照(控制端 → 被控端,只读)。
- * 被控端 dispatch 拦截执行，返回菜单栏面板已算好的同一份数据（已按「隐藏个人信息」打码，
- * 不含凭证）。老被控端不识别时回 CHANNEL_NOT_ALLOWED，手机端提示需要更新电脑上的 Cindy。
- */
-export const DL_USAGE_WIDGET_SNAPSHOT_CHANNEL = 'device-link:usage-widget:snapshot:v1';
-
-/**
- * Legacy 出方向语音转写 channel(控制端 → 被控端):早期方案里手机端录音后先经 server
- * `/api/device-link/media/presign-put` 上传 OSS 中转区,再把 ossKey 交给被控桌面。
- * 被控端下载音频并使用本机 voice-input batch ASR 配置转写,返回文本给手机插入 composer。
- *
- * 当前手机版语音主流程已改为 credential sync + 手机端实时 ASR/refine,此 channel
- * 仅作为协议兼容面保留,不是 ipcMain handler,由 device-link dispatch 拦截执行。
- */
-export const DL_VOICE_TRANSCRIBE_CHANNEL = 'device-link:voice:transcribe';
-
-/**
- * 手机端云端语音输入的临时 credential 同步 channel。
- *
- * 这是账号体系补齐前的窄口径例外:只允许同步 voice ASR/refine 所需的 XD Gateway key
- * 与模型配置,由被控端 dispatch 专门拦截,不落通用 ipcMain,也不是 safe-storage/api-key
- * 的通用远程读写能力。长期方案应改为「AI key 绑定用户账号,移动端登录后读自己的 key」。
- */
-export const DL_VOICE_CREDENTIAL_SYNC_CHANNEL = 'device-link:voice:credential-sync';
-
-/**
  * 个人 Telegram bot 的跨设备上下线 channel(控制端 → 被控端)。
  *
  * 背景:个人 Telegram bot 是 BYO token 直连 Bot API 的 getUpdates 长轮询,
@@ -142,7 +115,7 @@ export const DL_VOICE_CREDENTIAL_SYNC_CHANNEL = 'device-link:voice:credential-sy
  * host.ipc.handle 里统一包了 assertTrustedAppRendererEvent(见 im/host.ts),
  * 只认 Electron 持有的真实 sender; 而 dispatchLocalInvoke 用的是合成 event
  * (sender: undefined), 必然判定不可信。那道闸是有意拦着的(IM 凭证/配置面全算
- * 敏感面), 不该为远程下线放宽 —— 故与 media:fetch / voice:* 同款: 不是
+ * 敏感面), 不该为远程下线放宽 —— 故与 media:fetch 同款: 不是
  * ipcMain handler, 由被控端 dispatch 在通用路由前拦截执行。
  *
  * 准入论证(对照本文件顶部三条判据):
@@ -161,32 +134,6 @@ export const DL_VOICE_CREDENTIAL_SYNC_CHANNEL = 'device-link:voice:credential-sy
  */
 export const DL_TELEGRAM_STATUS_CHANNEL = 'device-link:telegram:status';
 export const DL_TELEGRAM_SET_ONLINE_CHANNEL = 'device-link:telegram:set-online';
-
-/**
- * 手机端语音词典学习回写 channel。
- *
- * 手机端只负责检测用户是否把一次 voice refine 结果改成了专有名词/术语修正;
- * 词典 advisor 与写入仍在被控桌面执行,避免移动端维护一份会分叉的本地词典。
- */
-export const DL_VOICE_DICTIONARY_LEARNING_CHANNEL = 'device-link:voice:dictionary-learning';
-
-/**
- * 手机端拉取被控桌面的语音词典快照(只读)。
- *
- * 桌面之间的词典靠 push 帧对等同步,手机不参与 CRDT 合并而只接收桌面主动推送的
- * 只读投影;本 channel 保留作为旧版兼容和丢 push 时的主动刷新兜底。返回的是**只读投影**:
- * 词条文本 + 频次 + 别名,外加一个
- * 版本向量(`stateVector`)供手机判断多台电脑的快照谁包含谁。化身、墓碑、抑制项、
- * 时钟都不外泄 —— 手机不参与合并,不持有可写状态,避免移动端词典分叉。
- *
- * 符合准入判据:不依赖 event.sender、无本机 UI 副作用、词典真相在被控端。
- *
- * invoke 仍属于 relay 的 CONTROL_KINDS,转发前会校验目标的 remoteControlEnabled;
- * 因此新版本优先使用独立的只读 push 快照通道,即使桌面关闭「允许被控」也能查看词典。
- * 本 channel 保留用于旧版桌面兼容和 push 丢失后的主动刷新,不能把 REMOTE_DISABLED
- * 当成“真的没有词条”。
- */
-export const DL_VOICE_DICTIONARY_GET_CHANNEL = 'device-link:voice:dictionary:get';
 
 /**
  * M3 核心集:远程会话全生命周期(新建/发消息/事件流/审批/中断/运行时切换)+ 基础读模型。
@@ -411,15 +358,6 @@ const CORE_INVOKE_CHANNELS: readonly string[] = [
   // 供应商组(被控端 dispatch 拦截执行，不落 ipcMain handler)：同账号电脑问组所在电脑该用组里哪台、
   // 报告运行中的任务与需要冷却的电脑。只给同账号，分享受邀者与共享任务访客在 dispatch 再拒一次。
   PROVIDER_GROUP_REMOTE_CHANNEL,
-  // 出方向语音转写(被控端 dispatch 拦截执行,不落 ipcMain handler;复用被控端 ASR 配置)。
-  DL_VOICE_TRANSCRIBE_CHANNEL,
-  // 临时 voice credential 同步(被控端 dispatch 拦截执行,不落 ipcMain handler;禁止泛化)。
-  DL_VOICE_CREDENTIAL_SYNC_CHANNEL,
-  // voice dictionary learning evidence 回写(被控端 dispatch 拦截执行,不落 ipcMain handler)。
-  DL_VOICE_DICTIONARY_LEARNING_CHANNEL,
-  // 手机拉取被控桌面的词典只读快照(被控端 dispatch 拦截执行,不落 ipcMain handler;
-  // 老被控端不识别时回 CHANNEL_NOT_ALLOWED,手机据此回退到「无词典」而不是报错)。
-  DL_VOICE_DICTIONARY_GET_CHANNEL,
 ];
 
 /**
@@ -581,8 +519,6 @@ const EXTENDED_INVOKE_CHANNELS: readonly string[] = [
   'maker:usage:codex-rate-limits',
   'maker:usage:codex-rate-limit-reset',
   'maker:usage:codex-reset-auto-use',
-  // 桌面小组件快照（只读，被控端 dispatch 拦截；准入同上方用量只读通道）。
-  DL_USAGE_WIDGET_SNAPSHOT_CHANNEL,
   // Claude 订阅账号余量快照(只读,cached-first):控制端远程会话状态栏 chip 显示
   // 被控端订阅的 5h/周/分模型窗口剩余(数据真相在被控端 —— turn 在被控端消耗其
   // 订阅额度)。快照只含利用率百分比、reset 时间与账号归属指纹(单向 scrypt 哈希,
@@ -606,22 +542,12 @@ const EXTENDED_INVOKE_CHANNELS: readonly string[] = [
   // sender 依赖、无副作用;老被控端 CHANNEL_NOT_ALLOWED → 控制端对默认路由远程
   // 会话维持「仅会话金额」占位(与旧行为一致)。
   'maker:claude-session-route:get',
-  // 模型单价表(只读,main 侧 Model Access model-groups 投影缓存):控制端模型选择器展示
-  // 被控端视角的单价(与被控端桌面 tooltip 同源)。无 sender 依赖、无副作用;老被控端无此 channel
-  // → CHANNEL_NOT_ALLOWED → 控制端隐藏价格(与桌面「无价不显示」口径一致)。
-  'maker:usage:model-pricing',
   // 用量历史跨设备合并(只读):同账号另一台电脑读取被控端 daily_spend / daily_model_usage
   // 原始行,合并进它自己的「所有设备」用量历史。数据真相在被控端;只含按天 × 模型聚合的
   // token 与金额,不含会话、消息或凭证。入参仅可选 sinceDay(YYYY-MM-DD),无 sender 依赖、
   // 无副作用;响应 gzip 编码,超帧预算回结构化 oversize。老被控端无此 channel →
   // CHANNEL_NOT_ALLOWED → 控制端把该设备标为「版本过旧」,不影响其它设备。
   'maker:usage:device-rows',
-  // 网关 API key **presence-only** 探测:只回 { present: boolean },不回、也永不扩展为读取
-  // 密钥材料 —— 这是「账号与密钥永不放行」大类下的窄口径例外(同 DL_VOICE_CREDENTIAL_SYNC
-  // 的例外定位,禁止泛化)。用途:控制端模型选择器判断折扣版(codex/)是否该置灰,判定依据
-  // 在被控端(key 存被控端 safeStorage、请求也从被控端发)。老被控端无此 channel →
-  // CHANNEL_NOT_ALLOWED → 控制端按 unknown 处理(不置灰)。
-  'maker:api-key:present',
   // —— Memory 读(写全局设置不放行)——
   // Teammate directory: handlers explicitly recognize the authorized device-link
   // context and return only identity/status/canonical task, without local paths,
@@ -739,7 +665,6 @@ const EXTENDED_INVOKE_CHANNELS: readonly string[] = [
   'worktree:suggest-name',
   'worktree:create',
   'worktree:discard-precreated',
-  'worktree:cancel-precreated',
   'worktree:removal-preview',
   // —— 个人 Telegram bot 跨设备上下线(准入论证见上方 DL_TELEGRAM_* 常量注释)——
   // 两条都由被控端 dispatch 拦截执行, 不是 ipcMain handler。
@@ -926,7 +851,6 @@ export const INVOKE_TIMEOUT_OVERRIDES_MS: Readonly<Record<string, number>> = {
   'worktree:sync-branch': 90_000,
   // 可能先等待同 sessionId 的晚到 create 释放互斥锁，再执行 git worktree remove。
   'worktree:discard-precreated': 60_000,
-  'worktree:cancel-precreated': 60_000,
   // pi 手动压缩调 LLM 生成摘要,大上下文 + 网关排队可达分钟级(core 侧
   // PI_COMPACT_TIMEOUT_MS = 10min);默认 30s 隧道超时会截断远程压缩请求,
   // 用户在控制端看到的就是「无反馈失败」。给足执行预算 + 回程余量:

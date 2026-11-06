@@ -110,9 +110,6 @@ export const OPEN_LINK_OBSERVATION_CHANNEL = 'device-link:observe:open-link';
 
 export const BREAKER_NEUTRAL_INVOKE_CHANNELS: ReadonlySet<string> = new Set([
   'device-link:media:fetch',
-  'device-link:voice:credential-sync',
-  'device-link:voice:dictionary-learning',
-  'device-link:voice:transcribe',
   DL_SUBSCRIBE_CHANNEL,
   DL_UNSUBSCRIBE_CHANNEL,
   OPEN_LINK_OBSERVATION_CHANNEL,

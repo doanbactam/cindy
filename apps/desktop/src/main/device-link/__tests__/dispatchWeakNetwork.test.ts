@@ -831,7 +831,7 @@ describe('[5] orphan 截止时间按 channel 收窄', () => {
     ];
     for (const [channel, args] of calls) {
       const budget =
-        (channel && resolveRemoteInvokeTimeoutMs(channel, args, 'desktop')) || 30_000;
+        (channel && resolveRemoteInvokeTimeoutMs(channel, args)) || 30_000;
       expect(__testing.remoteInvokeOrphanTimeoutForChannelMs(channel, args)).toBeGreaterThanOrEqual(budget);
       expect(__testing.outboxEntryMaxAgeMs(channel, args)).toBeGreaterThanOrEqual(budget);
     }
