@@ -1,5 +1,5 @@
 import { normalizeTaskTags, reconcileTaskTags } from '@cindy/maker-shared';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 /**
  * remoteProjectsStore —— 控制端「远程项目」内存层(device-link 跨设备远程控制)。
  * ---------------------------------------------------------------------------
@@ -499,9 +499,7 @@ function recompute(): void {
     }
     mergedSnapshot = flat;
   }
-  const nextVisible = CINDY_MAKE_ENABLED
-    ? mergedSnapshot
-    : mergedSnapshot.filter((session) => !isCindyMakeSource(session.source));
+  const nextVisible = mergedSnapshot.filter((session) => !isCindyMakeSource(session.source));
   // Share only the UI projection. Authoritative rows must keep their new content
   // identities so captureSessionRead still rejects details predating a snapshot.
   // Compare the complete JSON payload (including nested metadata), not a field

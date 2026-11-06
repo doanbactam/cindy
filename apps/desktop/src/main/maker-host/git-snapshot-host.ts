@@ -12,10 +12,6 @@ import path from 'node:path';
 import { currentOperationBudget, operationCheckpoint, operationWait } from '../utils/operationBudget';
 import { getActiveAppSession, ownerScopedUserDataPath } from '../appSessionState';
 import { SnapshotAttemptStore } from '../git-snapshot/snapshotAttemptStore';
-import {
-  isCindyMakeManagedWorktreePath,
-  makeSourceCheckoutPath,
-} from '../cindy-make/sourcePaths.js';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { GitSnapshotCoordinator } from '../git-snapshot/gitSnapshotCoordinator.js';
@@ -144,17 +140,6 @@ export function createGitSnapshotCoordinator(
     getSessionContext: async (sessionId) => {
       const meta = await maker.getSessionMeta(sessionId);
       if (!meta?.workDir || meta.remoteHostId) return null;
-      // Cindy Make stores file trees itself. Generic savepoints create commit objects.
-      const userData = app.getPath('userData');
-      const samePath = (a: string, b: string) =>
-        process.platform === 'win32'
-          ? path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase()
-          : path.resolve(a) === path.resolve(b);
-      if (
-        isCindyMakeManagedWorktreePath(userData, meta.workDir) ||
-        samePath(meta.workDir, makeSourceCheckoutPath(userData))
-      )
-        return null;
       return {
         workingDir: meta.workDir,
         agentKind: meta.agentKind as AgentKind,

@@ -1,13 +1,8 @@
 /**
- * Product gate for Cindy Make.
- *
- * Cindy Make remains on disk so existing source checkouts, history and personal
- * builds are not removed, but the product surface is currently unavailable to
- * users. Keep this value shared by desktop and mobile so a build cannot expose
- * one client while hiding the other.
+ * Cindy Make has been removed. Tasks it created (`cindy-make` / `cindy-make-merge`)
+ * stay in local history and usage totals, but every surface hides them and the
+ * host refuses to run them. Shared by desktop and remote clients.
  */
-export const CINDY_MAKE_ENABLED = false;
-
 export function isCindyMakeSource(source: string | null | undefined): boolean {
   return source === 'cindy-make' || source === 'cindy-make-merge';
 }
@@ -43,7 +38,6 @@ export async function filterCindyMakeSharedTasks<Task extends { sessionId: strin
   const confirmed = await Promise.all(tasks.map(async (task): Promise<{ task: Task; source: string | null } | null> => {
     if (!options.isCurrent()) return null;
     const known = options.knownSession(task);
-    if (CINDY_MAKE_ENABLED) return { task, source: known?.source ?? null };
     if (known?.id === task.sessionId && known.source !== undefined) {
       return isCindyMakeSource(known.source) ? hide(task) : { task, source: known.source };
     }

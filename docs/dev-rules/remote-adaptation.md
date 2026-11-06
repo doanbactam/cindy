@@ -608,13 +608,6 @@ enum 编译分支，也不接受任意 HTML、React 或无限 UI DSL。
 动作的 disabled 是呈现提示，主机仍须按最新状态、账号与任务身份复核。重连只重读，
 不得重放写操作；旧客户端不识别此 placement 时继续原有消息流程。
 
-Desktop 的同账号远程 Cindy Make 任务同样消费该投影：准备与测试交接卡接管输入区，
-继续修改后的恢复动作放在输入区顶部，实时状态与动作均来自任务所属电脑。控制端沿用
-既有 sessions topic，不新增业务 IPC 或本地构建回退；离线、切账号和切任务后禁用旧卡片
-动作，重连与操作超时后只重读状态。旧主机不提供该 placement 时保留只读历史卡片。
-实现与回归见 Desktop Renderer 的 `features/device-link/useSessionResourceCards.ts`、
-`SessionResourceCards.tsx` 及同目录测试；SSH 工作区不由此获得 Make 执行能力。
-
 ## 桌面远程控制的伙伴设置（`management:settings`，2026-10-22）
 
 产品规则见 [`../product-rules/cindy-bots-runtime.md`](../product-rules/cindy-bots-runtime.md)「伙伴设置」。落点：

@@ -195,13 +195,6 @@
     "apps/desktop/src/main/cindy-brain/__tests__/pluginModelPrefsIpc.test.ts": {
       "sourceReads": 1
     },
-    "apps/desktop/src/main/cindy-make/__tests__/stateBroadcast.test.ts": {
-      "resetModules": 1
-    },
-    "apps/desktop/src/main/cindy-make/__tests__/versionStartup.test.ts": {
-      "resetModules": 1,
-      "realWaits": 1
-    },
     "apps/desktop/src/main/companion-cloud/__tests__/twoDevices.harness.test.ts": {
       "realWaits": 1
     },
@@ -507,9 +500,6 @@
     },
     "apps/desktop/src/renderer/__tests__/chatInputSteerShortcut.test.ts": {
       "sourceReads": 3
-    },
-    "apps/desktop/src/renderer/__tests__/cindyMakeInlineEntry.test.ts": {
-      "sourceReads": 2
     },
     "apps/desktop/src/renderer/__tests__/composerChipPresentation.test.tsx": {
       "sourceReads": 1

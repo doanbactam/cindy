@@ -1,4 +1,3 @@
-import { isCindyMakeFamilySource } from '../../../../shared/cindyMakeMerge';
 import type { Session } from '@/lib/ccAgent.types';
 import { sessionProjectDirectory } from '@cindy/maker-shared/worktree-paths';
 
@@ -24,15 +23,10 @@ export function buildSessionSourceLabelMap(
   sessions: readonly Session[],
   allKnownProjects: readonly ProjectNode[],
   dialogueLabel = '',
-  cindyMakeLabel?: string,
 ): Map<string, string> {
   const nameByKey = new Map(allKnownProjects.map((p) => [p.projectKey, p.displayName]));
   const map = new Map<string, string>();
   for (const s of sessions) {
-    if (isCindyMakeFamilySource(s.source) && cindyMakeLabel) {
-      map.set(s.id, cindyMakeLabel);
-      continue;
-    }
     if (s.workspaceKind === 'dialogue' && dialogueLabel) {
       map.set(s.id, dialogueLabel);
       continue;

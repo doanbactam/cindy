@@ -26,7 +26,6 @@ export type SettingsTab =
   | 'builtin-tools'
   | 'pi-extensions'
   | 'computer-use'
-  | 'cindy-make'
   | 'im-bot'
   | 'help'
   | 'about'
@@ -84,7 +83,6 @@ export const TAB_LABEL_KEY: Record<SettingsTab, string> = {
   'builtin-tools': 'settings.tabs.builtinTools',
   'pi-extensions': 'settings.tabs.piExtensions',
   'computer-use': 'settings.tabs.computerUse',
-  'cindy-make': 'settings.tabs.cindyMake',
   'im-bot': 'settings.tabs.imBot',
   help: 'settings.tabs.help',
   about: 'settings.tabs.about',

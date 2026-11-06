@@ -25,7 +25,6 @@ vi.mock('@/components/ui/tooltip', () => ({ Tip: ({ children }: { children: Reac
 vi.mock('@/features/device-link/useMachineSwitcher', () => ({ useEffectiveSelectedMachineId: () => 'all' }));
 vi.mock('@/hooks/useReducedMotion', () => ({ useReducedMotion: () => true }));
 vi.mock('@/hooks/useSidebarCardMode', () => ({ useSidebarMainViewMode: () => ({ mode: 'text' }) }));
-vi.mock('@cindy/maker-shared/cindy-make-feature', () => ({ CINDY_MAKE_ENABLED: true }));
 vi.mock('../features/cc-agent/hooks/useRemoteHostProjectOrders', () => ({
   projectOrderWriteScopeForSelection: () => ({ kind: 'viewer' }),
   useLocalHostProjectOrder: () => ({ snapshot: { manualProjectOrder: [] } }),
@@ -132,7 +131,7 @@ function activity(phase: typeof phases[number]) {
 // boundary that opens the ancestor's organize menu. Existing lamp/drag tests do
 // not right-click headers. Minimal regression input: one grouped dialogue and a
 // bubbling, cancelable contextmenu event. Reuse this unit fixture to cover both
-// device layouts, shared Bot/Make headers and the real ProjectNode menu.
+// device layouts, shared Bot headers and the real ProjectNode menu.
 // Standalone: 6.47s including pnpm (Vitest 5.01s, 2.68s collection); reuses
 // the existing component fixture without another jsdom file or module resets.
 describe('Sidebar group context menus', () => {
@@ -345,7 +344,7 @@ describe('Sidebar group context menus', () => {
     expect(header.getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('preserves shared Bot/Make headers, blank-area events and the project menu', async () => {
+  it('preserves shared Bot headers, hides legacy Make tasks, keeps blank-area events and the project menu', async () => {
     const p = props(false);
     p.dialogues = [{ ...p.bots![0].sessions[0], id: 'make', source: 'cindy-make' }];
     p.projects = [{
@@ -361,18 +360,19 @@ describe('Sidebar group context menus', () => {
       <ProjectsSection {...p} />
       <span>Sidebar blank area</span>
     </div>);
-    for (const title of ['Demo Bot', 'settings.cindyMake.title']) {
+    expect(screen.queryByText('settings.cindyMake.title')).toBeNull();
+    for (const title of ['Demo Bot']) {
       const header = screen.getByText(title).closest<HTMLElement>('[role="button"]')!;
       const event = createEvent.contextMenu(header);
       fireEvent(header, event);
       expect(event.defaultPrevented).toBe(false);
     }
     fireEvent.contextMenu(screen.getByText('Sidebar blank area'));
-    expect(onSidebarContextMenu).toHaveBeenCalledTimes(3);
+    expect(onSidebarContextMenu).toHaveBeenCalledTimes(2);
 
     fireEvent.contextMenu(screen.getByText('Project').closest('[data-project-header]')!);
     expect(await screen.findByRole('menu')).toBeTruthy();
-    expect(onSidebarContextMenu).toHaveBeenCalledTimes(3);
+    expect(onSidebarContextMenu).toHaveBeenCalledTimes(2);
   });
 });
 

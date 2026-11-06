@@ -10,7 +10,7 @@ import { opencodeGoUsageWindowMinutes } from '../../shared/opencodeGoUsage.js';
  */
 
 import { actualSourceIdForModel, type ProviderView } from '@cindy/model-providers';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 import { matchCodexBucketForModel } from '@cindy/maker-shared/codex-usage-buckets';
 import type {
   ClaudeSubscriptionUsageSnapshot,
@@ -692,7 +692,7 @@ async function collectTasks(
     if (isSessionActivityRunning(activity)) ids.add(sessionId);
   }
   const ranked = [...ids]
-    .filter((sessionId) => CINDY_MAKE_ENABLED || !isCindyMakeSource(meta.get(sessionId)?.source))
+    .filter((sessionId) => !isCindyMakeSource(meta.get(sessionId)?.source))
     .sort((a, b) => {
       const runningA = activities.get(a) && isSessionActivityRunning(activities.get(a)!) ? 1 : 0;
       const runningB = activities.get(b) && isSessionActivityRunning(activities.get(b)!) ? 1 : 0;
@@ -704,7 +704,7 @@ async function collectTasks(
     const batch = await Promise.all(
       ranked.slice(offset, offset + MAX_TASK_ROWS).map(async (sessionId): Promise<MenubarTaskInput | null> => {
         const row = await safe(`session:${sessionId}`, () => deps.sessionRow(sessionId), null);
-        if (!CINDY_MAKE_ENABLED && isCindyMakeSource(row?.source)) return null;
+        if (isCindyMakeSource(row?.source)) return null;
         const info = meta.get(sessionId);
         const activity = activities.get(sessionId);
         const model = info?.model || row?.model || '';

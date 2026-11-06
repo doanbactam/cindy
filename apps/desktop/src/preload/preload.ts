@@ -4070,119 +4070,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openLogsDir: (): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('app:open-logs-dir'),
 
-  // Open <userData>/cindy-make/tools in the OS file manager (Settings → Cindy Make).
-  openCindyMakeToolsDir: (): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('app:open-cindy-make-tools-dir'),
-
-  getCindyMakeSourceStatus: (): Promise<import('../shared/cindyMakeDoctor').MakeSourceStatus> =>
-    ipcRenderer.invoke('app:get-cindy-make-source-status'),
-  cindyMakeMerge: (
-    input: import('../shared/cindyMakeMerge').CindyMakeMergeRequest,
-  ): Promise<import('../shared/cindyMakeMerge').CindyMakeMergeState | undefined> =>
-    ipcRenderer.invoke('app:cindy-make-merge', input),
-  cindyMakePersonalRemote: (
-    action: import('../shared/cindyMakePersonalRemote').CindyMakePersonalRemoteAction,
-  ): Promise<import('../shared/cindyMakePersonalRemote').CindyMakePersonalRemoteState> =>
-    ipcRenderer.invoke('app:cindy-make-personal-remote', action),
-  cindyMakeContribution: (
-    request: import('../shared/cindyMakeContribution').CindyMakeContributionRequest,
-  ): Promise<unknown> => ipcRenderer.invoke('app:cindy-make-contribution', request),
-  cindyMakeSync: (
-    request: import('../shared/cindyMakeSync').CindyMakeSyncRequest,
-  ): Promise<import('../shared/cindyMakeSync').CindyMakeSyncState> =>
-    ipcRenderer.invoke('app:cindy-make-sync', request),
-  getCindyMakeSettings: (): Promise<import('../shared/cindyMakeSettings').CindyMakeSettings> =>
-    ipcRenderer.invoke('app:get-cindy-make-settings'),
-  setCindyMakeSyncLatestBeforeBuild: (
-    enabled: boolean,
-  ): Promise<import('../shared/cindyMakeSettings').CindyMakeSettings> =>
-    ipcRenderer.invoke('app:set-cindy-make-sync-latest-before-build', enabled),
-  getCindyMakeHistory: (
-    selected?: string,
-  ): Promise<import('../shared/cindyMakeHistory').CindyMakeHistoryState> =>
-    ipcRenderer.invoke('app:cindy-make-history', selected),
-  actCindyMakeHistory: (
-    runId: string,
-    action: import('../shared/cindyMakeHistory').MakeHistoryAction,
-  ): Promise<import('../shared/cindyMakeHistory').CindyMakeHistoryState> =>
-    ipcRenderer.invoke('app:cindy-make-history-action', runId, action),
-  generateCindyMakePersonal: (
-    selection?: import('../shared/cindyMakeHistory').MakeHistoryBuildSelection[],
-  ): Promise<import('../shared/cindyMakeHistory').CindyMakeHistoryState> =>
-    ipcRenderer.invoke('app:cindy-make-history-build', selection),
-  cancelCindyMakePersonal: (
-    buildId: string,
-  ): Promise<import('../shared/cindyMakeHistory').CindyMakeHistoryState> =>
-    ipcRenderer.invoke('app:cindy-make-history-cancel-build', buildId),
-  openCindyMakeHistoryBuild: (): Promise<void> =>
-    ipcRenderer.invoke('app:cindy-make-history-open-build'),
-  cindyMakeTest: (
-    sessionId: string,
-    completionId: string,
-    action: import('../shared/cindyMakeSession').CindyMakeTestAction,
-  ): Promise<import('../shared/cindyMakeSession').CindyMakeCompletionMeta> =>
-    ipcRenderer.invoke('app:cindy-make-test', sessionId, completionId, action),
-  getCindyVersions: (): Promise<import('../shared/cindyVersions').CindyVersionsState> =>
-    ipcRenderer.invoke('app:cindy-versions-state'),
-  actCindyVersion: (
-    action: import('../shared/cindyVersions').CindyVersionAction,
-    id: string,
-  ): Promise<import('../shared/cindyVersions').CindyVersionsState> =>
-    ipcRenderer.invoke('app:cindy-versions-action', action, id),
-
-  getCindyMakeState: (): Promise<import('../shared/cindyMakeDoctor').CindyMakeGlobalState> =>
-    ipcRenderer.invoke('app:get-cindy-make-state'),
-  manageCindyMakeTask: (sessionId: string, action: 'end' | 'finish' | 'delete'): Promise<void> =>
-    ipcRenderer.invoke('app:manage-cindy-make-task', sessionId, action),
-
-  onCindyMakeState: (
-    listener: (state: import('../shared/cindyMakeDoctor').CindyMakeGlobalState) => void,
-  ): (() => void) => {
-    const wrapped = (
-      _event: Electron.IpcRendererEvent,
-      state: import('../shared/cindyMakeDoctor').CindyMakeGlobalState,
-    ) => listener(state);
-    ipcRenderer.on('maker:cindy-make:state-changed', wrapped);
-    return () => ipcRenderer.removeListener('maker:cindy-make:state-changed', wrapped);
-  },
-  onCindyMakeHistoryChanged: (
-    listener: (ownerStamp?: DataOwnerPushStamp) => void,
-  ): (() => void) => {
-    const wrapped = (_event: Electron.IpcRendererEvent, ownerStamp: unknown) => {
-      if (ownerStamp === undefined || isDataOwnerPushStamp(ownerStamp)) listener(ownerStamp);
-    };
-    ipcRenderer.on('cindy-make:history-changed', wrapped);
-    return () => ipcRenderer.removeListener('cindy-make:history-changed', wrapped);
-  },
-
-  openCindyMakeSourceDir: (): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('app:open-cindy-make-source-dir'),
-
-  // Global source preparation state: pushed to every window, whoever started it.
-  onCindyMakeSourceStatus: (
-    listener: (status: import('../shared/cindyMakeDoctor').MakeSourceStatus) => void,
-  ): (() => void) => {
-    const wrapped = (
-      _event: Electron.IpcRendererEvent,
-      status: import('../shared/cindyMakeDoctor').MakeSourceStatus,
-    ) => listener(status);
-    ipcRenderer.on('cindy-make:source-status', wrapped);
-    return () => ipcRenderer.removeListener('cindy-make:source-status', wrapped);
-  },
-  cancelCindyMakeSource: (): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('app:cancel-cindy-make-source'),
-
-  // Compatibility entry point: prepare a worktree and its dependencies.
-  prepareCindyMakeWorkspace: (
-    runId: string,
-  ): Promise<import('../shared/cindyMakeDoctor').MakeTaskWorkspace> =>
-    ipcRenderer.invoke('app:prepare-cindy-make-workspace', runId),
-  startCindyMakeTask: (
-    input: import('../shared/cindyMakeDoctor').CindyMakeTaskStart,
-  ): Promise<string> => ipcRenderer.invoke('app:start-cindy-make-task', input),
-  cancelCindyMakeTask: (runId: string): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('app:cancel-cindy-make-task', runId),
-
   // ── 客户端日志上报(Settings → About)──
   // 真相在 main:是否配置了上报目标、是否已同意隐私政策、开关的 override 状态都由 main
   // 判定,renderer 只消费结论。上传编号由 main 生成并回传,用户报障时口述给我们。
@@ -6801,11 +6688,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
         workingDir?: string;
         args?: string;
         deviceId?: string;
-      } & import('../shared/cindyMakeDoctor').MakeDoctorCommandContext,
+      },
     ): Promise<{
       success: boolean;
       error?: string;
-      doctorReport?: import('../shared/cindyMakeDoctor').MakeDoctorReport;
     }> => ipcRenderer.invoke('maker:execute-desktop-command', name, ctx),
 
     startReview: (input: {
@@ -6878,7 +6764,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onDesktopCommandTriggered: (
       handler: (payload: {
         command: string;
-        doctorReport?: import('../shared/cindyMakeDoctor').MakeDoctorReport;
         sessionId?: string;
         workingDir?: string;
         args?: string;

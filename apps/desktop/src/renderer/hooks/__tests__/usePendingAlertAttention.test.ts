@@ -266,36 +266,7 @@ describe('usePendingAlertAttention (派生收敛)', () => {
     expect(errorTailPendingMock).not.toHaveBeenCalled();
   });
 
-  it('Make 失败和重试的元数据更新会重算红点，同时保留未处理的中断', async () => {
-    interruptedPendingMock.mockResolvedValue(['interrupted']);
-    renderHook(() => usePendingAlertAttention());
-    await vi.waitFor(() => expect(addMock).toHaveBeenCalledWith('interrupted', 'error'));
-    errorTailPendingMock.mockClear();
-    errorTailPendingMock.mockResolvedValue(['make']);
-
-    const push = (status: string) => createdListeners[0]!({
-      sessionId: 'make',
-      message: {
-        role: 'assistant',
-        agentMeta: { cindyMakeCompletion: {
-          reportedAt: 100, lastAction: 'build', personal: { status },
-        } },
-      },
-    });
-    push('failed');
-    await vi.waitFor(() => expect(addMock).toHaveBeenCalledWith('make', 'error'));
-    expect(errorTailPendingMock).toHaveBeenCalled();
-
-    clearMock.mockClear();
-    addMock.mockClear();
-    errorTailPendingMock.mockResolvedValue([]);
-    push('waiting');
-    await vi.waitFor(() => expect(clearMock).toHaveBeenCalledWith('make', { intent: 'explicit' }));
-    expect(addMock).toHaveBeenCalledWith('interrupted', 'error');
-    expect(clearMock).not.toHaveBeenCalledWith('interrupted', expect.anything());
-  });
-
-  it('普通 Make 进度更新不反复查询告警', async () => {
+  it('遗留的 Cindy Make 完成记录行不触发告警查询', async () => {
     renderHook(() => usePendingAlertAttention());
     await refreshPendingAlerts();
     errorTailPendingMock.mockClear();

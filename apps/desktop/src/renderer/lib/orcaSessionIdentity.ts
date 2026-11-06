@@ -1,6 +1,6 @@
 import type { OrcaRole, Session } from '@/lib/ccAgent.types';
 import { getSessionFor, orcaWorkflowsFor } from '@/lib/makerTransport';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 import { botRouteForOwnedSession, readLoadedBotProfiles } from '@/features/bots/botSessionOwners';
 
 export function isOrcaLeadSession(session: { orcaRole?: OrcaRole | null }): boolean {
@@ -64,7 +64,7 @@ export async function resolveSessionRoute(
   options?: { remote?: boolean },
 ): Promise<string> {
   const targetSession = session ?? (await getSessionFor(sessionId).catch(() => null));
-  if (!CINDY_MAKE_ENABLED && isCindyMakeSource(targetSession?.source)) return '/cc-agent';
+  if (isCindyMakeSource(targetSession?.source)) return '/cc-agent';
 
   if (targetSession && isOrcaLeadSession(targetSession)) {
     return `/cc-agent/${sessionId}`;

@@ -24,7 +24,6 @@ const mock = vi.hoisted(() => ({
   trusted: true,
   lockHeld: true,
   packaged: false,
-  personal: false,
   region: 'cn',
   nonce: 0,
   startupGate: undefined as Promise<void> | undefined,
@@ -48,9 +47,6 @@ vi.mock('../../../shared/brandRegion.js', () => ({
   get CURRENT_CINDY_REGION() {
     return mock.region;
   },
-}));
-vi.mock('../../cindy-make/versionRuntimeIdentity.js', () => ({
-  isCindyPersonalRuntime: () => mock.personal,
 }));
 vi.mock('node:fs/promises', () => ({ default: { mkdir: async () => {} } }));
 vi.mock('../../device-link/crossProcessLock.js', () => ({
@@ -132,7 +128,6 @@ beforeEach(async () => {
   mock.trusted = true;
   mock.lockHeld = true;
   mock.packaged = false;
-  mock.personal = false;
   mock.region = 'cn';
   mock.nonce = 0;
   mock.startupGate = undefined;
@@ -327,14 +322,13 @@ describe('generic local app Cindy authorization', () => {
   });
   // Build identity, never the shared-profile path/version, controls the developer entry.
   it.each([
-    [true, false, 'cn', 'installed'],
-    [true, false, 'global', 'installed'],
-    [false, false, 'cn', 'development'],
-    [true, true, 'global', 'development'],
-    [true, false, 'dev', 'development'],
-  ])('projects build identity %s/%s/%s as %s', async (packaged, personal, region, kind) => {
+    [true, 'cn', 'installed'],
+    [true, 'global', 'installed'],
+    [false, 'cn', 'development'],
+    [true, 'dev', 'development'],
+  ])('projects build identity %s/%s as %s', async (packaged, region, kind) => {
     await disposeLocalAgentHost();
-    Object.assign(mock, { packaged, personal, region });
+    Object.assign(mock, { packaged, region });
     installLocalAgentHost({} as any);
     await localAgentConnections();
     expect(mock.deps.instanceInfo).toEqual({ kind, region });

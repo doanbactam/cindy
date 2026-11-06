@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   conversationSearchResultKey,
   emptyConversationSearchResponse,
@@ -13,12 +13,6 @@ import {
   type ConversationSearchResponse,
   type ConversationSearchResultItem,
 } from '../conversationSearch.js';
-
-const feature = vi.hoisted(() => ({ enabled: false }));
-vi.mock('../cindyMakeFeature.js', async (importOriginal) => ({
-  ...await importOriginal<typeof import('../cindyMakeFeature.js')>(),
-  get CINDY_MAKE_ENABLED() { return feature.enabled; },
-}));
 
 function result(
   id: string,
@@ -66,7 +60,6 @@ describe('remoteConversationSearchRequest', () => {
     expect(remoteIndexedSearchIgnoredWorkingDirs(response([page.results[0]!]), ['/project'])).toBe(false);
     expect(page.results[0]?.session.workingDir).toBe('/tmp/checkout');
   });
-  afterEach(() => { feature.enabled = false; });
 
   it.each([undefined, 1, 3, 24, 50, 100])('uses the bounded remote candidate pool for limit %s', (limit) => {
     const request = { query: 'needle', limit };
@@ -102,12 +95,6 @@ describe('remoteConversationSearchRequest', () => {
     const page = response(candidates.slice(0, remoteRequest.limit));
     expect(mergeConversationSearchFanout([page], request.limit).results.map((item) => item.session.id)).toEqual(['ordinary']);
     expect(remoteResultsFromFanoutPages([page]).map((item) => item.session.id)).toEqual(['ordinary', 'ordinary-next']);
-  });
-
-  it('leaves the original request unchanged when Cindy Make is enabled', () => {
-    feature.enabled = true;
-    const request = { query: 'needle', limit: 3 };
-    expect(remoteConversationSearchRequest(request)).toBe(request);
   });
 });
 

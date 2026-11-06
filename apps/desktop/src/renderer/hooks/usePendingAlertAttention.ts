@@ -43,7 +43,6 @@
 
 import { useEffect } from 'react';
 import { isDataOwnerPushCurrent } from '@/contexts/dataOwnerGeneration';
-import { getCindyMakeMessageAttention } from '../../shared/cindyMakeAttention';
 import {
   addSessionAttention,
   clearSessionAttention,
@@ -274,21 +273,13 @@ export function usePendingAlertAttention(): void {
   //
   // user 行:只在本 hook 仍认领该会话的错误尾行时重算。文件头不变量是「新 turn
   // 的 user 行会让 error 不再是尾行」;自动续跑的 UI_ACTION_TRIGGER 也是 user 行,
-  // 若不订这条,横幅已灭、任务已在跑,红点却一直亮。Make 直接更新同一张卡片,
-  // 没有新 error/user 行；失败、重试、继续的元数据广播也必须触发同一查询。
+  // 若不订这条,横幅已灭、任务已在跑,红点却一直亮。
   useEffect(() => {
     const onCreated = window.electronAPI?.localDb?.messages?.onCreated;
     if (!onCreated) return;
     return onCreated(({ sessionId, message }, ownerStamp) => {
       if (!isDataOwnerPushCurrent(ownerStamp)) return;
-      const makeAttention = message && getCindyMakeMessageAttention(message);
-      // Preparation can push many progress frames. Recheck running state only when
-      // retiring a failure, including a failure query that has not returned yet.
-      if (
-        message?.role === 'error' ||
-        (makeAttention &&
-          (makeAttention.kind !== 'running' || _errorTailOwned.has(sessionId) || _refreshInFlight))
-      ) {
+      if (message?.role === 'error') {
         void refreshPendingAlerts();
         return;
       }

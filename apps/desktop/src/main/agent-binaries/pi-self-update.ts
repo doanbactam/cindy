@@ -5,7 +5,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { download } from '../downloader/index.js';
-import { extractMakeToolArchive } from '../cindy-make/toolArchive.js';
+import { extractToolArchive } from '../managed-tools/archive.js';
 import { isBinaryVersionNotOlder, probeBinaryVersion } from './binary-version-probe.js';
 import { createLogger } from '../logger.js';
 import { getSharedGhCliTokenSource } from '../git-context/ghCliTokenSource.js';
@@ -27,7 +27,7 @@ export function piBinaryUpdateError(error: unknown, stage: PiBinaryUpdateFailure
 export interface PiBinaryUpdateDeps {
   fetchRelease(signal: AbortSignal): Promise<unknown>;
   download: typeof download;
-  extract: typeof extractMakeToolArchive;
+  extract: typeof extractToolArchive;
   probe: typeof probeBinaryVersion;
 }
 export const piBinaryUpdateDefaults: PiBinaryUpdateDeps = {
@@ -56,7 +56,7 @@ export const piBinaryUpdateDefaults: PiBinaryUpdateDeps = {
     if (!response.ok) throw new Error(`Pi release lookup failed (${response.status})`);
     return response.json();
   },
-  download, extract: extractMakeToolArchive, probe: probeBinaryVersion,
+  download, extract: extractToolArchive, probe: probeBinaryVersion,
 };
 
 export function parsePiRelease(value: unknown, platform: string, arch: string) {

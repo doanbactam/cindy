@@ -70,8 +70,6 @@ interface UseCCSessionsReturn {
     agentDeviceId?: string;
     /** per-session 来源(供应商)显式选择; null/undefined = 跟随默认路由。透传到 sessionService.create。 */
     providerId?: string | null;
-    /** Only the Cindy Make purpose may be requested from the renderer; Main validates it. */
-    source?: 'cindy-make';
   }, onCreateError?: (error: unknown) => void) => Promise<Session | null>;
   refreshSessions: () => Promise<Session[]>;
   patchLocal: (id: string, patch: Partial<Session>) => void;
@@ -178,7 +176,6 @@ export function useCCSessions(options?: UseCCSessionsOptions): UseCCSessionsRetu
       agentDeviceId?: string;
       /** per-session 来源(供应商)显式选择; null/undefined = 跟随默认路由。透传到 sessionService.create → mapper 落盘。 */
       providerId?: string | null;
-      source?: 'cindy-make';
       /** 新建页的未发送任务(见 sessionService.create)。 */
       provisional?: boolean;
     }, onCreateError?: (error: unknown) => void): Promise<Session | null> => {

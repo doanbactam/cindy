@@ -21,14 +21,10 @@ function harness(originalState: 'EACCES' | 'file' | 'ENOENT' | 'ready', saved = 
   const emit = vi.fn();
   const readiness = vi.fn(async (): Promise<'ready' | 'gone' | 'retry'> => 'ready');
   const managedBase = vi.fn((_dir: string): string | null => null);
-  const isCindyMake = vi.fn(() => false);
   const deps = {
     workingDirectoryRecovery: recovery,
     statWorkingDirectory: stat,
     readBoundWorkingDir: vi.fn(async () => original),
-    getUserDataPath: () => path.resolve('test-profile'),
-    isCindyMakeWorktreePath: isCindyMake,
-    assertCindyMakeWorkspace: vi.fn(async () => {}),
     getManagedWorktreeBasePath: managedBase,
     getManagedWorktreeReadinessForSession: readiness,
     findSimilarDirOnDisk: vi.fn(async () => null),
@@ -38,7 +34,7 @@ function harness(originalState: 'EACCES' | 'file' | 'ENOENT' | 'ready', saved = 
     emitWorkDirMissingError: emit,
   };
   const check = createWorkingDirectoryPreflight(deps);
-  return { original, fallback, stat, mkdir, findFallback, allocate, recovery, emit, readiness, managedBase, isCindyMake, check };
+  return { original, fallback, stat, mkdir, findFallback, allocate, recovery, emit, readiness, managedBase, check };
 }
 
 describe('persistent ordinary recovery in workdir preflight', () => {
@@ -96,10 +92,9 @@ describe('persistent ordinary recovery in workdir preflight', () => {
     expect(h.mkdir).not.toHaveBeenCalled();
   });
 
-  it.each(['ssh', 'worktree', 'cindy-make'])('preserves the %s readiness path', async (kind) => {
+  it.each(['ssh', 'worktree'])('preserves the %s readiness path', async (kind) => {
     const h = harness('ready');
     if (kind === 'worktree') h.managedBase.mockReturnValue(path.resolve('repo'));
-    if (kind === 'cindy-make') h.isCindyMake.mockReturnValue(true);
     expect(await h.check('task', h.original, 'codex', kind === 'ssh' ? 'remote-host' : undefined)).toBe(true);
     expect(h.findFallback).not.toHaveBeenCalled();
     expect(h.recovery.isFallback('task', h.original)).toBe(false);

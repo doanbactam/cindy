@@ -14,7 +14,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { CodexResumePreparationBlockedError, isCodexHistoryRecoveryRequired } from '@cindy/maker-core';
 import { CODEX_RESUME_NOT_READY_WIRE_MESSAGE } from '@cindy/maker-shared/agent-input-projection';
 
-import { assertCindyMakeSessionAvailable } from '../cindy-make/featureGate.js';
+import { assertCindyMakeSessionAvailable } from '../maker-ipc/legacyCindyMakeSession.js';
 import { remoteBackgroundInvoke } from '../device-link/index.js';
 import { forkRemoteAgentSession } from '../remote-agent/controller/fork.js';
 import { remoteAgentInvoker } from '../remote-agent/controller/runClient.js';

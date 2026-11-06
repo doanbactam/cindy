@@ -13,7 +13,6 @@ import type { ImMessageSource } from '../../shared/imMessageSource';
 import { sharedTaskAuthorMemberId, sharedTaskAuthorName } from '@cindy/maker-shared';
 import { readBotAuthorizationCard } from '../../shared/botAuthorization';
 import { readBotStarterOptions } from '../../shared/botStarterOptions';
-import { applyCindyMakeCardAttention } from './cindyMakeAttention';
 import { confirmRemoteUsers, reserveRemoteUser } from './remoteUserHandoff';
 import { readRemoteHistoryCache, remoteHistoryCacheWriter } from './remoteHistoryCache';
 import { encodeRemoteHistory, fitsRemoteHistoryCache } from '../../shared/remoteHistoryCache';
@@ -589,8 +588,8 @@ export interface ChatMessage {
     | 'plugin-model-route'
     /** Retired companion call transcript; kept only so MessageStream can hide it. */
     | 'voice-call'
-    | 'cindy-make-doctor'
-    | 'cindy-make'
+    /** Removed Cindy Make card or completion row; kept only so MessageStream can hide it. */
+    | 'retired-cindy-make'
     | 'help'
     | 'cost'
     | 'context'
@@ -600,8 +599,6 @@ export interface ChatMessage {
     | 'cmd'
     | 'goal-complete'
     | 'goal-resumed'
-    /** 个人版制作任务的完成记录,由持久化的 agentMeta.cindyMakeCompletion 派生,重开仍在。 */
-    | 'cindy-make-complete'
     | 'learn'
     | 'review'
     | 'auto-resume'
@@ -8968,20 +8965,6 @@ function initGlobalListeners(options: GlobalListenerOptions = {}): void {
       mapped.cacheHydrated = false;
       mapped.cacheReceipt = message.cacheReceipt;
     }
-    if (mapped.systemCardType?.startsWith('cindy-make')) {
-      // A late update to an older preparation card must not replace the current result.
-      const existingIndex = existing ? current.messages.indexOf(existing) : -1;
-      const newerMessage = current.messages.some(
-        (candidate, index) =>
-          candidate.clientId !== mapped.clientId &&
-          candidate.createdAt &&
-          mapped.createdAt &&
-          (candidate.createdAt > mapped.createdAt ||
-            (candidate.createdAt === mapped.createdAt && existingIndex >= 0 && index > existingIndex)),
-      );
-      if (!newerMessage)
-        applyCindyMakeCardAttention(sessionId, existing, mapped, _activeViewSessions.has(sessionId));
-    }
     const isLiveToolEcho =
       existing?.role === mapped.role &&
       (mapped.role === 'tool_use' || mapped.role === 'tool_result');
@@ -16969,13 +16952,12 @@ async function clearSessionAfterGuardImpl(sessionId: string, clearedAt: string):
 
 /**
  * F-CMD: Insert a local system card into the message stream.
- * Cindy Make cards are persisted below so the structured card survives reloads;
- * the other command cards remain local-only UI state.
+ * Command cards are local-only UI state.
  */
 function insertSystemCard(
   sessionId: string,
   cardType:
-    | 'help' | 'cost' | 'context' | 'pwd' | 'status' | 'compact' | 'cmd' | 'learn' | 'cindy-make-doctor' | 'cindy-make',
+    | 'help' | 'cost' | 'context' | 'pwd' | 'status' | 'compact' | 'cmd' | 'learn',
   data?: Record<string, unknown>,
 ): string | null {
   if (!sessionId) return null;
@@ -17001,56 +16983,17 @@ function insertSystemCard(
           isStreaming: false,
           systemCardType: cardType,
           systemCardData: data,
-          isLocalSystemCard: cardType !== 'cindy-make' && cardType !== 'cindy-make-doctor',
+          isLocalSystemCard: true,
           createdAt: new Date().toISOString(),
         },
       ],
     };
   });
-  if (
-    (cardType === 'cindy-make' || cardType === 'cindy-make-doctor') &&
-    data?.modalOnly !== true
-  ) {
-    enqueueCindyMakeCardPersistence(sessionId, clientId, cardType, data ?? {}, true);
-  }
   return clientId;
 }
 
+/** Legacy row marker written by the removed Cindy Make; such rows are hidden on load. */
 const CINDY_MAKE_CARD_MARKER = '__cindyMakeCard';
-const cindyMakeCardQueues = new Map<string, Promise<void>>();
-const cindyMakeNewCards = new Set<string>();
-
-/** Persist Cindy Make's structured card in the same message row that renders it. */
-function enqueueCindyMakeCardPersistence(
-  sessionId: string,
-  clientId: string,
-  cardType: 'cindy-make' | 'cindy-make-doctor',
-  data: Record<string, unknown>,
-  creating = false,
-): void {
-  const key = `${sessionId}:${clientId}`;
-  if (creating) cindyMakeNewCards.add(key);
-  const previous = cindyMakeCardQueues.get(key) ?? Promise.resolve();
-  const next = previous
-    .catch(() => undefined)
-    .then(async () => {
-      const content = { [CINDY_MAKE_CARD_MARKER]: { type: cardType, data } };
-      if (cindyMakeNewCards.has(key)) {
-        await messageService.create(sessionId, {
-          clientId,
-          role: 'assistant',
-          content,
-        });
-        cindyMakeNewCards.delete(key);
-      } else {
-        await messageService.updateContent(sessionId, clientId, content);
-      }
-    })
-    .catch((error) => {
-      log.warn('Failed to persist Cindy Make card:', error);
-    });
-  cindyMakeCardQueues.set(key, next);
-}
 
 /**
  * learn 卡移到消息流末尾 —— 提案就绪(及每轮修订刷新)时调用:卡片是在
@@ -17113,20 +17056,6 @@ function updateSystemCardData(
     };
     return { ...s, messages };
   });
-  const current = getSnapshot(sessionId).messages.find((message) => message.clientId === clientId);
-  if (
-    current?.systemCardType === 'cindy-make' ||
-    current?.systemCardType === 'cindy-make-doctor'
-  ) {
-    if (current.systemCardData?.modalOnly !== true) {
-      enqueueCindyMakeCardPersistence(
-        sessionId,
-        clientId,
-        current.systemCardType,
-        current.systemCardData ?? {},
-      );
-    }
-  }
 }
 
 // Only an accepted Host receipt may commit a question/plan decision. A rejected
@@ -19334,23 +19263,10 @@ function mapServerMessages(serverMsgs: Message[]): ChatMessage[] {
       m.role === 'assistant' && m.content && typeof m.content === 'object'
         ? (m.content as Record<string, unknown>)[CINDY_MAKE_CARD_MARKER]
         : undefined;
-    if (persistedCindyCard && typeof persistedCindyCard === 'object') {
-      const card = persistedCindyCard as Record<string, unknown>;
-      const type: 'cindy-make' | 'cindy-make-doctor' =
-        card.type === 'cindy-make' ? 'cindy-make' : 'cindy-make-doctor';
-      const data =
-        card.data && typeof card.data === 'object'
-          ? (card.data as Record<string, unknown>)
-          : {};
-      return {
-        clientId: m.clientId,
-        role: 'assistant' as const,
-        content: '',
-        isStreaming: false,
-        systemCardType: type,
-        systemCardData: data,
-      };
-    }
+    if (persistedCindyCard !== undefined) return {
+      clientId: m.clientId, role: 'assistant' as const, content: '', isStreaming: false,
+      systemCardType: 'retired-cindy-make' as const,
+    };
     if (m.role === 'tool_use' && m.content && typeof m.content === 'object') {
       const c = m.content as Record<string, unknown>;
       const { toolName, input: toolInput, toolUseId } = parseMessageToolUse(m);
@@ -19789,15 +19705,14 @@ function mapServerMessages(serverMsgs: Message[]): ChatMessage[] {
         systemCardData: { ...m.agentMeta.goalCompletion },
       };
     }
-    // 个人版制作任务完成记录:同 goal-complete,从持久 agentMeta 派生成完成卡片。
+    // Removed Cindy Make completion record: hidden, never rendered.
     if (m.role === 'assistant' && m.agentMeta?.cindyMakeCompletion) {
       return {
         clientId: m.clientId,
         role: m.role,
         content: '',
         isStreaming: false,
-        systemCardType: 'cindy-make-complete' as const,
-        systemCardData: { ...m.agentMeta.cindyMakeCompletion },
+        systemCardType: 'retired-cindy-make' as const,
       };
     }
     // 新任务「让插件选」的结果 → 第一条消息下方的一行说明。

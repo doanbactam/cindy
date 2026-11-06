@@ -45,7 +45,6 @@ import {
   shouldPrependMobileClientPromptNote,
 } from './mobileClientPromptNote.js';
 import { buildWireMessageSourceNote, readWireSourceDevice, readWireSourcePlugin } from './messageSourceNote.js';
-import { buildCindyMakeTaskNote } from '../cindy-make/taskNote.js';
 import { SIDE_CHAT_CONTEXT } from './sideChatContext.js';
 import { getMainClassicalStyle, getResolvedMainLocale } from '../i18n.js';
 import {
@@ -1571,13 +1570,7 @@ export function createMakerSendTransaction(deps: MakerSendTransactionDeps): Make
             host: sourceDevice ? deps.readHostDeviceIdentity?.() : undefined,
           })
         : null;
-      // 个人版制作任务说明:与手机说明同层、同占位规则(原生命令必须留在消息开头)。
       const taskSource = await deps.readTaskSource?.(sessionId);
-      const cindyMakeNote =
-        taskSource === 'cindy-make' &&
-        allowsEnvironmentNotes
-          ? buildCindyMakeTaskNote()
-          : null;
       const uiLanguageNote = allowsEnvironmentNotes
         ? buildUiLanguageErrorNote(turnUiLanguageFromSendOpts(so, getResolvedMainLocale()), {
             classicalStyle: turnClassicalStyleFromSendOpts(so, getMainClassicalStyle()),
@@ -1595,7 +1588,6 @@ export function createMakerSendTransaction(deps: MakerSendTransactionDeps): Make
         'bot-thread': botThreadNote,
         'task-delivery': allowsEnvironmentNotes ? await deps.readTaskDeliveryNote?.(sessionId) ?? null : null,
         'client-environment': mobileClientNote,
-        'cindy-make': cindyMakeNote,
         'ui-language': uiLanguageNote,
       };
       const wireNotePlan = allowsEnvironmentNotes
@@ -1605,12 +1597,9 @@ export function createMakerSendTransaction(deps: MakerSendTransactionDeps): Make
       const withMobileNote = plannedNotes['client-environment']
         ? prependNoteToWireUserMessage(withSourceNote as HandoffWireMessage, plannedNotes['client-environment'])
         : withSourceNote;
-      const withCindyMakeNote = plannedNotes['cindy-make']
-        ? prependNoteToWireUserMessage(withMobileNote as HandoffWireMessage, plannedNotes['cindy-make'])
-        : withMobileNote;
       let outgoing = plannedNotes['ui-language']
-        ? prependNoteToWireUserMessage(withCindyMakeNote as HandoffWireMessage, plannedNotes['ui-language'])
-        : withCindyMakeNote;
+        ? prependNoteToWireUserMessage(withMobileNote as HandoffWireMessage, plannedNotes['ui-language'])
+        : withMobileNote;
       if (plannedNotes['side-chat']) {
         outgoing = prependNoteToWireUserMessage(outgoing as HandoffWireMessage, plannedNotes['side-chat']);
       }

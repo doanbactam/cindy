@@ -29,7 +29,7 @@ it.each(['recovery', 'ordinary', 'missing-offer', 'pending', 'new-provider', 'ne
     const session = { source: scenario === 'ordinary' ? 'user' : 'bot',
       runtimeBaselineRecoveryPending: scenario !== 'missing-offer',
       runtimePending: scenario === 'pending' ? route : null, runtimeEffective: route };
-    const send = runInNewContext(code, { readOnly: false, cindyMakeInputLocked: false,
+    const send = runInNewContext(code, { readOnly: false,
       invalidateHistoryRecoveryNavigation: vi.fn(), getDataOwnerGeneration: () => 1,
       remoteDeviceId: null, displayAgentKind: 'codex', isCodex: true, session,
       agentSwitchIntent: scenario === 'new-intent' ? { target: 'pi' } : null,
@@ -50,7 +50,7 @@ it('authenticates the recovered Harness on subsequent sends after a legacy proje
   const auth = vi.fn(async (vendor: string) => ({ proceed: vendor === 'pi' }));
   const beforeEnqueue = vi.fn(async () => false);
   const displayAgentKind = dbToMakerAgentKind(session.agentKind);
-  const send = runInNewContext(code, { readOnly: false, cindyMakeInputLocked: false,
+  const send = runInNewContext(code, { readOnly: false,
     invalidateHistoryRecoveryNavigation: vi.fn(), getDataOwnerGeneration: () => 1,
     remoteDeviceId: null, displayAgentKind, isCodex: displayAgentKind === 'codex', session,
     agentSwitchIntent: null, vendorAuthGate: { checkAndConfirm: auth },

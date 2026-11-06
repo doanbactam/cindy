@@ -105,8 +105,6 @@ import {
   startSessionDrag,
 } from '../splitGroupDnd';
 import { shouldPrefetchSessionOnPointerDown } from './sessionSwitchPrefetch';
-import { useCindyMakeActivity } from './useCindyMakeActivity';
-import { CINDY_MAKE_SESSION_SOURCE } from '../../../../shared/cindyMakeSession';
 
 // Module-level dedup cache for loadScheduleSidebarIndexRuns.
 // When many ungrouped automation rows mount simultaneously they all need the
@@ -350,8 +348,6 @@ export const SessionItem = withSidebarNavigation<SessionItemProps>(function Sess
 }: SessionItemProps & SidebarNavigationProps) {
   const { t } = useTranslation();
   const followers = useSessionFollowers(session);
-  const cindyMakeActivity = useCindyMakeActivity(session);
-  const cindyMakePreparing = cindyMakeActivity === 'building' ? undefined : cindyMakeActivity;
   const prRefs = usePrRefsForSession(session.id);
   // 任务信息复选(C 期):行右侧信息槽内容,与整理菜单同源共享状态。
   const { fields: taskInfoFields } = useTaskInfoFields();
@@ -431,7 +427,7 @@ export const SessionItem = withSidebarNavigation<SessionItemProps>(function Sess
     isUrgentFromContext: isUrgentFromContext || remoteSchedule?.hasUnreadFailedRun === true,
     isRunning: session.deviceLinkDeviceId
       ? remoteActivity?.phase === 'running'
-      : isRunning || cindyMakeActivity != null,
+      : isRunning,
     hasAttentionNotification:
       hasAttentionNotification ||
       orcaWorkerAttentionKind !== undefined ||
@@ -519,16 +515,8 @@ export const SessionItem = withSidebarNavigation<SessionItemProps>(function Sess
       );
     }
   }, [effectiveScheduleId, t]);
-  const displayTitle = getSessionDisplayTitle(
-    session,
-    t(
-      session.source === CINDY_MAKE_SESSION_SOURCE
-        ? 'cindyMake.code.taskName'
-        : 'ccAgent.common.unnamedSession',
-    ),
-    t,
-  );
-  const canHighlightDisplayTitle = canHighlightSessionDisplayTitle(session, t);
+  const displayTitle = getSessionDisplayTitle(session, t('ccAgent.common.unnamedSession'));
+  const canHighlightDisplayTitle = canHighlightSessionDisplayTitle(session);
   const titleContent =
     matchIndices && matchIndices.length > 0 && canHighlightDisplayTitle
       ? highlightSegments(session.title, matchIndices, {
@@ -1141,18 +1129,7 @@ export const SessionItem = withSidebarNavigation<SessionItemProps>(function Sess
                 ordinalBadgeLabel != null && 'opacity-0 w-0 overflow-hidden',
               )}
             >
-              {cindyMakePreparing && rightStatusKind === 'running' ? (
-                <span
-                  className={cn(
-                    'max-w-[9rem] truncate text-xs font-normal',
-                    isActive
-                      ? 'text-sidebar-item-active-foreground/80'
-                      : 'text-[var(--cmd-palette-item-meta)]',
-                  )}
-                >
-                  {t('cindyMake.code.phases.' + cindyMakePreparing)}
-                </span>
-              ) : showRightStatus ? (
+              {showRightStatus ? (
                 <SidebarRightStatusIndicator kind={rightStatusKind} isActive={isActive} />
               ) : (
                 // 任务信息复选:按用户勾选拼装 pr / worktree / tokens / cost / time;默认仅

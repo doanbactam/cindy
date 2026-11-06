@@ -1,5 +1,5 @@
 import type { Session } from '@/lib/ccAgent.types';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 import { isOrcaWorkerSession } from '@/lib/orcaSessionIdentity';
 import type { AttentionKind } from '@/lib/sessionAttentionStore';
 import {
@@ -39,7 +39,7 @@ export function countAppAttention(input: AppAttentionCountInput): number {
   for (const session of input.sessions) {
     if (
       session.status !== 'active' ||
-      (!CINDY_MAKE_ENABLED && isCindyMakeSource(session.source)) ||
+      (isCindyMakeSource(session.source)) ||
       session.source === 'bot' ||
       isOrcaWorkerSession(session) ||
       session.deviceLinkDeviceId !== undefined ||

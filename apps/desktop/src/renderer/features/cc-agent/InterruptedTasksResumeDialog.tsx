@@ -175,7 +175,6 @@ export function InterruptedTasksResumeDialog({ suspended = false }: { suspended?
         tasks.map((task) => task.session),
         [],
         t('ccAgent.sidebar.dialogues'),
-        t('settings.cindyMake.title'),
       ),
     [tasks, t],
   );
@@ -237,7 +236,7 @@ export function InterruptedTasksResumeDialog({ suspended = false }: { suspended?
       <ul className="border-y border-[var(--border-default)] py-1">
         {tasks.map(({ session, interruptedAt, activity, botName }) => {
           const checked = !deselected.has(session.id);
-          const title = getSessionDisplayTitle(session, t('ccAgent.common.unnamedSession'), t);
+          const title = getSessionDisplayTitle(session, t('ccAgent.common.unnamedSession'));
           const relative = formatSidebarTime(new Date(interruptedAt).toISOString(), t);
           const meta = [
             botName ?? sourceLabels.get(session.id),

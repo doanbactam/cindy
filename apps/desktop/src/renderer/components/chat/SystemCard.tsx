@@ -68,8 +68,8 @@ interface SystemCardProps {
     | 'voice-call'
     | 'mcp-app'
     | 'input-handoff'
-    | 'cindy-make-doctor'
-    | 'cindy-make'
+    /** Row left by the removed Cindy Make; MessageStream hides these rows. */
+    | 'retired-cindy-make'
     | 'help'
     | 'cost'
     | 'context'
@@ -79,7 +79,6 @@ interface SystemCardProps {
     | 'cmd'
     | 'goal-complete'
     | 'goal-resumed'
-    | 'cindy-make-complete'
     | 'learn'
     | 'review'
     | 'auto-resume'
@@ -1534,11 +1533,6 @@ export function SystemCard({
   workingDir,
   autoResumeInFlight,
 }: SystemCardProps) {
-  if (
-    cardType === 'cindy-make-doctor' ||
-    cardType === 'cindy-make' ||
-    cardType === 'cindy-make-complete'
-  ) return null;
   switch (cardType) {
     case 'help':
       return <HelpCard data={data} />;
@@ -1583,6 +1577,7 @@ export function SystemCard({
     case 'review':
       return <ReviewCard data={data} workingDir={workingDir} />;
     case 'voice-call':
+    case 'retired-cindy-make':
       return null;
     case 'bot-session-task-message':
       return <BotSessionTaskMessageTrace data={data} />;

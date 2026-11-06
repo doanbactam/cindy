@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { createSourceFile, forEachChild, isCallExpression, isFunctionDeclaration, isVariableDeclaration, ScriptTarget, transpileModule, type Node } from 'typescript';
 import { describe, expect, it, vi } from 'vitest';
-import { assertCindyMakeEnabled, assertCindyMakeSessionAvailable } from '../../cindy-make/featureGate';
+import { assertCindyMakeSessionAvailable } from '../legacyCindyMakeSession';
 import { assertReviewSessionExternalInputAllowed } from '../../reviewer/reviewSessionInputPolicy';
 
 const source = createSourceFile('register.ts', readFileSync(new URL('../register.ts', import.meta.url), 'utf8'), ScriptTarget.Latest, true);
@@ -22,9 +22,8 @@ function bind(expression: string, deps: Record<string, unknown>) {
   return new Function(...Object.keys(deps), compiled)(...Object.values(deps));
 }
 
-describe('disabled Cindy Make execution', () => {
-  it('refuses direct feature operations and both persisted purposes but leaves ordinary sources available', () => {
-    expect(assertCindyMakeEnabled).toThrow(/\[UNSUPPORTED_CAPABILITY\]/);
+describe('removed Cindy Make tasks', () => {
+  it('refuses both persisted purposes but leaves ordinary sources available', () => {
     for (const source of ['cindy-make', 'cindy-make-merge']) {
       expect(() => assertCindyMakeSessionAvailable(source)).toThrow(/\[UNSUPPORTED_CAPABILITY\]/);
     }

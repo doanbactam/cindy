@@ -249,7 +249,6 @@ export function PinnedSection({
         visibleSessions,
         allKnownProjects,
         t('ccAgent.sidebar.dialogues'),
-        t('settings.cindyMake.title'),
       ),
     [visibleSessions, allKnownProjects, t],
   );

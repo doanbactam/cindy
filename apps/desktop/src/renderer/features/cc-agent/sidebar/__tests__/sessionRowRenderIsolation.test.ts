@@ -32,8 +32,6 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import type { Session } from '@/lib/ccAgent.types';
-import { cindyMakeState } from '@/lib/cindyMakeState';
-import type { CindyMakeGlobalState, MakeDoctorReport } from '../../../../../shared/cindyMakeDoctor';
 import { addSessionAttention, clearSessionAttention } from '@/lib/sessionAttentionStore';
 import { SessionAttentionUrgencyProvider } from '../../contexts/SessionAttentionUrgencyContext';
 import { SPLIT_GROUP_SESSION_MIME } from '../../splitGroupDnd';
@@ -190,96 +188,6 @@ afterEach(() => {
 });
 
 // ── 不变量 1:memo 包裹(结构断言 + 源码断言双保险) ──────────────────────────
-
-describe('SessionItem — Cindy Make preparation', () => {
-  it('keeps a personal build running outside an Agent turn without waking unrelated rows', () => {
-    let state: CindyMakeGlobalState = {};
-    const listeners = new Set<() => void>();
-    vi.spyOn(cindyMakeState, 'getSnapshot').mockImplementation(() => state);
-    vi.spyOn(cindyMakeState, 'subscribe').mockImplementation((listener) => {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    });
-    const makeA = { ...sessionA, source: 'cindy-make' as const };
-    const makeB = { ...sessionB, source: 'cindy-make' as const };
-    const remote = { ...makeSession('remote-build'), source: 'cindy-make' as const, deviceLinkDeviceId: 'other-device' };
-    render(rowsElement([makeA, makeB, remote], new Set()));
-    const baselineB = renderCounts.get(makeB.id);
-    const baselineRemote = renderCounts.get(remote.id);
-    const publish = (next: CindyMakeGlobalState) => act(() => {
-      state = next;
-      listeners.forEach((listener) => listener());
-    });
-    publish({ personalBuildSessionIds: [makeA.id, remote.id] });
-    expect(screen.getByTestId(makeA.id).getAttribute('data-running')).toBe('true');
-    expect(screen.getByTestId(makeB.id).getAttribute('data-running')).toBe('false');
-    expect(screen.getByTestId(remote.id).getAttribute('data-running')).toBe('false');
-    const baselineA = renderCounts.get(makeA.id);
-    publish({ personalBuildSessionIds: [makeA.id, remote.id], source: { status: 'ready', path: 'source' } });
-    expect(renderCounts.get(makeA.id)).toBe(baselineA);
-    expect(renderCounts.get(makeB.id)).toBe(baselineB);
-    expect(renderCounts.get(remote.id)).toBe(baselineRemote);
-    // Completion/failure/cancellation all release the same Main-owned build lease.
-    publish({});
-    expect(screen.getByTestId(makeA.id).getAttribute('data-running')).toBe('false');
-  });
-  it('shows preparation as activity and redraws only when this task changes phase', () => {
-    let state: CindyMakeGlobalState = {};
-    const listeners = new Set<() => void>();
-    vi.spyOn(cindyMakeState, 'getSnapshot').mockImplementation(() => state);
-    const subscribe = vi.spyOn(cindyMakeState, 'subscribe').mockImplementation((listener) => {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    });
-    const makeA = { ...sessionA, source: 'cindy-make' as const };
-    const makeB = { ...sessionB, source: 'cindy-make' as const };
-    const ordinary = makeSession('ordinary');
-    const remote = {
-      ...makeSession('remote'),
-      source: 'cindy-make' as const,
-      deviceLinkDeviceId: 'device',
-    };
-    render(rowsElement([makeA, makeB, ordinary, remote], new Set()));
-    expect(subscribe).toHaveBeenCalledTimes(2);
-    const baselineB = renderCounts.get(makeB.id);
-    const baselineOrdinary = renderCounts.get(ordinary.id);
-    const baselineRemote = renderCounts.get(remote.id);
-    let report: MakeDoctorReport = {
-      runId: 'make-run',
-      platform: 'win32',
-      arch: 'x64',
-      checks: [],
-      status: 'running',
-      task: { sessionId: makeA.id, phase: 'workspace' },
-    };
-    const publish = () =>
-      act(() => {
-        state = { tasks: { [report.runId]: report } };
-        listeners.forEach((listener) => listener());
-      });
-    publish();
-    expect(screen.getByTestId(makeA.id).getAttribute('data-running')).toBe('true');
-    expect(screen.getByText('cindyMake.code.phases.workspace')).toBeTruthy();
-    report = { ...report, task: { ...report.task!, phase: 'dependencies' } };
-    publish();
-    expect(screen.getByText('cindyMake.code.phases.dependencies')).toBeTruthy();
-    const baselineA = renderCounts.get(makeA.id);
-    report = { ...report, task: { ...report.task!, dependencies: { added: 42, reused: 200 } } };
-    publish();
-    expect(renderCounts.get(makeA.id)).toBe(baselineA);
-    expect(renderCounts.get(makeB.id)).toBe(baselineB);
-    expect(renderCounts.get(ordinary.id)).toBe(baselineOrdinary);
-    expect(renderCounts.get(remote.id)).toBe(baselineRemote);
-    for (const status of ['failed', 'cancelled', 'completed'] as const) {
-      report = { ...report, status };
-      publish();
-      expect(screen.getByTestId(makeA.id).getAttribute('data-running')).toBe('false');
-      expect(screen.queryByText('cindyMake.code.phases.dependencies')).toBeNull();
-    }
-  });
-});
 
 describe('SessionItem — memo 包裹', () => {
   it('导出的是 React.memo 组件', () => {

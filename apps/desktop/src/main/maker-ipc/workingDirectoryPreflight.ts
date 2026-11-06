@@ -10,9 +10,6 @@ export interface WorkingDirectoryPreflightDeps {
   workingDirectoryRecovery: ReturnType<typeof createWorkingDirectoryRecovery>;
   statWorkingDirectory(dir: string): Promise<SessionWorkingDirectoryStat>;
   readBoundWorkingDir(sessionId: string): Promise<string | null | readonly (string | null)[]>;
-  getUserDataPath(): string;
-  isCindyMakeWorktreePath(userData: string, dir: string): boolean;
-  assertCindyMakeWorkspace(userData: string, dir: string): Promise<unknown>;
   getManagedWorktreeBasePath(dir: string): string | null;
   getManagedWorktreeReadinessForSession(sessionId: string, dir: string): Promise<'ready' | 'gone' | 'retry'>;
   findSimilarDirOnDisk(dir: string): Promise<string | null>;
@@ -25,8 +22,8 @@ export interface WorkingDirectoryPreflightDeps {
 /** Timeout is uncertainty, not absence. Keep recovery and missing broadcasts behind evidence. */
 export function createWorkingDirectoryPreflight(deps: WorkingDirectoryPreflightDeps) {
   const {
-    workingDirectoryRecovery, statWorkingDirectory, readBoundWorkingDir, getUserDataPath,
-    isCindyMakeWorktreePath, assertCindyMakeWorkspace, getManagedWorktreeBasePath,
+    workingDirectoryRecovery, statWorkingDirectory, readBoundWorkingDir,
+    getManagedWorktreeBasePath,
     getManagedWorktreeReadinessForSession, findSimilarDirOnDisk, listActiveSessions,
     emitWorkDirMissingError, workdirLog, log,
   } = deps;
@@ -43,8 +40,6 @@ export function createWorkingDirectoryPreflight(deps: WorkingDirectoryPreflightD
     // 或者 agent 真跑起来时由远端 codex 自己报 ENOENT)。这里直接放行。
     if (remoteHostId) return true;
     if (!requestedWorkingDir?.trim()) return true;
-    const cindyMakeWorkspace = isCindyMakeWorktreePath(getUserDataPath(), requestedWorkingDir);
-    if (cindyMakeWorkspace) workingDirectoryRecovery.discard(sessionId);
     let workingDir = workingDirectoryRecovery.resolve(sessionId, requestedWorkingDir);
     const source: AgentKind = agentKind === 'codex' || agentKind === 'pi' ? agentKind : 'claude-code';
     // suppressMissingBroadcast: 调用方(SEND 事务)手里还有 DB 权威值可兜底时,
@@ -57,10 +52,9 @@ export function createWorkingDirectoryPreflight(deps: WorkingDirectoryPreflightD
       usingFallback: workingDirectoryRecovery.isFallback(sessionId, workingDir),
     };
     try {
-      if (cindyMakeWorkspace) await assertCindyMakeWorkspace(getUserDataPath(), workingDir);
       // Reuse a previously selected conversation-recovery directory before probing
       // the original path. This lookup must not allocate a new directory.
-      if (!cindyMakeWorkspace &&
+      if (
         !workingDirectoryRecovery.isFallback(sessionId, workingDir) &&
         getManagedWorktreeBasePath(path.resolve(workingDir).replace(/\\/g, '/')) === null) {
         if (!await workingDirectoryRecovery.recover(sessionId, workingDir, undefined, [], 'ordinary', { existingFallbackOnly: true })) {
@@ -126,7 +120,7 @@ export function createWorkingDirectoryPreflight(deps: WorkingDirectoryPreflightD
       // may observe `git worktree add` before snapshot apply finishes, and a previous apply conflict
       // deliberately leaves the directory present while keeping the session blocked.
       if (!await ensureManagedWorktreeReady(true)) return false;
-      if (!cindyMakeWorkspace && getManagedWorktreeBasePath(normalizedWorkingDir) === null) {
+      if (getManagedWorktreeBasePath(normalizedWorkingDir) === null) {
         if (!await workingDirectoryRecovery.recover(sessionId, workingDir)) {
           (suppress ? workdirLog.debug : workdirLog.warn)('workdir preflight rejected', { ...diagnosticContext, reason: 'recovery-failed-after-stat' });
           return false;
@@ -178,10 +172,6 @@ export function createWorkingDirectoryPreflight(deps: WorkingDirectoryPreflightD
           return false;
         }
         throw error;
-      }
-      if (cindyMakeWorkspace) {
-        if (!suppress) emitWorkDirMissingError(sessionId, workingDir, source, 'not-exist');
-        return false;
       }
       // Cindy 托管 worktree 被外部 PR cleanup / 手动 git 命令移除时，先按 DB 中
       // 的精确 worktree_path 从本地或 origin tracking 分支重建，保留原代码与快照。

@@ -30,7 +30,7 @@ import {
   projectKeyComparisonKey,
 } from '../../shared/projectKeys';
 import { normalizeWorkingDirForComparison, normalizeWorkingDirForGrouping } from '../../shared/workingDir';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 
 export interface ConversationSearchDevice {
   deviceId: string;
@@ -258,7 +258,7 @@ export function remoteResultsFromFanoutPages(
   const byKey = new Map<string, ConversationSearchResultItem>();
   for (const page of pages) {
     for (const item of page.results) {
-      if (!CINDY_MAKE_ENABLED && isCindyMakeSource(item.session.source)) continue;
+      if (isCindyMakeSource(item.session.source)) continue;
       if (!item.session.deviceLinkDeviceId) continue;
       const key = conversationSearchResultKey(item);
       const existing = byKey.get(key);
@@ -278,7 +278,7 @@ export function mergeConversationSearchFanout(
   const byKey = new Map<string, ConversationSearchResultItem>();
   for (const page of pages) {
     for (const item of page.results) {
-      if (!CINDY_MAKE_ENABLED && isCindyMakeSource(item.session.source)) continue;
+      if (isCindyMakeSource(item.session.source)) continue;
       const key = conversationSearchResultKey(item);
       const existing = byKey.get(key);
       if (!existing || item.rankScore > existing.rankScore) {
@@ -324,7 +324,7 @@ export function searchCachedSessionsByTitle(
 
   sessions.forEach((session, index) => {
     // The mirror includes companion chat metadata; ordinary search must not expose it.
-    if (session.source === 'bot' || (!CINDY_MAKE_ENABLED && isCindyMakeSource(session.source)) || isOrcaWorkerSession(session)) return;
+    if (session.source === 'bot' || (isCindyMakeSource(session.source)) || isOrcaWorkerSession(session)) return;
     if (allowed && !allowed.has(session.id)) return;
     if (!matchesWorkingDirSet(session.projectDir ?? session.workingDir, workingDirs)) return;
     if (!matchesStatus(session.status, filters.status ?? 'all')) return;
@@ -421,7 +421,7 @@ export function filterResultsByRequestFilters(
   return {
     ...response,
     results: response.results.filter((item) => {
-      if (!CINDY_MAKE_ENABLED && isCindyMakeSource(item.session.source)) return false;
+      if (isCindyMakeSource(item.session.source)) return false;
       if (!matchesWorkingDirSet(item.session.projectDir ?? item.session.workingDir, allowedDirs)) return false;
       if (isOrcaWorkerSession(item.session)) return false;
       if (!matchesStatus(item.session.status, status)) return false;

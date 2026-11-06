@@ -1,4 +1,3 @@
-import { CINDY_MAKE_ENABLED } from '@cindy/maker-shared/cindy-make-feature';
 
 export const SESSION_SOURCES = [
   'desktop',
@@ -71,8 +70,8 @@ export function isReviewSessionSource(source: unknown): source is 'review' {
 //         projectGrouping 对零消息的 plugin 会话豁免草稿判定,直接落项目分组)。
 // bot: 伙伴任务通过 bot_session_links 区分：routine/channel 进普通任务列表并标归属；
 //      canonical/thread/group 保留伙伴入口。不能仅按 source 把所有伙伴任务放入列表。
-// cindy-make: /cindy-make 弹窗选择制作个人版后创建的代码任务，工作目录是 Cindy 受管
-//      源码。Main 据此注入 cindy_make 工具与任务说明；按 workingDir 归到源码项目分组。
+// cindy-make / cindy-make-merge: 已移除的 Cindy Make 遗留任务；数据保留，但不进入任何列表，
+//      主进程拒绝再运行（见 maker-ipc/legacyCindyMakeSession.ts）。
 export const DESKTOP_VISIBLE_SESSION_SOURCES: SessionSource[] = [
   'side-chat',
   'desktop',
@@ -89,7 +88,6 @@ export const DESKTOP_VISIBLE_SESSION_SOURCES: SessionSource[] = [
   'review',
   'shared',
   'plugin',
-  ...(CINDY_MAKE_ENABLED ? (['cindy-make', 'cindy-make-merge'] as const) : []),
 ];
 
 /**

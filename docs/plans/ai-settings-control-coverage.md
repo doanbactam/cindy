@@ -80,7 +80,6 @@ Pi 先 `cindy_mcp_list_tools({server:"cindy_helper",tool:"list_tools"})`，再�
 | SessionImportSection | 已有扫描/导入工具 | 本批未新增导入器设置 |
 | SettingsCatalogPanel | 已有插件工具独立管理 | 插件设置不并入任意配置键写入；按插件实际能力发现 |
 | SharedTasks | 已有共享任务界面/身份规则 | 共享管理未由本批通用设置接口覆盖 |
-| CindyMakeSection | 原有能力保持 | Maker 设置未纳入本批 |
 | BillingSettings | 原账户/计费流程 | 充值/订阅等不由本批通用设置代为提交 |
 | UsageHistorySection | 原用量查询保持 | 导出/历史管理未纳入本批 |
 | StorageManagementCard | 原存储管理保持 | 清理/回收、数据库整理与告警阈值未接通 |

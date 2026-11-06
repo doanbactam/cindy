@@ -38,7 +38,6 @@ import {
   CircleAlert,
   CirclePlus,
   Folder,
-  Hammer,
   Loader2,
   SquarePen,
   Trash2,
@@ -47,7 +46,7 @@ import {
 import { useNavigate, useMatch, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { projectDraftSessionTitle } from '@cindy/maker-shared/session-title';
-import { CINDY_MAKE_ENABLED, isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
+import { isCindyMakeSource } from '@cindy/maker-shared/cindy-make-feature';
 
 import { cn } from '@/lib/utils';
 import { provisionalDraftTaskId, subscribeProvisionalDraftTask } from './provisionalDraftTask';
@@ -201,7 +200,7 @@ import {
   SessionGroupNode,
   viewedPriorityHold,
 } from './sidebar/sections/ProjectsSection';
-import { advanceViewedPriorityHold, partitionCindyMakeSessions, sortSessionsForMainList } from './lib/mainListModel';
+import { advanceViewedPriorityHold, sortSessionsForMainList } from './lib/mainListModel';
 import { toStoredSessionTitle } from './lib/sessionDisplayTitle';
 import {
   getVisibleSidebarSessionIds,
@@ -451,9 +450,7 @@ export function CCAgentSidebarUpper() {
   const sessionsHook = useCCSessions({ includeArchived });
   const { sessions: allSessionsForAttentionRaw } = useCCSessions({ includeArchived: 'all' });
   const allSessionsForAttention = useMemo(
-    () => CINDY_MAKE_ENABLED
-      ? allSessionsForAttentionRaw
-      : allSessionsForAttentionRaw.filter((session) => !isCindyMakeSource(session.source)),
+    () => allSessionsForAttentionRaw.filter((session) => !isCindyMakeSource(session.source)),
     [allSessionsForAttentionRaw],
   );
   const remoteProjectSessionsRaw = useSyncExternalStore(
@@ -461,9 +458,7 @@ export function CCAgentSidebarUpper() {
     remoteProjectsStore.getMergedRemoteSessions,
   );
   const remoteProjectSessions = useMemo(
-    () => CINDY_MAKE_ENABLED
-      ? remoteProjectSessionsRaw
-      : remoteProjectSessionsRaw.filter((session) => !isCindyMakeSource(session.source)),
+    () => remoteProjectSessionsRaw.filter((session) => !isCindyMakeSource(session.source)),
     [remoteProjectSessionsRaw],
   );
   const remoteDevices = useRemoteDevices();
@@ -631,7 +626,7 @@ export function CCAgentSidebarUpper() {
   }, [filter.status, remoteDevices, selectedMachineId]);
   const sessionsWithRemote = useMemo(
     () => selectVisibleSessions(sessionsHook.sessions, remoteProjectSessions, selectedMachineId)
-      .filter((session) => CINDY_MAKE_ENABLED || !isCindyMakeSource(session.source))
+      .filter((session) => !isCindyMakeSource(session.source))
       .filter(session => !session.deviceLinkDeviceId || !isSharedTaskPeer(session.deviceLinkDeviceId)),
     [sessionsHook.sessions, remoteProjectSessions, selectedMachineId],
   );
@@ -921,9 +916,7 @@ function ExpandedView({
   const location = useLocation();
   const localPlatform = window.electronAPI.platform;
   const sessions = useMemo(
-    () => CINDY_MAKE_ENABLED
-      ? sessionsHook.sessions
-      : sessionsHook.sessions.filter((session) => !isCindyMakeSource(session.source)),
+    () => sessionsHook.sessions.filter((session) => !isCindyMakeSource(session.source)),
     [sessionsHook.sessions],
   );
   const { refreshSessions, patchLocal, effectiveIncludeArchived } = sessionsHook;
@@ -1221,7 +1214,7 @@ function ExpandedView({
         allSessionsForNotificationRef.current,
         remoteSessionsForNotificationRef.current,
       ]);
-      if (!CINDY_MAKE_ENABLED && session && isCindyMakeSource(session.source)) return;
+      if (session && isCindyMakeSource(session.source)) return;
       // Orca Worker 的完成不发独立通知 —— 等 Lead 接到 worker_report 处理完再以 Lead
       // 名义统一推一条。出错与需要确认要用户本人处理,单独通知,标题带上所属 Lead;
       // 点击按 Worker id 走 resolveSessionRoute,落到 Lead 并打开该 Worker。
@@ -1402,9 +1395,7 @@ function ExpandedView({
   // 远端会话不在本地 DB,故走独立 store,不污染 sessionsStore / 本地链路。
   const remoteProjectSessionsRaw = useRemoteProjectSessions();
   const remoteProjectSessions = useMemo(
-    () => CINDY_MAKE_ENABLED
-      ? remoteProjectSessionsRaw
-      : remoteProjectSessionsRaw.filter((session) => !isCindyMakeSource(session.source)),
+    () => remoteProjectSessionsRaw.filter((session) => !isCindyMakeSource(session.source)),
     [remoteProjectSessionsRaw],
   );
   // 机器切换栏选中机器后整体过滤:本机 → 只本地会话;远程 → 只该机器会话。
@@ -4016,7 +4007,6 @@ function ExpandedView({
           与「显示全部」),见 railPanelStore 头注。 */}
       <RailPanels
         projects={visibleRailProjectsWithVendor}
-        sortBy={filter.sortBy}
         pinnedProjectKeys={pinnedProjectKeys}
         unclassified={railUnclassified}
         dialogues={railDialogues}
@@ -4275,7 +4265,6 @@ function RailPanelShell({
 }
 
 interface RailPanelsProps {
-  sortBy: Parameters<typeof sortSessionsForMainList>[1];
   projects: ProjectNode[];
   pinnedProjectKeys: ReadonlySet<string>;
   /** 未分类(草稿等)会话——展开态 UnclassifiedSection 同源,面板内平铺在项目列表之上。 */
@@ -4324,7 +4313,6 @@ function RailPanels({
   pinnedProjectKeys,
   unclassified: inputUnclassified,
   dialogues: inputDialogues,
-  sortBy,
   activeSessionId,
   viewedSessionId,
   runningSessionIds,
@@ -4346,16 +4334,9 @@ function RailPanels({
   onRemoveProjectFromSidebar,
 }: RailPanelsProps) {
   const { t } = useTranslation();
-  const { projects, dialogues, unclassified, cindyMake } = useMemo(
-    () =>
-      partitionCindyMakeSessions({
-        projects: inputProjects,
-        dialogues: inputDialogues,
-        unclassified: inputUnclassified,
-      }),
-    [inputProjects, inputDialogues, inputUnclassified],
-  );
-  const [cindyMakeCollapsed, setCindyMakeCollapsed] = useState(false);
+  const projects = inputProjects;
+  const dialogues = inputDialogues;
+  const unclassified = inputUnclassified;
   const panelState = useSyncExternalStore(railPanelStore.subscribe, railPanelStore.getSnapshot);
   // 项目行右键菜单(「在此项目内新建」)——controlled DropdownMenu + 不可见
   // trigger 跟坐标(Automations 菜单同款模式)。
@@ -4382,7 +4363,6 @@ function RailPanels({
     if (panelState.openSection !== 'projects') {
       setShowAllProjects(false);
       setProjectMenu(null);
-      setCindyMakeCollapsed(false);
     }
   }, [panelState.openSection]);
 
@@ -4408,10 +4388,10 @@ function RailPanels({
   // RailNav 的段灯据此聚合(review P2「灯绕过筛选/截断」两条的根治)。
   useEffect(() => {
     railPanelStore.setLampScope({
-      projectSessions: [...projects.flatMap((p) => p.sessions), ...unclassified, ...cindyMake],
+      projectSessions: [...projects.flatMap((p) => p.sessions), ...unclassified],
       dialogueSessions: dialogues,
     });
-  }, [projects, unclassified, dialogues, cindyMake]);
+  }, [projects, unclassified, dialogues]);
 
   // 键盘打开(popover 焦点契约,DESIGN.md §14.2):焦点移入一级面板的首个
   // 可聚焦元素(对话面板=头部新建钮/项目面板=首行),Tab 不再穿越 portal 间隔
@@ -4548,23 +4528,6 @@ function RailPanels({
 
   // 远程活动镜像整表版本号:项目行聚合灯 / 折叠豁免要跟上被控端 relay 推送。
   const remoteActivityRevision = useRemoteSessionActivityRevision();
-  const cindyMakeSessions = useMemo(() => {
-    const running = new Set(runningSessionIds);
-    const attention = new Set(notifications);
-    const waiting = new Set(urgentSet);
-    for (const session of cindyMake) {
-      const remote = remoteLampOf(session.id, session.deviceLinkDeviceId);
-      if (remote?.running) running.add(session.id);
-      if (remote?.tone) attention.add(session.id);
-      if (remote?.tone === 'error' || remote?.tone === 'awaiting') waiting.add(session.id);
-    }
-    return sortSessionsForMainList(cindyMake, sortBy, {
-      runningSessionIds: running,
-      attentionSessionIds: attention,
-      waitingSessionIds: waiting,
-    });
-  }, [cindyMake, sortBy, runningSessionIds, notifications, urgentSet, remoteActivityRevision]);
-
   // 可见性口径的「当前会话」:files 路由下 activeSessionId 为 undefined,被浏览
   // 文件的会话若排在折叠上限外且无灯语会被折进「显示全部」(codex review)。
   // 只喂给折叠豁免(isActiveEntry)与行高亮;点击导航仍走真实 activeSessionId。
@@ -4594,12 +4557,11 @@ function RailPanels({
     };
     collect(dialogues);
     collect(unclassified);
-    collect(cindyMake);
     for (const p of projects) collect(p.sessions);
     if (remoteIds.length === 0) return notifications;
     return new Set([...notifications, ...remoteIds]);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- remoteActivityRevision 代表 remoteLampOf 读到的整表内容
-  }, [notifications, dialogues, unclassified, projects, cindyMake, remoteActivityRevision]);
+  }, [notifications, dialogues, unclassified, projects, remoteActivityRevision]);
 
   // 项目列表折叠:纯硬性上限(ProjectsSection 同口径,默认 20)+「显示全部 N 项」。
   const projectsView = useMemo(
@@ -4733,23 +4695,9 @@ function RailPanels({
           <>
             {panelHead(
               t('ccAgent.sidebar.railNav.projects'),
-              projects.length + (cindyMake.length ? 1 : 0),
+              projects.length,
             )}
             <div className="max-h-[420px] overflow-y-auto [scrollbar-width:thin]">
-              {cindyMake.length > 0 && (
-                <SessionGroupNode
-                  sessions={cindyMakeSessions}
-                  {...entryListShared}
-                  groupTitle={t('settings.cindyMake.title')}
-                  groupIcon={<Hammer size={15} strokeWidth={1.8} className="shrink-0" aria-hidden />}
-                  collapsed={cindyMakeCollapsed}
-                  onToggle={() => setCindyMakeCollapsed((value) => !value)}
-                  isCreateDisabled={false}
-                  parentSectionCollapsed={false}
-                  disableSessionCollapse={false}
-                  sessionVariant="text"
-                />
-              )}
               {/* 未分类(草稿等)会话:展开态渲染在项目树之前(UnclassifiedSection,
                   无标题纯列表),面板同形同序——折叠态不能让它们不可达(review P2)。 */}
               {unclassified.length > 0 && (

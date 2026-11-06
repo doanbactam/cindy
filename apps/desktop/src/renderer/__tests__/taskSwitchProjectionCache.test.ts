@@ -81,8 +81,7 @@ describe('history projection across message-view mounts', () => {
     for (const changed of [
       { ...options, historyWindowIncomplete: true }, { ...options, workingDir: '/b' },
       { ...options, botSessionId: 'b' }, { ...options, turnChangeSets: [] },
-      { ...options, historyArtifacts: [] }, { ...options, cindyMakeSessionId: 'make' },
-      { ...options, cindyMakeCompletionInComposer: true },
+      { ...options, historyArtifacts: [] },
     ]) {
       const base = buildCachedRenderItems(messages, tasks, ghost, options);
       expect(buildCachedRenderItems(messages, tasks, ghost, changed)).not.toBe(base);

@@ -17,18 +17,11 @@ import { clearCurrentDbClient, setCurrentDbClient } from '../client/current.js';
 import * as schema from '../schema.js';
 import { listErrorTailPendingRows } from '../sessionActiveTurn.js';
 
-const feature = vi.hoisted(() => ({ enabled: false }));
-vi.mock('@cindy/maker-shared/cindy-make-feature', async (importOriginal) => ({
-  ...await importOriginal<typeof import('@cindy/maker-shared/cindy-make-feature')>(),
-  get CINDY_MAKE_ENABLED() { return feature.enabled; },
-}));
-
 describe('sessionActiveTurn', () => {
   let currentClient: DbClient | null = null;
   let rawDb: Database.Database | null = null;
 
   afterEach(async () => {
-    feature.enabled = false;
     const { _resetSessionActiveTurnStateForTests } = await import('../sessionActiveTurn.js');
     _resetSessionActiveTurnStateForTests();
     vi.restoreAllMocks();
@@ -753,52 +746,22 @@ describe('sessionActiveTurn', () => {
     expect(await hasAssistantProgressAfterMessage('s-same-ms', 'c-user2')).toBe(true);
   });
 
-  it('restores native Make failures only while enabled and preserves hidden failure history', async () => {
+  it('never raises alerts for legacy Make completion rows and preserves their history', async () => {
     const { listErrorTailPendingSessionIds } = await import('../sessionActiveTurn.js');
-    feature.enabled = true;
     const client = createTestDbClient();
     const at = Date.now();
-    const insert = async (id: string, completion: unknown, options: {
-      source?: string; status?: string; clearedAt?: number; rewindAt?: number; content?: unknown;
-    } = {}) => {
-      await seedSession(client, id, { source: options.source ?? 'cindy-make', ...options });
-      await client.exec(
-        'INSERT INTO messages (id, client_id, session_id, role, content, agent_meta, created_at, rewind_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [id, id, id, 'assistant', JSON.stringify(options.content ?? ''),
-          JSON.stringify({ cindyMakeCompletion: completion }), at, options.rewindAt ?? null],
-      );
-    };
     const failed = { reportedAt: at, lastAction: 'build', personal: { status: 'failed', error: 'buildFailed' } };
-    await insert('make-failed', failed);
-    await insert('make-test-failed', { reportedAt: at, lastAction: 'test', test: { status: 'failed' } });
-    await insert('make-interrupted', { reportedAt: at, lastAction: 'test', test: { status: 'stopped', error: 'interrupted' } });
-    await insert('make-preparation', null, { content: { __cindyMakeCard: { type: 'cindy-make',
-      data: { report: { runId: 'run', status: 'failed' } } } } });
-    await insert('make-continued', { ...failed, continuedAt: at + 1 });
-    await insert('make-cancelled', { ...failed, personal: { status: 'failed', error: 'cancelled' } });
-    await insert('make-retried', { ...failed, personal: { status: 'checking' } });
-    await insert('make-new-test', { ...failed, lastAction: 'test', test: { status: 'ready' } });
-    await insert('make-rewound', failed, { rewindAt: at + 1 });
-    await insert('make-cleared', failed, { clearedAt: at });
-    await insert('make-archived', failed, { status: 'archived' });
-    await insert('ordinary-task', failed, { source: 'desktop' });
-    await insert('make-merge-failed', failed, { source: 'cindy-make-merge' });
-    await insert('make-later-user', failed);
-    await client.exec('INSERT INTO messages (id, client_id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-      ['later', 'later', 'make-later-user', 'user', '{}', at]);
-    expect((await listErrorTailPendingSessionIds()).sort()).toEqual([
-      'make-failed', 'make-interrupted', 'make-preparation', 'make-test-failed',
-    ]);
-    feature.enabled = false;
+    for (const [id, source] of [['make-failed', 'cindy-make'], ['make-merge-failed', 'cindy-make-merge']]) {
+      await seedSession(client, id, { source });
+      await client.exec(
+        'INSERT INTO messages (id, client_id, session_id, role, content, agent_meta, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, id, id, 'assistant', JSON.stringify(''), JSON.stringify({ cindyMakeCompletion: failed }), at],
+      );
+    }
     expect(await listErrorTailPendingSessionIds()).toEqual([]);
     expect(await client.queryOne('SELECT agent_meta FROM messages WHERE id = ?', ['make-failed'])).toEqual({
       agent_meta: JSON.stringify({ cindyMakeCompletion: failed }),
     });
-    feature.enabled = true;
-    await client.exec('UPDATE messages SET agent_meta = ? WHERE id = ?', [
-      JSON.stringify({ cindyMakeCompletion: { ...failed, personal: { status: 'waiting' } } }), 'make-failed',
-    ]);
-    expect(await listErrorTailPendingSessionIds()).not.toContain('make-failed');
   });
 
   it('listErrorTailPendingRows preserves visible tail identities for alert dismissal', async () => {
