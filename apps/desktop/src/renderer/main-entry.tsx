@@ -18,18 +18,12 @@ import { TopLevelErrorBoundary } from './components/error/TopLevelErrorBoundary'
 import { initTapdb } from './analytics/tapdbClient';
 import { installScrollbarAutoHide } from './lib/scrollbarAutoHide';
 import { bootstrapMemorySettingsFromMain } from './lib/memorySettingsStore';
-import {
-  getVoiceInputSettings,
-  migrateLegacyVoiceInputRendererStorage,
-  syncVoiceInputGlobalShortcut,
-} from './hooks/useVoiceInputSettings';
 import { LocaleProvider } from './hooks/useLocale';
 import {
   getInitialThemeVariant,
   ThemeProvider,
 } from './hooks/useTheme';
 import { applyFontSettings, getInitialFontSettings } from './hooks/useFontSettings';
-import { ConfirmDialogProvider } from './components/ui/confirm-dialog-provider';
 import { bootstrapChatEmbeddingFromMain } from './lib/chatEmbeddingStore';
 import { bootstrapGitSafetySettingsFromMain } from './lib/gitSafetySettingsStore';
 import { bootstrapLspModeFromMain } from './lib/lspModeStore';
@@ -57,14 +51,11 @@ const disposeForegroundRecoveryDiagnostics = installForegroundRecoveryDiagnostic
 // 睡醒白屏取证:主线程阻塞漂移 + 可见无帧探针,只记日志(见模块头注释)。
 const disposeRenderLoopWatchdog = installRenderLoopWatchdog();
 // 隐藏期冻结常驻装饰动画 —— 有 running turn 时 backgroundThrottling 被主动关闭,
-// 不加这道闸门,看不见的窗口里动画会继续烧 CPU(见模块头注释)。浮窗同样适用:
-// 语音浮窗的 mic 波形也是 infinite 装饰动画。
+// 不加这道闸门,看不见的窗口里动画会继续烧 CPU(见模块头注释)。浮窗同样适用。
 const disposeHiddenAnimationGate = installHiddenAnimationGate();
 // Codex maker 化后, codex 事件流走 makerChatStore 内部的 maker:event 监听器,
 // 不再需要专门的 codex progress dispatcher。
 
-migrateLegacyVoiceInputRendererStorage();
-void syncVoiceInputGlobalShortcut(getVoiceInputSettings().shortcut);
 void bootstrapSilentEncryptedRetryFromMain();
 // 对话语义索引开关 —— 先同步 signed-out 镜像；AuthContext 提交稳定 owner 后会切换
 // owner 分区并重拉 Main 真值，迟到的启动响应会被 revision fence 丢弃。
@@ -73,13 +64,10 @@ void bootstrapChatEmbeddingFromMain();
 void bootstrapLspModeFromMain();
 
 const view = new URLSearchParams(window.location.search).get('view');
-const isVoiceInputOverlay = view === 'voice-input-overlay';
-const isVoiceInputDictionaryToast = view === 'voice-input-dictionary-toast';
 const isComputerPermissionGuide = view === 'computer-permission-guide';
 const isComputerPermissionBackdrop = view === 'computer-permission-backdrop';
 const isComputerPermissionView = isComputerPermissionGuide || isComputerPermissionBackdrop;
-const isAppearanceUtilityView =
-  isVoiceInputOverlay || isVoiceInputDictionaryToast || isComputerPermissionView;
+const isAppearanceUtilityView = isComputerPermissionView;
 document.documentElement.dataset.platform = window.electronAPI.platform;
 document.documentElement.dataset.windowBackdropMaterial =
   window.electronAPI.windowBackdropMaterial ?? 'none';
@@ -88,19 +76,16 @@ const disposeWindowBackdropMaterialChanged =
     document.documentElement.dataset.windowBackdropMaterial = material;
   }) ?? (() => {});
 import.meta.hot?.dispose(disposeWindowBackdropMaterialChanged);
-if (isVoiceInputOverlay || isVoiceInputDictionaryToast) {
-  document.documentElement.dataset.voiceInputOverlay = 'true';
-}
 if (isComputerPermissionView) {
   document.documentElement.dataset.computerPermissionOverlay = 'true';
 }
 
 // Windows-only: emulate macOS `acceptFirstMouse: false` so a click that
 // activates the window from background doesn't fall through to any in-page
-// target. Skip on voice-input overlay windows — those are click-through
+// target. Skip on computer-permission overlay windows — those are click-through
 // popups (focusable:false, acceptFirstMouse:true by design).
 const disposeSwallowActivationClick =
-  !isVoiceInputOverlay && !isVoiceInputDictionaryToast && !isComputerPermissionView
+  !isComputerPermissionView
     ? installSwallowActivationClick({
         window,
         platform: window.electronAPI?.platform ?? '',
@@ -121,8 +106,7 @@ const disposeSwallowActivationClick =
 if (import.meta.env.DEV) {
   const disposePerformanceTimelineCleanupInterval = installPerformanceTimelineCleanupInterval();
   // 交互卡顿探针(诊断用):longtask + Event Timing,只在主视图装,浮窗窗口没有交互归因价值。
-  const disposeInteractionJankProbe =
-    !isVoiceInputOverlay && !isVoiceInputDictionaryToast ? installInteractionJankProbe() : (): void => {};
+  const disposeInteractionJankProbe = installInteractionJankProbe();
   import.meta.hot?.dispose(() => {
     disposeForegroundRecoveryDiagnostics();
     disposeRenderLoopWatchdog();
@@ -175,31 +159,7 @@ void (async () => {
     return;
   }
 
-  if (isVoiceInputDictionaryToast) {
-    const { VoiceInputDictionaryToast } = await import('./voice-input/VoiceInputDictionaryToast');
-    root.render(
-      <ThemeProvider syncWindowVibrancy={false}>
-        <LocaleProvider>
-          <VoiceInputDictionaryToast />
-        </LocaleProvider>
-      </ThemeProvider>,
-    );
-    return;
-  }
 
-  if (isVoiceInputOverlay) {
-    const { VoiceInputOverlay } = await import('./voice-input/VoiceInputOverlay');
-    root.render(
-      <ThemeProvider syncWindowVibrancy={false}>
-        <LocaleProvider>
-          <ConfirmDialogProvider>
-            <VoiceInputOverlay />
-          </ConfirmDialogProvider>
-        </LocaleProvider>
-      </ThemeProvider>,
-    );
-    return;
-  }
 
   // Install the RSB control listener before any child Settings effect can ask
   // main for health. It is renderer-process scoped and must survive collapsed
@@ -217,7 +177,7 @@ void (async () => {
   await bootstrapMemorySettingsFromMain();
   await bootstrapGitSafetySettingsFromMain();
 
-  // TapDB 在线活跃上报 — 只在主视图启用,避免 voice-input 浮窗的弹出被算成 PV。
+  // TapDB 在线活跃上报 — 只在主视图启用,避免浮窗的弹出被算成 PV。
   // 这里只挂"同意闸":SDK 是否初始化由 main 的 analytics-settings 决定,用户没
   // 同意过《隐私政策》时一个字节都不会发出去(见 analytics/tapdbClient.ts)。
   initTapdb();

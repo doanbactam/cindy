@@ -7,7 +7,6 @@ export default {
   name: 'group-mask', entry: './group-mask-fixture.tsx', viewport: { width: 1040, height: 800 },
   real: 'BotGroupChatView, BotGroupComposer, ChatThreadPanel, BotGroupSettingsDrawer, ChatGroupSettings, GroupMaskControls and GroupMaskSettings',
   notCovered: 'Server identity, real agent replies, persistence, private digest delivery and cross-device presence. All events are isolated fixture data.',
-  stubs: { 'src/renderer/voice-input/workletUrl': 'export const getVoiceInputWorkletUrl = () => { throw new Error("Voice is outside this fixture"); };' },
   cases: Object.fromEntries(['default', 'paused', 'scheduled', 'manual', 'off', 'offline', 'unbound', 'error', 'loading'].map(name => [name, { about: `Personal stand-in: ${name}`, data: { selfAvatar } }])),
   async ready(page) { await page.getByTestId('group-mask-status').waitFor(); },
   async check(page, ui) {

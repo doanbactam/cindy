@@ -74,7 +74,6 @@
 | `heartbeat-client`                                        | 在线心跳：周期上报维持在线状态，零依赖                                                                                                                                | desktop                                                                            |
 | `lizi-im`                                                 | IM 传输层（飞书等 WS 通道）：凭据存储、附件下载、统一发送 API；host 注入适配                                                                                          | desktop                                                                            |
 | `project-context`                                         | agent 维护的项目知识层（commit 驱动的 markdown CLI）                                                                                                                  | desktop（maker-ipc）                                                               |
-| `voice-input-core`                                        | 语音输入核心：供应商无关的听写状态机与润色守卫                                                                                                                        | desktop                                                                            |
 
 ## 本机应用 Agent 接入
 

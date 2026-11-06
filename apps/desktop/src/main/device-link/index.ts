@@ -115,6 +115,7 @@ import {
 import {
   clearControllerPlatforms,
   getControllerPlatform,
+  isDesktopPlatform,
   isMobilePlatform,
   setControllerPlatform,
 } from './controllerPlatform';
@@ -141,16 +142,8 @@ import {
   type ControllerPresenceEvidence,
 } from './controllerPresenceDirectory';
 import { currentBusy, setBusyProbe, helloBusy, pollBusyChange, resetBusyDedupe } from './busyReporter';
-import {
-  DL_VOICE_DICTIONARY_SYNC_CHANNEL,
-  broadcastDictionaryNow,
-  handleDesktopPeerOnline,
-  handleIncomingDictionaryState,
-  initVoiceDictionarySync,
-  notifyLocalDictionaryChanged,
-  shouldExchangeDictionaryWith,
-} from '../voice-input/dictionarySyncDriver';
-import { onVoiceInputDictionaryChanged } from '../voice-input/VoiceInputDataStore';
+/** Voice dictionary sync was retired with voice input; older Desktops may still send it. */
+const RETIRED_VOICE_DICTIONARY_SYNC_CHANNEL = 'device-link:voice:dictionary:sync-state';
 import { resetAll as resetSubscriptionRefs, snapshotSubscriptions } from './subscriptionRefcount';
 import { getControllersForTopic } from './subscriptions';
 import { getKnownControllerIds } from './subscriptions';
@@ -317,7 +310,7 @@ export function applyControllerPresenceListSnapshot(
     shouldNotifyPeerOnline: ({ deviceId, online, platform }) =>
       online &&
       !isDeviceRevoked(deviceId) &&
-      shouldExchangeDictionaryWith({
+      isOnlineDesktopPeer({
         online,
         platform,
         revoked: false,
@@ -337,7 +330,6 @@ export function applyControllerPresenceListSnapshot(
     },
     onPeerControlEvidence: (deviceId, item) => evidence.set(deviceId, item),
     onPeerBecameOnline: (deviceId, platform) => {
-      handleDesktopPeerOnline(deviceId);
       replayActiveSubscriptions('directory-online', deviceId);
     },
   });
@@ -673,19 +665,27 @@ export function isPresenceFreshAfterRequest(deviceId: string, requestEpoch: numb
 }
 
 const presenceNameByDevice = new Map<string, string>();
-let unsubscribeDictionaryChanged: (() => void) | null = null;
 
 /**
- * 用户撤销过访问权限的设备,同样不参与词典同步 —— 撤销的意图是「不再跟这台设备
+ * 用户撤销过访问权限的设备,不参与电脑间的数据同步 —— 撤销的意图是「不再跟这台设备
  * 交换数据」,不只是「不许它操作我」。
  */
 function isDeviceRevoked(deviceId: string): boolean {
   return readDeviceLinkSettings().revokedControllers.includes(deviceId);
 }
 
+/** Peer-to-peer data sync only runs between online, non-revoked desktops. */
+function isOnlineDesktopPeer(device: {
+  online: boolean;
+  platform: string | undefined | null;
+  revoked: boolean;
+}): boolean {
+  return device.online && !device.revoked && isDesktopPlatform(device.platform);
+}
+
 const pluginSyncAccess = new PluginSyncAccess({
   eligible: deviceId => !!client && !isAppSessionBoundaryPending() && !isScopedPeer(deviceId) &&
-    deviceId !== client.getSelfDeviceId() && shouldExchangeDictionaryWith({
+    deviceId !== client.getSelfDeviceId() && isOnlineDesktopPeer({
       online: presenceOnlineByDevice.get(deviceId) === true,
       platform: getControllerPlatform(deviceId), revoked: isDeviceRevoked(deviceId),
     }),
@@ -1036,8 +1036,7 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
       else transportTimeoutReopen.dispose();
     }
     // 断线期间 relay 不会为对端补发 offline presence,重连后同一台电脑仍以
-    // online 到达,`wasOnline` 还是 true —— 上线握手不会触发,而断线这段时间的
-    // 改动谁也不会主动推。清空在线视图,让重连后的 presence 重新走一遍握手。
+    // online 到达。清空在线视图,让重连后的 presence 重新计算。
     // availability 同理(presence 是增量广播,verdict 只在连接代内有效,mobile
     // resetPresenceAvailabilityForConnection 同款):不清的话,断线期间目标离线
     // → 重连首轮重放吃 DEVICE_OFFLINE、退避循环被 presence 门禁按住 → 目标再
@@ -1124,7 +1123,6 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
     const { directOnline, online, available } = resolveControllerPresence(
       snap, hasOfflineDirectPath(snap.deviceId), wasAvailable,
     );
-    const wasOnline = presenceOnlineByDevice.get(snap.deviceId);
     presenceAvailableByDevice.set(snap.deviceId, available);
     presenceOnlineByDevice.set(snap.deviceId, online);
     // 权威 presence 已宣布不可用(离线 / 关被控):「响应性」判定失去意义,清熔断状态
@@ -1163,19 +1161,6 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
     // 收敛)。
     if (available && wasAvailable !== true) {
       replayActiveSubscriptions(`presence-online:${snap.deviceId.slice(0, 8)}`, snap.deviceId);
-    }
-    // 词典同步不看「允许被控」开关(push 帧不是控制类帧,这是自己设备之间的数据
-    // 流动),但撤销过的设备必须排除 —— 判定统一走 shouldExchangeDictionaryWith,
-    // 三个入口共用一份条件。
-    if (
-      wasOnline !== true &&
-      shouldExchangeDictionaryWith({
-        online: snap.online,
-        platform: snap.platform,
-        revoked: isDeviceRevoked(snap.deviceId),
-      })
-    ) {
-      handleDesktopPeerOnline(snap.deviceId);
     }
   });
 
@@ -1268,23 +1253,8 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
       return;
     }
     const sourceEpoch = sharedHostStreams.get(env.src)?.epoch;
-    // 词典同步帧在 main 侧消费,不转给 renderer —— 它不是远程视图事件,
-    // renderer 也不该看到别的设备的同步状态。
-    if (p?.channel === DL_VOICE_DICTIONARY_SYNC_CHANNEL) {
-      // 入站与出站走同一份准入判定:这条通道承载的是可写 CRDT 状态,只接受电脑
-      // 对端。手机在这套设计里是只读消费者(走 invoke 拉快照),不该能推状态过来
-      // 改桌面词典 —— 出站已经这么把关了,入站漏掉就等于白设。
-      if (
-        shouldExchangeDictionaryWith({
-          online: true,
-          platform: getControllerPlatform(env.src),
-          revoked: isDeviceRevoked(env.src),
-        })
-      ) {
-        handleIncomingDictionaryState(env.src, p.payload);
-      }
-      return;
-    }
+    // 已下线的语音词典同步帧:旧版电脑仍可能发来,直接丢弃,不转给 renderer。
+    if (p?.channel === RETIRED_VOICE_DICTIONARY_SYNC_CHANNEL) return;
     if (p?.channel === PLUGIN_SYNC_CHANNEL) {
       if (pluginSyncAccess.receive(env.src, p.payload)) return;
       void pluginDeviceSync.receive(env.src, p.payload);
@@ -1317,22 +1287,6 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
     });
   });
 
-  // 词典对等同步:传输能力注入驱动,驱动只管什么时候发、发给谁。
-  initVoiceDictionarySync({
-    sendState: (deviceId, payload) => {
-      client?.sendPush(deviceId, DL_VOICE_DICTIONARY_SYNC_CHANNEL, payload);
-    },
-    listOnlineDesktopDevices: () =>
-      [...presenceOnlineByDevice.entries()]
-        .filter(([deviceId, online]) =>
-          shouldExchangeDictionaryWith({
-            online,
-            platform: getControllerPlatform(deviceId),
-            revoked: isDeviceRevoked(deviceId),
-          }),
-        )
-        .map(([deviceId]) => deviceId),
-  });
   pluginDeviceSync.connect({
     self: () => client?.getSelfDeviceId() ?? null,
     peers: () => [...presenceOnlineByDevice.keys()]
@@ -1343,11 +1297,6 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
       .map(deviceId => ({ deviceId, deviceName: presenceNameByDevice.get(deviceId) ?? deviceId.slice(0, 8) })),
     allowed: deviceId => pluginSyncAccess.allowed(deviceId),
     send: (deviceId, frame) => { if (!client) throw new Error('device link unavailable'); client.sendPush(deviceId, PLUGIN_SYNC_CHANNEL, frame); },
-  });
-  if (unsubscribeDictionaryChanged) unsubscribeDictionaryChanged();
-  unsubscribeDictionaryChanged = onVoiceInputDictionaryChanged((options) => {
-    if (options?.immediate) broadcastDictionaryNow();
-    else notifyLocalDictionaryChanged();
   });
 
   // 同机多实例单持有者仲裁:共享 userData(同 deviceId)的多个实例中,只有认领

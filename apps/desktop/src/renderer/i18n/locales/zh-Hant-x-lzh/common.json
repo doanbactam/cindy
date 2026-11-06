@@ -1746,7 +1746,6 @@
       "usage": "耗用史",
       "personalization": "個性",
       "apiKeys": "工具金鑰",
-      "voiceInput": "聲入",
       "shortcuts": "快捷鍵",
       "agentIsland": "靈動島",
       "import": "差事匯入",
@@ -1789,7 +1788,6 @@
       "linkOpen": "啟連結",
       "streamFade": "應答之態",
       "compatMode": "小訣",
-      "voiceInput": "聲入",
       "import": "差事匯入",
       "providers": "模型供方",
       "remote": "遠方之機",
@@ -2812,392 +2810,6 @@
     "apiKey": {
       "showKey": "顯金鑰",
       "hideKey": "隱金鑰"
-    },
-    "voiceInput": {
-      "title": "語音輸入",
-      "description": "設識別語言、麥克風、快捷鍵、語音潤色，及語音輸入時靜音。",
-      "saveFailed": "語音輸入之設未能存：{{message}}",
-      "sections": {
-        "serviceSource": "服務之源",
-        "basics": "根本",
-        "refinement": "潤色",
-        "preferences": "所好",
-        "usageData": "耗用",
-        "speakerFilter": "聲紋濾別"
-      },
-      "serviceSource": {
-        "label": "語音服務",
-        "hint": "預設用 {{appName}} 語音服務；亦可連支援即時 ASR 之服務，並用獨立語音憑證。",
-        "localHint": "未登門時不用 {{appName}} 名籍服務；請連支援即時 ASR 之服務，並設獨立語音憑證。",
-        "ariaLabel": "擇語音服務來源",
-        "options": {
-          "cindy": "{{appName}} 官方服務",
-          "byok": "自定語音服務"
-        },
-        "optionDescriptions": {
-          "cindy": "用 {{appName}} 名籍之登門狀態，無須設任何金鑰",
-          "byok": "用具 ASR 之能之服務及其獨立語音憑證"
-        },
-        "asr": {
-          "label": "辨聲模型",
-          "hint": "語音轉文字所用之 ASR 模型。",
-          "ariaLabel": "擇語音識別模型"
-        },
-        "connectionTest": {
-          "action": "試連線",
-          "testing": "方試",
-          "testingStatus": "方連所擇即時 ASR 服務…",
-          "success": "連線已成，所擇即時 ASR 路由可用。",
-          "saveBeforeTest": "請先存自定 ASR 之修改，再試連線。",
-          "failure": {
-            "credentialsMissing": "缺所需憑證，請先畢其設。",
-            "authenticationFailed": "鑑權未成，請察此服務之憑證。",
-            "routeUnavailable": "AI 閘道器不支援或未啟所擇即時 ASR 路由。",
-            "timeout": "連線逾時，請察網路與服務狀態後再試。",
-            "network": "未能連服務，請察網路、地址與證書之設。",
-            "serviceError": "服務握手未成，請稍後再試，或察服務之設。",
-            "unsupportedProvider": "今識別模型不支援連線測試。"
-          }
-        },
-        "refiner": {
-          "label": "潤色模型",
-          "hint": "從輔助模型。",
-          "followAuxiliary": "從輔助模型",
-          "followHint": "潤色模型從「規制 → 個人化 → 輔助模型」之次序。{{appName}} 託管語音不受影響，潤色仍在服務端。",
-          "openAuxiliary": "往輔助模型",
-          "cannotRefine": "今輔助模型不可用於語音潤色（如純 Claude Messages），此番不潤色。",
-          "ariaLabel": "語音潤色模型"
-        },
-        "customAsr": {
-          "optionLabel": "自定即時 ASR",
-          "optionDescription": "用獨立之語音識別 WebSocket 與 API Key",
-          "notice": "請填 ASR 服務所供之完整 WebSocket 地址。{{appName}} 不復用言談模型之地址，亦不自拼語音路徑。",
-          "protocol": {
-            "label": "即時協議",
-            "hint": "請擇 ASR 服務實所行之訊格式。",
-            "ariaLabel": "自定即時 ASR 協議",
-            "openai": "OpenAI 轉寫協議",
-            "qwen": "Qwen 即時 ASR"
-          },
-          "websocketUrl": {
-            "label": "WebSocket 地址",
-            "hint": "填完整 wss:// 地址；此機迴環服務可用 ws://。",
-            "placeholder": "wss://asr.example.com/v1/realtime",
-            "invalid": "請輸有效且不含憑證之 wss:// 地址；唯此機迴環服務可用 ws://。"
-          },
-          "model": {
-            "label": "ASR 模型",
-            "hint": "填此服務實所受之語音識別模型 ID。",
-            "placeholder": "語音識別模型 ID"
-          },
-          "apiKey": {
-            "label": "ASR API Key",
-            "hint": "以系統加密存於此機，僅供此語音服務用。",
-            "savedHint": "此機已存 Key；留空則不易。",
-            "endpointChangedHint": "服務地址已轉新來源。請填新 Key，或先除已存之 Key。",
-            "placeholder": "輸 ASR API Key",
-            "savedPlaceholder": "Key 已存；輸新值可替之",
-            "clear": "除 Key"
-          },
-          "save": "存語音服務"
-        },
-        "credential": {
-          "gatewayKey": "須 AI 閘道器支援所擇即時 ASR 路由",
-          "codexLogin": "用 Codex 登門",
-          "elevenlabsKey": "用 ElevenLabs Key（環境變數）",
-          "codexRealtimeUnsupported": "不可用：Codex 登門非 OpenAI API Realtime 憑證"
-        },
-        "credentialError": {
-          "gatewayMissing": "未見可用之 AI 閘道器 Key，今模型不可用。",
-          "codexMissing": "Codex 未登門，今模型不可用。",
-          "elevenlabsMissing": "未設 ElevenLabs Key（環境變數），今模型不可用。",
-          "customAsrConfigMissing": "請先完填並存即時 ASR 服務之設，再始語音輸入。",
-          "customAsrKeyMissing": "請為自定即時 ASR 服務填並存 API Key。",
-          "codexRealtimeUnsupported": "Codex 登門不可用於即時語音識別，請擇受支援之 ASR 服務。"
-        },
-        "manageProviders": "往模型供方",
-        "reset": "復預設"
-      },
-      "historyToggle": {
-        "show": "展近期歷史",
-        "hide": "收近期歷史"
-      },
-      "language": {
-        "label": "語言",
-        "hint": "自識今之語音；指定語言可減多語誤判。",
-        "ariaLabel": "擇語言",
-        "options": {
-          "auto": "自擇",
-          "es": "Español"
-        },
-        "optionDescriptions": {
-          "auto": "由識別服務自判",
-          "zh-CN": "簡體中文（中國大陸）",
-          "zh-TW": "繁體中文（臺灣）",
-          "en": "English",
-          "ja": "日本語",
-          "ko": "한국어",
-          "es": "西班牙語"
-        }
-      },
-      "shortcut": {
-        "label": "快捷鍵",
-        "hint": "支援組合鍵、F1-F24 單鍵，亦可按住左/右 Command、Option、Control 或 Fn。",
-        "linuxUnsupported": "Linux 首版暫不支援全域語音輸入快捷鍵。請改用應用內之語音輸入鈕。",
-        "ariaLabel": "設快捷鍵",
-        "recording": "按新快捷鍵",
-        "none": "未設",
-        "clear": "清",
-        "fnNeedsInputMonitoring": "Fn 相關快捷鍵須監聽權柄，餘者可照常錄製。",
-        "awaitingInputMonitoring": "今快捷鍵待授監聽權柄，授之即生效。",
-        "toast": {
-          "needsModifier": "請用組合鍵、F1-F24 單鍵，或左/右 Command、Option、Control、Fn。",
-          "fnUnavailable": "請用組合鍵、F1-F24 單鍵，或左/右 Command、Option、Control、Fn。",
-          "systemReserved": "此快捷鍵與系統或常用編輯快捷鍵相衝",
-          "registrationFailed": "未能註冊此快捷鍵：{{error}}",
-          "recordingFailed": "未能始錄快捷鍵：{{error}}",
-          "listenerUnavailable": "未能啟快捷鍵監聽器，請重啟 {{appName}} 後再試",
-          "pendingInputMonitoring": "快捷鍵已存，授監聽權柄後生效"
-        }
-      },
-      "permissions": {
-        "granted": "已授",
-        "grant": "往授",
-        "openFailed": "未能開啟系統設定",
-        "microphone": {
-          "label": "麥克風"
-        },
-        "inputMonitoring": {
-          "label": "監聽權柄",
-          "tooltip": "用以監聽 Fn、單獨 Command / Option / Control、帶 Fn 之快捷鍵，及 F1-F24 單鍵按住說話之放開事件。尋常組合鍵不須之。已授者，謂今方行之 App 可監聽快捷鍵；開發版或由 Terminal 承其授權。"
-        },
-        "accessibility": {
-          "label": "自書",
-          "tooltip": "輔助功能權限用以於他 App 中自輸語音所得、讀游標附近文字為潤色上下文，並識外部修改以進詞典。"
-        }
-      },
-      "interactionSound": {
-        "label": "互動示音",
-        "hint": "語音輸入始末時，奏短提示音。",
-        "ariaLabel": "啟閉互動示音"
-      },
-      "fastActivation": {
-        "label": "速啟語音輸入",
-        "hint": "用畢令麥克風暫且待命，以縮按快捷鍵或鈕至始錄之候；常可快約 100 毫秒。若 30 分鐘內未再用，自釋麥克風。",
-        "ariaLabel": "切換速啟語音輸入"
-      },
-      "composerLongPress": {
-        "label": "長按輸入框語音輸入",
-        "hint": "於輸入框中按住滑鼠左鍵片刻，即始語音輸入；放開則止，並填入文字。",
-        "ariaLabel": "切換長按輸入框語音輸入"
-      },
-      "refinement": {
-        "enabled": {
-          "label": "語音潤色",
-          "hint": "啟之，則識別既畢，理其標點、專有詞與口語；闔之則逕用識別所得。",
-          "ariaLabel": "啟閉語音潤色"
-        },
-        "instructions": {
-          "label": "潤色之法",
-          "hint": "下為預設規則，可依習慣調之；僅涉潤色，不令模型作答或擴寫。",
-          "edit": "修",
-          "collapse": "收",
-          "ariaLabel": "潤色之法",
-          "placeholder": "依君言語之習書寫規則。"
-        },
-        "dictionary": {
-          "label": "自定詞典",
-          "hint": "錄常用人名、產品名、術語或易誤識之詞，潤色時優先參酌。",
-          "ariaLabel": "自定詞典",
-          "autoLearning": {
-            "label": "自學",
-            "hint": "君手正語音輸入之詞時，系統先錄為候選；屢經確認，自入詞典。",
-            "externalAppMacOnly": "外部 App 貼上後之自學，今僅支援 macOS；App 內語音輸入不受影響。",
-            "ariaLabel": "切換詞典自學"
-          },
-          "deviceSync": {
-            "label": "於吾諸裝置間同步",
-            "hint": "詞典於同時在線之機間自合，內容端到端傳輸，不經伺服器儲存。",
-            "ariaLabel": "啟閉詞典諸器同步"
-          },
-          "add": "新詞",
-          "save": "存之",
-          "cancel": "罷",
-          "edit": "修",
-          "delete": "刪",
-          "termLabel": "詞條",
-          "aliasSeparator": "、",
-          "aliases": "常誤聽為：{{aliases}}",
-          "aliasesEditLabel": "常誤聽為",
-          "aliasesEditAriaLabel": "修常見誤識寫法",
-          "aliasesPlaceholder": "每行一誤識寫法",
-          "aliasesEditHint": "每行一個；清空即盡刪誤識寫法。",
-          "searchAriaLabel": "尋詞典",
-          "closeSearch": "收尋",
-          "searchPlaceholder": "尋詞典",
-          "newAriaLabel": "增詞典條目",
-          "newPlaceholder": "增新詞",
-          "addDialog": {
-            "title": "增入詞典",
-            "description": "輸一詞條，增入語音輸入詞典。",
-            "submit": "增詞彙"
-          },
-          "csvImport": {
-            "label": "納 CSV",
-            "tooltip": "以單列 CSV 卷納入詞典，每行一詞。",
-            "success": "已納 {{count}} 詞入典",
-            "successWithSkipped": "已納 {{count}} 詞，略 {{skipped}} 個",
-            "errors": {
-              "fileType": "請擇 CSV 卷。",
-              "fileTooLarge": "CSV 卷過大，至多 5 MB。",
-              "readFailed": "未能讀卷，請換一 CSV 卷再試。",
-              "empty": "{{fileName}} 中無可納之詞。",
-              "invalidCsv": "CSV 格式不正。請用單列 CSV，每行一詞。",
-              "capacityFull": "詞典已滿，不能再納。",
-              "allDuplicate": "此等詞已在詞典中矣。"
-            }
-          },
-          "editAriaLabel": "修詞典條目",
-          "emptyAll": "詞典尚空，候君落筆。",
-          "emptyManual": "尚無手增之詞。",
-          "emptyAutomatic": "尚無自增之詞。",
-          "filters": {
-            "all": "全",
-            "automatic": "自增",
-            "manual": "手增"
-          },
-          "sources": {
-            "automatic": "自擇",
-            "manual": "手定"
-          },
-          "toast": {
-            "title": "已入詞典",
-            "termsSummary": "{{terms}} 等 {{count}} 詞",
-            "automaticAdded": "已自入詞典：{{term}}",
-            "automaticAddedMultiple": "已自入詞典：{{term}} 等 {{count}} 詞",
-            "delete": "刪",
-            "deleteAriaLabel": "刪自入之詞：{{term}}"
-          }
-        }
-      },
-      "microphone": {
-        "label": "麥克風",
-        "hint": "自用系統預設輸入；外接麥克風或耳機者，可指定裝置。",
-        "ariaLabel": "擇麥克風",
-        "options": {
-          "auto": "自擇",
-          "autoDetail": "系統預設輸入裝置",
-          "unnamed": "麥克風 {{index}}",
-          "unavailable": "所擇麥克風不可用",
-          "unavailableDetail": "重連後自復"
-        },
-        "errors": {
-          "selectedUnavailable": "所擇麥克風不可用。請重連之，或於語音輸入之設中改為自動麥克風。",
-          "deviceUnavailable": "無可用之麥克風裝置。請連麥克風或易輸入裝置後再試。",
-          "fallbackToAuto": "所擇麥克風不可用，已暫轉自動麥克風。"
-        }
-      },
-      "muteSystemAudio": {
-        "label": "語音輸入時噤聲",
-        "hint": "語音輸入時暫靜系統輸出，畢則復之。",
-        "ariaLabel": "啟閉語音輸入時噤聲",
-        "linuxUnsupported": "Linux 首版暫不支援語音輸入期間之系統靜音。"
-      },
-      "usage": {
-        "duration": "時長",
-        "estimatedCost": "估費",
-        "costBreakdown": "識別 {{asr}} · 潤色 {{refine}} · 依已遣音訊估之",
-        "sessions": "次數",
-        "outcomes": "無語音 {{noSpeech}} · 未成 {{failed}}",
-        "reset": "重計"
-      },
-      "history": {
-        "label": "近日識別",
-        "empty": "尚未有一言入錄。",
-        "copy": "錄之",
-        "delete": "刪",
-        "copyAria": "錄識別記錄",
-        "deleteAria": "刪識別記錄",
-        "toast": {
-          "copied": "已錄",
-          "copyFailed": "錄之未成"
-        }
-      },
-      "speakerFilter": {
-        "label": "辨吾之聲",
-        "hint": "語音輸入時靜旁人之聲，唯以君言送辨。須先錄聲紋；旁人與君同時言者，不能盡濾。",
-        "ariaLabel": "切換辨吾之聲",
-        "unsupported": "此機之系統暫不支援聲紋辨識。",
-        "privacy": "聲紋唯加密存於此機，不上呈，亦不同步至他裝置。",
-        "actionFailed": "操作未成，請稍後再試。",
-        "model": {
-          "needed": "初用須取下約 {{size}} 之辨識模型。",
-          "download": "取下",
-          "downloading": "方取下辨識模型（{{done}} / {{total}}）",
-          "cancel": "罷",
-          "retry": "再試",
-          "failed": {
-            "network": "辨識模型取下未成，請察網路後再試。",
-            "disk": "辨識模型未能存，請察磁碟空間後再試。",
-            "checksum": "所取下之辨識模型驗之未過，請再試。",
-            "unavailable": "暫不能得辨識模型，請稍後再試。"
-          }
-        },
-        "profile": {
-          "missing": "尚未錄聲紋",
-          "missingHint": "錄聲紋後方生效。",
-          "enrolled": "已錄聲紋",
-          "enrolledAt": "{{date}} 錄",
-          "enroll": "錄聲紋",
-          "reenroll": "重錄",
-          "delete": "刪聲紋",
-          "deleted": "聲紋已刪",
-          "deleteConfirm": {
-            "title": "刪聲紋乎？",
-            "description": "刪之，則語音輸入不復濾旁人之聲，至君重錄為止。",
-            "confirm": "刪",
-            "cancel": "罷"
-          }
-        },
-        "strictness": {
-          "label": "嚴寬",
-          "hint": "愈嚴則旁人之聲愈難混入，然於喧處亦易剪去君之言。",
-          "options": {
-            "relaxed": "寬",
-            "standard": "常",
-            "strict": "嚴"
-          }
-        },
-        "enroll": {
-          "title": "錄聲紋",
-          "description": "請以常時語氣朗讀下列 {{clips}} 段。每段至多錄 {{seconds}} 秒，讀畢點選止錄。請於平日用語音輸入之處錄之，勿令他人同時言語。",
-          "stepsAriaLabel": "朗讀之段",
-          "step": "第 {{current}} / {{total}} 段",
-          "record": "始讀",
-          "stop": "止錄",
-          "rerecord": "重錄此段",
-          "recording": "方錄，尚餘 {{seconds}} 秒",
-          "recorded": "此段已錄",
-          "cancel": "罷",
-          "submit": "畢",
-          "done": "聲紋已錄",
-          "passages": {
-            "p1": "今日上午，吾先整理本週之工作安排；午後再將須議之問題一一列出，遣予諸君，請先行過目。",
-            "p2": "明日若天朗氣清，吾等可早些啟程，途中順道買些鮮果與零食，午時便在園中席地而食。",
-            "p3": "請助吾將此段文字改得更為簡潔，留其關鍵數字與結論，再以三至五句話總括其要點。"
-          },
-          "errors": {
-            "too_short": "第 {{index}} 段所得語音不足，請重錄。",
-            "no_embedding": "第 {{index}} 段未能辨出聲紋，請重錄此段。",
-            "inconsistent": "第 {{index}} 段與他段不似一人，或混入他人之聲或雜音，請重錄此段。",
-            "models_missing": "辨識模型尚未取下完畢，請稍後再試。",
-            "storage_unavailable": "系統鑰匙圈暫不可用，聲紋不能加密儲存，請稍後再試。",
-            "failed": "聲紋生成未成，請再試。",
-            "microphone": "麥克風不可用，請察麥克風權限與裝置。",
-            "noAudio": "麥克風無聲傳來，請察裝置後再試。"
-          }
-        }
-      }
     },
     "sessionImport": {
       "title": "此機差事匯入",
@@ -4381,7 +3993,7 @@
         "more": "餘語聲型號（{{count}}）",
         "manual": "親書語聲型號",
         "modelId": "語聲模型 ID",
-        "modelsHint": "存語聲模型不啟語聲合成。音色與逐句朗讀，可於同僚語聲之設中調之。",
+        "modelsHint": "存語聲模型不啟語聲合成。",
         "otherModels": "言談與他模型",
         "separateKey": "語聲服務須 API Key。將另立獨連線，原有訂閱或裝置碼連線仍留。",
         "fetchFailed": "暫不能取模型目錄，仍可擇參考型號增之。",
@@ -6713,13 +6325,6 @@
           "builtIn": "用鍵帽預設之動作",
           "unmapped": "此鍵帽無對應之動作"
         },
-        "microphone": {
-          "title": "麥克風",
-          "separate": {
-            "label": "分設麥克風鍵",
-            "description": "短按則始錄且持之，再按即止；長按則鬆手即止。"
-          }
-        },
         "analog": {
           "title": "搖桿",
           "description": "分設搖桿四向之動作。",
@@ -6757,8 +6362,7 @@
           "tasks": "差事",
           "commands": "令",
           "keycaps": "鍵帽",
-          "skills": "技藝",
-          "voice": "聲入"
+          "skills": "技藝"
         },
         "layout": {
           "editor": {
@@ -6842,8 +6446,6 @@
         "notBindable": "此組合鍵不可用",
         "systemReserved": "此組合鍵為系統所留",
         "conflict": "與「{{name}}」相衝",
-        "voiceConflict": "與聲入捷徑相衝",
-        "composerVoiceConflict": "與聲入捷徑相衝，請改遣訊或聲入之捷徑。",
         "menuAccelerator": "此組合鍵不能註為選單捷徑",
         "globalUnusable": "此組合鍵不可作全域捷徑",
         "globalOccupied": "已為他應用程式所佔，請另擇組合鍵"
@@ -7125,8 +6727,6 @@
         },
         "actions": {
           "none": "未設",
-          "voice": "聲入",
-          "voiceDescription": "按住以聲入，鬆手即止。",
           "commands": "令",
           "skills": "技藝",
           "choose": "擇其功"
@@ -11487,135 +11087,6 @@
         "riskBody": "X 之問將用同僚之共享記憶、才能與工作目錄，回答公開。勿經 X 處理私密資訊。專線不直接用同僚之私聊記錄。"
       }
     },
-    "voiceMode": {
-      "openConversation": "啟對話",
-      "inCallWith": "正與 {{name}} 通話",
-      "showDetails": "展通話錄",
-      "hideDetails": "收通話錄",
-      "transcriptTitle": "今所辨之文",
-      "transcriptEmpty": "君但啟齒，所言之文自現於此。",
-      "composerPaused": "罷語音後，再續書訊…",
-      "microphoneMuted": "麥克風已闔",
-      "exit": {
-        "idle": "久未發聲，將退語音模式",
-        "farewell": "已聞道別，將退語音模式",
-        "semantic": "將罷語音模式",
-        "sending": "方呈，成則退語音模式…",
-        "countdown": "{{seconds}} 秒後退語音模式",
-        "cancel": "不退",
-        "hint": "續言或點「不退」可留語音模式。進行中之差事不受影響。",
-        "mutedHint": "麥克風仍靜音，點「不退」可留語音模式。進行中之差事不受影響。"
-      },
-      "settingsTitle": "聲",
-      "openSettings": "語音規制",
-      "startConversation": "始語音言談",
-      "settingsHint": "擇此同僚所用之朗讀模型與音色。設畢，自輸入框始語音言談。",
-      "previewNeedsChat": "與同僚始言談後方可試聽。",
-      "voiceId": "音色 ID",
-      "manualVoice": "手書音色 ID",
-      "refreshVoices": "重整音色錄",
-      "voicesLoading": "方取音色…",
-      "voicesError": "不能取音色錄。請再試，或手書音色 ID。",
-      "voicesCustomError": "未能盡取自訂音色。請再試，或手書音色 ID。",
-      "voicesReference": "此為該型號之參考音色；相容服務實際所支援或異。",
-      "voicesTruncated": "僅示部分音色；未列者可手書其 ID。",
-      "voicesManual": "此介面無可用音色錄，請手書音色 ID。",
-      "preview": "試聆",
-      "stopPreview": "止試聽",
-      "previewVoice": "試聆 {{voice}}",
-      "stopPreviewVoice": "止試聽 {{voice}}",
-      "previewText": "幸會，此乃吾聲。得與君言，甚喜。",
-      "previewStatus": {
-        "idle": "試聽將呼所選模型，或生耗用。",
-        "preparing": "方生試聽之聲…",
-        "playing": "方試聽…",
-        "complete": "試聽畢。",
-        "error": "試聽未成"
-      },
-      "readAloud": "誦",
-      "stopReadAloud": "止朗讀",
-      "finishBeforeReadAloud": "請先罷語音模式，再朗讀訊。",
-      "readAloudFailed": "朗讀未成",
-      "finishBeforeDictation": "請先罷語音模式，再始聽寫。",
-      "title": "聲談",
-      "model": "誦讀模型",
-      "refresh": "重整模型",
-      "voice": "音色",
-      "voiceHint": "填所選模型所支援之音色名，如 alloy。",
-      "modelUnavailable": "前選之朗讀模型已不可用，請重擇。",
-      "noModels": "今無可用之語音合成模型。",
-      "noModelsSupportedProtocols": "支援 MiniMax、ElevenLabs、Qwen / CosyVoice HTTP，及 OpenAI 相容之語音合成介面。",
-      "noModelsSetupHint": "接供方並啟語音模型後，即可設同僚之朗讀聲。",
-      "openProviders": "往模型供方",
-      "catalogError": "語音規制讀取或儲存未成，請再試。",
-      "start": "始言",
-      "resume": "續",
-      "retrySend": "重連而遣",
-      "mute": "噤聲",
-      "interrupt": "止朗讀",
-      "send": "遣",
-      "end": "罷",
-      "unsent": "尚未遣 · 可選文錄之",
-      "hint": "稍頓即自遣，回覆由 AI 之聲朗讀。隨時開口即可插話。",
-      "status": {
-        "questionElsewhere": "任務有問待答 · 通話如故",
-        "idle": "君備則始",
-        "connecting": "方接語音辨識…",
-        "listening": "方聆",
-        "thinking": "容吾思之…",
-        "speaking": "方朗讀…",
-        "paused": "已暫停 · 麥克風已闔",
-        "error": "已暫停 · 麥克風已闔",
-        "question": "待擇 · 可言選項編號或名",
-        "confirmation": "待君確認 · 麥克風已闔",
-        "preparing": "方備語音…",
-        "loading": "方讀語音規制…",
-        "microphone": "方啟麥克風…",
-        "muted": "麥克風已闔 · 仍可聆聽"
-      },
-      "errors": {
-        "busy": "語音為他事所占，請畢之再試。",
-        "connection": "語音連線中斷，未遣之文已留。",
-        "microphone": "麥克風已止，請查權柄與裝置連線後再續。",
-        "send": "此訊未獲接收，文已留。",
-        "speech": "回覆朗讀未成，文字回覆仍留言談中。",
-        "speechTimeout": "聲應逾時"
-      },
-      "voiceIdHint": "填該供方名籍可用之音色 ID。",
-      "speed": "誦速",
-      "speedAdjusted": "已依所選模型調為 {{speed}}×。",
-      "speedUnavailable": "今之模型暫不支援調語速。",
-      "speedValue": "{{speed}}×",
-      "sentencePlayback": "逐句誦",
-      "sentencePlaybackHint": "回覆生成之時，盡早按整句朗讀；闔之則待全文回覆乃讀。若須待回覆處理，將自延後。",
-      "preferenceHint": "語音規制僅為此同僚存之。",
-      "resetPreference": "復預設",
-      "preferenceError": "不能讀取或儲存語音規制，請再試。",
-      "protocol": "語音介面",
-      "protocolOpenai": "OpenAI 相容",
-      "protocolHint": "擇此位址實所支援之語音介面；易介面不易供方。",
-      "protocolCorrectedHint": "已依官方位址正其介面，請重擇音色。",
-      "unmute": "解靜音",
-      "mutedHint": "麥克風已闔，同僚回覆仍將朗讀。解靜音後可續言。",
-      "microphoneResumeError": "不能啟麥克風，仍可聆聽。請查權柄與裝置後，再試解靜音。",
-      "callRecord": "此番通話",
-      "callHistoryTitle": "聲通",
-      "you": "君",
-      "companion": "同僚",
-      "callInProgress": "方通話",
-      "callSendFailed": "遣送未成，原話已留。",
-      "handoff": {
-        "sending": "方交接…",
-        "accepted": "已交同僚處理",
-        "failed": "交接未成，原話已留",
-        "completed": "結果已歸"
-      },
-      "callSaved": "錄已存",
-      "taskFromCall": "通話所生之事",
-      "viewTaskProgress": "覽進度",
-      "liveDraft": "方辨識",
-      "questionDraft": "待定"
-    },
     "dmThread": {
       "newReply": "有新答",
       "you": "君",
@@ -12382,23 +11853,6 @@
       "defaultPlaceholder": "萬里長風待君令，今日欲成何事~",
       "createAgentPlaceholder": "幸會，{{appName}}！",
       "recommendationShortcut": "Tab",
-      "voiceInput": {
-        "start": "始語音輸入",
-        "stop": "止語音輸入",
-        "releaseToStop": "語音輸入中，放之則止",
-        "holdComposer": "長按輸入框，以聲輸入",
-        "speakRelease": "請言，放之則止",
-        "speakPressAgain": "請言，再按則止",
-        "releaseToSend": "放之即遣",
-        "finishAndSend": "罷語音輸入而遣",
-        "refining": "方潤色",
-        "permissionDialog": {
-          "title": "須麥克風權柄",
-          "description": "請開麥克風權柄，再點語音輸入",
-          "confirm": "往授權",
-          "cancel": "罷"
-        }
-      },
       "remoteSwitchFailed": "遠端之設切換未成，未生效",
       "switchFailed": "設定切換未成，未生效",
       "modelWindowUnknown": {
@@ -12652,59 +12106,6 @@
       "oauthSub": "於瀏覽器啟授權之頁，登門後自連"
     }
   },
-  "voiceInputOverlay": {
-    "rateLimited": "聲請過頻，請稍候再試。",
-    "status": {
-      "listening": "方聽聲",
-      "submitting": "方確認",
-      "refining": "方潤色",
-      "result": "以聲代筆",
-      "inputFailed": "輸入未成",
-      "transcriptKept": "所識之文已存",
-      "permissionRequired": "需授權",
-      "error": "聲入未成"
-    },
-    "hint": "再按快捷鍵以輸入",
-    "placeholder": "洗耳恭聽…",
-    "pasteHint": "未能自動輸入。君可錄其文，再手自輸入。",
-    "pasteErrors": {
-      "empty": "無可輸入之聲文。",
-      "unavailable": "此應用不能自動輸入。君可錄其文，再手自輸入。",
-      "unconfirmed": "未能確知是否已自動輸入。君可錄其文，再手自輸入。",
-      "permission": "須開輔助功能權柄，方能將聲文自動輸入此應用。授權後可再試。",
-      "failed": "未能自動輸入。君可錄其文，再手自輸入。"
-    },
-    "permissionPrompts": {
-      "microphone": {
-        "message": "須開麥克風權柄，方能以聲輸入。",
-        "hint": "授權後再按快捷鍵，即可始錄。"
-      },
-      "accessibility": {
-        "message": "須開輔助功能權柄，方能自動輸入此應用。",
-        "hint": "授權後再按快捷鍵，即可自動輸入。"
-      }
-    },
-    "copy": "錄之",
-    "retry": "再試",
-    "openPermissionSettings": "往授權",
-    "openSettings": "往規制",
-    "settingsRecoveryHint": "設畢，再按快捷鍵即可再試。",
-    "settingsOpenFailed": "規制未能開啟，請自主視窗手入規制。",
-    "close": "闔",
-    "submit": "畢而輸入",
-    "submitWithShortcut": "畢而輸入（{{shortcut}}）",
-    "closeWithShortcut": "闔而棄之（{{shortcut}}）",
-    "codexRequired": "須先於 {{appName}} 中連 Codex，方能以聲輸入。",
-    "apiKeyRequired": "須先設 API Key，方能以聲輸入。",
-    "cindyServiceUnavailable": "{{appName}} 官方聲服暫不可用，請察網路，或易其服源。",
-    "asrServiceUnavailable": "識聲之服連線未成，請察網路，或稍後再試。",
-    "emptyTranscript": "已聞其聲，而未識一字，請再試。",
-    "speakerFiltered": "他人之聲已略",
-    "connectionInterrupted": "聲之連線中斷，請察網路後再試。",
-    "recognitionStalled": "識聲不復有所回，請再試。",
-    "transcriptKept": "{{message}}（所識之文已存，可徑修之）",
-    "transcriptKeptOverlay": "{{message}}（所識之文已存，可錄之續用）"
-  },
   "chatgptAuthRecovery": {
     "title": "ChatGPT 登入已失效",
     "systemSharedInvalidated": "{{appName}} 今沿用此機之 ChatGPT 登入，而該登入已失效。請開 ChatGPT App 重新登入，再試。",
@@ -12770,14 +12171,6 @@
     "jumpToBottom": "至底",
     "prevMessageJump": "至上一問：{{preview}}",
     "askUserQuestion": {
-      "voice": {
-        "hint": "可言「第一項」或選項之名；多選畢，請言「確認選擇」。",
-        "freeTextHint": "可徑言其答，察畢言「確認選擇」以呈。",
-        "confirm": "請察所選，言「確認選擇」以呈，或言「取消選擇」以重選。",
-        "ambiguous": "未能確知君之所選，請再言一選項編號或全名，亦可手選。",
-        "unknown": "未辨得明確選項，請言選項編號或全名，亦可手選。",
-        "cancelled": "已罷聲選，請重選。"
-      },
       "skippedAnswer": "已略",
       "pendingTitle": "待君作答",
       "restoreAriaLabel": "展問卡",
@@ -16847,12 +16240,6 @@
         "device-mismatch": "登入之狀與此裝置不合，請重新登入。",
         "account-unavailable": "名籍不可用（或已停用、已刪除），如有疑問，請聯絡管理員。"
       },
-      "voiceApiKeyAuthTitle": "須配 {{appName}} AI",
-      "voiceApiKeyAuthDescription": "語音輸入今用 {{appName}} AI 語音識別之服。{{appName}} AI 尚未相通，無從起語音輸入。往「模型供方」相通乎？",
-      "voiceDirectApiKeyAuthTitle": "須配語音輸入 API Key",
-      "voiceDirectApiKeyAuthDescription": "語音輸入今用直連之供方，須先配對應 API Key。往「API Keys」增之乎？",
-      "codexVoiceAuthTitle": "須連 ChatGPT",
-      "codexVoiceAuthDescription": "語音輸入須藉已連之 ChatGPT 名籍，呼叫 GPT 即時語音識別。今名籍未連或須更新，往「模型供方」連 ChatGPT 乎？",
       "codexBinaryMissingTitle": "Codex 元件未備",
       "codexBinaryMissingDescription": "Codex 元件尚未備妥，此功暫不可用。請稍後再試，或往「模型供方」察 Codex 相通之狀。",
       "piBinaryMissingTitle": "Pi 元件未備",

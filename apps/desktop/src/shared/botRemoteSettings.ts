@@ -50,10 +50,6 @@ export const BOT_SETTINGS_OPS = [
   'routines.deliveryTargets',
   'routines.runNow',
   'routines.remove',
-  'voice.models',
-  'voice.voices',
-  'voice.preference',
-  'voice.setPreference',
   'channels.im.list',
   'channels.im.remove',
   'channels.im.listGroups',
@@ -79,8 +75,6 @@ export const BOT_SETTINGS_HOST_OPS: readonly BotSettingsOp[] = [
   'autonomy.set',
   'autonomy.reset',
   'routines.sources',
-  'voice.models',
-  'voice.voices',
   'channels.im.listAdoptable',
 ];
 
@@ -108,7 +102,6 @@ export type BotSettingsPageId =
   | 'personality'
   | 'memory'
   | 'model'
-  | 'voice'
   | 'capabilities'
   | 'channels'
   | 'routines'

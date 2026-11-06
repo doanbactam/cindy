@@ -21,7 +21,7 @@ const domains = [
   ['groups-and-sharing', '群与共享', '群设置、成员、通知、分工与共享权限'],
   ['devices', '设备', '电脑、远控、中转与 SSH 连接'],
   ['tools-and-extensions', '工具与扩展', '内建工具、MCP、Skill、插件与 Pi 扩展'],
-  ['media-and-input', '语音与输入', '麦克风、语音词典、音效和输入行为'],
+  ['media-and-input', '输入配件', 'Work Louder 键盘、游戏手柄等输入配件'],
   ['runtimes-and-storage', '运行环境与存储', 'Pi 更新、运行资源、清理与回收'],
   ['accounts-and-mobile', '账号与手机', '账号连接和手机自身的本地设置'],
 ] as const;
@@ -60,7 +60,7 @@ export const CONTROL_CATALOG: readonly Control[] = [
     ['appearance.assets', 'appearance', '自定义壁纸和主题导入', '自定义媒体与主题的导入管理', '自定义壁纸 壁纸图片 导入主题 custom wallpaper'],
     ['groups.settings', 'groups-and-sharing', '群与共享设置', '群成员、分工、通知和共享权限', '群 共享 group sharing'],
     ['devices.remote-settings', 'devices', '远程控制与中转配置', '远控开关、中转服务和设备管理', '远程控制 中转 relay'],
-    ['input.voice', 'media-and-input', '语音与输入设置', '麦克风、语言、词典、音效和配件', '语音 麦克风 词典 voice microphone'],
+    ['input.accessories', 'media-and-input', '输入配件设置', '键盘与手柄的按键映射、灯光和开关', '配件 键盘 手柄 keyboard gamepad'],
     ['storage.management', 'runtimes-and-storage', '存储与回收设置', '缓存、清理、回收与存储告警', '缓存 清理 回收 storage'],
     ['mobile.preferences', 'accounts-and-mobile', '手机本地设置', '发起请求的手机自身偏好，不是被控电脑的偏好', '手机 iphone android mobile'],
     ['accounts.settings', 'accounts-and-mobile', '账号资料与连接', '账号设置与安全连接流程', '账号 登录 account login'],

@@ -1746,7 +1746,6 @@
       "usage": "使用履歴",
       "personalization": "パーソナライズ",
       "apiKeys": "ツールキー",
-      "voiceInput": "音声入力",
       "shortcuts": "キーボードショートカット",
       "agentIsland": "Agent Island",
       "import": "セッションインポート",
@@ -1789,7 +1788,6 @@
       "linkOpen": "リンクを開く",
       "streamFade": "返信のアニメーション",
       "compatMode": "ヒント",
-      "voiceInput": "音声入力",
       "import": "セッションインポート",
       "providers": "プロバイダー",
       "remote": "リモートマシン",
@@ -2812,392 +2810,6 @@
     "apiKey": {
       "showKey": "キーを表示",
       "hideKey": "キーを非表示"
-    },
-    "voiceInput": {
-      "title": "音声入力",
-      "description": "認識言語、マイク、ショートカット、音声の整え方、音声入力中のミュートを設定します。",
-      "saveFailed": "音声入力設定の保存に失敗しました：{{message}}",
-      "sections": {
-        "serviceSource": "サービスソース",
-        "basics": "基本",
-        "refinement": "整え方",
-        "preferences": "設定",
-        "usageData": "使用量",
-        "speakerFilter": "声紋フィルター"
-      },
-      "serviceSource": {
-        "label": "音声サービス",
-        "hint": "既定では {{appName}} 音声サービスを使用します。リアルタイム ASR 対応サービスと専用の音声認証情報に切り替えることもできます。",
-        "localHint": "未ログイン状態では {{appName}} アカウントサービスを使用しません。リアルタイム ASR 対応サービスと専用の音声認証情報を設定してください。",
-        "ariaLabel": "音声サービスソースの選択",
-        "options": {
-          "cindy": "{{appName}} 公式サービス",
-          "byok": "カスタム音声サービス"
-        },
-        "optionDescriptions": {
-          "cindy": "{{appName}} のログイン情報を使用し、キーの設定は不要です",
-          "byok": "ASR 対応サービスと専用の音声認証情報を使用します"
-        },
-        "asr": {
-          "label": "認識モデル",
-          "hint": "音声をテキストに変換する ASR モデル。",
-          "ariaLabel": "音声認識モデルの選択"
-        },
-        "connectionTest": {
-          "action": "接続をテスト",
-          "testing": "テスト中",
-          "testingStatus": "選択したリアルタイム ASR サービスに接続しています…",
-          "success": "接続に成功しました。選択したリアルタイム ASR ルートを利用できます。",
-          "saveBeforeTest": "接続をテストする前に、カスタム ASR の変更を保存してください。",
-          "failure": {
-            "credentialsMissing": "必要な認証情報がありません。先に設定を完了してください。",
-            "authenticationFailed": "認証に失敗しました。このサービスの認証情報を確認してください。",
-            "routeUnavailable": "AI ゲートウェイがこのリアルタイム ASR ルートをサポートしていないか、有効にしていません。",
-            "timeout": "接続がタイムアウトしました。ネットワークとサービスの状態を確認して再試行してください。",
-            "network": "サービスに接続できません。ネットワーク、アドレス、証明書の設定を確認してください。",
-            "serviceError": "サービスとのハンドシェイクに失敗しました。後でもう一度試すか、サービス設定を確認してください。",
-            "unsupportedProvider": "この認識モデルでは接続テストを利用できません。"
-          }
-        },
-        "refiner": {
-          "label": "整えモデル",
-          "hint": "補助モデルに従います。",
-          "followAuxiliary": "補助モデルに従う",
-          "followHint": "整えモデルは「設定 → パーソナライズ → 補助モデル」の順に従います。{{appName}} ホストの音声は影響を受けず、整えはサーバー側のままです。",
-          "openAuxiliary": "補助モデルへ",
-          "cannotRefine": "現在の補助モデルでは音声を整えられません（Claude Messages のみなど）。今回は整えません。",
-          "ariaLabel": "音声整えモデル"
-        },
-        "customAsr": {
-          "optionLabel": "カスタムリアルタイム ASR",
-          "optionDescription": "専用の音声認識 WebSocket と API キーを使用",
-          "notice": "ASR 対応サービスが提供する完全な WebSocket URL を入力してください。{{appName}} はチャットモデルの URL を再利用せず、音声用パスも追加しません。",
-          "protocol": {
-            "label": "リアルタイムプロトコル",
-            "hint": "ASR サービスが実装しているメッセージ形式を選択します。",
-            "ariaLabel": "カスタムリアルタイム ASR プロトコル",
-            "openai": "OpenAI 文字起こし",
-            "qwen": "Qwen リアルタイム ASR"
-          },
-          "websocketUrl": {
-            "label": "WebSocket URL",
-            "hint": "完全な wss:// URL。ローカルのループバックサービスでは ws:// も使用できます。",
-            "placeholder": "wss://asr.example.com/v1/realtime",
-            "invalid": "認証情報を含まない有効な wss:// URL を入力してください。ws:// はローカルのループバックサービスだけで使用できます。"
-          },
-          "model": {
-            "label": "ASR モデル",
-            "hint": "サービスが受け付ける音声認識モデル ID を入力します。",
-            "placeholder": "音声認識モデル ID"
-          },
-          "apiKey": {
-            "label": "ASR API キー",
-            "hint": "システム暗号化でローカルに保存し、この音声サービスだけに使用します。",
-            "savedHint": "キーはローカルに保存されています。空欄のままなら変更しません。",
-            "endpointChangedHint": "接続先のオリジンが変更されました。新しいキーを入力するか、保存済みのキーを削除してから保存してください。",
-            "placeholder": "ASR API キーを入力",
-            "savedPlaceholder": "キーは保存済みです。新しい値で置き換えられます",
-            "clear": "キーを削除"
-          },
-          "save": "音声サービスを保存"
-        },
-        "credential": {
-          "gatewayKey": "AI ゲートウェイが選択したリアルタイム ASR ルートに対応している必要があります",
-          "codexLogin": "Codex ログインを使用",
-          "elevenlabsKey": "ElevenLabs キーを使用（環境変数）",
-          "codexRealtimeUnsupported": "利用不可：Codex ログインは OpenAI API Realtime の認証情報ではありません"
-        },
-        "credentialError": {
-          "gatewayMissing": "利用可能な AI ゲートウェイキーが見つからないため、このモデルは使用できません。",
-          "codexMissing": "Codex にログインしていないため、このモデルは使用できません。",
-          "elevenlabsMissing": "ElevenLabs キー（環境変数）が未設定のため、このモデルは使用できません。",
-          "customAsrConfigMissing": "音声入力を開始する前に、リアルタイム ASR サービスの設定をすべて入力して保存してください。",
-          "customAsrKeyMissing": "カスタムリアルタイム ASR サービスの API キーを入力して保存してください。",
-          "codexRealtimeUnsupported": "Codex ログインはリアルタイム音声認識には使用できません。対応する ASR サービスを選択してください。"
-        },
-        "manageProviders": "モデルプロバイダーを開く",
-        "reset": "既定に戻す"
-      },
-      "historyToggle": {
-        "show": "履歴を表示",
-        "hide": "履歴を隠す"
-      },
-      "language": {
-        "label": "言語",
-        "hint": "自動では話している言語を判定します。指定すると多言語環境での誤認識を減らせます。",
-        "ariaLabel": "言語の選択",
-        "options": {
-          "auto": "自動",
-          "es": "Español"
-        },
-        "optionDescriptions": {
-          "auto": "認識サービスが自動判定",
-          "zh-CN": "簡体字中国語（中国本土）",
-          "zh-TW": "繁体字中国語（台湾）",
-          "en": "英語",
-          "ja": "日本語",
-          "ko": "韓国語",
-          "es": "スペイン語"
-        }
-      },
-      "shortcut": {
-        "label": "ショートカット",
-        "hint": "組み合わせキー、F1-F24 単独、または左右の Command / Option / Control / Fn の長押しを使えます。",
-        "linuxUnsupported": "Linux 初版ではグローバル音声入力ショートカットをまだサポートしていません。代わりにアプリ内の音声入力ボタンを使ってください。",
-        "ariaLabel": "ショートカットを設定",
-        "recording": "新しいショートカットを押してください",
-        "none": "未設定",
-        "clear": "クリア",
-        "fnNeedsInputMonitoring": "Fn を含むショートカットにはショートカット監視の許可が必要です。他のショートカットは通常どおり記録できます。",
-        "awaitingInputMonitoring": "このショートカットはショートカット監視の許可待ちです。許可すると有効になります。",
-        "toast": {
-          "needsModifier": "組み合わせキー、F1-F24 単独、または左右の Command / Option / Control / Fn を使ってください。",
-          "fnUnavailable": "組み合わせキー、F1-F24 単独、または左右の Command / Option / Control / Fn を使ってください。",
-          "systemReserved": "このショートカットはシステムまたは一般的な編集ショートカットと競合します",
-          "registrationFailed": "ショートカットを登録できませんでした: {{error}}",
-          "recordingFailed": "ショートカットの記録を開始できませんでした: {{error}}",
-          "listenerUnavailable": "ショートカット監視を開始できませんでした。{{appName}} を再起動してから再試行してください",
-          "pendingInputMonitoring": "ショートカットを保存しました。ショートカット監視を許可すると有効になります"
-        }
-      },
-      "permissions": {
-        "granted": "許可済み",
-        "grant": "許可する",
-        "openFailed": "システム設定を開けませんでした",
-        "microphone": {
-          "label": "マイク"
-        },
-        "inputMonitoring": {
-          "label": "ショートカット監視",
-          "tooltip": "Fn、単独の Command / Option / Control、Fn を含むショートカット、および F1-F24 単独キーの長押し音声入力でキーを放したことを検出するために使います。通常の組み合わせキーには不要です。許可済みは、現在実行中のアプリがショートカットを監視できることを意味します。開発版では Terminal 経由で許可される場合があります。"
-        },
-        "accessibility": {
-          "label": "自動入力",
-          "tooltip": "アクセシビリティ権限は、他のアプリへの自動入力、整形用のカーソル周辺テキストの取得、外部での修正検出による辞書学習に使います。"
-        }
-      },
-      "interactionSound": {
-        "label": "操作音",
-        "hint": "音声入力の開始時と終了時に短い音で知らせます。",
-        "ariaLabel": "操作音を切り替え"
-      },
-      "fastActivation": {
-        "label": "音声入力をすばやく開始",
-        "hint": "使用後しばらくマイクを待機状態に保ち、ショートカットやボタンを押してから録音開始までを短縮します。通常は約 100 ms 速くなります。30 分間使用しないと自動的にマイクを解放します。",
-        "ariaLabel": "音声入力の高速開始を切り替え"
-      },
-      "composerLongPress": {
-        "label": "入力欄の長押しで音声入力",
-        "hint": "入力欄でマウスの左ボタンを少し長押しすると音声入力を開始し、離すと終了して文字を入力します。",
-        "ariaLabel": "入力欄の長押しで音声入力を切り替え"
-      },
-      "refinement": {
-        "enabled": {
-          "label": "音声テキストを整える",
-          "hint": "有効にすると、認識後に句読点、専門用語、口語表現を整えます。無効にすると認識結果をそのまま使います。",
-          "ariaLabel": "音声テキスト整形を切り替え"
-        },
-        "instructions": {
-          "label": "整形ルール",
-          "hint": "既定のルールは編集できます。整形だけに使われ、モデルが回答したり内容を広げたりすることはありません。",
-          "edit": "編集",
-          "collapse": "閉じる",
-          "ariaLabel": "整形ルール",
-          "placeholder": "自分の話し方に合わせたルールを書きます。"
-        },
-        "dictionary": {
-          "label": "カスタム辞書",
-          "hint": "人名、製品名、専門用語、誤認識されやすい語を入れると、整形時に優先して参照します。",
-          "ariaLabel": "カスタム辞書",
-          "autoLearning": {
-            "label": "自動学習",
-            "hint": "音声入力の語句を手動で直したとき、候補として記録し、複数回確認されたら辞書に追加します。",
-            "externalAppMacOnly": "外部アプリへ貼り付けた後の自動学習は現在 macOS のみ対応です。アプリ内の音声入力には影響しません。",
-            "ariaLabel": "辞書の自動学習を切り替え"
-          },
-          "deviceSync": {
-            "label": "自分のデバイス間で同期",
-            "hint": "同時にオンラインのパソコン同士で辞書を自動的に統合します。内容はデバイス間で直接やり取りし、サーバーには保存しません。",
-            "ariaLabel": "辞書のデバイス間同期を切り替え"
-          },
-          "add": "新しい語",
-          "save": "保存",
-          "cancel": "キャンセル",
-          "edit": "編集",
-          "delete": "削除",
-          "termLabel": "辞書の語",
-          "aliasSeparator": "、",
-          "aliases": "よくある誤認識：{{aliases}}",
-          "aliasesEditLabel": "よくある誤認識",
-          "aliasesEditAriaLabel": "よくある誤認識を編集",
-          "aliasesPlaceholder": "誤認識を 1 行に 1 件入力",
-          "aliasesEditHint": "1 行に 1 件入力します。すべて削除するには空欄にします。",
-          "searchAriaLabel": "辞書を検索",
-          "closeSearch": "検索を閉じる",
-          "searchPlaceholder": "辞書を検索",
-          "newAriaLabel": "辞書エントリを追加",
-          "newPlaceholder": "新しい語を追加",
-          "addDialog": {
-            "title": "辞書に追加",
-            "description": "語句を入力して音声入力辞書に追加します。",
-            "submit": "語を追加"
-          },
-          "csvImport": {
-            "label": "CSV をインポート",
-            "tooltip": "1 行に 1 語の 1 列 CSV ファイルを使用します。",
-            "success": "{{count}} 件の語をインポートしました",
-            "successWithSkipped": "{{count}} 件をインポートし、{{skipped}} 件をスキップしました",
-            "errors": {
-              "fileType": "CSV ファイルを選択してください。",
-              "fileTooLarge": "CSV ファイルが大きすぎます。最大サイズは 5 MB です。",
-              "readFailed": "ファイルを読み取れません。別の CSV ファイルで再試行してください。",
-              "empty": "{{fileName}} にインポート可能な語がありません。",
-              "invalidCsv": "CSV 形式が正しくありません。1 行に 1 語の 1 列 CSV を使用してください。",
-              "capacityFull": "辞書がいっぱいのため、これ以上インポートできません。",
-              "allDuplicate": "これらの語はすでに辞書にあります。"
-            }
-          },
-          "editAriaLabel": "辞書エントリを編集",
-          "emptyAll": "辞書エントリはまだありません。",
-          "emptyManual": "手動で追加した語はまだありません。",
-          "emptyAutomatic": "自動追加された語はまだありません。",
-          "filters": {
-            "all": "すべて",
-            "automatic": "自動追加",
-            "manual": "手動追加"
-          },
-          "sources": {
-            "automatic": "自動",
-            "manual": "手動"
-          },
-          "toast": {
-            "title": "辞書に追加しました",
-            "termsSummary": "{{terms}} ほか合計 {{count}} 件",
-            "automaticAdded": "辞書に自動追加しました：{{term}}",
-            "automaticAddedMultiple": "辞書に自動追加しました：{{term}} ほか {{count}} 件",
-            "delete": "削除",
-            "deleteAriaLabel": "自動追加された語を削除：{{term}}"
-          }
-        }
-      },
-      "microphone": {
-        "label": "マイク",
-        "hint": "自動ではシステム既定の入力を使います。外部マイクやヘッドセットは指定できます。",
-        "ariaLabel": "マイクの選択",
-        "options": {
-          "auto": "自動",
-          "autoDetail": "システム既定の入力デバイス",
-          "unnamed": "マイク {{index}}",
-          "unavailable": "選択中のマイクは利用できません",
-          "unavailableDetail": "再接続すると自動で復帰します"
-        },
-        "errors": {
-          "selectedUnavailable": "選択中のマイクは利用できません。再接続するか、音声入力設定で自動マイクに変更してください。",
-          "deviceUnavailable": "利用できるマイクがありません。マイクを接続するか、別の入力デバイスを選んでから再試行してください。",
-          "fallbackToAuto": "選択中のマイクは利用できないため、この録音では自動マイクに一時的に切り替えました。"
-        }
-      },
-      "muteSystemAudio": {
-        "label": "音声入力中にミュート",
-        "hint": "音声入力中はシステム出力を一時的にミュートし、終了後に戻します。",
-        "ariaLabel": "音声入力中のミュートを切り替え",
-        "linuxUnsupported": "Linux 初版では音声入力中のシステムミュートは未対応です。"
-      },
-      "usage": {
-        "duration": "時間",
-        "estimatedCost": "概算費用",
-        "costBreakdown": "認識 {{asr}} · 整文 {{refine}} · 送信済み音声からの推定",
-        "sessions": "回数",
-        "outcomes": "音声なし {{noSpeech}} · 失敗 {{failed}}",
-        "reset": "統計をリセット"
-      },
-      "history": {
-        "label": "最近の認識",
-        "empty": "認識履歴はまだありません。",
-        "copy": "コピー",
-        "delete": "削除",
-        "copyAria": "認識結果をコピー",
-        "deleteAria": "認識結果を削除",
-        "toast": {
-          "copied": "コピーしました",
-          "copyFailed": "コピーに失敗しました"
-        }
-      },
-      "speakerFilter": {
-        "label": "自分の声を認識",
-        "hint": "音声入力中は周りの人の声をミュートし、あなたの話した内容だけを認識に送ります。事前に声紋の登録が必要です。あなたと同時に話された声は完全には取り除けません。",
-        "ariaLabel": "「自分の声を認識」を切り替え",
-        "unsupported": "このパソコンでは声紋認識を利用できません。",
-        "privacy": "声紋はこのパソコンにだけ暗号化して保存され、アップロードや他のデバイスへの同期は行われません。",
-        "actionFailed": "操作に失敗しました。しばらくしてからもう一度お試しください。",
-        "model": {
-          "needed": "初回は約 {{size}} の認識モデルをダウンロードします。",
-          "download": "ダウンロード",
-          "downloading": "認識モデルをダウンロード中（{{done}} / {{total}}）",
-          "cancel": "キャンセル",
-          "retry": "再試行",
-          "failed": {
-            "network": "認識モデルのダウンロードに失敗しました。ネットワークを確認してもう一度お試しください。",
-            "disk": "認識モデルを保存できませんでした。ディスクの空き容量を確認してもう一度お試しください。",
-            "checksum": "ダウンロードした認識モデルの検証に失敗しました。もう一度お試しください。",
-            "unavailable": "現在、認識モデルを取得できません。しばらくしてからもう一度お試しください。"
-          }
-        },
-        "profile": {
-          "missing": "声紋が未登録です",
-          "missingHint": "声紋を登録すると有効になります。",
-          "enrolled": "声紋を登録済み",
-          "enrolledAt": "{{date}} に登録",
-          "enroll": "声紋を登録",
-          "reenroll": "登録し直す",
-          "delete": "声紋を削除",
-          "deleted": "声紋を削除しました",
-          "deleteConfirm": {
-            "title": "声紋を削除しますか？",
-            "description": "削除すると、もう一度登録するまで音声入力で周りの人の声を除外しなくなります。",
-            "confirm": "削除",
-            "cancel": "キャンセル"
-          }
-        },
-        "strictness": {
-          "label": "厳しさ",
-          "hint": "厳しくするほど周りの人の声が入りにくくなりますが、騒がしい場所では自分の言葉も途切れやすくなります。",
-          "options": {
-            "relaxed": "ゆるめ",
-            "standard": "標準",
-            "strict": "厳しめ"
-          }
-        },
-        "enroll": {
-          "title": "声紋を登録",
-          "description": "以下の {{clips}} つの文章を普段の声で読み上げてください。各録音は最大 {{seconds}} 秒です。読み終えたら録音を終了してください。普段音声入力を使う場所で、ほかの人が同時に話さないように録音してください。",
-          "stepsAriaLabel": "読み上げる文章",
-          "step": "{{current}} / {{total}}",
-          "record": "読み上げを開始",
-          "stop": "録音を終了",
-          "rerecord": "この文章を録り直す",
-          "recording": "録音中、残り {{seconds}} 秒",
-          "recorded": "録音済み",
-          "cancel": "キャンセル",
-          "submit": "完了",
-          "done": "声紋を登録しました",
-          "passages": {
-            "p1": "今日の午前中は今週の作業予定を整理して、午後には話し合いたい課題をまとめて、みんなに先に送っておきます。",
-            "p2": "明日天気が良ければ少し早めに出発して、途中で果物やお菓子を買い、お昼は公園で食べましょう。",
-            "p3": "この文章をもう少し簡潔にして、重要な数字と結論は残したうえで、要点を三つから五つの文でまとめてください。"
-          },
-          "errors": {
-            "too_short": "{{index}} つ目の録音で検出された音声が短すぎます。録り直してください。",
-            "no_embedding": "{{index}} つ目の録音から声紋を読み取れませんでした。録り直してください。",
-            "inconsistent": "{{index}} つ目の録音が他と同じ人の声に聞こえません。他の人の声や雑音が入った可能性があります。録り直してください。",
-            "models_missing": "認識モデルのダウンロードがまだ完了していません。しばらくしてからお試しください。",
-            "storage_unavailable": "システムのキーチェーンを利用できないため、声紋を暗号化して保存できません。しばらくしてからお試しください。",
-            "failed": "声紋を作成できませんでした。もう一度お試しください。",
-            "microphone": "マイクを使用できません。マイクの許可とデバイスを確認してください。",
-            "noAudio": "マイクから音が届いていません。デバイスを確認してもう一度お試しください。"
-          }
-        }
-      }
     },
     "sessionImport": {
       "title": "セッションのインポート",
@@ -4381,7 +3993,7 @@
         "more": "その他の音声モデル（{{count}}）",
         "manual": "音声モデル ID を入力",
         "modelId": "音声モデル ID",
-        "modelsHint": "音声モデルを保存しても、音声合成は開始されません。音声や文ごとの読み上げはパートナーの音声設定で調整できます。",
+        "modelsHint": "音声モデルを保存しても、音声合成は開始されません。",
         "otherModels": "チャットとその他のモデル",
         "separateKey": "音声には API キーが必要です。別の接続を作成し、既存のサブスクリプションやデバイスコードの接続は保持します。",
         "fetchFailed": "モデル一覧を取得できません。参考モデルを選んで追加できます。",
@@ -6713,13 +6325,6 @@
           "builtIn": "キーキャップの組み込みアクションを使用",
           "unmapped": "このキーキャップには動作がありません"
         },
-        "microphone": {
-          "title": "マイク",
-          "separate": {
-            "label": "マイクキーを分ける",
-            "description": "短く押すと録音を開始して維持します。もう一度押すか、長押しして離すと停止します。"
-          }
-        },
         "analog": {
           "title": "ジョイスティック",
           "description": "ジョイスティックの各方向に割り当てるアクションを選択します。",
@@ -6757,8 +6362,7 @@
           "tasks": "タスク",
           "commands": "コマンド",
           "keycaps": "キーキャップ",
-          "skills": "スキル",
-          "voice": "音声入力"
+          "skills": "スキル"
         },
         "layout": {
           "editor": {
@@ -6842,8 +6446,6 @@
         "notBindable": "このキーの組み合わせは使用できません",
         "systemReserved": "OS によって予約されています",
         "conflict": "「{{name}}」と競合しています",
-        "voiceConflict": "音声入力のショートカットと競合しています",
-        "composerVoiceConflict": "音声入力のショートカットと競合しています。メッセージ入力の送信ショートカットまたは音声入力のショートカットを変更してください。",
         "menuAccelerator": "この組み合わせはメニューショートカットとして登録できません",
         "globalUnusable": "この組み合わせはシステム全体のショートカットに使用できません",
         "globalOccupied": "他のアプリで使用中です。別の組み合わせを選んでください"
@@ -7125,8 +6727,6 @@
         },
         "actions": {
           "none": "未設定",
-          "voice": "音声入力",
-          "voiceDescription": "押している間音声入力し、離すと終了します。",
           "commands": "コマンド",
           "skills": "スキル",
           "choose": "機能を選択"
@@ -11487,135 +11087,6 @@
         "riskBody": "X の質問にはパートナーの共有メモリ、ツール、作業フォルダーを使用し、返信は公開されます。個人情報を扱う用途には使用しないでください。プライベートチャットの履歴は直接使用しません。"
       }
     },
-    "voiceMode": {
-      "openConversation": "会話を開く",
-      "inCallWith": "{{name}} と通話中",
-      "showDetails": "通話記録を表示",
-      "hideDetails": "通話記録を閉じる",
-      "transcriptTitle": "現在の文字起こし",
-      "transcriptEmpty": "話した内容がここに表示されます。",
-      "composerPaused": "音声モードを終了すると入力できます…",
-      "microphoneMuted": "マイクはオフです",
-      "exit": {
-        "idle": "しばらく発話がないため、まもなく音声モードを終了します",
-        "farewell": "別れの言葉を認識しました。まもなく音声モードを終了します",
-        "semantic": "まもなく音声モードを終了します",
-        "sending": "メッセージの送信後に音声モードを終了します…",
-        "countdown": "{{seconds}}秒後に音声モードを終了",
-        "cancel": "音声モードを続ける",
-        "hint": "話し始めるか「音声モードを続ける」を押すと、終了を取り消せます。進行中の作業には影響しません。",
-        "mutedHint": "マイクはミュートのままです。「音声モードを続ける」を押すと、終了を取り消せます。進行中の作業には影響しません。"
-      },
-      "settingsTitle": "音声",
-      "openSettings": "音声設定",
-      "startConversation": "音声会話を開始",
-      "settingsHint": "このパートナーの読み上げモデルと声を選択し、入力欄から音声会話を開始できます。",
-      "previewNeedsChat": "パートナーとの会話を開始すると試聴できます。",
-      "voiceId": "音声 ID",
-      "manualVoice": "音声 ID を手動入力",
-      "refreshVoices": "音声リストを更新",
-      "voicesLoading": "音声を取得中…",
-      "voicesError": "音声を取得できませんでした。再試行するか、音声 ID を入力してください。",
-      "voicesCustomError": "カスタム音声をすべて取得できませんでした。再試行するか、音声 ID を入力してください。",
-      "voicesReference": "このモデルの参考音声です。互換サービスで使える音声は異なる場合があります。",
-      "voicesTruncated": "音声リストの一部を表示しています。未掲載の音声は ID を入力してください。",
-      "voicesManual": "このインターフェースには音声リストがありません。音声 ID を入力してください。",
-      "preview": "試聴",
-      "stopPreview": "試聴を停止",
-      "previewVoice": "{{voice}}を試聴",
-      "stopPreviewVoice": "{{voice}}の試聴を停止",
-      "previewText": "こんにちは、これが私の声です。お話しできてうれしいです。",
-      "previewStatus": {
-        "idle": "試聴には選択したモデルを使用し、利用料金が発生する場合があります。",
-        "preparing": "試聴用の音声を生成中…",
-        "playing": "試聴中…",
-        "complete": "試聴が完了しました。",
-        "error": "試聴に失敗しました"
-      },
-      "readAloud": "読み上げ",
-      "stopReadAloud": "読み上げを停止",
-      "finishBeforeReadAloud": "メッセージを読み上げるには、音声モードを終了してください。",
-      "readAloudFailed": "読み上げに失敗しました",
-      "finishBeforeDictation": "音声モードを終了してから音声入力を開始してください。",
-      "title": "音声モード",
-      "model": "読み上げモデル",
-      "refresh": "モデルを更新",
-      "voice": "音声",
-      "voiceHint": "選択したモデルが対応する音声名を入力してください（例：alloy）。",
-      "modelUnavailable": "保存した読み上げモデルは利用できません。別のモデルを選んでください。",
-      "noModels": "利用可能な音声合成モデルがありません。",
-      "noModelsSupportedProtocols": "MiniMax、ElevenLabs、Qwen / CosyVoice の HTTP API、および OpenAI 互換の音声合成 API に対応しています。",
-      "noModelsSetupHint": "プロバイダーに接続して音声モデルを有効にすると、パートナーの読み上げ音声を設定できます。",
-      "openProviders": "モデルプロバイダーを開く",
-      "catalogError": "音声設定の読み込み、または保存に失敗しました。もう一度お試しください。",
-      "start": "会話を始める",
-      "resume": "再開",
-      "retrySend": "再接続して送信",
-      "mute": "ミュート",
-      "interrupt": "読み上げを停止",
-      "send": "送信",
-      "end": "終了",
-      "unsent": "未送信 · テキストを選択してコピーできます",
-      "hint": "話し終えると自動送信し、返答を AI 音声で読み上げます。いつでも話しかけて割り込めます。",
-      "status": {
-        "questionElsewhere": "タスクに回答待ちの質問があります · 通話は継続中",
-        "idle": "準備ができたら開始",
-        "connecting": "音声認識に接続中…",
-        "listening": "聞いています",
-        "thinking": "考え中…",
-        "speaking": "読み上げ中…",
-        "paused": "一時停止 · マイクはオフ",
-        "error": "一時停止 · マイクはオフ",
-        "question": "選択待ち · 選択肢の番号または名前を話せます",
-        "confirmation": "確認待ち · マイクはオフ",
-        "preparing": "音声を準備中…",
-        "loading": "音声設定を読み込み中…",
-        "microphone": "マイクを起動中…",
-        "muted": "マイクはオフ · 引き続き聞けます"
-      },
-      "errors": {
-        "busy": "音声は別の通話、読み上げ、試聴、または音声入力で使用中です。終了してからもう一度お試しください。",
-        "connection": "音声接続が途切れました。未送信のテキストは保持されています。",
-        "microphone": "マイクが停止しました。権限と接続を確認して再開してください。",
-        "send": "メッセージは受け付けられませんでした。テキストは保持されています。",
-        "speech": "読み上げに失敗しました。返答のテキストは会話に残っています。",
-        "speechTimeout": "音声の応答がタイムアウトしました"
-      },
-      "voiceIdHint": "このプロバイダーのアカウントで利用できる音声 ID を入力してください。",
-      "speed": "読み上げ速度",
-      "speedAdjusted": "選択したモデルに合わせて {{speed}} 倍に調整しました。",
-      "speedUnavailable": "このモデルは現在、読み上げ速度の調整に対応していません。",
-      "speedValue": "{{speed}}×",
-      "sentencePlayback": "文ごとに読み上げ",
-      "sentencePlaybackHint": "返答の生成中に、完成した文から読み上げます。オフにすると返答全体の完成を待ちます。返答の処理が必要な場合は、自動的に待機します。",
-      "preferenceHint": "音声設定は、このパートナー専用に保存されます。",
-      "resetPreference": "既定値に戻す",
-      "preferenceError": "音声設定を読み込むか保存できませんでした。もう一度お試しください。",
-      "protocol": "音声 API",
-      "protocolOpenai": "OpenAI 互換",
-      "protocolHint": "このアドレスが対応する音声 API を選択してください。プロバイダーは切り替わりません。",
-      "protocolCorrectedHint": "公式アドレスに合わせて API を修正しました。音声を選び直してください。",
-      "unmute": "ミュート解除",
-      "mutedHint": "マイクはオフです。返答の読み上げは続きます。ミュートを解除すると会話を続けられます。",
-      "microphoneResumeError": "マイクをオンにできませんでした。読み上げは引き続き聞けます。権限とデバイスを確認し、ミュート解除を再試行してください。",
-      "callRecord": "今回の通話",
-      "callHistoryTitle": "音声通話",
-      "you": "あなた",
-      "companion": "パートナー",
-      "callInProgress": "通話中",
-      "callSendFailed": "送信できませんでした。発言は保持されています。",
-      "handoff": {
-        "sending": "引き継ぎ中…",
-        "accepted": "パートナーに引き継ぎました",
-        "failed": "引き継ぎできませんでした。発言は保持されています",
-        "completed": "結果を受信しました"
-      },
-      "callSaved": "記録を保存しました",
-      "taskFromCall": "通話から引き継いだ作業",
-      "viewTaskProgress": "進捗を確認",
-      "liveDraft": "文字起こし中",
-      "questionDraft": "確認待ち"
-    },
     "dmThread": {
       "newReply": "新しい返信",
       "you": "あなた",
@@ -12382,23 +11853,6 @@
       "defaultPlaceholder": "今日は何をしましょうか〜",
       "createAgentPlaceholder": "{{appName}}さん、こんにちは！",
       "recommendationShortcut": "Tab",
-      "voiceInput": {
-        "start": "音声入力を開始",
-        "stop": "音声入力を停止",
-        "releaseToStop": "音声入力中、離すと終了",
-        "holdComposer": "入力欄を長押しして音声入力",
-        "speakRelease": "話してください。離すと終了",
-        "speakPressAgain": "話してください。もう一度押すと終了",
-        "releaseToSend": "離すと送信",
-        "finishAndSend": "音声入力を終了して送信",
-        "refining": "整えています",
-        "permissionDialog": {
-          "title": "マイク権限が必要です",
-          "description": "マイクへのアクセスを許可してから、もう一度音声入力をクリックしてください。",
-          "confirm": "権限を許可",
-          "cancel": "キャンセル"
-        }
-      },
       "remoteSwitchFailed": "リモート設定の変更に失敗しました(未適用)",
       "switchFailed": "設定の変更に失敗しました(未適用)",
       "modelWindowUnknown": {
@@ -12652,59 +12106,6 @@
       "oauthSub": "ブラウザで認証ページが開き、ログイン後に自動接続されます"
     }
   },
-  "voiceInputOverlay": {
-    "rateLimited": "音声リクエストが多すぎます。しばらく待ってから再試行してください。",
-    "status": {
-      "listening": "音声入力中",
-      "submitting": "確定中",
-      "refining": "整えています",
-      "result": "音声入力",
-      "inputFailed": "入力に失敗しました",
-      "transcriptKept": "認識したテキストは保持しています",
-      "permissionRequired": "権限が必要です",
-      "error": "音声入力に失敗しました"
-    },
-    "hint": "もう一度ショートカットで入力",
-    "placeholder": "話し始めてください…",
-    "pasteHint": "自動入力に失敗しました。認識テキストをコピーして手動で入力してください。",
-    "pasteErrors": {
-      "empty": "入力できる音声テキストがありません。",
-      "unavailable": "現在のアプリでは自動入力できません。認識テキストをコピーして手動で入力してください。",
-      "unconfirmed": "自動入力が成功したか確認できません。必要に応じて認識テキストをコピーしてください。",
-      "permission": "現在のアプリへ音声入力するにはアクセシビリティ権限が必要です。権限を許可してから再試行してください。",
-      "failed": "自動入力に失敗しました。認識テキストをコピーして手動で入力してください。"
-    },
-    "permissionPrompts": {
-      "microphone": {
-        "message": "音声入力を使用するにはマイク権限が必要です。",
-        "hint": "権限を許可してから、もう一度ショートカットを押すと録音を開始できます。"
-      },
-      "accessibility": {
-        "message": "現在のアプリに自動入力するにはアクセシビリティ権限が必要です。",
-        "hint": "権限を許可してから、もう一度ショートカットを押すと自動入力できます。"
-      }
-    },
-    "copy": "コピー",
-    "retry": "再試行",
-    "openPermissionSettings": "権限を許可",
-    "openSettings": "設定を開く",
-    "settingsRecoveryHint": "設定を完了してから、もう一度ショートカットを押してください。",
-    "settingsOpenFailed": "設定を開けませんでした。メインウィンドウから手動で設定を開いてください。",
-    "close": "閉じる",
-    "submit": "確定して入力",
-    "submitWithShortcut": "確定して入力（{{shortcut}}）",
-    "closeWithShortcut": "閉じて破棄（{{shortcut}}）",
-    "codexRequired": "音声入力を使用するには、先に {{appName}} で Codex に接続してください。",
-    "apiKeyRequired": "音声入力を使用するには、先に API Key を設定してください。",
-    "cindyServiceUnavailable": "{{appName}} 音声サービスを利用できません。ネットワークを確認するか、サービス提供元を切り替えてください。",
-    "asrServiceUnavailable": "音声認識サービスに接続できません。ネットワークを確認してから再試行してください。",
-    "emptyTranscript": "音声は検出されましたが、テキストを認識できませんでした。もう一度お試しください。",
-    "speakerFiltered": "他の人の声を除外しました",
-    "connectionInterrupted": "音声接続が中断されました。ネットワークを確認してからやり直してください。",
-    "recognitionStalled": "音声認識の結果が返ってこなくなりました。もう一度お試しください。",
-    "transcriptKept": "{{message}}（ここまで認識したテキストは保持しており、そのまま編集できます）",
-    "transcriptKeptOverlay": "{{message}}（ここまで認識したテキストは保持しており、コピーして続けられます）"
-  },
   "chatgptAuthRecovery": {
     "title": "ChatGPT のログインが無効になりました",
     "systemSharedInvalidated": "{{appName}} はこのコンピューターの ChatGPT ログインを使用しています。まず ChatGPT App でログインを復旧してください。別の認証情報を作成したり、このコンピューターをログアウトさせたりせずに済みます。",
@@ -12779,14 +12180,6 @@
     "prevMessageJump": "前の質問へ移動：{{preview}}",
     "sessionLoading": "セッションを読み込み中",
     "askUserQuestion": {
-      "voice": {
-        "hint": "選択肢の番号または名前を話してください。複数選択後は「選択を確定」と言ってください。",
-        "freeTextHint": "回答を話し、内容を確認してから「選択を確定」と言って送信してください。",
-        "confirm": "選択内容を確認し、「選択を確定」で送信するか、「選択を取り消し」で選び直してください。",
-        "ambiguous": "選択を特定できません。選択肢の番号または正式な名前を一つ話すか、手動で選んでください。",
-        "unknown": "選択肢を認識できませんでした。番号または正式な名前を話すか、手動で選んでください。",
-        "cancelled": "音声での選択を取り消しました。もう一度選んでください。"
-      },
       "skippedAnswer": "スキップ済み",
       "pendingTitle": "回答待ち",
       "restoreAriaLabel": "質問カードを展開",
@@ -16847,12 +16240,6 @@
         "device-mismatch": "ログイン状態がこのデバイスと一致しません。再度ログインしてください。",
         "account-unavailable": "アカウントを利用できません（無効化または削除された可能性があります）。必要に応じて管理者にお問い合わせください。"
       },
-      "voiceApiKeyAuthTitle": "{{appName}} AI の設定が必要です",
-      "voiceApiKeyAuthDescription": "現在の音声入力プロバイダーは {{appName}} AI を使用します。{{appName}} AI が未接続のため音声入力を開始できません。モデルプロバイダーを開いて接続しますか？",
-      "voiceDirectApiKeyAuthTitle": "音声入力の API Key が必要です",
-      "voiceDirectApiKeyAuthDescription": "現在の音声入力プロバイダーには直接接続用の API Key が必要です。API Keys で追加しますか？",
-      "codexVoiceAuthTitle": "ChatGPT への接続が必要です",
-      "codexVoiceAuthDescription": "音声入力は、接続済みの ChatGPT アカウントで GPT リアルタイム音声認識を使用します。アカウントが未接続か、接続の更新が必要です。モデルプロバイダーを開いて ChatGPT に接続しますか？",
       "codexBinaryMissingTitle": "Codex コンポーネントの準備ができていません",
       "codexBinaryMissingDescription": "Codex コンポーネントの準備がまだできていないため、この機能は使用できません。しばらくしてから再試行するか、「設定 → プロバイダー」で Codex の接続状態を確認してください。",
       "piBinaryMissingTitle": "Pi コンポーネントの準備ができていません",

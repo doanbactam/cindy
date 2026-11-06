@@ -69,7 +69,7 @@
 | [features/billing/BillingPage.tsx:1884](../../../apps/desktop/src/renderer/features/billing/BillingPage.tsx#L1884) | OrderHistoryCard | variant="secondary" size="sm" compact |
 | [components/new-chat/ModelSelector.tsx:541](../../../apps/desktop/src/renderer/components/new-chat/ModelSelector.tsx#L541) | RemoteModelLoadNotice | variant="secondary" tone="danger" size="xs" compact |
 | [components/settings/HelpThreadView.tsx:251](../../../apps/desktop/src/renderer/components/settings/HelpThreadView.tsx#L251) | FeedbackSection | variant="secondary" size="sm" compact |
-| [components/settings/VoiceInputSection.tsx:2132](../../../apps/desktop/src/renderer/components/settings/VoiceInputSection.tsx#L2132) | VoiceInputSection | variant="secondary" size="md" compact |
+| `components/settings/VoiceInputSection.tsx:2132`（2026-11-06 随语音输入下线删除） | VoiceInputSection | variant="secondary" size="md" compact |
 | [features/scheduler/components/ScheduleFormDialog.tsx:1191](../../../apps/desktop/src/renderer/features/scheduler/components/ScheduleFormDialog.tsx#L1191) | ScheduleFormDialog | variant="secondary" size="sm" compact |
 | [components/settings/HookConnectionsSection.tsx:1440](../../../apps/desktop/src/renderer/components/settings/HookConnectionsSection.tsx#L1440) | HookConnectionsSection | variant="secondary" size="xs" compact |
 | [components/settings/HookConnectionsSection.tsx:1451](../../../apps/desktop/src/renderer/components/settings/HookConnectionsSection.tsx#L1451) | HookConnectionsSection | variant="secondary" size="xs" compact |

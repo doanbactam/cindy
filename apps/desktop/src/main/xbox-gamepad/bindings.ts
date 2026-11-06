@@ -55,7 +55,7 @@ export function digitalTriggerPressed(previous: boolean, value: number): boolean
  * Turns one gamepad snapshot into Cindy hardware actions using the saved layout.
  *
  * The first frame after listen starts never fires button edges, so enabling
- * the adapter mid-hold cannot submit or start voice by accident.
+ * the adapter mid-hold cannot submit by accident.
  */
 export function reduceXboxGamepadFrame(
   previous: XboxGamepadFrame | null,
@@ -66,16 +66,11 @@ export function reduceXboxGamepadFrame(
   if (previous) {
     for (const id of XBOX_GAMEPAD_BUTTON_IDS) {
       const binding = layout.buttons[id];
-      if (!binding || binding.type === 'voice') continue;
+      if (!binding) continue;
       if (pressed(previous.buttons[id], next.buttons[id])) {
         const action = actionFromBinding(binding);
         if (action) actions.push(action);
       }
-    }
-    const wasVoice = voiceHeld(previous, layout);
-    const isVoice = voiceHeld(next, layout);
-    if (wasVoice !== isVoice) {
-      actions.push({ type: 'voice', phase: isVoice ? 'press' : 'release' });
     }
     for (const stick of XBOX_GAMEPAD_STICK_IDS) {
       if (layout.sticks[stick].mode !== 'custom') continue;
@@ -83,7 +78,7 @@ export function reduceXboxGamepadFrame(
       const nextHat = hatFromStick(stickAxes(next, stick));
       if (!nextHat || nextHat === previousHat) continue;
       const binding = layout.sticks[stick].directions[nextHat];
-      if (!binding || binding.type === 'voice') continue;
+      if (!binding) continue;
       const action = actionFromBinding(binding);
       if (action) actions.push(action);
     }
@@ -101,14 +96,10 @@ export function xboxGamepadActiveHolds(
   frame: XboxGamepadFrame | null,
   layout: XboxGamepadLayout,
 ): {
-  voice: boolean;
   scroll: Extract<InputDeviceRendererAction, { type: 'scroll' }> | null;
 } {
-  if (!frame) return { voice: false, scroll: null };
-  return {
-    voice: voiceHeld(frame, layout),
-    scroll: combinedScroll(frame, layout),
-  };
+  if (!frame) return { scroll: null };
+  return { scroll: combinedScroll(frame, layout) };
 }
 
 export function xboxGamepadHoldReleases(
@@ -117,7 +108,6 @@ export function xboxGamepadHoldReleases(
 ): InputDeviceRendererAction[] {
   const holds = xboxGamepadActiveHolds(frame, layout);
   const actions: InputDeviceRendererAction[] = [];
-  if (holds.voice) actions.push({ type: 'voice', phase: 'release' });
   if (holds.scroll) actions.push({ type: 'scroll-stop' });
   return actions;
 }
@@ -139,12 +129,6 @@ export function xboxGamepadPreviewFromFrame(
 
 function pressed(wasDown: boolean, isDown: boolean): boolean {
   return !wasDown && isDown;
-}
-
-function voiceHeld(frame: XboxGamepadFrame, layout: XboxGamepadLayout): boolean {
-  return XBOX_GAMEPAD_BUTTON_IDS.some(
-    (id) => layout.buttons[id]?.type === 'voice' && frame.buttons[id],
-  );
 }
 
 function actionFromBinding(binding: XboxGamepadBinding): InputDeviceRendererAction | null {

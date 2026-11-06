@@ -50,8 +50,7 @@ prepareCindyVersionStartup();
 // Node happy-eyeballs(autoSelectFamily)默认每个地址只给 250ms 完成 TCP 握手,
 // VPN/高 RTT 链路上直连海外端点(platform.claude.com 换 token、订阅模式模型流量等)
 // 的合法握手常超过 250ms,所有地址族全被掐掉后 undici 只报一个裸 'fetch failed'。
-// 与 voice-input/refinerHttpDispatcher.ts 的 per-pool 配置同值(2500ms),这里设
-// 进程级默认值,兜住 main 里所有不走自建 dispatcher 的 fetch / net.connect。
+// 这里设 2500ms 进程级默认值,兜住 main 里所有不走自建 dispatcher 的 fetch / net.connect。
 setDefaultAutoSelectFamilyAttemptTimeout(2500);
 
 initLogger();

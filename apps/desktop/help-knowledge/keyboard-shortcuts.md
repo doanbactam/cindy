@@ -22,9 +22,9 @@ These also work but aren't shown on the page: Mod+1 … Mod+9 jump to the first 
 **Changing a shortcut:**
 
 - Click the pencil on a row, press the new key combination, or click **Cancel**. The trash button removes the binding (the row shows **Not set**).
-- Cindy rejects combinations that can't be used, are **Reserved by the operating system**, conflict with another Cindy shortcut (it names which one), or conflict with the voice input shortcut.
+- Cindy rejects combinations that can't be used, are **Reserved by the operating system**, or conflict with another Cindy shortcut (it names which one).
 - A changed row gets **Reset to default**; **Reset all to defaults** appears at the top once anything is customized.
-- Other shortcuts live elsewhere: the voice input shortcut is in **Settings > Voice Input** (see the voice input topic), and the send key (**Use ⌘↵ to send**) is under **Settings > General > Message input**.
+- The send key (**Use ⌘↵ to send**) lives elsewhere, under **Settings > General > Message input**.
 
 **Accessories (keyboards and controllers):**
 
@@ -33,8 +33,8 @@ These also work but aren't shown on the page: Mod+1 … Mod+9 jump to the first 
   - Connect with a data-capable USB cable and turn on **Enable**. Cindy uses the official Work Louder software that comes with a supported ChatGPT or Codex app, so keep one installed; close ChatGPT if it's holding the device. On macOS, allow Cindy under **Input Monitoring**.
   - **Lighting**: **Brightness** and **Auto-dim**.
   - **Agent keys**: **Task order** (**Sidebar order**, **Recent tasks**, **Priority**, or **Custom**), **Focus Cindy with a single tap**, and each key's role — a **Task key** switches tasks and shows status (only the first 6 task keys can light independently), an **Action key** runs a shortcut.
-  - Also **Microphone** (separate mic keys), **Joystick** directions, **Encoder** mode (switch tasks, navigate the composer, reasoning effort, scroll, or custom), the keycap **Layout** editor, and **Reset layout**.
+  - Also **Joystick** directions, **Encoder** mode (switch tasks, navigate the composer, reasoning effort, scroll, or custom), the keycap **Layout** editor, and **Reset layout**.
   - **Codex compatibility** (macOS only): **Prevent Codex from occupying the device** while Cindy runs; quit and reopen Codex to apply.
-- **Xbox controller**, **PlayStation controller** (DualSense / DualShock), **Switch controller** (Switch Pro / Joy-Con), and **Generic controller** — scroll, talk, send, and switch tasks with a gamepad over USB or Bluetooth.
+- **Xbox controller**, **PlayStation controller** (DualSense / DualShock), **Switch controller** (Switch Pro / Joy-Con), and **Generic controller** — scroll, send, and switch tasks with a gamepad over USB or Bluetooth.
   - Turn on **Enable**; Cindy only listens while it's in the foreground.
-  - Click a control to assign an action (a command, a skill, or **Voice input** — hold to talk, release to stop). A stick can **Scroll conversation** or use **Custom directions**. **Reset mapping** restores the defaults.
+  - Click a control to assign an action (a command or a skill). A stick can **Scroll conversation** or use **Custom directions**. **Reset mapping** restores the defaults.

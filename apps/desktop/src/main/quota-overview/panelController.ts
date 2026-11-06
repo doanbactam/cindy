@@ -24,7 +24,7 @@ import {
   openMainWindowBillingTopUp,
   openMainWindowSession,
   openMainWindowRemoteControlSettings,
-  openMainWindowVoiceSettings,
+  openMainWindowProviderSettings,
 } from '../deepLink.js';
 import { getActiveControllers } from '../device-link/dispatch.js';
 import { getResolvedMainLocale, rawMainString } from '../i18n.js';
@@ -158,7 +158,7 @@ export class QuotaPanelController {
         void this.runDetailAction(command.sourceId);
         return;
       case 'open-provider-settings':
-        openMainWindowVoiceSettings('providers');
+        openMainWindowProviderSettings();
         return;
       case 'open-remote-control-settings':
         openMainWindowRemoteControlSettings();
@@ -244,7 +244,7 @@ export class QuotaPanelController {
         openMainWindowBillingTopUp();
         return;
       case 'open-settings':
-        openMainWindowVoiceSettings('providers');
+        openMainWindowProviderSettings();
         return;
       case 'open-app':
         showMainWindow();

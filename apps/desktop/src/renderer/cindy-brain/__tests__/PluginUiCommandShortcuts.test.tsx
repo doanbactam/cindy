@@ -62,12 +62,11 @@ describe('plugin command shortcut targeting', () => {
     expect(choose(key(document.body))).toBeUndefined();
   });
 
-  it('leaves other inputs, native editing, voice bindings and pending actions alone', () => {
+  it('leaves other inputs, native editing and pending actions alone', () => {
     expect(choose(key(document.querySelector('#other-input')!), { focusMessageId: undefined, entry: 'session' })).toBeUndefined();
     const copy = { ...definition, scope: 'session' as const, defaultCombo: { ...combo, code: 'KeyC', ctrl: true, alt: false, shift: false } };
     expect(choose(key(document.querySelector('#composer')!, { code: 'KeyC', ctrlKey: true, altKey: false, shiftKey: false }),
       { focusMessageId: undefined, entry: 'session', definitions: [copy] })).toBeUndefined();
-    expect(choose(key(document.querySelector('#first')!), { voiceCombo: combo })).toBeUndefined();
     expect(choose(key(document.querySelector('#first')!), { pending: new Set(['view-1']) })).toBeUndefined();
   });
 

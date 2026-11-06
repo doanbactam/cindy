@@ -278,7 +278,7 @@ export function setGhostCommandRoster(
   );
 }
 
-/** 导出供测试直接在 ProseMirror state 层实例化(同 VoiceInputDraftDecoration)。 */
+/** 导出供测试直接在 ProseMirror state 层实例化。 */
 export function createGhostCommandPlugin(): Plugin<GhostCommandPluginState> {
   return new Plugin<GhostCommandPluginState>({
     key: PLUGIN_KEY,

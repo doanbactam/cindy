@@ -1,18 +1,9 @@
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { ctx, mountPage, subscription } from '../../ui-page/harness';
 import { ChatInput } from '../../../src/renderer/components/new-chat/ChatInput';
-import { getDefaultVoiceInputSettings } from '../../../src/shared/voiceInputData';
-import { makerChatStore } from '../../../src/renderer/lib/makerChatStore';
 import { useAttachments } from '../../../src/renderer/hooks/useAttachments';
 import { getDraft } from '../../../src/renderer/lib/composerDraftStore';
 import fixturePhoto from '../../../src/renderer/assets/bot-presets/cindy.png';
-import {
-  __testing as promptRecommendations,
-  beginPromptRecommendationPrediction,
-  clearPromptRecommendationSession,
-  resolvePromptRecommendationPrediction,
-} from '../../../src/renderer/lib/promptRecommendationStore';
-
 // The fixture's custom origin lacks secure-context randomUUID. These IDs only
 // identify in-memory send snapshots; production uses Chromium's secure implementation.
 if (!crypto.randomUUID) {
@@ -43,23 +34,7 @@ function CacheScenario() {
 function Fixture() {
   const [attached, setAttached] = useState(false);
   const [running, setRunning] = useState(false);
-  const [callOpen, setCallOpen] = useState(false);
   const [sent, setSent] = useState('');
-  useEffect(() => {
-    if (typeof ctx.data.recommendation !== 'string') return;
-    const sessionId = 'fixture-companion';
-    // Seed a completed turn and model result; keep the real recommendation
-    // store, editor acceptance and call/send dispatch for the coexistence check.
-    makerChatStore.getSnapshot(sessionId);
-    promptRecommendations.applyRunningSnapshot(new Map([[sessionId, { isRunning: true }]]));
-    promptRecommendations.noteTurnEnded(sessionId, 200);
-    promptRecommendations.applyRunningSnapshot(new Map());
-    promptRecommendations.settleCompletion(sessionId);
-    const seq = beginPromptRecommendationPrediction(sessionId, 200);
-    if (seq !== null)
-      resolvePromptRecommendationPrediction(sessionId, 200, seq, ctx.data.recommendation);
-    return () => clearPromptRecommendationSession(sessionId);
-  }, []);
   const files: ComponentProps<typeof ChatInput>['attachmentState'] = {
     attachments: attached
       ? [
@@ -110,8 +85,6 @@ function Fixture() {
           disableAutofocus
           isStreaming={running}
           onStop={() => setRunning(false)}
-          onStartVoiceConversation={() => setCallOpen(true)}
-          voiceConversationActive={callOpen}
           onSend={async (text) => {
             setSent(text);
             return true;
@@ -125,11 +98,6 @@ function Fixture() {
         <button onClick={() => setRunning((value) => !value)} data-testid="running">
           Running
         </button>
-        {callOpen && (
-          <button onClick={() => setCallOpen(false)} data-testid="end-call">
-            End call
-          </button>
-        )}
         <output data-testid="sent">{sent}</output>
       </div>
     </main>
@@ -150,14 +118,6 @@ void mountPage({
       onPiPackagesChanged: subscription('pi-packages'),
       listAgentSkills: async () => ({ success: true, skills: [] }),
       getSessionAgentSwitchIntent: async () => null,
-    },
-    voiceInput: {
-      getDataSnapshot: () => ({
-        settings: { ...getDefaultVoiceInputSettings('darwin'), playInteractionSound: false },
-      }),
-      onDataChanged: subscription('voice-data'),
-      getMicrophonePermissionCached: () => ({ ok: true, status: 'granted' }),
-      onGlobalShortcutTrigger: subscription('voice-shortcut'),
     },
     deviceLink: { onRemotePush: subscription('remote-push') },
     ghosts: { listSync: () => ({ ghosts: [] }) },

@@ -9,7 +9,7 @@ export const PLAYSTATION_GAMEPAD_DEVICE_ID = 'playstation-gamepad';
 export const NINTENDO_GAMEPAD_DEVICE_ID = 'nintendo-gamepad';
 export const GENERIC_GAMEPAD_DEVICE_ID = 'generic-gamepad';
 
-const GAMEPAD_CAPABILITIES = [{ kind: 'commands' }, { kind: 'voice' }, { kind: 'stick' }] as const;
+const GAMEPAD_CAPABILITIES = [{ kind: 'commands' }, { kind: 'stick' }] as const;
 
 export const XBOX_GAMEPAD_DEVICE: InputDeviceDescriptor = {
   id: XBOX_GAMEPAD_DEVICE_ID,
@@ -74,8 +74,7 @@ export type XboxGamepadStickMode = (typeof XBOX_GAMEPAD_STICK_MODES)[number];
 
 export type XboxGamepadBinding =
   | { type: 'command'; commandId: InputDeviceCommandId }
-  | { type: 'skill'; skillId: string; name: string }
-  | { type: 'voice' };
+  | { type: 'skill'; skillId: string; name: string };
 
 export interface XboxGamepadStickBinding {
   mode: XboxGamepadStickMode;
@@ -243,8 +242,6 @@ export const XBOX_GAMEPAD_DEFAULT_LAYOUT: XboxGamepadLayout = {
     y: { type: 'command', commandId: 'newTask' },
     lb: { type: 'command', commandId: 'composer.decreaseReasoningEffort' },
     rb: { type: 'command', commandId: 'composer.increaseReasoningEffort' },
-    lt: { type: 'voice' },
-    rt: { type: 'voice' },
     view: { type: 'command', commandId: 'toggleFullscreen' },
     menu: { type: 'command', commandId: 'settings' },
     xbox: { type: 'command', commandId: 'manageTasks' },
@@ -383,7 +380,7 @@ export function isXboxGamepadBinding(value: unknown): value is XboxGamepadBindin
       record.name.length <= 256
     );
   }
-  return record.type === 'voice';
+  return false;
 }
 
 /**

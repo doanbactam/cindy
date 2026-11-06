@@ -12,7 +12,7 @@ export type WorkLouderCodexActionWindowTarget = 'task-switch' | 'active-window' 
 
 /**
  * Task switching stays on the primary Cindy window so the six task keys keep
- * one stable owner. Voice, send, and scroll follow the focused Cindy window
+ * one stable owner. Send and scroll follow the focused Cindy window
  * when Cindy is frontmost; otherwise they go to the system frontmost app.
  */
 const TASK_SWITCH_COMMANDS = new Set(['session.selectPrevious', 'session.selectNext']);
@@ -25,7 +25,6 @@ export function workLouderCodexActionWindowTarget(
     return 'task-switch';
   }
   if (
-    action.type === 'voice' ||
     action.type === 'scroll' ||
     action.type === 'scroll-stop' ||
     (action.type === 'command' && SYSTEM_FRONTMOST_COMMANDS.has(action.commandId))
@@ -47,27 +46,24 @@ export function isSendableWorkLouderCodexWindow(
   );
 }
 
-type HeldGesture = 'voice' | 'scroll';
+type HeldGesture = 'scroll';
 
 function heldGestureFor(action: WorkLouderCodexRendererAction): HeldGesture | null {
-  if (action.type === 'voice') return 'voice';
   if (action.type === 'scroll' || action.type === 'scroll-stop') return 'scroll';
   return null;
 }
 
 function isHeldGestureStart(action: WorkLouderCodexRendererAction): boolean {
-  return (action.type === 'voice' && action.phase === 'press') || action.type === 'scroll';
+  return action.type === 'scroll';
 }
 
 function isHeldGestureEnd(action: WorkLouderCodexRendererAction): boolean {
-  return (action.type === 'voice' && action.phase === 'release') || action.type === 'scroll-stop';
+  return action.type === 'scroll-stop';
 }
 
 /**
  * Sticky held gestures stay on the window that received the press. A focus
- * change mid-hold must not split press and release across two composers.
- * Voice and scroll keep independent slots so one finishing cannot steal the
- * other's target.
+ * change mid-hold must not split press and release across two windows.
  */
 export function createWorkLouderCodexActiveWindowRouter<
   TWindow extends WorkLouderCodexActionWindowLike,
@@ -77,7 +73,6 @@ export function createWorkLouderCodexActiveWindowRouter<
   isActionWindow: (win: TWindow | null | undefined) => boolean;
 }) {
   const held = {
-    voice: { window: null as TWindow | null, onSystemFrontmost: false },
     scroll: { window: null as TWindow | null, onSystemFrontmost: false },
   };
 

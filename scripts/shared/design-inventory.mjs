@@ -675,7 +675,7 @@ export function catalogSurfaces() {
       platform: 'desktop',
       title: '设置',
       productionEntry:
-        'hash `/settings`（SettingsView；tab 含 general / personalization / providers / billing / usage / voice-input / im-bot / shortcuts / agent-island / import / remote-control / ghosts / builtin-tools / computer-use / help / about）',
+        'hash `/settings`（SettingsView；tab 含 general / personalization / providers / billing / usage / im-bot / shortcuts / agent-island / import / remote-control / ghosts / builtin-tools / computer-use / help / about）',
       reachableComponents: ['SettingsView'],
       styleRoots: [
         'apps/desktop/src/renderer/components/settings',
@@ -893,36 +893,6 @@ export function catalogSurfaces() {
       ],
       routerPaths: [],
       rendererEntryModules: { remoteDesktopViewer: './remote-desktop-viewer-entry' },
-    },
-    {
-      id: 'desktop.window.voice-overlay',
-      platform: 'desktop',
-      title: '语音输入浮窗',
-      productionEntry: '`?view=voice-input-overlay` → main-entry.tsx → VoiceInputOverlay',
-      // VoiceInputOverlay 直接渲染 VoiceInputStatusNotice(状态提示条);
-      // main-entry.tsx 无条件加载 globals.css,其中 data-voice-input-overlay
-      // 透明根节点规则是该浮窗专用。
-      reachableComponents: ['VoiceInputOverlay', 'VoiceInputStatusNotice'],
-      styleRoots: [
-        'apps/desktop/src/renderer/voice-input/VoiceInputOverlay.tsx',
-        'apps/desktop/src/renderer/voice-input/VoiceInputStatusNotice.tsx',
-        'apps/desktop/src/main/voice-input/global.ts',
-        'apps/desktop/src/renderer/styles/globals.css',
-        'apps/desktop/src/renderer/styles/generated/tokens.css',
-      ],
-      routerPaths: [],
-      viewEntryComponents: { 'voice-input-overlay': 'VoiceInputOverlay' },
-    },
-    {
-      id: 'desktop.window.voice-dictionary-toast',
-      platform: 'desktop',
-      title: '语音词典 Toast 窗',
-      productionEntry:
-        '`?view=voice-input-dictionary-toast` → main-entry.tsx → VoiceInputDictionaryToast',
-      reachableComponents: ['VoiceInputDictionaryToast'],
-      styleRoots: ['apps/desktop/src/renderer/voice-input/VoiceInputDictionaryToast.tsx'],
-      routerPaths: [],
-      viewEntryComponents: { 'voice-input-dictionary-toast': 'VoiceInputDictionaryToast' },
     },
     {
       id: 'desktop.window.computer-permission-guide',

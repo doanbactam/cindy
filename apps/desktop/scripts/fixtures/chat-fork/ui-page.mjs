@@ -1,26 +1,28 @@
 import assert from 'node:assert/strict';
 export default {
   name: 'chat-fork', entry: './chat-fork-fixture.tsx', viewport: { width: 800, height: 480 },
-  real: 'UserMessage, AssistantMessage, MessageActionBar, companion read-aloud actions and useForkAtMessage with native fork capabilities',
-  notCovered: 'Native remote execution, database writes and real speech playback; plugin cards are absent from these messages',
+  real: 'UserMessage, AssistantMessage, MessageActionBar, companion reply actions and useForkAtMessage with native fork capabilities',
+  notCovered: 'Native remote execution and database writes; plugin cards are absent from these messages',
   stubs: {
     'src/renderer/components/chat/GhostToolCard': 'export const CARD_EXPAND_TOGGLE_EVENT = "xdt-card-expand-toggle"; export const GhostToolCard = () => null; export const MailCardEditor = () => null;',
   },
   cases: {
     default: { about: 'Task using a shared model: fork from a user message or an assistant reply' },
     ssh: { about: 'SSH workspaces still hide the unsupported fork action' },
-    companion: { about: 'Completed companion replies retain read-aloud and stop in the persistent message footer' },
-    'companion-narrow': { about: 'Reply, read-aloud and more remain accessible below a long reply at 320 px', viewport: { width: 320, height: 520 } },
+    companion: { about: 'Completed companion replies keep their actions in the persistent message footer' },
+    'companion-narrow': { about: 'Reply actions remain accessible below a long reply at 320 px', viewport: { width: 320, height: 520 } },
     'companion-thread': { about: '2026-10-29: native private reply in a 320px topic retains full width and accessible actions below', viewport: { width: 640, height: 520 } },
   },
   async check(page, ui) {
     if (ui.case.startsWith('companion')) {
-      const read = page.getByRole('button', { name: await ui.t('bots.voiceMode.readAloud'), exact: true });
-      assert.equal(await read.count(), 1);
+      // The companion reply renders first; the topic case also shows a user message with its own Copy.
+      const copies = page.getByRole('button', { name: await ui.t('chat.messageActionBar.copy'), exact: true });
+      assert.equal(await copies.count(), ui.case === 'companion-thread' ? 2 : 1);
+      const copy = copies.first();
       if (ui.case === 'companion-thread') {
         // Private-message actions now live below the bubble, not inside the
         // group-chat floating toolbar. Locate the real footer by its accessible action.
-        const layout = await read.evaluate(button => {
+        const layout = await copy.evaluate(button => {
           const footer = button.parentElement;
           const message = footer.parentElement;
           const bubble = message.querySelector('[data-bot-reply-bubble]').getBoundingClientRect();
@@ -35,13 +37,6 @@ export default {
         assert.ok(layout.unused < 10 && layout.inside && layout.below && layout.inViewport,
           'private topic uses its column with accessible message actions below the bubble');
       }
-      await page.locator('[data-bot-reply-bubble]').hover();
-      await read.click();
-      const stop = page.getByRole('button', { name: await ui.t('bots.voiceMode.stopReadAloud'), exact: true });
-      assert.equal(await stop.getAttribute('aria-pressed'), 'true');
-      await ui.capture('reading');
-      await stop.click();
-      assert.equal(await read.count(), 1);
       return;
     }
     const forks = page.getByRole('button', { name: await ui.t('chat.messageActionBar.fork'), exact: true });

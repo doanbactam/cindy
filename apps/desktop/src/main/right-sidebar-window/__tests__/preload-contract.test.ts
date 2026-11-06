@@ -234,7 +234,7 @@ describe('sidebarWindowPreload 椤跺眰濂戠害', () => {
 
   it('涓嶆毚闇?maker / agent / voice / login 鑷不鑳藉姏', () => {
     const forbidden = [
-      'agent', 'voiceInput', 'login', 'settings',
+      'agent', 'login', 'settings',
       'updater', 'chat', 'session',
       'resourceUsageWindow', 'ghostPanelWindow',
       'pluginMarket', 'deepLink', 'gitContext',

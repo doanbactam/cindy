@@ -25,18 +25,11 @@ describe('utility window appearance bootstrap registration', () => {
     expectBefore(source, 'markAppearanceSettingsReaderWindow(guide)', 'loadPermissionView(guide');
   });
 
-  it('语音浮窗与词典 toast 在加载 renderer 前登记只读权限', () => {
-    const source = readMainSource('voice-input/global.ts');
-    expectBefore(source, 'markAppearanceSettingsReaderWindow(window)', 'window.loadURL(');
-    const toastFactory = source.slice(source.indexOf('function createDictionaryToastWindow'));
-    expectBefore(toastFactory, 'markAppearanceSettingsReaderWindow(window)', 'window.loadURL(');
-  });
-
   it('utility renderer 订阅运行期外观变化并直接更新 CSS 字体变量', () => {
     const source = readMainSource('../renderer/main-entry.tsx');
     expect(source).toContain('isAppearanceUtilityView');
     expect(source).toContain('appearanceSettings?.onChanged?.(applyFontSettings)');
     expect(source).toContain('import.meta.hot?.dispose(disposeUtilityAppearanceSettingsSync)');
-    expect(source.match(/<ThemeProvider syncWindowVibrancy=\{false\}>/g)).toHaveLength(4);
+    expect(source.match(/<ThemeProvider syncWindowVibrancy=\{false\}>/g)).toHaveLength(2);
   });
 });

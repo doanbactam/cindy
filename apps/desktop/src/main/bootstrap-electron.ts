@@ -83,7 +83,6 @@ import {
   session,
   shell,
   Tray,
-  webContents,
 } from 'electron';
 import {
   resolveVibrancyConfig,
@@ -561,10 +560,6 @@ import {
   installPowerEventDiagnostics,
   installWindowResponsivenessDiagnostics,
 } from './powerWakeDiagnostics';
-import {
-  broadcastVoiceInputPowerState,
-  installVoiceInputPowerRelease,
-} from './voice-input/powerReleaseNotifier';
 import { reapClaudeOrphansSync } from './claude-orphan-reaper';
 import { reapCodexToolTreesSync } from './codex-tool-tree-reaper';
 import { startAgentProcessPriorityWatcher } from './agent-process-priority';
@@ -598,7 +593,6 @@ import {
 import {
   assertTrustedAppRendererEvent,
   isTrustedAppRendererEvent,
-  isTrustedCindyRendererWindow,
 } from './security/trustedAppRenderer.js';
 
 import { isIpcError } from '../shared/ipc-errors';
@@ -1015,7 +1009,6 @@ import { disposeHtmlPreviews } from './file-browser/html-preview-ipc.js';
 import { disposeRemoteFileBrowser } from './file-browser/remote-deps.js';
 import { registerFileBrowserDeviceOp } from './file-browser/device-op.js';
 import { registerSearchIpc } from './file-browser/search/index.js';
-import { registerVoiceInputIpc } from './voice-input/index.js';
 import { initRegionScreenshot, setRegionScreenshotLocale, stopRegionScreenshot } from './region-screenshot/index.js';
 import { installWindowHiddenBroadcast } from './windowHiddenBroadcast.js';
 import { getRenderWatchdogContext } from './renderWatchdogContext.js';
@@ -1037,12 +1030,6 @@ import {
   parseSessionDragPreviewPalette,
   truncateSessionDragPreviewLabel,
 } from './sessionDragPreviewHtml.js';
-import {
-  isGlobalVoiceInputOverlayVisible,
-  isGlobalVoiceInputOverlaySender,
-  releaseActiveGlobalVoiceInputShortcut,
-  registerGlobalVoiceInputIpc,
-} from './voice-input/global.js';
 import { ensureMainAppPresence } from './appPresence.js';
 import {
   registerDeepLinkProtocol,
@@ -1221,8 +1208,6 @@ import {
 } from './scheduler-host/index.js';
 import { configureRoutineHost } from './routines/service.js';
 import { configureBotAutonomyHost, initBotAutonomy } from './bot-autonomy/service.js';
-import { voiceCallCoordinator } from './voice-conversation/callCoordinator.js';
-import { hasVoiceConversationLease } from './voice-conversation/lease.js';
 import { getBotRemoteResourceSource, ensureBotRoutineLaneSession } from './localDb/ipc/bots.js';
 import {
   registerScheduleHandlers,
@@ -1297,18 +1282,6 @@ configureRoutineHost({
 });
 // 伙伴自主跟进：跟随例行任务引擎生命周期（引擎每次创建后重新登记 host:sessions 事件源）。
 configureBotAutonomyHost({ getMainWindow: () => mainWindowRef });
-voiceCallCoordinator.configure({
-  hostSender: () => {
-    const win = mainWindowRef;
-    return win && !win.isDestroyed() && !win.webContents.isDestroyed() ? win.webContents.id : null;
-  },
-  send: (sender, channel, payload) => {
-    const target = webContents.fromId(sender);
-    if (target && !target.isDestroyed()) target.send(channel, payload);
-  },
-  onActiveChange: (active) => setMainWindowBackgroundThrottlingForVoiceCall(active),
-  leaseHeld: hasVoiceConversationLease,
-});
 initBotAutonomy();
 
 /**
@@ -1710,7 +1683,6 @@ const safeStorageReadLog = createLogger('safe-storage:read');
 // 必需,是放行的。两者不能共用 scope,详见 console-message 监听处的注释。
 const rendererConsoleLog = createLogger('renderer-console');
 const updatePresentationLog = createLogger('update-presentation');
-const voicePowerBroadcastLog = createLogger('voice-input-power');
 const sessionDragPreviewLog = createLogger('session-drag-preview');
 const windowDragLog = createLogger('window-drag');
 const piSubagentLog = createLogger('pi-subagent');
@@ -3281,7 +3253,6 @@ const providerModelFocusRefreshTracker = createAppFocusAutoRefreshTracker({
 });
 let mainWindowBackgroundThrottlingAllowed = true;
 let mainWindowHasRunningTurn = false;
-let mainWindowHasVoiceCall = false;
 const isUpdateRelaunchCandidate =
   process.platform === 'darwin' && isMacOSUpdateRelaunch(process.argv);
 let updatePresentationRecoveryInitialized = false;
@@ -3804,14 +3775,8 @@ function setMainWindowBackgroundThrottlingForActiveTurn(hasRunningTurn: boolean)
   syncMainWindowBackgroundThrottling();
 }
 
-/** The live call runs in the main window, including while that window is hidden. */
-function setMainWindowBackgroundThrottlingForVoiceCall(active: boolean): void {
-  mainWindowHasVoiceCall = active;
-  syncMainWindowBackgroundThrottling();
-}
-
 function syncMainWindowBackgroundThrottling(): void {
-  const nextAllowed = !mainWindowHasRunningTurn && !mainWindowHasVoiceCall;
+  const nextAllowed = !mainWindowHasRunningTurn;
   if (mainWindowBackgroundThrottlingAllowed === nextAllowed) return;
   mainWindowBackgroundThrottlingAllowed = nextAllowed;
   applyMainWindowBackgroundThrottling();
@@ -4172,8 +4137,8 @@ const createWindow = () => {
     if (mainWindowRef === mainWindow) mainWindowRef = null;
     setDeepLinkMainWindow(null);
   });
-  // Main-window close policy is explicit because hidden utility windows (for
-  // example the prewarmed global voice overlay) can keep the process alive.
+  // Main-window close policy is explicit because hidden utility windows can
+  // keep the process alive.
   const makeTestWindow = createMakeTestWindowBehavior({
     isPackaged: app.isPackaged,
     environment: process.env,
@@ -4626,11 +4591,10 @@ const registerIpcHandlers = () => {
     return collectCurrentDatabaseSizeWarningStatus();
   });
 
-  // Find the primary app window, skipping transient utility BrowserWindows like
-  // the voice-input overlay (minimizable:false, maximizable:false). Electron's
+  // Find the primary app window, skipping transient utility BrowserWindows
+  // (minimizable:false, maximizable:false). Electron's
   // BrowserWindow.getAllWindows() ordering is not guaranteed to be stable across
-  // versions / platforms, so once the overlay has been opened once and stays
-  // cached (see voice-input/global.ts), [0] could return the overlay — which
+  // versions / platforms, so [0] could return a cached utility window — which
   // would silently no-op window-minimize / window-maximize IPC and make the
   // title bar's min/max buttons appear unresponsive.
   const getWindow = () => {
@@ -5734,7 +5698,7 @@ const registerIpcHandlers = () => {
   //  - 主窗(Windows): 走 win.close() 触发 close handler,由 handler 决定托盘隐藏或退出。
   //  - 主窗(或解析不到 sender 的兜底,Windows 之外): 自定义 X 语义是"退出 app",
   //    走 app.quit() 才能 trigger before-quit → disposer chain,把 codex 子进程 / im / db
-  //    等都收掉;否则 voice overlay 这种 hidden BrowserWindow 还活着,window-all-closed
+  //    等都收掉;否则隐藏的辅助 BrowserWindow 还活着,window-all-closed
   //    不 fire,残留进程。
   //  - 「在新窗口打开」的副窗: 只关自己, 不退出 app(会话活在主进程, 不受影响)。
   ipcMain.on('window-close', (event) => {
@@ -6921,16 +6885,6 @@ const registerIpcHandlers = () => {
   ipcMain.handle('shell:open-chatgpt-app', async (event): Promise<{ success: boolean }> =>
     handleOpenChatGPTApp(event, {
       assertTrustedSender: (candidate) => {
-        // The cached global overlay is a trusted Cindy renderer but deliberately
-        // not app-content: it needs this fixed, no-argument capability to keep
-        // auth recovery visible without activating the main window.
-        const overlayWindow = BrowserWindow.fromWebContents(candidate.sender);
-        if (
-          isGlobalVoiceInputOverlaySender(candidate.sender) &&
-          candidate.senderFrame === candidate.sender.mainFrame &&
-          isTrustedCindyRendererWindow(overlayWindow)
-        )
-          return;
         assertTrustedAppRendererEvent(candidate);
       },
       openExternal: (url) => shell.openExternal(url),
@@ -10069,12 +10023,6 @@ app.on('ready', async () => {
       mainWindowRef && !mainWindowRef.isDestroyed() ? mainWindowRef.webContents : null,
   });
   registerLocalThemesIpc();
-  registerVoiceInputIpc();
-  registerGlobalVoiceInputIpc({
-    getMainWindow: () => mainWindowRef,
-    // 会话副窗口跑同一套路由,设置页在里面照样打得开,所以弹系统授权窗那两条 IPC 要认它。
-    isSecondaryAppWindow,
-  });
   // 老 'usage:get-today-spend' 已退役 —— renderer 走 maker:usage:today('claude-code') 拉。
   // readTodaySpend 仍在 main/usageBroadcaster.ts 内部被 readAgentTodayUsage 用。
   // 主机飞书 token 链已退役(2026-07-17):飞书授权改由 xd-feishu 意识经
@@ -10196,7 +10144,6 @@ app.on('ready', async () => {
   registerProviderGroupReshare();
   registerFilePeerIpc();
   registerRemoteDesktopIpc(
-    isGlobalVoiceInputOverlaySender,
     { name: getControllerName, revoke: revokeController },
     getLiveScreenHost,
   );
@@ -10216,21 +10163,6 @@ app.on('ready', async () => {
   // 睡醒白屏取证:suspend/resume/lock/unlock 全部落日志,给 renderer 侧
   // render-watchdog 的漂移/无帧日志提供时间锚点。
   installPowerEventDiagnostics({ powerMonitor });
-
-  // 挂起/锁屏时通知 renderer 释放语音输入的保活麦克风(用户已离开,再占着采集
-  // 设备只剩隐私指示灯常亮和 idle-sleep assertion 的代价)。
-  installVoiceInputPowerRelease({
-    powerMonitor,
-    releaseActiveShortcut: releaseActiveGlobalVoiceInputShortcut,
-    broadcast: (channel, payload) => {
-      broadcastVoiceInputPowerState(
-        BrowserWindow.getAllWindows(),
-        channel,
-        payload,
-        voicePowerBroadcastLog,
-      );
-    },
-  });
 
   // ── System resume: refresh tokens after sleep/hibernate ──
   powerMonitor.on('resume', () => {
@@ -10703,16 +10635,7 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
   // macOS Dock clicks should restore/create the primary app window, not reason
-  // about every BrowserWindow in the process. Global voice input keeps a hidden
-  // cached overlay window alive after first use; using getAllWindows().length
-  // here made Dock activation a no-op when the main window was closed but the
-  // overlay still existed.
-  //
-  // Do not focus the main window while the global voice overlay is visible.
-  // Clicking overlay controls also activates the Electron app on macOS; treating
-  // that activation like a Dock click makes the main window pop over the
-  // user's target app right after they click "Copy" in the failure fallback.
-  if (isGlobalVoiceInputOverlayVisible()) return;
+  // about every BrowserWindow in the process.
   // focusMainWindow() 在 hide-on-close 模式下天然把藏起来的窗口 show 回来,
   // renderer 不重载;返回 false 表示主窗口真没了(异常或首次启动),才 createWindow。
   // 端点清单阻断期间禁止建窗(同 second-instance,防绕过阻断门 + preload 白屏)。

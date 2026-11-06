@@ -33,7 +33,7 @@ describe('parseRouterOutput', () => {
   });
 
   it('caps at 2 ids', () => {
-    expect(parseRouterOutput('providers, integrations, voice-input', KNOWN)).toHaveLength(2);
+    expect(parseRouterOutput('providers, integrations, teammates', KNOWN)).toHaveLength(2);
   });
 
   it('dedupes and tolerates whitespace, newlines and case', () => {
@@ -84,7 +84,6 @@ describe('HELP_KNOWLEDGE invariants', () => {
     'personalization',
     'api-keys',
     'providers',
-    'voice-input',
     'import',
     'connections',
     'im-bot',

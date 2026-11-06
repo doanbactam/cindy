@@ -1,9 +1,8 @@
 /**
  * 系统保留快捷键表 —— 判定某个「修饰键 + 物理键」组合是否会与 OS 级快捷键冲突。
  *
- * 从 renderer/voice-input/shortcut.ts 抽出为 shared 纯数据 + 纯函数,
- * 供语音输入快捷键与应用级快捷键 (appShortcuts) 两套体系共用同一份保留键
- * 判定。零 DOM / Electron 依赖, main / renderer 均可 import。
+ * shared 纯数据 + 纯函数, 供应用级快捷键 (appShortcuts) 判定保留键。
+ * 零 DOM / Electron 依赖, main / renderer 均可 import。
  *
  * 判定基准是 W3C KeyboardEvent.code (物理键位, 布局无关)。
  */

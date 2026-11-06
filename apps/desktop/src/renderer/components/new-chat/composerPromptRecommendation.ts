@@ -5,7 +5,6 @@ export interface ComposerPromptRecommendationVisibilityInput {
   hasMessage: boolean;
   hasAttachments: boolean;
   hasBrowserComments: boolean;
-  hasVoiceDraftText: boolean;
   mutationLocked: boolean;
 }
 
@@ -19,7 +18,6 @@ export function isComposerReadyForPromptRecommendation(
     !input.hasMessage &&
     !input.hasAttachments &&
     !input.hasBrowserComments &&
-    !input.hasVoiceDraftText &&
     !input.mutationLocked
   );
 }

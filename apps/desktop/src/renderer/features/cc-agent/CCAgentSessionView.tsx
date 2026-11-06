@@ -6,12 +6,6 @@ import { PluginUiCommandShortcuts } from '@/cindy-brain/PluginUiCommandShortcuts
 import { PluginUiStatusBar } from '@/cindy-brain/PluginUiStatusBar';
 import { McpSetupPrompt, useMcpSetupRequest } from '@/components/new-chat/McpSetupPrompt';
 import { deviceDisplayName } from '@/lib/deviceName';
-import { VoiceCallComposerSlot } from '../bots/voice/GlobalVoiceCall';
-import { resolveVoiceConfiguration } from '../bots/voice/voiceConfiguration';
-import { sendVoiceCallCommand, useVoiceCallSummary } from '../bots/voice/voiceCallStore';
-import { visibleVoiceCallMessages } from '../bots/voice/VoiceCallTranscript';
-import { useMessageReadAloud } from '../bots/voice/useMessageReadAloud';
-import { MessageReadAloudContext } from '@/components/chat/MessageReadAloudContext';
 import { RemoteBotFollowUpInvitation } from '@/features/bots/RemoteBotFollowUpInvitation';
 import { BotFollowUpInvitation } from '@/features/bots/BotFollowUpInvitation';
 import { formatSessionDuration } from '@/lib/sessionDurationFormat';
@@ -126,7 +120,6 @@ import { GhostGrantConfirmCard } from './GhostGrantConfirmCard';
 import { InputHandoffCard } from '@/features/input-handoff/InputHandoffCard';
 import { RemoteDesktopConfirmationNotice } from './RemoteDesktopConfirmationNotice';
 import { AskUserQuestionPrompt } from '@/components/new-chat/AskUserQuestionPrompt';
-import type { VoiceQuestionTarget } from '@/components/new-chat/voiceQuestionSelection';
 import { PluginSetupPrompt } from '@/components/new-chat/PluginSetupPrompt';
 import { PlanViewerCard } from '@/components/new-chat/PlanViewerCard';
 import { PlanActionCard } from '@/components/new-chat/PlanActionCard';
@@ -254,7 +247,6 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import * as sessionService from '@/lib/sessionService';
 import { emitRefresh } from '@/lib/sessionsBus';
 import type { Session } from '@/lib/ccAgent.types';
-import { isSecondaryWindow } from '@/lib/secondaryWindow';
 import { toast } from '@/lib/toast';
 import {
   buildCreateOptsForCurrentSession,
@@ -1078,19 +1070,7 @@ function CCAgentSessionContent({
 
   // Bot route gates have already checked durable ownership. The async runtime
   // snapshot may be absent during load/reconnect; it must never change the skin.
-  // The call is app-wide; this page only tells whether it belongs to this task.
-  const voiceCall = useVoiceCallSummary();
-  const voiceModeOpen = voiceCall.open && voiceCall.sessionId === sessionId;
-  const activeVoiceCallId = voiceCall.sessionId === sessionId ? voiceCall.callId : null;
-  const voiceQuestionBridge = useRef<VoiceQuestionTarget | null>(null);
   const botChatIdentity = resolveBotChatIdentity(botIdentity, sessionId);
-  const companionSettingsOpen = new URLSearchParams(location.search).get('settings') === '1';
-  const openVoiceSettings = useCallback(() => {
-    const search = new URLSearchParams(location.search);
-    search.set('settings', '1');
-    search.set('settingsPage', 'voice');
-    navigate(`${location.pathname}?${search.toString()}`);
-  }, [location.pathname, location.search, navigate]);
   const [followUpInvitationSession, setFollowUpInvitationSession] = useState<string | null>(null);
   useEffect(() => setFollowUpInvitationSession(null), [sessionId]);
   const showCenteredControlledBanner = hasControlledBanner && !controlledBannerCollapsed;
@@ -4404,58 +4384,6 @@ function CCAgentSessionContent({
     ],
   );
 
-  const voiceSurfaceAvailable = Boolean(botChatIdentity && !botChatIdentity.deviceId && sessionId
-    && !remoteDeviceId && !session?.remoteHostId && !readOnly && ownsRoute && viewVisible);
-  const voiceModeAvailable = voiceSurfaceAvailable && !companionSettingsOpen;
-  const voiceModeBlocked = Boolean(pendingPermission || pendingPlanReview
-    || pendingPluginSetup || pendingIssueConfirm || pendingRenameSessionsConfirm
-    || pendingGhostGrantConfirm || pendingRemoteDesktopConfirmation || pendingInputHandoff || sessionBinding.attached
-    || remoteHandoffPreparing || cindyMakeInputLocked || queuePaused);
-  // The host reads these live through the composer slot, so a pause cannot be undone by Resume.
-  const voicePageBlocked = remoteHandoffPreparing || cindyMakeInputLocked;
-  // A settings drawer or a secondary window can cover the card: then it takes no spoken answer.
-  const voiceQuestionVisible = voiceSurfaceAvailable && !voiceModeBlocked && !companionSettingsOpen && !isSecondaryWindow();
-  const messageReadAloud = useMessageReadAloud({
-    botId: botChatIdentity?.id,
-    sessionId: sessionId ?? '',
-    enabled: voiceModeAvailable,
-    voiceModeOpen: voiceCall.open,
-  });
-  const voiceEntryRef = useRef({ sessionId, available: voiceModeAvailable, bot: botChatIdentity });
-  voiceEntryRef.current = { sessionId, available: voiceModeAvailable, bot: botChatIdentity };
-  const startVoiceMode = useCallback(() => {
-    const target = sessionId;
-    const entry = () => voiceEntryRef.current;
-    const isCurrent = () => entry().sessionId === target && entry().available;
-    // Release message playback before the host starts its exclusive voice lease.
-    void messageReadAloud.stopForVoiceMode().then(async (current) => {
-      const bot = entry().bot;
-      if (!current || !isCurrent() || !bot || !target) return;
-      const voice = window.electronAPI.voiceConversation;
-      // Missing configuration opens settings here, not in a possibly hidden main window.
-      const configured = await Promise.all([voice.models(), voice.preference(bot.id)]).then(
-        ([models, preference]) => {
-          const { selection, protocol } = resolveVoiceConfiguration(models, preference.selection);
-          return Boolean(selection && protocol);
-        },
-        // The host re-reads these and reports a failed read on the toolbar.
-        () => true,
-      );
-      if (!isCurrent()) return;
-      if (!configured) {
-        openVoiceSettings();
-        return;
-      }
-      const { id, name, templateId, avatar, avatarColor } = bot;
-      const started = await sendVoiceCallCommand({
-        type: 'start',
-        sessionId: target,
-        bot: { id, name, templateId, avatar, avatarColor },
-      }).catch(() => false);
-      if (!started) toast.warning(t('bots.voiceMode.errors.busy'));
-    });
-  }, [sessionId, messageReadAloud.stopForVoiceMode, openVoiceSettings, t]);
-
   const handleStopSession = useCallback(() => {
     if (remoteSessionUnavailable) {
       toast.warning(t('ccAgent.remoteSession.actionsUnavailable'));
@@ -4620,12 +4548,6 @@ function CCAgentSessionContent({
     session,
     t,
   ]);
-
-  const handleBeforeVoiceInputStart = useCallback(async () => {
-    if (cindyMakeInputLocked || voiceModeOpen) return false;
-    const { proceed } = await vendorAuthGate.checkAndConfirm('codex', { purpose: 'voice-input' });
-    return proceed;
-  }, [vendorAuthGate, cindyMakeInputLocked, voiceModeOpen]);
 
   // M32: Retry — ErrorBanner 的 retryText 现在只是兼容展示值。真正的
   // recovery target 由 main coordinator 持有，避免把已发出的文本重新走普通
@@ -5283,10 +5205,7 @@ function CCAgentSessionContent({
   const sideChatMessages = useMemo(() => session?.source === 'side-chat'
     ? messages.filter(message => new Date(message.createdAt ?? session.createdAt).getTime() >= new Date(session.createdAt).getTime())
     : messages, [messages, session?.source, session?.createdAt]);
-  const timelineMessages = useMemo(
-    () => visibleVoiceCallMessages(sideChatMessages, activeVoiceCallId),
-    [sideChatMessages, activeVoiceCallId],
-  );
+  const timelineMessages = sideChatMessages;
   // 伙伴私聊的引用回复与「回复对应的消息」(cindy-bots-runtime.md):气泡经稳定读取函数找原消息，
   // 流式输出不会让每个气泡跟着重渲染。
   const { enabled: showBotReplyTargets } = useBotReplyTargetPreference();
@@ -5320,19 +5239,9 @@ function CCAgentSessionContent({
     quote: (quote) => { if (!readOnly) setPendingBotReplyQuote(sessionId, quote); },
     locate: (clientId) => requestChatTaskFocus(sessionId, clientId),
   } : null, [botChatIdentity, botQuoteNames, getQuoteMessage, readOnly, sessionId, showBotReplyTargets]);
-  const openVoiceTask = useCallback((clientId: string) => {
-    // Accepted queued work may not have a timeline row yet. Reveal its existing
-    // queue instead of inventing another task or claiming it has begun running.
-    if (pendingQueue.some(entry => entry.clientId === clientId)) {
-      setQueueExpanded(true);
-    } else if (sessionId) {
-      requestChatTaskFocus(sessionId, clientId);
-    }
-  }, [pendingQueue, sessionId, setQueueExpanded]);
   const pendingMcpSetup = useMcpSetupRequest(sessionId ?? null, !remoteDeviceId && !readOnly);
   const messageStreamEl = (
     <BotChatQuoteProvider value={botChatQuote}>
-    <MessageReadAloudContext.Provider value={messageReadAloud.value}>
     <MessageStream
       header={messageStreamHeader}
       footer={pendingMcpSetup ? <McpSetupPrompt key={pendingMcpSetup.requestId} request={pendingMcpSetup} teammate={!!botChatIdentity} /> : null}
@@ -5358,7 +5267,6 @@ function CCAgentSessionContent({
       onBotReadThrough={viewVisible ? onBotReadThrough : undefined}
       messages={timelineMessages}
       activeErrorClientId={!readOnly && error ? errorPersistId : null}
-      activeVoiceCallId={activeVoiceCallId}
       historyVisibleAfter={session?.source === 'side-chat' ? new Date(session.createdAt).getTime() : undefined}
       onAskInSideChat={!readOnly && canNavigateSession && sessionId && session?.source !== 'side-chat' && session?.source !== 'bot'
         ? (quote) => openSideChatTab(sessionId, { quote }) : undefined}
@@ -5387,7 +5295,6 @@ function CCAgentSessionContent({
       ownsHardwareScrollActions={ownsHardwareTaskActions}
       onInlinePlanVisibilityChange={handleInlinePlanVisibilityChange}
     />
-    </MessageReadAloudContext.Provider>
     </BotChatQuoteProvider>
   );
 
@@ -6026,9 +5933,6 @@ function CCAgentSessionContent({
                   />
                 ) : pendingAskUser ? (
                   <AskUserQuestionPrompt
-                    voiceBridge={voiceModeOpen && voiceQuestionVisible ? voiceQuestionBridge : undefined}
-                    voiceShortcutPreferred={isOrcaLeadSessionView}
-                    hostVisible={viewVisible}
                     sessionId={sessionId}
                     workingDir={session?.workingDir ?? ''}
                     remoteHostId={session?.remoteHostId}
@@ -6084,11 +5988,6 @@ function CCAgentSessionContent({
               </div>
               {/* 会话内 /goal 进行中状态条(composer 上方);无 goal 时返回 null 不占位。 */}
               {!isSharedTaskPeer(remoteDeviceId ?? '') && <GoalIndicator sessionId={sessionId} />}
-              {/* Only the compact bar reserves composer space; its transcript is a
-                  dismissible popover, so expansion does not move the main timeline. */}
-              {voiceSurfaceAvailable && sessionId ? (
-                <VoiceCallComposerSlot sessionId={sessionId} questionBridge={voiceQuestionVisible ? voiceQuestionBridge : undefined} blocked={voicePageBlocked} openTask={openVoiceTask} />
-              ) : null}
               {/* 互斥:控制端能终结的 pending interaction 会接管 composer；
                  Desktop-only 只读确认只能提示等待，必须保留 ChatInput，避免控制端
                  既处理不了确认又无法继续发送或排队消息。
@@ -6140,11 +6039,6 @@ function CCAgentSessionContent({
                   getContentWidth={getMessageWidth}
                 />
               ) : (
-                <div
-                  className={voiceModeOpen && voiceSurfaceAvailable ? 'w-full opacity-60' : 'contents'}
-                  inert={voiceModeOpen && voiceSurfaceAvailable}
-                  aria-hidden={voiceModeOpen && voiceSurfaceAvailable ? true : undefined}
-                >
                 <ChatInput
                   middleToolbarSlot={sessionId ? <>
                     <PluginUiContributionControls sessionId={sessionId}
@@ -6171,13 +6065,8 @@ function CCAgentSessionContent({
                   focusRequest={pendingReplyQuote}
                   onSend={handleSend}
                   onComposerTyping={handleComposerTyping}
-                  onBeforeVoiceInputStart={handleBeforeVoiceInputStart}
-                  onStartVoiceConversation={voiceModeAvailable ? startVoiceMode : undefined}
-                  voiceConversationDisabled={voiceModeBlocked || voiceCall.open}
-                  voiceConversationDisabledReason={voiceCall.open && !voiceModeOpen && voiceCall.botName ? t('bots.voiceMode.inCallWith', { name: voiceCall.botName }) : undefined}
-                  voiceConversationActive={voiceModeOpen}
                   sessionId={sessionId}
-                  ownsHardwareComposerActions={ownsHardwareTaskActions && !voiceModeOpen}
+                  ownsHardwareComposerActions={ownsHardwareTaskActions}
                   // session=null 是冷启动 / 直链 GET 尚未回流的合法首帧；显式传 null，
                   // 让 ChatInput 暂不显示 Agent 身份，不能跟随 displayAgentKind 的 cc 回退。
                   runtimeAgentKind={session ? dbToMakerAgentKind(session.agentKind) : null}
@@ -6231,9 +6120,7 @@ function CCAgentSessionContent({
                   steeringQueueClientIds={steeringQueueClientIds}
                   messages={sideChatMessages}
                   placeholder={
-                    voiceModeOpen && voiceSurfaceAvailable
-                      ? t('bots.voiceMode.composerPaused')
-                      : botChatIdentity
+                    botChatIdentity
                       ? t(botChatIdentity.deviceId ? 'bots.devicePicker.remotePlaceholder' : botComposerPlaceholderKey(botChatIdentity.name), {
                           name: botChatIdentity.name,
                           device: deviceDisplayName(botChatIdentity.deviceId ?? '', botChatIdentity.deviceName),
@@ -6332,7 +6219,6 @@ function CCAgentSessionContent({
                   botMentions={botMentions}
                   hideRuntimeControls={Boolean(botChatIdentity)}
                 />
-                </div>
               )}
 
               {/* F-FP-5: workingDir — always rendered to prevent layout shift

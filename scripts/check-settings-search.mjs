@@ -34,7 +34,6 @@ const controls = new Set([
   "BotModelChainEditor",
   "Select.Trigger",
   "FontFamilyPicker",
-  "VoiceInputSelect",
   "PillSelect",
   "BehaviorRow",
   "OneshotModelPinPicker",
@@ -42,7 +41,7 @@ const controls = new Set([
 // These application controls do not spread DOM props by contract. Check their
 // implementation as well as every caller, including aliases and same-file controls.
 const customControls = new Set([
-  "SegmentedControl", "FontFamilyPicker", "BotModelChainEditor", "VoiceInputSelect", "PillSelect", "Select", "BehaviorRow", "OneshotModelPinPicker", "ModelSelector",
+  "SegmentedControl", "FontFamilyPicker", "BotModelChainEditor", "PillSelect", "Select", "BehaviorRow", "OneshotModelPinPicker", "ModelSelector",
 ]);
 const interactiveRoles = new Set([
   "button", "checkbox", "radio", "switch", "combobox", "listbox", "option",

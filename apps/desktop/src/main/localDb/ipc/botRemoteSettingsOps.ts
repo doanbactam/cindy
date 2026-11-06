@@ -89,13 +89,6 @@ export interface BotSettingsOpsDeps {
       setCompanion(botId: string | null, expectedBotId: string | null): Promise<unknown>;
     };
   };
-  /** Speech catalog and the per-teammate preference (the voice IPC's own services). */
-  voice: {
-    models(): unknown;
-    voices(selection: unknown): Promise<unknown>;
-    preference(botId: string): Promise<unknown>;
-    setPreference(botId: string, selection: unknown, sentencePlayback: unknown): Promise<unknown>;
-  };
   /** The routine service every surface shares (`routineTools`). */
   routines: {
     list(botId: string): Promise<Routine[]>;
@@ -170,15 +163,6 @@ const wechatSettings = (settings: unknown) => ({ ...record(settings, 'settings')
 async function wechatOf(deps: BotSettingsOpsDeps) {
   return (await deps.channels.wechat()) ?? throwIpcError('PRECONDITION_FAILED', 'WeChat is unavailable');
 }
-
-/** The local voice IPC answers every failure with one message and logs no arguments; so does the remote page. */
-const voiceCall = async <T>(run: () => T | Promise<T>): Promise<T> => {
-  try {
-    return await run();
-  } catch {
-    return throwIpcError('PRECONDITION_FAILED', 'Voice conversation is unavailable.');
-  }
-};
 
 /** The local routine IPC reports every failure with this one message; so does the remote page. */
 const routineCall = async <T>(run: () => Promise<T>): Promise<T> => {
@@ -302,14 +286,6 @@ export function createBotRemoteSettingsOps(deps: BotSettingsOpsDeps): Partial<Re
       await deps.routines.remove(botOf(call), text(call.args.id, 'id', 128));
       return null;
     }),
-    'voice.models': () => voiceCall(() => deps.voice.models()),
-    'voice.voices': call => voiceCall(() => deps.voice.voices(call.args.selection)),
-    'voice.preference': call => voiceCall(() => deps.voice.preference(botOf(call))),
-    'voice.setPreference': call => voiceCall(() => deps.voice.setPreference(
-      botOf(call),
-      'selection' in call.args ? call.args.selection : undefined,
-      'sentencePlayback' in call.args ? call.args.sentencePlayback : undefined,
-    )),
     'channels.im.list': async call => onlyThisTeammate(deps, await deps.channels.im.list(), call),
     'channels.im.remove': async call => onlyThisTeammate(deps, await deps.channels.im.remove(await ownConnection(deps, call)), call),
     'channels.im.listGroups': async call => deps.channels.im.listGroups(await ownConnection(deps, call)),

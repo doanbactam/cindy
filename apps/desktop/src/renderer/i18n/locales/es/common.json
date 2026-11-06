@@ -1811,7 +1811,6 @@
       "usage": "Historial de uso",
       "personalization": "Personalización",
       "apiKeys": "Claves de herramientas",
-      "voiceInput": "Entrada de voz",
       "shortcuts": "Atajos de teclado",
       "agentIsland": "Isla Agent",
       "import": "Importación de sesión",
@@ -1854,7 +1853,6 @@
       "linkOpen": "Abrir enlaces",
       "streamFade": "Animación de respuesta",
       "compatMode": "Consejos",
-      "voiceInput": "Entrada de voz",
       "import": "Importación de sesión",
       "providers": "Proveedores",
       "remote": "Máquinas remotas",
@@ -2877,392 +2875,6 @@
     "apiKey": {
       "showKey": "Mostrar clave",
       "hideKey": "Ocultar clave"
-    },
-    "voiceInput": {
-      "title": "Entrada de voz",
-      "description": "Configure el idioma, el micrófono, el acceso directo, el refinamiento y el silencio durante la entrada de voz.",
-      "saveFailed": "No se pudo guardar la configuración de entrada de voz: {{message}}",
-      "sections": {
-        "serviceSource": "Fuente de servicio",
-        "basics": "Conceptos básicos",
-        "refinement": "Refinamiento",
-        "preferences": "Preferencias",
-        "usageData": "Uso",
-        "speakerFilter": "Filtro de huella de voz"
-      },
-      "serviceSource": {
-        "label": "Servicio de voz",
-        "hint": "Utiliza el servicio de voz {{appName}} de forma predeterminada. En su lugar, puede conectar un servicio ASR en tiempo real con credenciales de voz independientes.",
-        "localHint": "Los servicios de la cuenta {{appName}} no están disponibles si no se ha iniciado sesión; conecte un servicio ASR en tiempo real con credenciales de voz independientes.",
-        "ariaLabel": "Fuente del servicio de voz",
-        "options": {
-          "cindy": "Servicio oficial {{appName}}",
-          "byok": "Servicio de voz personalizado"
-        },
-        "optionDescriptions": {
-          "cindy": "Utiliza su inicio de sesión {{appName}}, no hay claves para configurar",
-          "byok": "Utiliza un servicio compatible con ASR y sus propias credenciales de voz"
-        },
-        "asr": {
-          "label": "Modelo de reconocimiento",
-          "hint": "Modelo ASR utilizado para conversión de voz a texto.",
-          "ariaLabel": "Modelo de reconocimiento de voz"
-        },
-        "connectionTest": {
-          "action": "Conexión de prueba",
-          "testing": "Pruebas",
-          "testingStatus": "Conectándose al servicio ASR en tiempo real seleccionado…",
-          "success": "Conectado. La ruta ASR en tiempo real seleccionada está disponible.",
-          "saveBeforeTest": "Guarde los cambios personalizados de ASR antes de probar la conexión.",
-          "failure": {
-            "credentialsMissing": "Faltan las credenciales requeridas. Primero complete la configuración.",
-            "authenticationFailed": "La autenticación falló. Verifique las credenciales para este servicio.",
-            "routeUnavailable": "La puerta de enlace AI no admite o no ha habilitado esta ruta ASR en tiempo real.",
-            "timeout": "Se agotó el tiempo de conexión. Verifique el estado de la red y del servicio y vuelva a intentarlo.",
-            "network": "No se pudo conectar. Verifique la configuración de red, dirección y certificado.",
-            "serviceError": "El protocolo de enlace del servicio falló. Vuelva a intentarlo más tarde o verifique la configuración del servicio.",
-            "unsupportedProvider": "Las pruebas de conexión no son compatibles con este modelo de reconocimiento."
-          }
-        },
-        "refiner": {
-          "label": "Modelo de refinamiento",
-          "hint": "Sigue el modelo auxiliar.",
-          "followAuxiliary": "Seguir modelo auxiliar",
-          "followHint": "El refinamiento sigue Configuración → Personalización → Modelos auxiliares. La voz alojada en {{appName}} no ha cambiado; el refinamiento todavía se ejecuta en el servidor.",
-          "openAuxiliary": "Modelos auxiliares abiertos",
-          "cannotRefine": "Los modelos auxiliares actuales no pueden refinar el habla (por ejemplo, solo mensajes Claude), por lo que este dictado no se refinará.",
-          "ariaLabel": "Modelo de refinamiento de voz"
-        },
-        "customAsr": {
-          "optionLabel": "ASR personalizado en tiempo real",
-          "optionDescription": "Utiliza una tecla dedicada de reconocimiento de voz WebSocket y API",
-          "notice": "Ingrese la dirección WebSocket completa de un servicio compatible con ASR. {{appName}} no reutilizará ni agregará rutas al punto final de su modelo de chat.",
-          "protocol": {
-            "label": "Protocolo en tiempo real",
-            "hint": "Elija el formato de mensaje implementado por el servicio ASR.",
-            "ariaLabel": "Protocolo ASR personalizado en tiempo real",
-            "openai": "Transcripción OpenAI",
-            "qwen": "Qwen en tiempo real ASR"
-          },
-          "websocketUrl": {
-            "label": "WebSocket URL",
-            "hint": "Un wss completo:// URL. Los servicios de loopback local pueden usar ws://.",
-            "placeholder": "wss://asr.example.com/v1/realtime",
-            "invalid": "Ingrese un wss válido:// URL sin credenciales integradas. Sólo los servicios de loopback local pueden utilizar ws://."
-          },
-          "model": {
-            "label": "modelo ASR",
-            "hint": "El modelo exacto de reconocimiento de voz aceptado por este servicio.",
-            "placeholder": "ID del modelo de reconocimiento de voz"
-          },
-          "apiKey": {
-            "label": "Clave API de ASR",
-            "hint": "Almacenado localmente con cifrado del sistema y utilizado únicamente para este servicio de voz.",
-            "savedHint": "Una clave se almacena localmente. Deje este campo en blanco para conservarlo.",
-            "endpointChangedHint": "El origen del servicio cambió. Ingrese una nueva clave o elimine la clave guardada antes de guardar.",
-            "placeholder": "Ingrese la clave ASR API",
-            "savedPlaceholder": "Clave guardada: ingresa un nuevo valor para reemplazarlo",
-            "clear": "Quitar clave"
-          },
-          "save": "Guardar servicio de voz"
-        },
-        "credential": {
-          "gatewayKey": "Requiere que su puerta de enlace AI admita esta ruta ASR en tiempo real",
-          "codexLogin": "Utiliza su inicio de sesión Codex",
-          "elevenlabsKey": "Utiliza tu clave de ElevenLabs (variable de entorno)",
-          "codexRealtimeUnsupported": "No disponible: el inicio de sesión de Codex no es una credencial de tiempo real de OpenAI API"
-        },
-        "credentialError": {
-          "gatewayMissing": "No se encontró ninguna clave de puerta de enlace AI; este modelo no esta disponible.",
-          "codexMissing": "Codex no ha iniciado sesión; este modelo no esta disponible.",
-          "elevenlabsMissing": "No hay ninguna clave de ElevenLabs configurada (variable de entorno); este modelo no esta disponible.",
-          "customAsrConfigMissing": "Complete y guarde la configuración del servicio ASR en tiempo real antes de iniciar la entrada de voz.",
-          "customAsrKeyMissing": "Agregue y guarde una clave API para el servicio personalizado ASR en tiempo real.",
-          "codexRealtimeUnsupported": "El inicio de sesión Codex no se puede utilizar para el reconocimiento de voz en tiempo real. Elija un servicio ASR compatible."
-        },
-        "manageProviders": "Proveedores de modelos abiertos",
-        "reset": "Restablecer los valores predeterminados"
-      },
-      "historyToggle": {
-        "show": "Mostrar historial reciente",
-        "hide": "Ocultar historial reciente"
-      },
-      "language": {
-        "label": "Idioma",
-        "hint": "Detecta automáticamente el idioma hablado. Elija uno para reducir las confusiones multilingües.",
-        "ariaLabel": "Selección de idioma",
-        "options": {
-          "auto": "Automático",
-          "es": "Español"
-        },
-        "optionDescriptions": {
-          "auto": "Deja que el servicio de reconocimiento lo detecte",
-          "zh-CN": "Chino simplificado (China continental)",
-          "zh-TW": "Chino tradicional (Taiwán)",
-          "en": "ingles",
-          "ja": "japonés",
-          "ko": "coreano",
-          "es": "Español"
-        }
-      },
-      "shortcut": {
-        "label": "Atajo",
-        "hint": "Utilice una combinación de teclas, una tecla F1-F24 independiente o mantenga presionado Left/Right Comando, Opción, Control o Fn.",
-        "linuxUnsupported": "La primera versión de Linux aún no admite el acceso directo de entrada de voz global. Utilice el botón de entrada de voz en la aplicación en su lugar.",
-        "ariaLabel": "Establecer acceso directo",
-        "recording": "Pulsa un nuevo atajo",
-        "none": "No establecido",
-        "clear": "Borrar",
-        "fnNeedsInputMonitoring": "Los atajos basados en Fn necesitan el permiso de escucha de atajos; Otros atajos graban normalmente.",
-        "awaitingInputMonitoring": "Este atajo está esperando el permiso de escucha de atajos y entra en vigor una vez concedido.",
-        "toast": {
-          "needsModifier": "Utilice una combinación de teclas, una tecla F1-F24 independiente o Left/Right Comando, Opción, Control, Fn.",
-          "fnUnavailable": "Utilice una combinación de teclas, una tecla F1-F24 independiente o Left/Right Comando, Opción, Control, Fn.",
-          "systemReserved": "Este atajo entra en conflicto con un sistema o un atajo de edición común.",
-          "registrationFailed": "No se pudo registrar este acceso directo: {{error}}",
-          "recordingFailed": "No se pudo iniciar la grabación de acceso directo: {{error}}",
-          "listenerUnavailable": "No se pudo iniciar el detector de accesos directos: reinicie {{appName}} e inténtelo de nuevo",
-          "pendingInputMonitoring": "Acceso directo guardado: entra en vigor después de otorgar permiso de escucha al acceso directo"
-        }
-      },
-      "permissions": {
-        "granted": "Concedido",
-        "grant": "Autorizar",
-        "openFailed": "No se puede abrir la configuración del sistema",
-        "microphone": {
-          "label": "micrófono"
-        },
-        "inputMonitoring": {
-          "label": "Oyente de acceso directo",
-          "tooltip": "Se utiliza para escuchar Fn, Comando/Opción/Control independientes, atajos basados en Fn y eventos de lanzamiento de pulsar para hablar independientes F1-F24. Las combinaciones de teclas habituales no lo necesitan. Concedido significa que la aplicación que se está ejecutando actualmente puede escuchar los atajos; Las compilaciones de desarrollo pueden autorizarse a través de Terminal."
-        },
-        "accessibility": {
-          "label": "Entrada automática",
-          "tooltip": "El permiso de accesibilidad permite escribir entradas de voz en otras aplicaciones, leer el texto del cursor cercano para refinar el contexto y detectar ediciones externas para el aprendizaje de diccionarios."
-        }
-      },
-      "interactionSound": {
-        "label": "Señales de sonido",
-        "hint": "Reproduzca pistas breves cuando comience y finalice la entrada de voz.",
-        "ariaLabel": "Alternar señales de sonido"
-      },
-      "fastActivation": {
-        "label": "Activación rápida por voz",
-        "hint": "Mantiene el micrófono listo brevemente después de su uso para que la grabación comience antes después de presionar el acceso directo o el botón; normalmente unos 100 ms más rápido. El micrófono se libera automáticamente después de 30 minutos sin uso.",
-        "ariaLabel": "Alternar activación rápida por voz"
-      },
-      "composerLongPress": {
-        "label": "Mantener pulsado el cuadro de texto para dictar",
-        "hint": "Mantén pulsado el botón izquierdo del ratón en el cuadro de texto un momento para comenzar a dictar. Suéltalo para detener el dictado e insertar el texto.",
-        "ariaLabel": "Activar o desactivar el dictado al mantener pulsado el cuadro de texto"
-      },
-      "refinement": {
-        "enabled": {
-          "label": "Refinamiento de voz",
-          "hint": "Cuando está habilitado, el texto reconocido se limpia en busca de puntuación, terminología y frases habladas. Cuando está deshabilitado, el resultado ASR se usa directamente.",
-          "ariaLabel": "Alternar refinamiento de voz"
-        },
-        "instructions": {
-          "label": "Reglas de refinamiento",
-          "hint": "Estas reglas predeterminadas se pueden editar. Sólo guían la limpieza; el modelo no responderá ni ampliará el contenido.",
-          "edit": "Editar",
-          "collapse": "Contraer",
-          "ariaLabel": "Reglas de refinamiento",
-          "placeholder": "Escribe reglas para tu estilo de expresión."
-        },
-        "dictionary": {
-          "label": "Diccionario personalizado",
-          "hint": "Agregue nombres, términos de productos, jerga o errores de reconocimiento comunes para mejorarlos y priorizarlos.",
-          "ariaLabel": "Diccionario personalizado",
-          "autoLearning": {
-            "label": "Autoaprendizaje",
-            "hint": "Cuando corrige manualmente las palabras dictadas, los candidatos son registrados y promovidos después de repetidas pruebas.",
-            "externalAppMacOnly": "El aprendizaje automático después de pegar en aplicaciones externas actualmente es solo para macOS. La entrada de voz dentro de la aplicación no se ve afectada.",
-            "ariaLabel": "Alternar aprendizaje automático del diccionario"
-          },
-          "deviceSync": {
-            "label": "Sincronizar entre mis dispositivos",
-            "hint": "Su diccionario se fusiona automáticamente entre computadoras que están en línea al mismo tiempo. Las entradas se envían de dispositivo a dispositivo y nunca se almacenan en un servidor.",
-            "ariaLabel": "Alternar sincronización de diccionario entre dispositivos"
-          },
-          "add": "Nuevo término",
-          "save": "Guardar",
-          "cancel": "Cancelar",
-          "edit": "Editar",
-          "delete": "Eliminar",
-          "termLabel": "Término",
-          "aliasSeparator": ", ",
-          "aliases": "A menudo se escucha mal como: {{aliases}}",
-          "aliasesEditLabel": "A menudo malinterpretado como",
-          "aliasesEditAriaLabel": "Editar errores de reconocimiento comunes",
-          "aliasesPlaceholder": "Un error de reconocimiento por línea",
-          "aliasesEditHint": "Utilice uno por línea. Borre el campo para eliminarlos todos.",
-          "searchAriaLabel": "buscar diccionario",
-          "closeSearch": "Cerrar búsqueda",
-          "searchPlaceholder": "buscar diccionario",
-          "newAriaLabel": "Nueva entrada del diccionario",
-          "newPlaceholder": "Agregar un nuevo término",
-          "addDialog": {
-            "title": "Añadir al diccionario",
-            "description": "Ingrese un término y agréguelo al diccionario de entrada de voz.",
-            "submit": "Agregar término"
-          },
-          "csvImport": {
-            "label": "Importar CSV",
-            "tooltip": "Utilice un archivo CSV de una columna con un término por fila.",
-            "success": "Términos {{count}} importados",
-            "successWithSkipped": "Términos {{count}} importados, {{skipped}} omitidos",
-            "errors": {
-              "fileType": "Elija un archivo CSV.",
-              "fileTooLarge": "El archivo CSV es demasiado grande. El tamaño máximo es 5 MB.",
-              "readFailed": "No se pudo leer el archivo. Pruebe con otro archivo CSV.",
-              "empty": "No se encontraron términos importables en {{fileName}}.",
-              "invalidCsv": "El formato CSV no es válido. Utilice una columna con un término por fila.",
-              "capacityFull": "El diccionario está lleno, por lo que no se pueden importar más términos.",
-              "allDuplicate": "Estos términos ya están en el diccionario."
-            }
-          },
-          "editAriaLabel": "Editar entrada del diccionario",
-          "emptyAll": "Aún no hay entradas en el diccionario.",
-          "emptyManual": "Aún no hay términos agregados manualmente.",
-          "emptyAutomatic": "Aún no se han agregado términos automáticamente.",
-          "filters": {
-            "all": "Todo",
-            "automatic": "Agregado automáticamente",
-            "manual": "manuales"
-          },
-          "sources": {
-            "automatic": "Automático",
-            "manual": "manuales"
-          },
-          "toast": {
-            "title": "Agregado al diccionario",
-            "termsSummary": "Total de términos {{terms}} y {{count}}",
-            "automaticAdded": "Agregado automáticamente al diccionario: {{term}}",
-            "automaticAddedMultiple": "Términos {{count}} agregados automáticamente, incluido {{term}}",
-            "delete": "Eliminar",
-            "deleteAriaLabel": "Eliminar término agregado automáticamente: {{term}}"
-          }
-        }
-      },
-      "microphone": {
-        "label": "micrófono",
-        "hint": "Auto utiliza el valor predeterminado del sistema. Elija un dispositivo para un micrófono o auricular externo.",
-        "ariaLabel": "Selección de micrófono",
-        "options": {
-          "auto": "Automático",
-          "autoDetail": "Dispositivo de entrada predeterminado del sistema",
-          "unnamed": "Micrófono {{index}}",
-          "unavailable": "El micrófono seleccionado no está disponible",
-          "unavailableDetail": "Vuelva a conectarlo para restaurar automáticamente"
-        },
-        "errors": {
-          "selectedUnavailable": "El micrófono seleccionado no está disponible. Vuelva a conectarlo o elija Auto en la configuración de Entrada de voz.",
-          "deviceUnavailable": "No hay ningún dispositivo de micrófono disponible. Conecte un micrófono o elija otro dispositivo de entrada y vuelva a intentarlo.",
-          "fallbackToAuto": "El micrófono seleccionado no está disponible, por lo que se utiliza el micrófono automático para esta grabación."
-        }
-      },
-      "muteSystemAudio": {
-        "label": "Silenciar durante la entrada de voz",
-        "hint": "Silencia temporalmente la salida del sistema durante la entrada de voz y luego la restaura cuando finaliza la entrada.",
-        "ariaLabel": "Alternar silenciar el audio del sistema durante la entrada de voz",
-        "linuxUnsupported": "La primera versión de Linux no admite silenciar el audio del sistema durante la entrada de voz."
-      },
-      "usage": {
-        "duration": "Duración",
-        "estimatedCost": "Costo estimado",
-        "costBreakdown": "ASR {{asr}} · Refinar {{refine}} · Estimado a partir del audio enviado",
-        "sessions": "Cantidad",
-        "outcomes": "Sin voz {{noSpeech}} · Error {{failed}}",
-        "reset": "Restablecer estadísticas"
-      },
-      "history": {
-        "label": "Transcripciones recientes",
-        "empty": "Aún no hay transcripciones.",
-        "copy": "Copiar",
-        "delete": "Eliminar",
-        "copyAria": "Copiar transcripción",
-        "deleteAria": "Eliminar transcripción",
-        "toast": {
-          "copied": "Copiado",
-          "copyFailed": "No se pudo copiar"
-        }
-      },
-      "speakerFilter": {
-        "label": "reconoce mi voz",
-        "hint": "Silencia a otras personas durante la entrada de voz para que solo se transcriba lo que usted dice. Requiere una huella de voz grabada; El discurso que se superpone al suyo no se puede eliminar por completo.",
-        "ariaLabel": "Alternar reconocer mi voz",
-        "unsupported": "El reconocimiento de huellas de voz no está disponible en esta computadora.",
-        "privacy": "Tu huella de voz permanece cifrada en esta computadora. Nunca se carga ni se sincroniza con otros dispositivos.",
-        "actionFailed": "Algo salió mal. Vuelve a intentarlo más tarde.",
-        "model": {
-          "needed": "El primer uso descarga un modelo de reconocimiento de aproximadamente {{size}}.",
-          "download": "Descargar",
-          "downloading": "Descargando modelo de reconocimiento ({{done}} / {{total}})",
-          "cancel": "Cancelar",
-          "retry": "Reintentar",
-          "failed": {
-            "network": "No se pudo descargar el modelo de reconocimiento. Verifique su red e inténtelo nuevamente.",
-            "disk": "No se pudo guardar el modelo de reconocimiento. Verifique su espacio libre en disco e inténtelo nuevamente.",
-            "checksum": "El modelo de reconocimiento descargado no superó la verificación. Intentar otra vez.",
-            "unavailable": "El modelo de reconocimiento no está disponible en este momento. Vuelve a intentarlo más tarde."
-          }
-        },
-        "profile": {
-          "missing": "Aún no hay huella de voz",
-          "missingHint": "Grabe su huella de voz para habilitar el filtrado.",
-          "enrolled": "Huella de voz grabada",
-          "enrolledAt": "Grabado {{date}}",
-          "enroll": "Grabar huella de voz",
-          "reenroll": "Grabar de nuevo",
-          "delete": "Eliminar huella de voz",
-          "deleted": "Huella de voz eliminada",
-          "deleteConfirm": {
-            "title": "¿Eliminar huella de voz?",
-            "description": "La entrada de voz dejará de filtrar a otras personas hasta que vuelvas a grabar tu huella de voz.",
-            "confirm": "Eliminar",
-            "cancel": "Cancelar"
-          }
-        },
-        "strictness": {
-          "label": "rigor",
-          "hint": "Más estricto deja pasar menos voces, pero en lugares ruidosos también puede cortar más palabras propias.",
-          "options": {
-            "relaxed": "Relajado",
-            "standard": "Estándar",
-            "strict": "estricto"
-          }
-        },
-        "enroll": {
-          "title": "Grabar huella de voz",
-          "description": "Lea los pasajes de {{clips}} a continuación con su voz normal. Cada grabación dura hasta {{seconds}} segundos; deja de grabar cuando termines de leer. Graba donde normalmente utilizas la entrada de voz, sin que nadie más hable.",
-          "stepsAriaLabel": "Pasajes para leer",
-          "step": "{{current}} de {{total}}",
-          "record": "Empezar a leer",
-          "stop": "Detener grabación",
-          "rerecord": "Graba esto otra vez",
-          "recording": "Grabando, queda {{seconds}}",
-          "recorded": "grabado",
-          "cancel": "Cancelar",
-          "submit": "Listo",
-          "done": "Huella de voz grabada",
-          "passages": {
-            "p1": "Esta mañana repasaré el plan para la semana y por la tarde enumeraré las preguntas que debemos discutir y las enviaré para que todos puedan leerlas primero.",
-            "p2": "Si mañana hace buen tiempo, podemos salir un poco más temprano, comprar algo de fruta y bocadillos en el camino y almorzar en el parque.",
-            "p3": "Haga que este texto sea más conciso, mantenga los números clave y las conclusiones y luego resuma los puntos principales en tres a cinco oraciones."
-          },
-          "errors": {
-            "too_short": "Se detectó muy poca voz en el pasaje {{index}}. Grábalo de nuevo.",
-            "no_embedding": "No se pudo leer ninguna huella de voz en el pasaje {{index}}. Grábalo de nuevo.",
-            "inconsistent": "El pasaje {{index}} no parece la misma persona que los demás; Es posible que se haya captado otra voz o ruido. Grábalo de nuevo.",
-            "models_missing": "El modelo de reconocimiento no ha terminado de descargarse. Vuelve a intentarlo en breve.",
-            "storage_unavailable": "El llavero del sistema no está disponible, por lo que la huella de voz no se puede almacenar cifrada. Vuelve a intentarlo más tarde.",
-            "failed": "No se pudo crear la huella de voz. Intentar otra vez.",
-            "microphone": "No se puede utilizar el micrófono. Verifique el permiso del micrófono y el dispositivo.",
-            "noAudio": "No salió ningún sonido del micrófono. Verifique el dispositivo e inténtelo nuevamente."
-          }
-        }
-      }
     },
     "sessionImport": {
       "title": "Importar sesiones",
@@ -4477,7 +4089,7 @@
         "more": "Más modelos de voz ({{count}})",
         "manual": "Ingrese un ID de modelo de voz",
         "modelId": "ID del modelo de voz",
-        "modelsHint": "Guardar modelos de voz no inicia la síntesis de voz. Elija voces y reproducción de oraciones en la configuración de voz complementaria.",
+        "modelsHint": "Guardar modelos de voz no inicia la síntesis de voz.",
         "otherModels": "Chat y otros modelos",
         "separateKey": "El habla requiere una clave API. Esto crea una conexión separada y mantiene su suscripción o conexión de código de dispositivo.",
         "fetchFailed": "El catálogo de modelos no está disponible. Aún puedes agregar modelos de referencia.",
@@ -6818,13 +6430,6 @@
           "builtIn": "Usar la acción integrada de la cubierta",
           "unmapped": "Esta cubierta no tiene ninguna acción"
         },
-        "microphone": {
-          "title": "micrófono",
-          "separate": {
-            "label": "Usar teclas de micrófono separadas",
-            "description": "Una pulsación corta inicia y mantiene la grabación. Vuelve a pulsar para detenerla, o mantén pulsado y suelta para detenerla."
-          }
-        },
         "analog": {
           "title": "Joystick",
           "description": "Elige la acción para cada dirección del joystick.",
@@ -6862,8 +6467,7 @@
           "tasks": "Tareas",
           "commands": "Comandos",
           "keycaps": "Cubiertas de teclas",
-          "skills": "Habilidades",
-          "voice": "Entrada de voz"
+          "skills": "Habilidades"
         },
         "layout": {
           "editor": {
@@ -6947,8 +6551,6 @@
         "notBindable": "No se puede usar esta combinación de teclas",
         "systemReserved": "Reservada por el sistema operativo",
         "conflict": "En conflicto con \"{{name}}\"",
-        "voiceConflict": "En conflicto con el atajo de entrada de voz",
-        "composerVoiceConflict": "En conflicto con el atajo de entrada de voz. Cambia el atajo de envío del editor de mensajes o el atajo de entrada de voz.",
         "menuAccelerator": "Esta combinación no se puede registrar como atajo de menú",
         "globalUnusable": "Esta combinación no se puede usar como atajo global del sistema",
         "globalOccupied": "Otra aplicación ya la está usando. Elige otra combinación."
@@ -7230,8 +6832,6 @@
         },
         "actions": {
           "none": "Sin asignar",
-          "voice": "Entrada de voz",
-          "voiceDescription": "Mantén presionado para usar la entrada de voz; suelta para detenerla.",
           "commands": "Comandos",
           "skills": "Habilidades",
           "choose": "Elegir acción"
@@ -11628,135 +11228,6 @@
         "riskBody": "Las preguntas de X usan la memoria compartida, las herramientas y el espacio de trabajo del compañero, y las respuestas son públicas. No uses X para información privada. El hilo de X no usa directamente tu historial de chat privado."
       }
     },
-    "voiceMode": {
-      "openConversation": "Abrir conversación",
-      "inCallWith": "En llamada con {{name}}",
-      "showDetails": "Mostrar transcripción de la llamada",
-      "hideDetails": "Ocultar transcripción de la llamada",
-      "transcriptTitle": "Transcripción actual",
-      "transcriptEmpty": "Lo que digas aparecerá aquí.",
-      "composerPaused": "Finaliza el modo de voz para seguir escribiendo…",
-      "microphoneMuted": "Micrófono desactivado",
-      "exit": {
-        "idle": "No hay conversación reciente. El modo de voz finalizará pronto.",
-        "farewell": "Se detectó una despedida. El modo de voz finalizará pronto.",
-        "semantic": "El modo de voz está por finalizar",
-        "sending": "Enviando tu mensaje antes de finalizar el modo de voz…",
-        "countdown": "El modo de voz finaliza en {{seconds}} segundos",
-        "cancel": "Mantener el modo de voz activo",
-        "hint": "Vuelve a hablar o mantén el modo de voz activo para cancelar. El trabajo en curso continuará.",
-        "mutedHint": "Tu micrófono sigue silenciado. Mantén el modo de voz activo para cancelar. El trabajo en curso continuará."
-      },
-      "settingsTitle": "Voz",
-      "openSettings": "Configuración de voz",
-      "startConversation": "Iniciar conversación de voz",
-      "settingsHint": "Elige el modelo de síntesis de voz y la voz de este compañero y luego inicia una conversación de voz desde el editor de mensajes.",
-      "previewNeedsChat": "Inicia una conversación con este compañero para escuchar una muestra de voz.",
-      "voiceId": "ID de voz",
-      "manualVoice": "Ingresa un ID de voz",
-      "refreshVoices": "Actualizar voces",
-      "voicesLoading": "Cargando voces…",
-      "voicesError": "No se pudieron cargar las voces. Vuelve a intentarlo o ingresa un ID de voz.",
-      "voicesCustomError": "No se pudieron cargar todas las voces personalizadas. Vuelve a intentarlo o ingresa un ID de voz.",
-      "voicesReference": "Estas son voces de referencia para este modelo. Los servicios compatibles pueden admitir otras voces.",
-      "voicesTruncated": "Se muestra parte de la lista de voces. Ingresa un ID para usar una voz que no aparezca.",
-      "voicesManual": "No hay una lista de voces disponible para esta interfaz. Ingresa un ID de voz.",
-      "preview": "Vista previa",
-      "stopPreview": "Detener muestra",
-      "previewVoice": "Escuchar muestra de {{voice}}",
-      "stopPreviewVoice": "Detener muestra de {{voice}}",
-      "previewText": "Hola, esta es mi voz. Es un gusto hablar contigo.",
-      "previewStatus": {
-        "idle": "La muestra usa el modelo seleccionado y puede generar cargos por uso.",
-        "preparing": "Generando muestra…",
-        "playing": "Reproduciendo muestra…",
-        "complete": "Muestra finalizada.",
-        "error": "No se pudo reproducir una muestra de esta voz"
-      },
-      "readAloud": "Leer en voz alta",
-      "stopReadAloud": "Detener lectura",
-      "finishBeforeReadAloud": "Finaliza el modo de voz antes de leer un mensaje en voz alta.",
-      "readAloudFailed": "No se pudo leer esta respuesta en voz alta",
-      "finishBeforeDictation": "Finaliza el modo de voz antes de iniciar el dictado.",
-      "title": "Modo de voz",
-      "model": "Modelo de síntesis de voz",
-      "refresh": "Actualizar modelos",
-      "voice": "Voz",
-      "voiceHint": "Usa un nombre de voz compatible con el modelo seleccionado, como alloy.",
-      "modelUnavailable": "El modelo de síntesis de voz guardado no está disponible. Elige otro modelo.",
-      "noModels": "No hay modelos de texto a voz disponibles.",
-      "noModelsSupportedProtocols": "Compatible con las API HTTP de MiniMax, ElevenLabs y Qwen / CosyVoice, y con proveedores de texto a voz compatibles con OpenAI.",
-      "noModelsSetupHint": "Conecta un proveedor y activa un modelo de síntesis de voz para configurar la voz de tu compañero.",
-      "openProviders": "Abrir proveedores de modelos",
-      "catalogError": "No se pudo cargar o guardar la configuración de síntesis de voz. Vuelve a intentarlo.",
-      "start": "Empieza a hablar",
-      "resume": "Reanudar",
-      "retrySend": "Reconectar y enviar",
-      "mute": "Silenciar",
-      "interrupt": "Detener lectura",
-      "send": "Enviar",
-      "end": "Finalizar",
-      "unsent": "No enviado · selecciona el texto para copiarlo",
-      "hint": "Haz una pausa para enviar. Las respuestas se leen en voz alta con una voz de IA. Habla en cualquier momento para interrumpir.",
-      "status": {
-        "questionElsewhere": "Hay una pregunta esperando en la tarea · la llamada continúa",
-        "idle": "Todo listo cuando quieras",
-        "connecting": "Conectando al reconocimiento de voz…",
-        "listening": "Escuchando",
-        "thinking": "Pensando…",
-        "speaking": "Hablando…",
-        "paused": "En pausa · micrófono desactivado",
-        "error": "En pausa · micrófono desactivado",
-        "question": "Elige una opción · di su número o nombre",
-        "confirmation": "Esperando tu confirmación · micrófono desactivado",
-        "preparing": "Preparando voz…",
-        "loading": "Cargando configuración de voz…",
-        "microphone": "Activando el micrófono…",
-        "muted": "Micrófono desactivado · Puedes seguir escuchando"
-      },
-      "errors": {
-        "busy": "La voz está en uso por otra llamada, lectura, vista previa o dictado. Termínalo e inténtalo de nuevo.",
-        "connection": "Se interrumpió la conexión de voz. Tu texto sin enviar se conserva abajo.",
-        "microphone": "El micrófono se detuvo. Revisa sus permisos y su conexión y luego reanuda.",
-        "send": "Este mensaje no se aceptó. Tu texto se conserva abajo.",
-        "speech": "No se pudo leer la respuesta en voz alta. La respuesta de texto permanece en la conversación.",
-        "speechTimeout": "Se agotó el tiempo de espera de la respuesta de voz"
-      },
-      "voiceIdHint": "Ingresa un ID de voz disponible para esta cuenta del proveedor.",
-      "speed": "Velocidad de voz",
-      "speedAdjusted": "Ajustada a {{speed}}× para el modelo seleccionado.",
-      "speedUnavailable": "Este modelo no permite ajustar la velocidad de voz por el momento.",
-      "speedValue": "{{speed}}×",
-      "sentencePlayback": "Leer por oraciones",
-      "sentencePlaybackHint": "Empieza a leer oraciones completas a medida que llega la respuesta. Desactiva esta opción para esperar la respuesta completa. La lectura espera cuando se requiere procesar la respuesta.",
-      "preferenceHint": "La configuración de voz se guarda solo para este compañero.",
-      "resetPreference": "Usar valores predeterminados",
-      "preferenceError": "No se pudo cargar o guardar la configuración de voz. Vuelve a intentarlo.",
-      "protocol": "API de voz",
-      "protocolOpenai": "Compatible con OpenAI",
-      "protocolHint": "Elige la API de voz que admite esta dirección. Esto no cambia de proveedor.",
-      "protocolCorrectedHint": "La API ahora coincide con la dirección oficial. Vuelve a elegir una voz.",
-      "unmute": "Activar micrófono",
-      "mutedHint": "Tu micrófono está desactivado. Las respuestas seguirán reproduciéndose. Actívalo para seguir hablando.",
-      "microphoneResumeError": "No se pudo activar el micrófono. Puedes seguir escuchando. Revisa los permisos y tu dispositivo y luego intenta activarlo de nuevo.",
-      "callRecord": "Llamada de voz",
-      "callHistoryTitle": "Llamada de voz",
-      "you": "Tú",
-      "companion": "Compañero",
-      "callInProgress": "En llamada",
-      "callSendFailed": "No se pudo enviar. Se conservó lo que dijiste.",
-      "handoff": {
-        "sending": "Transfiriendo…",
-        "accepted": "Transferido a tu compañero",
-        "failed": "No se pudo transferir. Se conservó lo que dijiste.",
-        "completed": "Resultado recibido"
-      },
-      "callSaved": "Registro guardado",
-      "taskFromCall": "Trabajo de esta llamada",
-      "viewTaskProgress": "Ver progreso",
-      "liveDraft": "Transcribiendo",
-      "questionDraft": "Esperando confirmación"
-    },
     "dmThread": {
       "newReply": "Nueva respuesta",
       "you": "Tú",
@@ -12524,23 +11995,6 @@
       "defaultPlaceholder": "¿En qué trabajamos hoy~?",
       "createAgentPlaceholder": "¡Hola, {{appName}}!",
       "recommendationShortcut": "Tab",
-      "voiceInput": {
-        "start": "Iniciar entrada de voz",
-        "stop": "Detener entrada de voz",
-        "releaseToStop": "Grabando. Suelta para detener.",
-        "holdComposer": "Mantén presionado el cuadro de entrada para dictar",
-        "speakRelease": "Empieza a hablar. Suelta para terminar.",
-        "speakPressAgain": "Empieza a hablar. Presiona de nuevo para terminar.",
-        "releaseToSend": "Suelta para enviar",
-        "finishAndSend": "Finalizar entrada de voz y enviar",
-        "refining": "Refinando",
-        "permissionDialog": {
-          "title": "Se requiere permiso para usar el micrófono",
-          "description": "Permite el acceso al micrófono y vuelve a hacer clic en la entrada de voz.",
-          "confirm": "Conceder permiso",
-          "cancel": "Cancelar"
-        }
-      },
       "remoteSwitchFailed": "Falló el cambio de configuración remota; no se aplicó",
       "switchFailed": "Falló el cambio de configuración; no se aplicó",
       "modelWindowUnknown": {
@@ -12806,59 +12260,6 @@
       "oauthSub": "Abre una página de verificación en tu navegador y se conecta automáticamente"
     }
   },
-  "voiceInputOverlay": {
-    "rateLimited": "Demasiadas solicitudes de voz. Espere un momento y vuelva a intentarlo.",
-    "status": {
-      "listening": "Entrada de voz",
-      "submitting": "Finalizando",
-      "refining": "Refinando",
-      "result": "Entrada de voz",
-      "inputFailed": "No se pudo insertar el texto",
-      "transcriptKept": "Se conservó el texto reconocido",
-      "permissionRequired": "Se requiere permiso",
-      "error": "Falló la entrada de voz"
-    },
-    "hint": "Vuelve a presionar el atajo para insertar el texto",
-    "placeholder": "Empieza a hablar…",
-    "pasteHint": "Falló la inserción automática. Copia la transcripción e introdúcela manualmente.",
-    "pasteErrors": {
-      "empty": "No hay texto de entrada de voz para insertar.",
-      "unavailable": "La inserción automática no está disponible en la aplicación actual. Copia la transcripción e introdúcela manualmente.",
-      "unconfirmed": "No se pudo confirmar si la inserción automática se completó. Copia la transcripción si lo necesitas.",
-      "permission": "Se requiere permiso de accesibilidad para insertar la entrada de voz en la aplicación actual. Concede el permiso y vuelve a intentarlo.",
-      "failed": "Falló la inserción automática. Copia la transcripción e introdúcela manualmente."
-    },
-    "permissionPrompts": {
-      "microphone": {
-        "message": "Se requiere permiso de micrófono para usar la entrada de voz.",
-        "hint": "Concede el permiso y vuelve a presionar el atajo para empezar a grabar."
-      },
-      "accessibility": {
-        "message": "Se requiere permiso de accesibilidad para insertar texto en la aplicación actual.",
-        "hint": "Concede el permiso y vuelve a presionar el atajo para insertar el texto automáticamente."
-      }
-    },
-    "copy": "Copiar",
-    "retry": "Reintentar",
-    "openPermissionSettings": "Conceder permiso",
-    "openSettings": "Abrir configuración",
-    "settingsRecoveryHint": "Completa la configuración y vuelve a presionar el atajo para intentarlo de nuevo.",
-    "settingsOpenFailed": "No se pudo abrir Configuración. Ábrela manualmente desde la ventana principal.",
-    "close": "Cerrar",
-    "submit": "Finalizar e insertar",
-    "submitWithShortcut": "Finalizar e insertar ({{shortcut}})",
-    "closeWithShortcut": "Cerrar y descartar ({{shortcut}})",
-    "codexRequired": "Conecta Codex en {{appName}} antes de usar la entrada de voz.",
-    "apiKeyRequired": "Configura una clave de API antes de usar la entrada de voz.",
-    "cindyServiceUnavailable": "El servicio de voz de {{appName}} no está disponible. Revisa tu red o cambia de fuente de servicio.",
-    "asrServiceUnavailable": "No se pudo conectar al servicio de reconocimiento de voz. Revisa tu red e inténtalo de nuevo.",
-    "emptyTranscript": "Se detectó voz, pero no se reconoció ningún texto. Inténtalo de nuevo.",
-    "speakerFiltered": "Se ignoró la voz de otra persona",
-    "connectionInterrupted": "La conexión de voz fue interrumpida. Verifique su red e inténtelo nuevamente.",
-    "recognitionStalled": "El reconocimiento de voz dejó de dar resultados. Intentar otra vez.",
-    "transcriptKept": "{{message}} El texto reconocido hasta ahora se mantuvo; puede editarlo directamente.",
-    "transcriptKeptOverlay": "{{message}} Se conservó el texto reconocido hasta ahora; cópialo para continuar."
-  },
   "chatgptAuthRecovery": {
     "title": "El inicio de sesión de ChatGPT ya no es válido",
     "systemSharedInvalidated": "{{appName}} está usando el inicio de sesión de ChatGPT de esta computadora. Restáuralo primero en la aplicación ChatGPT; así evitas crear una segunda credencial o cerrar la sesión de esta computadora.",
@@ -12899,14 +12300,6 @@
     "prevMessageJump": "Ir al prompt anterior: {{preview}}",
     "sessionLoading": "Cargando tarea",
     "askUserQuestion": {
-      "voice": {
-        "hint": "Di el número o el nombre de una opción. Para seleccionar varias, di después «confirmar selección».",
-        "freeTextHint": "Di tu respuesta, revísala y luego di «confirmar selección» para enviarla.",
-        "confirm": "Revisa tu selección y luego di «confirmar selección» para enviarla o «cancelar selección» para elegir de nuevo.",
-        "ambiguous": "Tu elección no está clara. Di el número de una opción o su nombre completo, o elige manualmente.",
-        "unknown": "No se reconoció ninguna opción clara. Di el número de una opción o su nombre completo, o elige manualmente.",
-        "cancelled": "Selección por voz cancelada. Elige de nuevo."
-      },
       "skippedAnswer": "Saltado",
       "pendingTitle": "Pregunta pendiente",
       "restoreAriaLabel": "Restaurar pregunta",
@@ -17074,12 +16467,6 @@
         "device-mismatch": "Tu sesión ya no corresponde a este dispositivo. Inicia sesión de nuevo.",
         "account-unavailable": "Tu cuenta no está disponible (es posible que se haya deshabilitado o eliminado). Contacta a tu administrador si es necesario."
       },
-      "voiceApiKeyAuthTitle": "Se requiere {{appName}} AI",
-      "voiceApiKeyAuthDescription": "El proveedor actual de entrada de voz usa {{appName}} AI. {{appName}} AI aún no está conectado, por lo que no se puede iniciar la entrada de voz. ¿Abrir Proveedores de modelos para conectarlo?",
-      "voiceDirectApiKeyAuthTitle": "Se requiere una clave de API para la entrada de voz",
-      "voiceDirectApiKeyAuthDescription": "El proveedor actual de entrada de voz requiere una clave de API directa. ¿Agregarla en Claves de API para iniciar la entrada de voz?",
-      "codexVoiceAuthTitle": "Se requiere conexión con ChatGPT",
-      "codexVoiceAuthDescription": "La entrada de voz usa una cuenta de ChatGPT conectada para el reconocimiento de voz en tiempo real de GPT. La cuenta no está conectada o necesita una actualización. ¿Abrir Proveedores de modelos para conectar ChatGPT?",
       "codexBinaryMissingTitle": "El componente de Codex no está listo",
       "codexBinaryMissingDescription": "El componente de Codex aún no está listo, por lo que esta función no se puede usar. Inténtalo de nuevo más tarde o revisa la conexión de Codex en Configuración → Proveedores.",
       "piBinaryMissingTitle": "El componente de Pi no está listo",

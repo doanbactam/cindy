@@ -1,5 +1,5 @@
 import { defineSettings, type SettingsSearchModule } from './settingsSearchTypes';
-import { getComposerModifierShortcutLabel } from '@/voice-input/composerShortcut';
+import { getComposerModifierShortcutLabel } from '@/hooks/useComposerSendShortcutPreference';
 
 /** Search metadata for cards rendered inside the long settings pages. */
 export const personalizationDetailsSettings = defineSettings({

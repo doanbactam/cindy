@@ -10,7 +10,6 @@ import {
   cloneWorkLouderCodexSettings,
   createWorkLouderCodexDefaultSettings,
   creatorCommandAssignment,
-  isWorkLouderCodexVoiceAssignment,
   isWorkLouderCreatorProgrammableKey,
   resolveWorkLouderHidRole,
   workLouderCodexAutoDimMs,
@@ -138,7 +137,6 @@ export class WorkLouderCodexLightingController {
   private layoutPreviewActive = false;
   private inputActionsEnabled = false;
   private joystickNeedsCenter = false;
-  private voicePressed = false;
   /** First switch down under a 2U cap; its release ends the press. The other switch is ignored. */
   private mergeWinner = new Map<string, string>();
 
@@ -356,10 +354,7 @@ export class WorkLouderCodexLightingController {
       this.emitKeyPreview(this.previewPartForEvent(event.key), event.act);
     }
     if (this.layoutPreviewActive) return;
-    if (!this.inputActionsEnabled) {
-      this.releaseHeldVoiceFromEvent(event);
-      return;
-    }
+    if (!this.inputActionsEnabled) return;
     const creatorRole = this.settings.layout.taskKeys
       ? resolveWorkLouderHidRole(event.key, this.settings.layout.taskKeys, this.device)
       : null;
@@ -433,19 +428,6 @@ export class WorkLouderCodexLightingController {
     const merge = workLouderMergeForKey(workLouderLayoutMerges(this.settings.layout), slot);
     if (merge && (event.act === 0 || event.act === 1)) {
       if (!this.claimMergeSwitch(merge.origin, event.key, event.act === 1)) return;
-    }
-    // Voice speaks through a printed MIC keycap (Codex) or a bound voice
-    // action (Creator's blank caps). A short click starts and stays recording.
-    if (isWorkLouderCodexVoiceAssignment(assignment)) {
-      if (event.act === 1) {
-        if (this.voicePressed) return;
-        this.voicePressed = true;
-        this.dispatchRendererAction({ type: 'voice', phase: 'press' });
-      } else if (event.act === 0 && this.voicePressed) {
-        this.voicePressed = false;
-        this.dispatchRendererAction({ type: 'voice', phase: 'release' });
-      }
-      return;
     }
     if (event.act !== 1) return;
     const action =
@@ -609,34 +591,9 @@ export class WorkLouderCodexLightingController {
     this.joystickReleaseTimer.unref?.();
   }
 
-  private releaseHeldVoiceFromEvent(event: WorkLouderCodexHidEvent): void {
-    if (event.act !== 0) return;
-    const creatorRole = this.settings.layout.taskKeys
-      ? resolveWorkLouderHidRole(event.key, this.settings.layout.taskKeys, this.device)
-      : null;
-    const slot =
-      creatorRole?.role === 'command'
-        ? creatorRole.physical
-        : this.commandSlotForKey(event.key);
-    if (!slot) return;
-    const assignment = isWorkLouderCreatorProgrammableKey(slot)
-      ? creatorCommandAssignment(this.settings.layout, slot)
-      : this.settings.layout.slots[slot as WorkLouderCodexCommandSlot];
-    if (!isWorkLouderCodexVoiceAssignment(assignment)) return;
-    this.releaseHeldVoice();
-  }
-
   private releaseHeldHardwareGestures(): void {
     this.stopJoystickScroll();
-    this.releaseHeldVoice();
     this.mergeWinner.clear();
-  }
-
-  private releaseHeldVoice(): void {
-    if (!this.voicePressed) return;
-    this.voicePressed = false;
-    this.mergeWinner.clear();
-    this.dispatchRendererAction({ type: 'voice', phase: 'release' });
   }
 
   /** First switch under a 2U cap wins; its release counts. The other switch is dropped. */
@@ -672,9 +629,6 @@ export class WorkLouderCodexLightingController {
     } else if (action.type === 'keycap') {
       const resolved = WORKLOUDER_CODEX_KEYCAP_ACTIONS[action.keycapId];
       if (resolved) this.executeAction(resolved, focusTask);
-    } else if (action.type === 'voice') {
-      // Voice is hold-to-talk: it is driven by key press/release events in
-      // handleCommandKeyInput, never by a one-shot action execution.
     } else {
       this.dispatchRendererAction(action);
     }
@@ -1038,8 +992,6 @@ function actionTitle(action: WorkLouderCodexAction | null): string | null {
       return action.text;
     case 'external-url':
       return action.url;
-    case 'voice':
-      return null;
     case 'task':
       return action.sessionId;
   }

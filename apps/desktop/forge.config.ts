@@ -255,16 +255,6 @@ function sharpPlatformPkgs(platform: string, arch: string): string[] {
   return pkgs;
 }
 
-/**
- * sherpa-onnx-node 按 platform-arch 拆出预编译子包,Windows 子包名用 `win` 而非
- * `win32`。子包里 sherpa-onnx.node 与 onnxruntime / sherpa-onnx-c-api 动态库并排,
- * 必须整目录解包(见 packagerConfig.asar)。同上用 TARGET platform/arch。
- */
-function sherpaOnnxRuntimePackages(platform: string, arch: string): string[] {
-  const platformName = platform === 'win32' ? 'win' : platform;
-  return ['sherpa-onnx-node', `sherpa-onnx-${platformName}-${arch}`];
-}
-
 // Locate a package's directory on disk. Some packages ship a strict `exports`
 // map that hides the obvious resolve targets:
 //   - `long` blocks `./package.json` but exposes a main entry → walk up from
@@ -365,13 +355,10 @@ function bundleNativeDeps(buildPath: string, targetPlatform: string, targetArch:
     // Reviewer PDF utility 的 canvas wrapper 由 Vite externalize；正式包必须
     // 同时带 wrapper 与目标平台的预编译 binding，不能依赖 workspace hoist。
     ...reviewPdfRuntimePackages(targetPlatform, targetArch),
-    // loudness 只在 Windows 用 (录音时静音)。它的 Win 后端是个捆绑的 .exe,
+    // loudness 只在 Windows 用 (远程桌面受控时静音)。它的 Win 后端是个捆绑的 .exe,
     // 必须运行时按 __dirname 找 — 所以走 NATIVE_RUNTIME_DEPS 这条路, 不让 vite
     // bundle。Mac/Linux 完全不带, 避免拖入 execa 这条无用依赖链。
     ...(targetPlatform === 'win32' ? ['loudness'] : []),
-    // 语音「只识别我的声音」的推理库：JS 主包 + 目标平台的预编译子包
-    // (.node 与 onnxruntime 动态库同目录,整目录 asar.unpack)。
-    ...sherpaOnnxRuntimePackages(targetPlatform, targetArch),
   ];
   // node-addon-api 必须解析成 node-pty 实际依赖的那一版 (7.x, 有 `.targets`),
   // 不能让它退化到 root 可能 hoist 的 1.7.2。以 node-pty 目录为解析起点。
@@ -627,7 +614,7 @@ function signPackagedExes(buildPath: string): void {
   // 第三方 exe 通过 asar.unpack 释放的路径前缀是 resources/app.asar.unpacked/...
   // 跟 extraResource 注入的(resources/...)不一样,别搞混。
   // loudness 自带的 .exe 也在这里签:不签的话企业 EDR / Smart App Control 可能
-  // 把它当未知未签名第三方进程拦下,影响"录音时静音"功能。
+  // 把它当未知未签名第三方进程拦下,影响远程桌面受控时静音。
   const exes = [
     path.join(buildPath, `${CINDY_EXE}.exe`),
     path.join(buildPath, 'resources', UPDATER_EXE),
@@ -925,7 +912,7 @@ function isMacForgePlatform(platform: ForgePlatform): boolean {
   return platform === 'darwin' || platform === 'mas';
 }
 
-const MACOS_VOICE_HELPER_DEPLOYMENT_TARGET = 'macos10.15';
+const MACOS_WORKLOUDER_HELPER_DEPLOYMENT_TARGET = 'macos10.15';
 const MACOS_AGENT_ISLAND_HELPER_DEPLOYMENT_TARGET = 'macos14.0';
 const MACOS_COMPUTER_PERMISSION_GUIDE_HELPER_DEPLOYMENT_TARGET = 'macos13.0';
 const MACOS_SESSION_DRAG_RELEASE_HELPER_DEPLOYMENT_TARGET = 'macos10.15';
@@ -1492,108 +1479,27 @@ function buildMacXboxGamepadHelper(platform: ForgePlatform, arch: ForgeArch): vo
   fs.chmodSync(dest, 0o755);
 }
 
-function buildMacVoiceInputTextInsertionHelper(platform: ForgePlatform, arch: ForgeArch): void {
+function buildMacWorkLouderSystemInputHelper(platform: ForgePlatform, arch: ForgeArch): void {
   if (process.platform !== 'darwin' || !isMacForgePlatform(platform)) return;
-  const src = path.join(__dirname, 'native', 'voice-input', 'macos-text-insertion-helper.swift');
-  const destDir = path.join(__dirname, 'resources', 'tools', 'voice-input');
+  const src = path.join(__dirname, 'native', 'worklouder', 'macos-text-insertion-helper.swift');
+  const destDir = path.join(__dirname, 'resources', 'tools', 'worklouder');
   const dest = path.join(destDir, 'xdt-macos-text-insertion-helper');
   if (!fs.existsSync(src)) {
-    throw new Error(`[forge] macOS voice input text insertion helper source missing at ${src}`);
+    throw new Error(`[forge] macOS Work Louder system input helper source missing at ${src}`);
   }
   fs.mkdirSync(destDir, { recursive: true });
   buildSwiftHelperForForgeArch(
     src,
     dest,
     arch,
-    MACOS_VOICE_HELPER_DEPLOYMENT_TARGET,
+    MACOS_WORKLOUDER_HELPER_DEPLOYMENT_TARGET,
     [],
-    'voice input text insertion helper',
+    'Work Louder system input helper',
   );
   fs.chmodSync(dest, 0o755);
   const sizeMb = (fs.statSync(dest).size / (1024 * 1024)).toFixed(2);
   console.log(
-    `[forge:prePackage] macOS voice input text insertion helper (${swiftArchLabel(arch, MACOS_VOICE_HELPER_DEPLOYMENT_TARGET)}) -> ${dest} (${sizeMb} MB)`,
-  );
-}
-
-function buildMacVoiceInputModifierShortcutListener(
-  platform: ForgePlatform,
-  arch: ForgeArch,
-): void {
-  if (process.platform !== 'darwin' || !isMacForgePlatform(platform)) return;
-  const src = path.join(
-    __dirname,
-    'native',
-    'voice-input',
-    'macos-modifier-shortcut-listener.swift',
-  );
-  const destDir = path.join(__dirname, 'resources', 'tools', 'voice-input');
-  const dest = path.join(destDir, 'xdt-macos-modifier-shortcut-listener');
-  if (!fs.existsSync(src)) {
-    throw new Error(
-      `[forge] macOS voice input modifier shortcut listener source missing at ${src}`,
-    );
-  }
-  fs.mkdirSync(destDir, { recursive: true });
-  buildSwiftHelperForForgeArch(
-    src,
-    dest,
-    arch,
-    MACOS_VOICE_HELPER_DEPLOYMENT_TARGET,
-    [],
-    'voice input modifier shortcut listener',
-  );
-  fs.chmodSync(dest, 0o755);
-  const sizeMb = (fs.statSync(dest).size / (1024 * 1024)).toFixed(2);
-  console.log(
-    `[forge:prePackage] macOS voice input modifier shortcut listener (${swiftArchLabel(arch, MACOS_VOICE_HELPER_DEPLOYMENT_TARGET)}) -> ${dest} (${sizeMb} MB)`,
-  );
-}
-
-function buildWindowsVoiceInputFunctionKeyListener(targetPlatform: string): void {
-  if (process.platform !== 'win32' || targetPlatform !== 'win32') return;
-  const sourceRoot = path.join(__dirname, 'native', 'voice-input', 'windows-function-key-listener');
-  const manifest = path.join(sourceRoot, 'Cargo.toml');
-  if (!fs.existsSync(manifest)) {
-    throw new Error(
-      `[forge] Windows voice input function key listener source missing at ${manifest}`,
-    );
-  }
-  const cargoBin = process.env.USERPROFILE
-    ? path.join(process.env.USERPROFILE, '.cargo', 'bin', 'cargo.exe')
-    : 'cargo';
-  const cargo = fs.existsSync(cargoBin) ? cargoBin : 'cargo';
-  const result = spawnSync(cargo, ['build', '--release', '--manifest-path', manifest], {
-    stdio: 'inherit',
-  });
-  if (result.error) {
-    throw new Error(
-      `[forge] failed to invoke cargo (${cargo}) for Windows function key listener: ${result.error.message}`,
-    );
-  }
-  if (result.status !== 0) {
-    throw new Error(
-      `[forge] Windows function key listener cargo build failed with exit code ${result.status}`,
-    );
-  }
-  const builtExe = path.join(
-    sourceRoot,
-    'target',
-    'release',
-    'cindy-windows-function-key-listener.exe',
-  );
-  const destDir = path.join(__dirname, 'resources', 'tools', 'voice-input');
-  const dest = path.join(destDir, 'cindy-windows-function-key-listener.exe');
-  if (!fs.existsSync(builtExe)) {
-    throw new Error(
-      `[forge] Windows function key listener build succeeded but ${builtExe} is missing`,
-    );
-  }
-  fs.mkdirSync(destDir, { recursive: true });
-  fs.copyFileSync(builtExe, dest);
-  const sizeMb = (fs.statSync(dest).size / (1024 * 1024)).toFixed(2);
-  console.log(
-    `[forge:prePackage] Windows voice input function key listener -> ${dest} (${sizeMb} MB)`,
+    `[forge:prePackage] macOS Work Louder system input helper (${swiftArchLabel(arch, MACOS_WORKLOUDER_HELPER_DEPLOYMENT_TARGET)}) -> ${dest} (${sizeMb} MB)`,
   );
 }
 
@@ -1860,11 +1766,10 @@ const config: ForgeConfig = {
     // node-pty 在 macOS/Linux 上会 posix_spawn 一个无扩展名的 spawn-helper、在
     // Windows 上也带 winpty-agent.exe / DLL 等非 .node 二进制；这些都必须 unpack
     // 到 asar 外才能被 spawn / 动态加载。AutoUnpackNativesPlugin 只 unpack .node,
-    // 所以这里显式覆盖 loudness / node-pty 整个目录。sherpa-onnx 平台子包同理:
-    // .node 依赖同目录的 onnxruntime 动态库,只解包 .node 会加载失败。
+    // 所以这里显式覆盖 loudness / node-pty 整个目录。
     asar: {
       unpack:
-        '**/{@img/{sharp-libvips-*,sharp-win32-*},loudness,native/sqlite-vec,node-pty,sherpa-onnx-{darwin,win,linux}-*}/**',
+        '**/{@img/{sharp-libvips-*,sharp-win32-*},loudness,native/sqlite-vec,node-pty}/**',
     },
     // 打包名(out 目录 / mac .app 包名 / Helper 目录名 / 主 plist CFBundleName)
     // 按区域派生:cn/global 'Cindy'(2026-07-26 显示名统一,.app 撞名双装
@@ -1908,7 +1813,7 @@ const config: ForgeConfig = {
     //
     //   Windows / Linux 完全忽略此字段。
     extendInfo: {
-      NSMicrophoneUsageDescription: 'Cindy uses the microphone for voice input and screen recordings.',
+      NSMicrophoneUsageDescription: 'Cindy uses the microphone for screen recordings.',
       NSAudioCaptureUsageDescription: 'Cindy captures computer audio for screen recordings and your connected remote desktop.',
       // agent 会话中访问受 TCC 保护的目录(桌面/文稿/下载)时，macOS 需要这些声明才能向
       // 用户展示授权弹窗；缺失时系统直接静默拒绝，不弹窗。
@@ -1978,7 +1883,7 @@ const config: ForgeConfig = {
     // helper bundles also need the usage description for macOS TCC to register
     // the packaged app correctly in Privacy & Security > Microphone.
     extendHelperInfo: {
-      NSMicrophoneUsageDescription: 'Cindy uses the microphone for voice input and screen recordings.',
+      NSMicrophoneUsageDescription: 'Cindy uses the microphone for screen recordings.',
       NSAudioCaptureUsageDescription: 'Cindy captures computer audio for screen recordings and your connected remote desktop.',
       NSDesktopFolderUsageDescription:
         "Cindy's AI agent needs access to read and write files on your Desktop.",
@@ -2055,8 +1960,7 @@ const config: ForgeConfig = {
       }
       stageRipgrep(targetPlatform, targetArch);
       stageAndroidPlatformTools(targetPlatform, targetArch);
-      buildWindowsVoiceInputFunctionKeyListener(targetPlatform);
-      buildMacVoiceInputTextInsertionHelper(platform, arch);
+      buildMacWorkLouderSystemInputHelper(platform, arch);
       buildMacXboxGamepadHelper(platform, arch);
       buildWindowsGamepadHelper(platform, arch);
       buildWindowsAtomicRenameHelper(platform, arch);
@@ -2074,7 +1978,6 @@ const config: ForgeConfig = {
         if (trackpadBuild.error || trackpadBuild.status !== 0)
           throw new Error('Native trackpad build failed');
       }
-      buildMacVoiceInputModifierShortcutListener(platform, arch);
       buildMacAgentIslandHelper(platform, arch);
       buildMacComputerPermissionGuideHelper(platform, arch);
       buildMacSessionDragReleaseHelper(platform, arch);
@@ -2146,12 +2049,6 @@ const config: ForgeConfig = {
           entry: 'src/main/im/wechat/silkWorker.ts',
           config: 'vite.silk-worker.config.ts',
           // SILK/WASM 解码隔离在线程中，避免阻塞 Electron main。
-          target: 'preload',
-        },
-        {
-          entry: 'src/main/voice-input/speaker/speakerGateWorker.ts',
-          config: 'vite.speaker-gate-worker.config.ts',
-          // 声纹过滤的 ONNX 推理是同步 CPU 计算，隔离在线程中，避免阻塞 Electron main。
           target: 'preload',
         },
         {

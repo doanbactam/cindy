@@ -42,9 +42,7 @@ const searchI18n = createInstance();
 await searchI18n.init({ lng: 'zh-CN', fallbackLng: 'en', resources: {
   'zh-CN': { translation: zhCN }, en: { translation: en },
 }, interpolation: { defaultVariables: { appName: BRAND_NAME } } });
-const searchContext = { platform: 'win32', region: 'cn', mode: 'cloud', membershipKind: 'personal',
-  voiceInput: { serviceMode: 'byok', asrProvider: 'custom-realtime-asr' },
-} as const;
+const searchContext = { platform: 'win32', region: 'cn', mode: 'cloud', membershipKind: 'personal' } as const;
 
 describe('settings discoverability regressions', () => {
   // Unit regression (#8481): automatic mode renders no slot explanations.
@@ -57,8 +55,7 @@ describe('settings discoverability regressions', () => {
         .not.toContain('settings.auxiliaryModels.' + slot + '.label');
     }
   });
-  // Unit regressions (#8481): generic titles did not cover visible storage
-  // explanations or the speaker card's unsupported/enrolled branches.
+  // Unit regression (#8481): generic titles did not cover visible storage explanations.
   it('finds storage rows by their visible descriptions', () => {
     const documents = buildSettingsSearchDocuments(searchI18n.t, TAB_IDS, searchContext);
     for (const lng of ['zh-CN', 'en']) {
@@ -68,22 +65,6 @@ describe('settings discoverability regressions', () => {
       }
     }
   });
-  it.each([undefined, { supported: false, enrolled: false }, { supported: true, enrolled: false }, { supported: true, enrolled: true }])(
-    'indexes only rendered speaker-filter text for %j', (speakerFilter) => {
-      const documents = buildSettingsSearchDocuments(searchI18n.t, TAB_IDS, { ...searchContext, speakerFilter });
-      for (const lng of ['zh-CN', 'en']) {
-        for (const [key, visible] of [
-          ['hint', speakerFilter?.supported !== false],
-          ['unsupported', speakerFilter?.supported === false],
-          ...['strictness.label', 'strictness.hint', 'strictness.options.relaxed', 'strictness.options.standard', 'strictness.options.strict']
-            .map((key) => [key, speakerFilter?.supported === true && speakerFilter.enrolled] as const),
-        ] as const) {
-          const query = searchI18n.t(`settings.voiceInput.speakerFilter.${key}`, { lng });
-          expect(searchSettings(documents, query).some(({ entry }) => entry.id === 'settings.voiceInput.speakerFilter.label'), query).toBe(visible);
-        }
-      }
-    },
-  );
   // Unit regression (#8481): backend title coverage missed the visible selected
   // description. Query real translated explanations through the production index.
   it('finds browser settings by each backend description', () => {
@@ -160,42 +141,6 @@ describe('settings discoverability regressions', () => {
       }
     },
   );
-  // Unit regression (#8481): disabled refinement leaves both child controls
-  // unmounted. Query real translated labels instead of inspecting declarations.
-  it.each([false, true])('filters refinement children with refinementEnabled=%s', (voiceRefinementEnabled) => {
-    const documents = buildSettingsSearchDocuments(searchI18n.t, TAB_IDS, { ...searchContext, voiceRefinementEnabled });
-    for (const lng of ['zh-CN', 'en']) {
-      for (const field of ['instructions', 'dictionary']) {
-        const id = `settings.voiceInput.refinement.${field}.label`;
-        const matches = searchSettings(documents, searchI18n.t(id, { lng }));
-        expect(matches.some(({ entry }) => entry.id === id)).toBe(voiceRefinementEnabled);
-      }
-    }
-    expect(documents.some(({ entry }) => entry.id === 'settings.voiceInput.refinement.enabled.label')).toBe(true);
-  });
-
-  // Unit regression (#8481): an unloaded, managed, or non-custom ASR selection
-  // exposed unmounted fields. Existing title tests only covered visible fields.
-  it.each([
-    ['cloud', undefined, false, false],
-    ['cloud', { serviceMode: 'cindy', asrProvider: 'custom-realtime-asr' }, false, false],
-    ['cloud', { serviceMode: 'byok', asrProvider: 'openai' }, true, false],
-    ['cloud', { serviceMode: 'byok', asrProvider: 'custom-realtime-asr' }, true, true],
-    ['local', { serviceMode: 'cindy', asrProvider: 'custom-realtime-asr' }, true, true],
-    ['local', { serviceMode: 'cindy', asrProvider: 'openai' }, true, false],
-  ] as const)('matches mounted ASR fields for %s / %j', (mode, voiceInput, byokVisible, customVisible) => {
-    const documents = buildSettingsSearchDocuments(searchI18n.t, TAB_IDS, { ...searchContext, mode, voiceInput });
-    for (const lng of ['zh-CN', 'en']) {
-      for (const field of ['protocol', 'websocketUrl', 'model', 'apiKey']) {
-        const query = searchI18n.t(`settings.voiceInput.serviceSource.customAsr.${field}.label`, { lng });
-        const matches = searchSettings(documents, query);
-        const id = `voiceInput.customAsr${field[0].toUpperCase()}${field.slice(1)}`;
-        expect(matches.some(({ entry }) => entry.id === id)).toBe(customVisible);
-      }
-    }
-    expect(documents.some(({ entry }) => entry.id === 'voiceInput.asr')).toBe(byokVisible);
-    expect(documents.some(({ entry }) => entry.id === 'voiceInput.serviceSource')).toBe(true);
-  });
 
   it.each([
     ['LSP', 'general.lsp'],
@@ -211,14 +156,9 @@ describe('settings discoverability regressions', () => {
     ['字体大小', 'settings.appearance.font.uiSize.label'],
     ['自动更新', 'settings.about.autoUpdateLabel'],
     ['开机启动', 'settings.windowBehavior.loginItem.label'],
-    ['语音快捷键', 'settings.voiceInput.shortcut.label'],
     ['Ctrl+Enter', 'settings.composer.sendShortcut.label'],
     ['鸿蒙字体', 'settings.appearance.font.uiFamily.label'],
     ['全速', 'settings.agentResource.preset'],
-    ['Qwen 实时 ASR', 'voiceInput.customAsrProtocol'],
-    // Option descriptions must be searchable in the current locale and English.
-    ['无需配置任何密钥', 'voiceInput.serviceSource'],
-    ['ASR-capable service', 'voiceInput.serviceSource'],
     ['系统默认浏览器', 'settings.linkOpen.web.label'],
   ])('finds %s without opening the page first', (query, id) => {
     const documents = buildSettingsSearchDocuments(searchI18n.t, TAB_IDS, searchContext);
@@ -232,7 +172,6 @@ describe('settings discoverability regressions', () => {
     const documents = buildSettingsSearchDocuments(searchI18n.t, TAB_IDS, { ...searchContext, platform });
     for (const [id, standardKey, linuxKey] of [
       ['settings.about.autoUpdateLabel', 'settings.about.autoUpdateDescription', 'settings.about.linuxUpdateDescription'],
-      ['settings.voiceInput.shortcut.label', 'settings.voiceInput.shortcut.hint', 'settings.voiceInput.shortcut.linuxUnsupported'],
     ]) {
       for (const lng of ['zh-CN', 'en']) {
         const visibleKey = platform === 'linux' ? linuxKey : standardKey;
@@ -288,40 +227,6 @@ describe('settings discoverability regressions', () => {
         .toBe(agentIsland.supported && agentIsland.enabled);
     }
     expect(documents.some(({ entry }) => entry.id === 'settings.agentIsland.enableLabel')).toBe(agentIsland.supported);
-  });
-
-  // Unit regression (PR #8481): option descriptions previously ignored local mode.
-  // Existing cloud queries do not cover hidden options; exercise production search
-  // with local mode + "no keys to configure", using real locales and retaining BYOK.
-  it('does not find cloud-only voice options in local mode', () => {
-    const documents = buildSettingsSearchDocuments(searchI18n.t, TAB_IDS, {
-      ...searchContext, mode: 'local',
-    });
-    for (const lng of ['zh-CN', 'en']) {
-      const hiddenQuery = searchI18n.t('settings.voiceInput.serviceSource.optionDescriptions.cindy', { lng });
-      const visibleQuery = searchI18n.t('settings.voiceInput.serviceSource.optionDescriptions.byok', { lng });
-      expect(searchSettings(documents, hiddenQuery).map(({ entry }) => entry.id))
-        .not.toContain('voiceInput.serviceSource');
-      expect(searchSettings(documents, visibleQuery).map(({ entry }) => entry.id))
-        .toContain('voiceInput.serviceSource');
-    }
-  });
-
-  // Unit regression (#8481): the local service hint was visible but unsearchable.
-  // Option visibility coverage above does not exercise the row's description.
-  it.each(['local', 'cloud'] as const)('indexes only the visible voice service hint in %s mode', (mode) => {
-    const documents = buildSettingsSearchDocuments(searchI18n.t, TAB_IDS, { ...searchContext, mode });
-    for (const lng of ['zh-CN', 'en']) {
-      for (const hint of ['localHint', 'hint']) {
-        const query = searchI18n.t(`settings.voiceInput.serviceSource.${hint}`, { lng });
-        const result = searchSettings(documents, query).find(({ entry }) => entry.id === 'voiceInput.serviceSource');
-        if ((hint === 'localHint') === (mode === 'local')) {
-          expect(result?.entry.targetId).toBe('settings-voice-serviceSource');
-        } else {
-          expect(result).toBeUndefined();
-        }
-      }
-    }
   });
 
   it('respects platform capabilities and requires every Chinese search word', () => {

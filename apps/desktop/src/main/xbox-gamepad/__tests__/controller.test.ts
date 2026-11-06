@@ -25,11 +25,13 @@ describe('XboxGamepadController', () => {
   });
 
   it.each(['lt', 'rt'] as const)(
-    'keeps Windows %s voice held across pressure dips until release',
+    'fires a Windows %s binding once across pressure dips',
     (trigger) => {
       const dispatch = vi.fn();
       const controller = new XboxGamepadController({ isCindyFrontmost: () => true, dispatch });
-      controller.applySettings('xbox', enabledSettings());
+      const settings = enabledSettings();
+      settings.layout.buttons[trigger] = { type: 'command', commandId: 'newTask' };
+      controller.applySettings('xbox', settings);
       controller.handleHostMessage({ kind: 'presence', family: 'xbox', present: true });
       // Matches native TriggerState's sequence, including main's second parsing pass.
       for (const [pressure, pressed] of [
@@ -48,11 +50,8 @@ describe('XboxGamepadController', () => {
           triggers: { ...XBOX_GAMEPAD_EMPTY_FRAME.triggers, [trigger]: pressure },
         });
       }
-      expect(
-        dispatch.mock.calls.map(([action]) => action).filter((action) => action.type === 'voice'),
-      ).toEqual([
-        { type: 'voice', phase: 'press' },
-        { type: 'voice', phase: 'release' },
+      expect(dispatch.mock.calls.map(([action]) => action)).toEqual([
+        { type: 'command', commandId: 'newTask' },
       ]);
     },
   );
@@ -120,14 +119,13 @@ describe('XboxGamepadController', () => {
     });
     controller.handleHostMessage({
       kind: 'frame',
-      buttons: { ...XBOX_GAMEPAD_EMPTY_FRAME.buttons, lt: true },
+      buttons: XBOX_GAMEPAD_EMPTY_FRAME.buttons,
       axes: { lx: 0, ly: 0, rx: 0, ry: 1 },
-      triggers: { lt: 1, rt: 0 },
+      triggers: XBOX_GAMEPAD_EMPTY_FRAME.triggers,
     });
     dispatch.mockClear();
 
     controller.setCindyFrontmost(false);
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'release' });
     expect(dispatch).toHaveBeenCalledWith({ type: 'scroll-stop' });
   });
 
@@ -284,19 +282,18 @@ describe('XboxGamepadController', () => {
       controller.handleHostMessage({
         kind: 'frame',
         family,
-        buttons: { ...XBOX_GAMEPAD_EMPTY_FRAME.buttons, lt: true },
+        buttons: XBOX_GAMEPAD_EMPTY_FRAME.buttons,
         axes: { lx: 0, ly: 0, rx: 0, ry: 1 },
-        triggers: { lt: 1, rt: 0 },
+        triggers: XBOX_GAMEPAD_EMPTY_FRAME.triggers,
       });
     }
     dispatch.mockClear();
 
     controller.setLayoutPreviewActive(true, 'xbox');
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'release' });
     expect(dispatch).toHaveBeenCalledWith({ type: 'scroll-stop' });
   });
 
-  it('keeps the other pad voice and scroll when one family releases', () => {
+  it('keeps the other pad scroll when one family releases', () => {
     const dispatch = vi.fn();
     const controller = new XboxGamepadController({
       isCindyFrontmost: () => true,
@@ -315,9 +312,9 @@ describe('XboxGamepadController', () => {
       controller.handleHostMessage({
         kind: 'frame',
         family,
-        buttons: { ...XBOX_GAMEPAD_EMPTY_FRAME.buttons, lt: true },
+        buttons: XBOX_GAMEPAD_EMPTY_FRAME.buttons,
         axes: { lx: 0, ly: 0, rx: 0, ry: 1 },
-        triggers: { lt: 1, rt: 0 },
+        triggers: XBOX_GAMEPAD_EMPTY_FRAME.triggers,
       });
     }
     dispatch.mockClear();
@@ -329,7 +326,6 @@ describe('XboxGamepadController', () => {
       axes: XBOX_GAMEPAD_EMPTY_FRAME.axes,
       triggers: XBOX_GAMEPAD_EMPTY_FRAME.triggers,
     });
-    expect(dispatch).not.toHaveBeenCalledWith({ type: 'voice', phase: 'release' });
     expect(dispatch).not.toHaveBeenCalledWith({ type: 'scroll-stop' });
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'scroll', direction: 'up' }),
@@ -343,7 +339,6 @@ describe('XboxGamepadController', () => {
       axes: XBOX_GAMEPAD_EMPTY_FRAME.axes,
       triggers: XBOX_GAMEPAD_EMPTY_FRAME.triggers,
     });
-    expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'release' });
     expect(dispatch).toHaveBeenCalledWith({ type: 'scroll-stop' });
   });
 });

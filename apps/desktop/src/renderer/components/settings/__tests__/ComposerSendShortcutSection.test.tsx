@@ -20,8 +20,6 @@ vi.mock('react-i18next', () => ({
         'settings.defaults.customizedBadge': 'Customized',
         'settings.defaults.restore': 'Restore default',
         'settings.defaults.restored': 'Restored default',
-        'settings.shortcuts.errors.composerVoiceConflict':
-          'Conflicts with the voice input shortcut. Change either shortcut.',
       };
       return (translations[key] ?? key).replace('{{shortcut}}', options?.shortcut ?? '');
     },
@@ -46,18 +44,6 @@ function setPlatform(platform: string): void {
   Object.defineProperty(window, 'electronAPI', {
     configurable: true,
     value: { platform },
-  });
-}
-
-function setVoiceInputShortcut(shortcut: object | null): void {
-  Object.defineProperty(window, 'electronAPI', {
-    configurable: true,
-    value: {
-      platform: 'darwin',
-      voiceInput: {
-        getDataSnapshot: () => ({ settings: { shortcut } }),
-      },
-    },
   });
 }
 
@@ -108,25 +94,5 @@ describe('ComposerSendShortcutSection', () => {
     expect(switches[0].getAttribute('data-state')).toBe('unchecked');
     expect(switches[1].getAttribute('data-state')).toBe('unchecked');
     expect(toastMocks.success).toHaveBeenCalledWith('Restored default');
-  });
-
-  it('rejects a Composer shortcut that is already used by Voice Input', () => {
-    setVoiceInputShortcut({
-      trigger: 'keyboard',
-      code: 'Enter',
-      key: 'Enter',
-      modifiers: { meta: true, ctrl: false, alt: false, shift: false, fn: false },
-    });
-
-    render(<ComposerSendShortcutSection />);
-
-    const switchControl = screen.getByRole('switch', { name: 'Use ⌘+Enter to send messages' });
-    fireEvent.click(switchControl);
-
-    expect(localStorage.getItem(COMPOSER_SEND_SHORTCUT_STORAGE_KEY)).toBeNull();
-    expect(switchControl.getAttribute('data-state')).toBe('unchecked');
-    expect(toastMocks.error).toHaveBeenCalledWith(
-      'Conflicts with the voice input shortcut. Change either shortcut.',
-    );
   });
 });

@@ -24,7 +24,6 @@ export const WORKLOUDER_CODEX_DEVICE: InputDeviceDescriptor = {
   capabilities: [
     { kind: 'task-slots', count: 6 },
     { kind: 'commands' },
-    { kind: 'voice' },
     { kind: 'encoder' },
     { kind: 'stick' },
     { kind: 'lighting', model: 'task-slots' },
@@ -406,9 +405,7 @@ export type WorkLouderCodexKeycapId = (typeof WORKLOUDER_CODEX_KEYCAP_IDS)[numbe
 
 export type WorkLouderCodexAction =
   | InputDeviceAction
-  | { type: 'keycap'; keycapId: WorkLouderCodexKeycapId }
-  /** Push-to-talk. Voice is press/release, so it only works on physical keys. */
-  | { type: 'voice' };
+  | { type: 'keycap'; keycapId: WorkLouderCodexKeycapId };
 
 export interface WorkLouderCodexKeyAssignment {
   keycapId: WorkLouderCodexKeycapId;
@@ -576,8 +573,7 @@ export const WORKLOUDER_CODEX_DEFAULT_SETTINGS: WorkLouderCodexSettings = {
 
 /**
  * Creator's factory kit is thirteen blank 1U caps (no 2U MIC). Same PCB as
- * Codex: merge/split is a layout choice. Push-to-talk defaults to ACT10
- * because a blank cap has no printed microphone fallback.
+ * Codex: merge/split is a layout choice.
  */
 export const WORKLOUDER_CREATOR_MICRO_2_DEFAULT_LAYOUT: WorkLouderCodexLayout = {
   version: 1,
@@ -586,7 +582,7 @@ export const WORKLOUDER_CREATOR_MICRO_2_DEFAULT_LAYOUT: WorkLouderCodexLayout = 
     ACT07: { keycapId: 'EMPT2', action: { type: 'command', commandId: 'approval.approve' } },
     ACT08: { keycapId: 'EMPT3', action: { type: 'command', commandId: 'approval.decline' } },
     ACT09: { keycapId: 'EMPT4', action: { type: 'command', commandId: 'forkTask' } },
-    ACT10: { keycapId: 'EMPT1', action: { type: 'voice' } },
+    ACT10: { keycapId: 'EMPT1', action: null },
     ACT11: { keycapId: 'EMPT2', action: null },
     ACT10_ACT11: { keycapId: 'EMPT5', action: null },
     ACT12: { keycapId: 'EMPT3', action: { type: 'command', commandId: 'composer.submit' } },
@@ -708,15 +704,6 @@ export function isWorkLouderCodexMicrophoneKeycap(
   keycapId: WorkLouderCodexKeycapId | null | undefined,
 ): boolean {
   return keycapId === 'MIC' || keycapId === 'MIC1';
-}
-
-/** Voice is carried either by a printed MIC keycap (Codex) or a bound action. */
-export function isWorkLouderCodexVoiceAssignment(
-  assignment: Pick<WorkLouderCodexKeyAssignment, 'keycapId' | 'action'> | null | undefined,
-): boolean {
-  if (!assignment) return false;
-  if (assignment.action) return assignment.action.type === 'voice';
-  return isWorkLouderCodexMicrophoneKeycap(assignment.keycapId);
 }
 
 export function isWorkLouderCodexDoubleKeycap(

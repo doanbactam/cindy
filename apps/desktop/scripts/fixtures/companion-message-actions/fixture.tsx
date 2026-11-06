@@ -1,7 +1,6 @@
 import { useState, type ComponentProps } from 'react';
 import { mountPage, subscription } from '../../ui-page/harness';
 import { ChatInput } from '../../../src/renderer/components/new-chat/ChatInput';
-import { getDefaultVoiceInputSettings } from '../../../src/shared/voiceInputData';
 
 // The fixture's custom origin lacks secure-context randomUUID. These IDs only
 // identify in-memory send snapshots; production uses Chromium's secure implementation.
@@ -168,13 +167,6 @@ void mountPage({
       onPiPackagesChanged: subscription('pi-packages'),
       listAgentSkills: async () => ({ success: true, skills: [] }),
       getSessionAgentSwitchIntent: async () => null,
-    },
-    voiceInput: {
-      getDataSnapshot: () => ({
-        settings: { ...getDefaultVoiceInputSettings('darwin'), playInteractionSound: false },
-      }),
-      onDataChanged: subscription('voice-data'),
-      onGlobalShortcutTrigger: subscription('voice-shortcut'),
     },
     deviceLink: { onRemotePush: subscription('remote-push') },
     ghosts: { listSync: () => ({ ghosts: [] }) },

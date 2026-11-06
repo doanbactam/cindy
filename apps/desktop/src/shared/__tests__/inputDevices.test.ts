@@ -21,7 +21,6 @@ describe('input device contract', () => {
   it('describes Codex Micro as one adapter with its own capabilities', () => {
     expect(WORKLOUDER_CODEX_DEVICE.id).toBe('worklouder-codex-micro');
     expect(inputDeviceHasCapability(WORKLOUDER_CODEX_DEVICE, 'task-slots')).toBe(true);
-    expect(inputDeviceHasCapability(WORKLOUDER_CODEX_DEVICE, 'voice')).toBe(true);
     expect(inputDeviceHasCapability(WORKLOUDER_CODEX_DEVICE, 'lighting')).toBe(true);
   });
 

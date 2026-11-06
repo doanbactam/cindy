@@ -103,7 +103,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 0
           }
@@ -115,7 +114,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 0
           }
@@ -127,7 +125,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": true,
             "scrollHeld": true,
             "releases": 0
           }
@@ -153,7 +150,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": true,
             "scrollHeld": true,
             "releases": 0
           }
@@ -188,7 +184,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": true,
             "scrollHeld": true,
             "releases": 0
           }
@@ -206,7 +201,6 @@
           "expect": {
             "present": false,
             "name": null,
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 1
           }
@@ -218,7 +212,6 @@
           "expect": {
             "present": false,
             "name": null,
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 1
           }
@@ -226,7 +219,7 @@
       ]
     },
     {
-      "name": "reading failure releases voice and scroll once",
+      "name": "reading failure releases scroll once",
       "steps": [
         {
           "kind": "snapshot",
@@ -251,7 +244,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 0
           }
@@ -263,7 +255,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 0
           }
@@ -275,7 +266,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": true,
             "scrollHeld": true,
             "releases": 0
           }
@@ -292,7 +282,6 @@
           "expect": {
             "present": false,
             "name": null,
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 1
           }
@@ -304,7 +293,6 @@
           "expect": {
             "present": false,
             "name": null,
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 1
           }
@@ -337,7 +325,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 0
           }
@@ -349,7 +336,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 0
           }
@@ -361,7 +347,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 A",
-            "voiceHeld": true,
             "scrollHeld": true,
             "releases": 0
           }
@@ -394,7 +379,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 B",
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 1
           }
@@ -406,7 +390,6 @@
           "expect": {
             "present": true,
             "name": "Xbox 测试 B",
-            "voiceHeld": false,
             "scrollHeld": false,
             "releases": 1
           }

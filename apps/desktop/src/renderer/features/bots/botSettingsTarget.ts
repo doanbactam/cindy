@@ -22,7 +22,6 @@ export type BotCapabilityEntry = {
 type Bots = NonNullable<Window['electronAPI']['localDb']>['bots'];
 // The nightly review is read on this computer only (BotNightlyLearning); a target never carries it.
 export type BotRoutinesApi = Omit<Window['electronAPI']['routines'], 'nightlyLearning'>;
-type VoiceApi = Window['electronAPI']['voiceConversation'];
 type ImConnectionApi = Window['electronAPI']['botImConnection'];
 type WechatApi = Window['electronAPI']['wechatBot'];
 
@@ -75,12 +74,6 @@ export interface BotSettingsTarget {
       get(): Promise<{ available: boolean; /** Absent on older computers. */ visible?: boolean; enabled: boolean; connected: boolean; companionBotId: string | null }>;
       setCompanion(assign: boolean, expectedBotId: string | null): Promise<{ companionBotId: string | null }>;
     } | null;
-  };
-  voice: Pick<VoiceApi, 'models' | 'voices' | 'preference' | 'setPreference'> & {
-    /** Refreshes the gateway model list before reading the catalog (a computer refreshes its own on use). */
-    refreshCatalog?(): Promise<void>;
-    /** Sample playback uses this window's speakers and its own voice service; absent for another computer. */
-    previewApi?: VoiceApi;
   };
   /** Routines of the teammate's computer (`onChanged` fires when they change there). */
   routines: BotRoutinesApi;

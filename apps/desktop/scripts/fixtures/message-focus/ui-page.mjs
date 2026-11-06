@@ -10,7 +10,6 @@ export default {
   stubs: {
     'src/renderer/components/chat/GhostToolCard':
       'export const GhostToolCard = () => null; export const MailCardEditor = () => null; export const CARD_EXPAND_TOGGLE_EVENT = "xdt-card-expand-toggle";',
-    'src/renderer/voice-input/workletUrl': 'export const getVoiceInputWorkletUrl = () => "";',
   },
   real: 'MessageStream navigation, focus lifecycle, background/ring transitions, theme tokens',
   notCovered: 'Host search transport, native mobile, agent execution',

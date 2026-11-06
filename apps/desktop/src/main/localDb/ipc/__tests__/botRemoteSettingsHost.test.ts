@@ -63,10 +63,9 @@ function setup(overrides: { allowed?: boolean; visible?: boolean; ownerCurrent?:
       })),
       x: { summary: vi.fn(() => ({ available: true, enabled: true, connected: true, companionBotId: 'bot-2' })), setCompanion: vi.fn() },
     },
-    voice: { models: vi.fn(() => []), voices: vi.fn(async () => ({ voices: [] })), preference: vi.fn(async () => ({ selection: null, customized: false })), setPreference: vi.fn(async () => ({ selection: null, customized: false })) },
     routines: { list: vi.fn(async () => []), sources: vi.fn(async () => []), history: vi.fn(async () => []), save: vi.fn(async () => ({ id: 'r1' })), runNow: vi.fn(), remove: vi.fn() },
     ...overrides.deps,
-  } as unknown as BotSettingsOpsDeps & { updateProfile: ReturnType<typeof vi.fn>; lifecycle: ReturnType<typeof vi.fn>; memory: Record<string, ReturnType<typeof vi.fn>>; routines: Record<string, ReturnType<typeof vi.fn>>; voice: Record<string, ReturnType<typeof vi.fn>>; channels: any };
+  } as unknown as BotSettingsOpsDeps & { updateProfile: ReturnType<typeof vi.fn>; lifecycle: ReturnType<typeof vi.fn>; memory: Record<string, ReturnType<typeof vi.fn>>; routines: Record<string, ReturnType<typeof vi.fn>>; channels: any };
   const host = createBotRemoteSettingsHost({
     owner: () => 'owner-1',
     isOwnerCurrent: overrides.ownerCurrent ? overrides.ownerCurrent : () => true,
@@ -198,17 +197,6 @@ it('validates a routine before it reaches the shared routine service and reports
   expect(deps.routines.save).toHaveBeenCalledWith('bot-1', expect.objectContaining({ name: 'Digest' }), 'r1');
   // Event sources are host-wide: no teammate is required.
   expect(await call('routines.sources', undefined, null)).toMatchObject({ ok: true });
-});
-
-it('keeps "not provided" and "reset to default" apart when a voice preference is written', async () => {
-  const { deps, call } = setup();
-  await call('voice.setPreference', { sentencePlayback: false });
-  expect(deps.voice.setPreference).toHaveBeenLastCalledWith('bot-1', undefined, false);
-  await call('voice.setPreference', { selection: null, sentencePlayback: null });
-  expect(deps.voice.setPreference).toHaveBeenLastCalledWith('bot-1', null, null);
-  // The catalog is host-wide; a failing voice service never leaks its message.
-  (deps.voice.models as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => { throw new Error('key sk-secret rejected'); });
-  expect(await call('voice.models', undefined, null)).toEqual({ ok: false, code: 'PRECONDITION_FAILED', message: 'Voice conversation is unavailable.' });
 });
 
 it('limits messaging-platform operations to this teammate and keeps the WeChat folder path home', async () => {

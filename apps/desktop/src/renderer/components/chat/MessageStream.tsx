@@ -7,7 +7,6 @@ import { historyAfter } from './historyAfter';
 import { readGhostCardSupersededBy, readMailCard } from '@cindy/maker-shared/ghost-card-form';
 import { animateFocusScroll } from './animateFocusScroll';
 import { botProcessItems } from '@/features/bots/botConversationPresentation';
-import { isVisibleVoiceCallMessage } from '@/features/bots/voice/voiceCallPresentation';
 import { MessageViewport, type MessageViewportApi } from './MessageViewport';
 import { PAGE_TEXT_NAVIGATION_EVENT } from '@/lib/pageTextAccess';
 export { botProcessItems, simplifyBotRenderItems } from '@/features/bots/botConversationPresentation';
@@ -493,8 +492,6 @@ interface MessageStreamProps {
   messages: ChatMessage[];
   /** Persisted row already owned by the live error banner; keep its recovery state there. */
   activeErrorClientId?: string | null;
-  /** The ongoing call appears only in its transcript popover, including history replays. */
-  activeVoiceCallId?: string | null;
   /** This task's preparation card is shown in the composer, including after history reload. */
   cindyMakeSessionId?: string;
   cindyMakeCompletionInComposer?: boolean;
@@ -1555,7 +1552,6 @@ export function buildRenderItems(
     historyArtifacts?: readonly import('@cindy/maker-shared/message-window').HistoryFileArtifact[];
     /** Bot-owned Session: show newly created files as deliverables, not an engineering diff card. */
     botSessionId?: string;
-    activeVoiceCallId?: string | null;
     /** Reuse image Markdown extraction for completed assistant messages across stream batches. */
     markdownImageTargetCache?: MarkdownImageTargetCache;
     /** Keep the stored preparation report out of its own task's visible timeline. */
@@ -1572,9 +1568,9 @@ export function buildRenderItems(
   // shared store for the dialog to observe, but never enter the chat timeline.
   allMessages = allMessages.filter(
     (message) =>
-      // History snapshots bypass the task view's raw-list filter. Keep this
-      // rule at the shared render boundary, before time/turn/work grouping.
-      isVisibleVoiceCallMessage(message, opts?.activeVoiceCallId) &&
+      // Companion voice calls were retired; their saved transcript rows stay
+      // stored but are hidden here, at the boundary shared by history views.
+      message.systemCardType !== 'voice-call' &&
       message.systemCardData?.modalOnly !== true &&
       !(opts?.cindyMakeCompletionInComposer && isCindyMakeCompletionMessage(message)) &&
       !isCindyMakePreparationMessage(message, opts?.cindyMakeSessionId),
@@ -2490,7 +2486,6 @@ export function buildCachedRenderItems(
     opts?.turnChangeSets,
     opts?.workingDir,
     opts?.botSessionId,
-    opts?.activeVoiceCallId,
     opts?.subagentRunStatuses,
     opts?.historyArtifacts,
     opts?.cindyMakeSessionId,
@@ -2630,7 +2625,6 @@ export function buildMessageStreamRenderProjection({
         renderOptions?.turnChangeSets,
         renderOptions?.workingDir,
         renderOptions?.botSessionId,
-        renderOptions?.activeVoiceCallId,
         renderOptions?.subagentRunStatuses,
         renderOptions?.cindyMakeSessionId,
         renderOptions?.cindyMakeCompletionInComposer,
@@ -3047,7 +3041,6 @@ export function MessageStream({
   onBotReadThrough,
   messages,
   activeErrorClientId = null,
-  activeVoiceCallId = null,
   cindyMakeSessionId,
   cindyMakeCompletionInComposer,
   historyLoaded,
@@ -3337,7 +3330,6 @@ export function MessageStream({
     renderOptions: {
       sessionId, turnChangeSets, workingDir,
       botSessionId: simplifiedBotConversation ? sessionId : undefined,
-      activeVoiceCallId,
       markdownImageTargetCache: markdownImageTargetCacheRef.current,
       cindyMakeSessionId, cindyMakeCompletionInComposer, subagentRunStatuses,
     },
@@ -3354,7 +3346,6 @@ export function MessageStream({
         turnChangeSets,
         workingDir,
         simplifiedBotConversation,
-        activeVoiceCallId,
         sessionId,
         cindyMakeSessionId,
         cindyMakeCompletionInComposer,
@@ -3369,7 +3360,6 @@ export function MessageStream({
           turnChangeSets,
           workingDir,
           botSessionId: simplifiedBotConversation ? sessionId : undefined,
-          activeVoiceCallId,
           markdownImageTargetCache: markdownImageTargetCacheRef.current,
           cindyMakeSessionId,
           cindyMakeCompletionInComposer,
@@ -3379,7 +3369,6 @@ export function MessageStream({
     ),
   }), [
     displayMessages,
-    activeVoiceCallId,
     cindyMakeSessionId,
     cindyMakeCompletionInComposer,
     historyView,
@@ -6845,11 +6834,7 @@ export function MessageStream({
                         }
                       : {};
                     if (simplifiedBotConversation) {
-                      // Call cards carry their own date/time in the compact header.
-                      const groupTimestamp =
-                        msg.systemCardType === 'voice-call'
-                          ? undefined
-                          : botMessageTimeGroups.get(msg.clientId);
+                      const groupTimestamp = botMessageTimeGroups.get(msg.clientId);
                       const startsUnread = botUnreadBoundaryClientId === msg.clientId;
                       return (
                         <div

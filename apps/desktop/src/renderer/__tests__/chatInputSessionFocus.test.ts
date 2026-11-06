@@ -47,7 +47,7 @@ describe('ChatInput session switch focus contract', () => {
     const restoreNextDraftBlock = extractBetween(
       chatInputSource,
       'const restoreNextDraft = () => {',
-      'const pendingStopAndSend = voiceInputStopAndSendPromiseRef.current;',
+      "// storageKey actually changed — swap the editor's content immediately.",
     );
     const firstMountHydrationBlock = extractBetween(
       chatInputSource,
@@ -82,10 +82,7 @@ describe('ChatInput session switch focus contract', () => {
       'const ownsRoute = routeOwner ?? (!sessionIdProp && !isCompactRail && !isOrcaMode);',
     );
     expect(sessionViewSource).toContain('focusOnStorageKeyChange={ownsRoute || focusComposerOnOpen}');
-    expect(sessionViewSource).toContain(
-      'ownsHardwareComposerActions={ownsHardwareTaskActions && !voiceModeOpen}',
-    );
-    expect(chatInputSource).toContain('workLouderVoiceGestureRef.current?.cancelHeldPress();');
+    expect(sessionViewSource).toContain('ownsHardwareComposerActions={ownsHardwareTaskActions}');
     expect(sessionViewSource).toContain(
       'ownsHardwareScrollActions={ownsHardwareTaskActions}',
     );
@@ -152,14 +149,9 @@ describe('ChatInput session switch focus contract', () => {
     expect(chatInputSource).toContain(
       'const captureSendFocusForRestore = useComposerSendFocusRestore(',
     );
-    const focusRestoreCall = extractBetween(
-      chatInputSource,
-      'const captureSendFocusForRestore = useComposerSendFocusRestore(',
-      'const { settings: voiceInputSettings }',
+    expect(chatInputSource).toContain(
+      'useComposerSendFocusRestore(editor, composerTypingLocked);',
     );
-    expect(focusRestoreCall).toContain('composerTypingLocked');
-    expect(focusRestoreCall).not.toContain('composerMutationLocked');
-    expect(focusRestoreCall).not.toContain('sendDispatchInFlight');
     expect(localSendLockBlock).toContain('captureSendFocusForRestore();');
     expect(localSendLockBlock.indexOf('captureSendFocusForRestore();')).toBeLessThan(
       localSendLockBlock.indexOf('setSendDispatchInFlight(true);'),
@@ -258,9 +250,6 @@ describe('ChatInput session switch focus contract', () => {
     expect(chatInputSource).toContain(
       'setAllowTypeDuringSend(nextSendInFlight && nextSendCleared);',
     );
-    expect(chatInputSource).toContain(
-      'documentBeforeOptimisticClear = plainTextToComposerDocument(serializedContent.text);',
-    );
     const settleLockBlock = extractBetween(
       chatInputSource,
       'dispatchSendInFlightKeysRef.current.delete(sendInFlightKey);',
@@ -289,7 +278,6 @@ describe('ChatInput session switch focus contract', () => {
       'optimisticallyClearRemoteComposer && editorOwnsSourceAtStart',
     );
     expect(snapshotBlock).toContain('getComposerDraft(sourceStorageKey)');
-    expect(snapshotBlock).toContain('frozenVoiceSendRef.current?.sourceStorageKey === sourceStorageKey');
     expect(snapshotBlock).toContain('editorOwnsSourceAtStart\n        ? editor.getJSON()');
     expect(snapshotBlock.indexOf('editorOwnsSourceAtStart')).toBeLessThan(
       snapshotBlock.indexOf('editor.getJSON()'),
@@ -376,16 +364,12 @@ describe('ChatInput session switch focus contract', () => {
     expect(chatInputSource).not.toContain('mergeComposerDocumentsForRestore(');
   });
 
-  it('reuses the original voice-session recovery checkpoint until the editor owner switches', () => {
+  it('reuses the original recovery checkpoint until the editor owner switches', () => {
     expect(chatInputSource).toContain('useRef<RemoteOptimisticTransitionCheckpoint | null>(null)');
     expect(chatInputSource).toContain('getOrCreateRemoteOptimisticTransitionCheckpoint(');
     expect(chatInputSource).toContain('saveComposerTextAfterAsyncTransition(');
     expect(chatInputSource).toContain('recoveryCheckpoint!');
-    expect(chatInputSource).toContain(
-      'if ((pendingStopAndSend || voiceInputBusyRef.current) && prevEditorKey && voiceOwnerKey)',
-    );
     expect(chatInputSource).toContain('}, [editor, storageKey]);');
-    expect(chatInputSource).not.toContain('}, [editor, storageKey, voiceInput.isBusy]);');
     expect(chatInputSource.match(/storageKeyTransitionRecoveryRef\.current = null;/g)).toHaveLength(
       2,
     );

@@ -17,10 +17,6 @@ import {
   setSlashCommandRoster,
   SlashCommandDecoration,
 } from '@/components/new-chat/SlashCommandDecoration';
-import {
-  setVoiceInputDraftDecoration,
-  VoiceInputDraftDecoration,
-} from '@/components/new-chat/VoiceInputDraftDecoration';
 import { applyListContinuation } from '@/lib/composerListContinuation';
 
 /**
@@ -794,53 +790,6 @@ describe('ComposerListIndentDecoration in a real editor', () => {
         'p.composer-list-fallback-container br.composer-list-fallback-break',
       ),
     ).toHaveLength(2);
-  });
-
-  it('uses the paragraph fallback while voice replacement overlaps a multiline list row', () => {
-    editor = new Editor({
-      element: document.createElement('div'),
-      extensions: [
-        Document,
-        Paragraph,
-        Text,
-        HardBreak,
-        CjkPunctDecoration,
-        ComposerListIndentDecoration,
-        VoiceInputDraftDecoration,
-      ],
-      content: {
-        type: 'doc',
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              { type: 'text', text: '- first' },
-              { type: 'hardBreak' },
-              { type: 'text', text: '2. second row' },
-            ],
-          },
-        ],
-      },
-    });
-    expect(editor.view.dom.querySelectorAll('.composer-list-line-indent')).toHaveLength(2);
-
-    setVoiceInputDraftDecoration(
-      editor,
-      'replacement',
-      'refinement',
-      { from: 9, to: 21 },
-      'processing',
-    );
-    expect(editor.view.dom.querySelector('p.composer-list-fallback-container')).not.toBeNull();
-    expect(editor.view.dom.querySelector('.composer-list-line-indent')).toBeNull();
-    expect(editor.view.dom.querySelector('[data-voice-draft-inline]')?.textContent).toBe(
-      'replacement',
-    );
-    expect(editor.view.dom.querySelector('.voice-input-draft-replaced')).not.toBeNull();
-
-    setVoiceInputDraftDecoration(editor, '', null);
-    expect(editor.view.dom.querySelector('p.composer-list-fallback-container')).toBeNull();
-    expect(editor.view.dom.querySelectorAll('.composer-list-line-indent')).toHaveLength(2);
   });
 
   it('keeps an inline atom and body punctuation inside the multiline fallback flow', () => {

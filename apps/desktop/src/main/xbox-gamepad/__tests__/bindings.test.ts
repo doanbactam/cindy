@@ -53,15 +53,6 @@ describe('reduceXboxGamepadFrame', () => {
     ]);
   });
 
-  it('starts and stops voice from the bound trigger', () => {
-    expect(reduceXboxGamepadFrame(XBOX_GAMEPAD_EMPTY_FRAME, press('lt'), layout)).toEqual([
-      { type: 'voice', phase: 'press' },
-    ]);
-    expect(reduceXboxGamepadFrame(press('lt'), XBOX_GAMEPAD_EMPTY_FRAME, layout)).toEqual([
-      { type: 'voice', phase: 'release' },
-    ]);
-  });
-
   it('scrolls with a conversation-scroll stick and stops at center', () => {
     const started = reduceXboxGamepadFrame(XBOX_GAMEPAD_EMPTY_FRAME, axes({ ry: 1 }), layout);
     expect(started[0]).toMatchObject({ type: 'scroll', direction: 'up' });
@@ -132,13 +123,10 @@ describe('digitalTriggerPressed', () => {
 });
 
 describe('xboxGamepadHoldReleases', () => {
-  it('releases voice and scroll that were still held', () => {
+  it('releases scroll that was still held', () => {
     const layout = createXboxGamepadDefaultLayout();
     expect(
       xboxGamepadHoldReleases({ ...press('lt'), axes: { ...XBOX_GAMEPAD_EMPTY_FRAME.axes, ry: -1 } }, layout),
-    ).toEqual([
-      { type: 'voice', phase: 'release' },
-      { type: 'scroll-stop' },
-    ]);
+    ).toEqual([{ type: 'scroll-stop' }]);
   });
 });

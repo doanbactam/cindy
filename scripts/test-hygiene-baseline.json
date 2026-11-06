@@ -445,27 +445,6 @@
     "apps/desktop/src/main/vision-bridge/__tests__/vision-bridge-settings-store.test.ts": {
       "resetModules": 1
     },
-    "apps/desktop/src/main/voice-input/__tests__/dictionarySyncStore.test.ts": {
-      "sourceReads": 2
-    },
-    "apps/desktop/src/main/voice-input/__tests__/ElevenLabsScribeProvider.test.ts": {
-      "realWaits": 2
-    },
-    "apps/desktop/src/main/voice-input/__tests__/globalShortcut.test.ts": {
-      "resetModules": 1
-    },
-    "apps/desktop/src/main/voice-input/__tests__/RealtimeAsrWebSocketProvider.test.ts": {
-      "realWaits": 3
-    },
-    "apps/desktop/src/main/voice-input/__tests__/SystemAudioMuteGuard.test.ts": {
-      "resetModules": 1
-    },
-    "apps/desktop/src/main/voice-input/__tests__/VolcengineSaucAsrProvider.test.ts": {
-      "realWaits": 4
-    },
-    "apps/desktop/src/main/voice-input/__tests__/WindowsFunctionKeyShortcutListener.test.ts": {
-      "resetModules": 1
-    },
     "apps/desktop/src/main/worklouder-codex/__tests__/codexMicroGuardHook.test.ts": {
       "sourceReads": 1
     },
@@ -896,21 +875,6 @@
     },
     "apps/desktop/src/renderer/themes/__tests__/generatedEffortInitialization.test.ts": {
       "resetModules": 1
-    },
-    "apps/desktop/src/renderer/voice-input/__tests__/dictionaryLearningSettings.test.ts": {
-      "resetModules": 1
-    },
-    "apps/desktop/src/renderer/voice-input/__tests__/overlayRetryGate.test.ts": {
-      "sourceReads": 2
-    },
-    "apps/desktop/src/renderer/voice-input/__tests__/startCue.test.ts": {
-      "resetModules": 1
-    },
-    "apps/desktop/src/renderer/voice-input/__tests__/voiceInputHistory.test.ts": {
-      "resetModules": 1
-    },
-    "apps/desktop/src/renderer/voice-input/__tests__/VoiceInputSection.recordingGate.test.ts": {
-      "sourceReads": 9
     },
     "packages/lizi-im/src/feishu/__tests__/outboundFile.test.ts": {
       "sourceReads": 1

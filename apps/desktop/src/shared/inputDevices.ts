@@ -47,7 +47,6 @@ export type InputDeviceAction =
 
 export type InputDeviceRendererAction =
   | Exclude<InputDeviceAction, { type: 'task' }>
-  | { type: 'voice'; phase: 'press' | 'release' }
   | {
       type: 'scroll';
       direction: 'up' | 'down';
@@ -59,7 +58,6 @@ export type InputDeviceRendererAction =
 export type InputDeviceCapability =
   | { kind: 'task-slots'; count: number }
   | { kind: 'commands' }
-  | { kind: 'voice' }
   | { kind: 'encoder' }
   | { kind: 'stick' }
   | { kind: 'lighting'; model: 'task-slots' | 'global' | 'none' };

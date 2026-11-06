@@ -123,8 +123,7 @@ function parseLayout(value: unknown): WorkLouderCodexLayout {
       'analogStick',
       'encoder',
       'encoderMode',
-      // `voiceButtonMode` was dropped: the microphone key follows Cindy's own
-      // microphone and has no mode. Still accepted so a settings object saved
+      // `voiceButtonMode` was dropped with voice input. Still accepted so a settings object saved
       // by an older build round-trips instead of being rejected outright.
       'voiceButtonMode',
       'separateMicrophoneKeys',
@@ -222,10 +221,6 @@ function parseAction(value: unknown, nullable: false): WorkLouderCodexAction;
 function parseAction(value: unknown, nullable: boolean): WorkLouderCodexAction | null {
   if (value === null && nullable) return null;
   const record = requireRecord(value, 'device action must be an object');
-  if (record.type === 'voice') {
-    rejectUnknownKeys(record, ['type'], 'voice action field');
-    return { type: 'voice' };
-  }
   if (record.type === 'command') {
     rejectUnknownKeys(record, ['type', 'commandId'], 'command action field');
     if (!isWorkLouderCodexCommandId(record.commandId)) {

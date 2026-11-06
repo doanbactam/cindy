@@ -519,7 +519,7 @@ export function handleStructuredListBackspace(view: EditorView): boolean {
 }
 
 /**
- * Upgrade a plain list row appended by paste, IME, dictation, or another
+ * Upgrade a plain list row appended by paste, IME, or another
  * direct transaction that does not run input rules.
  *
  * The command is intentionally scoped to the final top-level paragraph and

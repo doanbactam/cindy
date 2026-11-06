@@ -7,7 +7,7 @@
  *
  * 纯常量 + 纯函数, 零 Electron / DOM 依赖 (platform 一律作参数传入),
  * main / preload / renderer 三端可 import。内部规范表示以 KeyboardEvent.code
- * 为基准 (物理键位, 布局无关, 与 voice-input 快捷键体系一致); Electron
+ * 为基准 (物理键位, 布局无关); Electron
  * accelerator 字符串与 before-input-event Input 均通过本文件的转换/匹配函数
  * 与该表示互通, 保证双端判定不漂移。
  *
@@ -114,8 +114,8 @@ export interface AppShortcutDefinition {
   /** true = 不在设置页快捷键列表展示 (仍正常生效, 如 ⌘, 打开设置)。 */
   hiddenInSettings?: boolean;
   /**
-   * true = 本条目的默认组合对用户既有绑定让位: 与其它 id 的 override 或
-   * registry 之外体系的用户键位 (yieldToCombos) 撞键时, 默认组合被压制
+   * true = 本条目的默认组合对用户既有绑定让位: 与其它 id 的 override
+   * 撞键时, 默认组合被压制
    * (该槽位等效无绑定), 写入侧 findAppShortcutConflict 也不把它算作占用。
    * 只用于「批量占键的次要便捷槽位」(switch-session-*): 它们隐藏在设置页
    * 之外, 用户看不到也解不开, 不让位就会一次按键双动作。save-file / ⌘, 等
@@ -510,16 +510,12 @@ export function normalizeAppShortcutOverrides(raw: unknown, platform: string): A
  * 看不到占用者也无法解绑, 若不让位则一次按键触发两个动作。让位后该槽位
  * 等效无绑定 (消费端与序号徽标端对空组合天然兼容); 其余条目 —— 包括
  * save-file / open-settings 等同样 hiddenInSettings 的惯例键 —— 不让位,
- * 维持既有行为 (见 yieldsToUserBindings 字段注释)。让位对象有两类:
- * 1. 本 registry 内其它 id 的用户 override (overrides 参数);
- * 2. registry 之外体系的用户键位 (yieldToCombos 参数, 如语音输入的键盘
- *    快捷键) —— 由知道该体系的消费端传入; 无此类消费的调用点 (如 main 的
- *    菜单 accelerator, 这些隐藏槽位本就不进菜单) 不传即可, 行为不变。
+ * 维持既有行为 (见 yieldsToUserBindings 字段注释)。让位对象是本 registry
+ * 内其它 id 的用户 override (overrides 参数)。
  */
 export function getEffectiveAppShortcuts(
   overrides: AppShortcutOverrides,
   platform: string,
-  yieldToCombos: ReadonlyArray<AppShortcutCombo> = [],
 ): Map<AppShortcutId, AppShortcutCombo[]> {
   const overrideEntries: Array<{ scope: AppShortcutScope; combo: AppShortcutCombo }> = [];
   for (const def of APP_SHORTCUT_DEFINITIONS) {
@@ -545,7 +541,7 @@ export function getEffectiveAppShortcuts(
         (c) =>
           !overrideEntries.some(
             (o) => appShortcutScopesOverlap(def.scope, o.scope) && appShortcutCombosEqual(o.combo, c),
-          ) && !yieldToCombos.some((y) => appShortcutCombosEqual(y, c)),
+          ),
       );
     }
     result.set(def.id, combos);
@@ -877,9 +873,8 @@ export function getEffectivePluginShortcuts(
   definitions: readonly PluginShortcutDefinition[],
   overrides: AppShortcutOverrides,
   platform: string,
-  yieldToCombos: readonly AppShortcutCombo[] = [],
 ): Map<PluginShortcutId, AppShortcutCombo[]> {
-  const used = [...getEffectiveAppShortcuts(overrides, platform, yieldToCombos).values()].flat().concat(yieldToCombos);
+  const used = [...getEffectiveAppShortcuts(overrides, platform).values()].flat();
   const result = new Map<PluginShortcutId, AppShortcutCombo[]>();
   const sorted = [...definitions].sort((a, b) => a.id.localeCompare(b.id));
   const family = platform === 'darwin' ? 'mac' : platform === 'win32' ? 'windows' : 'other';

@@ -53,10 +53,6 @@ vi.mock('@/lib/appShortcutStore', () => ({
   subscribeAppShortcuts: () => () => {},
 }));
 
-vi.mock('@/hooks/useVoiceInputSettings', () => ({
-  getVoiceInputSettings: () => ({ shortcut: null }),
-}));
-
 vi.mock('@/features/skillhub/hooks/useSkillhub', () => ({
   useSkillhub: () => ({
     skills: [],

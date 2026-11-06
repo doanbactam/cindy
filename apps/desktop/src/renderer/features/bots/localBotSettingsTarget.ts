@@ -26,7 +26,7 @@ import type { BotCapabilityEntry, BotCapabilityKind, BotSettingsTarget } from '.
 
 const api = () => window.electronAPI.localDb.bots;
 // `projects` lists folders on this computer: a remote teammate's target never offers it.
-const ALL_PAGES = ['profile', 'personality', 'memory', 'projects', 'model', 'voice', 'capabilities', 'channels', 'routines', 'history', 'advanced'] as const;
+const ALL_PAGES = ['profile', 'personality', 'memory', 'projects', 'model', 'capabilities', 'channels', 'routines', 'history', 'advanced'] as const;
 
 /** Runtime / MCP facts that change which references a teammate can use. */
 const CATALOG_PATCH_KEYS = [
@@ -164,18 +164,6 @@ export const localBotSettingsTarget: BotSettingsTarget = {
     canEnterCredentials: true,
     wechat: null,
     x: null,
-  },
-  voice: {
-    models: () => window.electronAPI.voiceConversation.models(),
-    voices: (...args) => window.electronAPI.voiceConversation.voices(...args),
-    preference: (...args) => window.electronAPI.voiceConversation.preference(...args),
-    setPreference: (...args) => window.electronAPI.voiceConversation.setPreference(...args),
-    refreshCatalog: async () => {
-      await window.electronAPI.maker.refreshBuiltinProviderModels('xd');
-    },
-    get previewApi() {
-      return window.electronAPI.voiceConversation;
-    },
   },
   routines: {
     list: (...args) => window.electronAPI.routines.list(...args),

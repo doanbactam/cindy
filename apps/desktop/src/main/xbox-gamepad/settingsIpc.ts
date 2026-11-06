@@ -124,11 +124,7 @@ function parseStick(value: unknown, id: string): XboxGamepadStickBinding {
   rejectUnknownKeys(directionsRecord, XBOX_GAMEPAD_STICK_DIRECTIONS, `${id} stick direction`);
   const directions = Object.fromEntries(
     XBOX_GAMEPAD_STICK_DIRECTIONS.map((direction) => {
-      const binding = parseBinding(directionsRecord[direction] ?? null);
-      if (binding?.type === 'voice') {
-        throwIpcError('INVALID_PARAMS', `${id} stick directions cannot use voice`);
-      }
-      return [direction, binding];
+      return [direction, parseBinding(directionsRecord[direction] ?? null)];
     }),
   ) as XboxGamepadStickBinding['directions'];
   return { mode: record.mode, directions };
@@ -151,10 +147,6 @@ function parseBinding(value: unknown): XboxGamepadBinding | null {
       skillId: requireBoundedString(record.skillId, 1_024, 'skillId'),
       name: requireBoundedString(record.name, 256, 'skill name'),
     };
-  }
-  if (record.type === 'voice') {
-    rejectUnknownKeys(record, ['type'], 'voice binding field');
-    return { type: 'voice' };
   }
   throwIpcError('INVALID_PARAMS', 'gamepad binding type is invalid');
 }

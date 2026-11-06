@@ -18,7 +18,6 @@ interface Step {
   expect: {
     present: boolean;
     name: string | null;
-    voiceHeld: boolean;
     scrollHeld: boolean;
     releases: number;
   };
@@ -52,7 +51,7 @@ describe('Windows snapshot → NDJSON host → controller lifecycle contract', (
         send({ kind: 'presence', family: 'xbox', present: true, name: 'Xbox Test' });
         send(fixture.frames.neutral);
         send(fixture.frames.held);
-        expect(dispatch).toHaveBeenCalledWith({ type: 'voice', phase: 'press' });
+        expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: 'scroll' }));
         dispatch.mockClear();
         if (reason === 'disable')
           controller.applySettings('xbox', { ...enabled, deviceEnabled: false });
@@ -63,10 +62,7 @@ describe('Windows snapshot → NDJSON host → controller lifecycle contract', (
         if (reason === 'preview') controller.setLayoutPreviewActive(true, 'xbox');
         send(fixture.frames.held);
         send(fixture.frames.neutral);
-        expect(dispatch.mock.calls.map(([action]) => action)).toEqual([
-          { type: 'voice', phase: 'release' },
-          { type: 'scroll-stop' },
-        ]);
+        expect(dispatch.mock.calls.map(([action]) => action)).toEqual([{ type: 'scroll-stop' }]);
       } finally {
         host.stop();
       }
@@ -80,14 +76,10 @@ describe('Windows snapshot → NDJSON host → controller lifecycle contract', (
         stderr: new PassThrough(),
         kill: vi.fn(),
       });
-      const held = { voice: false, scroll: false, releases: 0, scrollStops: 0 };
+      const held = { scroll: false, scrollStops: 0 };
       const controller = new XboxGamepadController({
         isCindyFrontmost: () => true,
         dispatch: (action) => {
-          if (action.type === 'voice') {
-            held.voice = action.phase === 'press';
-            if (action.phase === 'release') held.releases++;
-          }
           if (action.type === 'scroll') held.scroll = true;
           if (action.type === 'scroll-stop') {
             held.scroll = false;
@@ -126,9 +118,7 @@ describe('Windows snapshot → NDJSON host → controller lifecycle contract', (
             expect(state.devicePresent).toBe(step.expect.present);
             expect(state.deviceName).toBe(step.expect.name);
             expect(state.connectionStatus).toBe(step.expect.present ? 'connected' : 'not-detected');
-            expect(held.voice).toBe(step.expect.voiceHeld);
             expect(held.scroll).toBe(step.expect.scrollHeld);
-            expect(held.releases).toBe(step.expect.releases);
             expect(held.scrollStops).toBe(step.expect.releases);
           }
         }

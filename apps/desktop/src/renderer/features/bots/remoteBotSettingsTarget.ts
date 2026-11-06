@@ -178,7 +178,6 @@ export function remoteBotSettingsPages(ops: ReadonlySet<BotSettingsOp>): Set<str
   if (has('models.default', 'profile.update')) pages.add('model');
   if (has('capabilities.catalog')) pages.add('capabilities');
   if (has('history.search')) pages.add('history');
-  if (has('voice.models', 'voice.voices', 'voice.preference', 'voice.setPreference')) pages.add('voice');
   if (has('channels.im.list', 'channels.im.remove')) pages.add('channels');
   if (has('routines.list', 'routines.sources', 'routines.history', 'routines.save', 'routines.runNow', 'routines.remove')) pages.add('routines');
   return pages;
@@ -368,16 +367,6 @@ export function createRemoteBotSettingsTarget(input: RemoteBotSettingsInput) {
             setCompanion: (assign, expectedBotId) => call2('channels.x.setCompanion', { assign, expectedBotId }),
           }
         : null,
-    },
-    voice: {
-      models: () => invokeBotSettings(deviceId, 'voice.models', null),
-      voices: (selection) => invokeBotSettings(deviceId, 'voice.voices', null, { selection }),
-      preference: (id) => invokeBotSettings(deviceId, 'voice.preference', id),
-      setPreference: (id, selection, sentencePlayback) =>
-        invokeBotSettings(deviceId, 'voice.setPreference', id, {
-          ...(selection !== undefined ? { selection } : {}),
-          ...(sentencePlayback !== undefined ? { sentencePlayback } : {}),
-        }),
     },
     routineModels: input.ops.has('routines.saveWithModel'),
     routineSessionModes: input.ops.has('routines.saveWithSessionMode'),

@@ -4,12 +4,11 @@ import { parseModelCatalogKey } from '../../shared/controlledModelCatalog';
 /**
  * useVendorAuthGate —— vendor 未就绪时弹通用 confirmDialog,确认后跳 settings。
  *
- * Codex/Claude 聊天和语音输入共用这层门禁，避免每个入口各自维护一套
+ * Codex/Claude/Pi 聊天的各入口共用这层门禁，避免每个入口各自维护一套
  * "缺连接/缺 API Key/缺组件" 的弹窗与跳转逻辑。
  *
  * 复用现有:
  *   - useVendorReadiness (cc / codex 的 ready/unauthenticated/binary-missing/loading)
- *   - voice-input:get-readiness (语音输入按当前 provider 判断 Codex/API Key)
  *   - useConfirmDialog (项目通用确认弹窗 Provider)
  *   - react-router-dom navigate
  *
@@ -49,14 +48,10 @@ interface DialogCopy {
   settingsTab: SettingsTab;
 }
 
-type GatePurpose = 'send' | 'voice-input';
 type SettingsTab = 'api-keys' | 'connections' | 'providers' | 'about';
 
 type CopyKey =
   | 'no-source'
-  | 'voice-api-key-unauth'
-  | 'voice-direct-api-key-unauth'
-  | 'codex-voice-unauth'
   | 'codex-binary-missing'
   | 'pi-binary-missing';
 
@@ -68,28 +63,6 @@ function buildCopy(t: (key: string) => string): Record<CopyKey, DialogCopy> {
       title: t('newChat.noProvider.title'),
       description: t('newChat.noProvider.description'),
       confirmText: t('newChat.noProvider.connect'),
-      cancelText: t('logic.confirm.cancel'),
-      settingsTab: 'providers',
-    },
-    'voice-api-key-unauth': {
-      title: t('logic.confirm.voiceApiKeyAuthTitle'),
-      description: t('logic.confirm.voiceApiKeyAuthDescription'),
-      confirmText: t('logic.confirm.goToSettings'),
-      cancelText: t('logic.confirm.cancel'),
-      settingsTab: 'providers',
-    },
-    'voice-direct-api-key-unauth': {
-      title: t('logic.confirm.voiceDirectApiKeyAuthTitle'),
-      description: t('logic.confirm.voiceDirectApiKeyAuthDescription'),
-      confirmText: t('logic.confirm.goToSettings'),
-      cancelText: t('logic.confirm.cancel'),
-      // 「工具密钥」页已下架(2026-07-13),直连 key 引导落到模型供应商页。
-      settingsTab: 'providers',
-    },
-    'codex-voice-unauth': {
-      title: t('logic.confirm.codexVoiceAuthTitle'),
-      description: t('logic.confirm.codexVoiceAuthDescription'),
-      confirmText: t('logic.confirm.goToSettings'),
       cancelText: t('logic.confirm.cancel'),
       settingsTab: 'providers',
     },
@@ -108,15 +81,6 @@ function buildCopy(t: (key: string) => string): Record<CopyKey, DialogCopy> {
       settingsTab: 'about',
     },
   };
-}
-
-export function pickVoiceInputDialogCopy(
-  copy: Record<CopyKey, DialogCopy>,
-  readiness: { auth: 'api-key' | 'codex'; settingsTab: SettingsTab },
-): DialogCopy {
-  if (readiness.auth === 'codex') return copy['codex-voice-unauth'];
-  if (readiness.settingsTab === 'providers') return copy['voice-api-key-unauth'];
-  return copy['voice-direct-api-key-unauth'];
 }
 
 function pickCopy(
@@ -229,7 +193,7 @@ interface UseVendorAuthGateReturn {
    */
   checkAndConfirm: (
     vendor: AgentKind,
-    options?: { purpose?: GatePurpose; deviceId?: string; existingSessionRoute?: boolean },
+    options?: { deviceId?: string; existingSessionRoute?: boolean },
   ) => Promise<GateResult>;
 }
 
@@ -245,29 +209,8 @@ export function useVendorAuthGate(): UseVendorAuthGateReturn {
   const checkAndConfirm = useCallback(
     async (
       vendor: AgentKind,
-      options?: { purpose?: GatePurpose; deviceId?: string; existingSessionRoute?: boolean },
+      options?: { deviceId?: string; existingSessionRoute?: boolean },
     ): Promise<GateResult> => {
-      if (options?.purpose === 'voice-input') {
-        const cached = window.electronAPI.voiceInput.getReadinessCached();
-        const readiness = cached?.ok ? cached : await window.electronAPI.voiceInput.getReadiness();
-        if (readiness.ok) return { proceed: true };
-
-        const dialogCopy = pickVoiceInputDialogCopy(copy, readiness);
-        const ok = await confirm({
-          title: dialogCopy.title,
-          description: dialogCopy.description,
-          confirmText: dialogCopy.confirmText,
-          cancelText: dialogCopy.cancelText,
-          // 主操作("前往设置")是非破坏性的,默认焦点交给它,
-          // 否则 Radix 默认聚焦 Cancel,会让"取消"天然带 focus ring。
-          autoFocusConfirm: true,
-        });
-        if (ok) {
-          navigate(`/settings?tab=${readiness.settingsTab}`);
-        }
-        return { proceed: false };
-      }
-
       // device-link:远程草稿 / 远程会话 → 就绪态以**被控端**为准(控制端本机配置无关)。
       // 两条隧道查询并行:provider:list 提供与本地 / 手机同源的来源判定(唯一真相),
       // agent:status 提供 codex binary 轴 + 老被控端的 authReady 回退口径。

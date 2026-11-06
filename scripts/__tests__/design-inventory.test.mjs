@@ -59,7 +59,7 @@ test('DS-8: every desktop globals.css surface includes its generated token style
   const { surfaces } = buildGeneratedSurfaces(ROOT);
   const consumers = surfaces.filter(surface => surface.platform === 'desktop'
     && surface.styleSources.includes('apps/desktop/src/renderer/styles/globals.css'));
-  assert.equal(consumers.length, 9);
+  assert.equal(consumers.length, 8);
   for (const surface of consumers) {
     assert.ok(surface.styleSources.includes('apps/desktop/src/renderer/styles/generated/tokens.css'), surface.id);
   }
@@ -714,12 +714,10 @@ test('市场页直接渲染的子组件纳入样式统计', () => {
 
 test('view 分支覆盖守卫: main-entry 的 view→组件映射必须与 catalog 一致', () => {
   const actualViews = extractViewEntries(fs.readFileSync(MAIN_ENTRY_PATH, 'utf8'));
-  // 与源码实况钉死:当前 4 个 view 分支各自渲染的组件。
+  // 与源码实况钉死:当前 2 个 view 分支各自渲染的组件。
   assert.deepEqual(Object.fromEntries(actualViews), {
     'computer-permission-backdrop': 'ComputerPermissionBackdrop',
     'computer-permission-guide': 'ComputerPermissionGuideWindow',
-    'voice-input-dictionary-toast': 'VoiceInputDictionaryToast',
-    'voice-input-overlay': 'VoiceInputOverlay',
   });
   const covered = new Map(
     catalogSurfaces().flatMap((surface) => Object.entries(surface.viewEntryComponents ?? {})),
@@ -736,15 +734,15 @@ test('view 分支覆盖守卫: main-entry 的 view→组件映射必须与 catal
 test('extractViewEntries: view 名保留但渲染组件换了会被发现(fixture)', () => {
   // 这正是「只比 view 名」防不住的场景:view 名不动,浮窗实现换成别的组件。
   const swapped = `
-    const isVoiceInputOverlay = view === 'voice-input-overlay';
-    if (isVoiceInputOverlay) {
-      const { VoiceInputDictionaryToast } = await import('./voice-input/VoiceInputDictionaryToast');
-      root.render(<VoiceInputDictionaryToast />);
+    const isPermissionGuide = view === 'computer-permission-guide';
+    if (isPermissionGuide) {
+      const { ComputerPermissionBackdrop } = await import('./computer-use/ComputerPermissionBackdrop');
+      root.render(<ComputerPermissionBackdrop />);
     }
   `;
   const mappings = extractViewEntries(swapped);
   assert.deepEqual(Object.fromEntries(mappings), {
-    'voice-input-overlay': 'VoiceInputDictionaryToast',
+    'computer-permission-guide': 'ComputerPermissionBackdrop',
   });
   // 新增 view 分支。
   const added = `
@@ -971,27 +969,6 @@ test('独立窗口 surface 纳入各自 entry 导入的 globals.css', () => {
     assert.ok(generated.tokenCount > 4, `${surfaceId} token 应高于 4(实际 ${generated.tokenCount})`);
     assert.ok(generated.bareColors > 2, `${surfaceId} 裸色应高于 2(实际 ${generated.bareColors})`);
   }
-});
-
-test('语音浮窗纳入 globals.css 与直接渲染的 VoiceInputStatusNotice', () => {
-  // main-entry.tsx 无条件加载 globals.css（含 data-voice-input-overlay 透明根规则）；
-  // VoiceInputOverlay.tsx:1521 直接渲染 VoiceInputStatusNotice。
-  const catalog = catalogSurfaces();
-  const overlay = catalog.find((surface) => surface.id === 'desktop.window.voice-overlay');
-  assert.ok(overlay);
-  assert.ok(overlay.styleRoots.includes('apps/desktop/src/renderer/styles/globals.css'));
-  assert.ok(
-    overlay.reachableComponents.includes('VoiceInputStatusNotice'),
-    'VoiceInputStatusNotice 必须列入可达组件',
-  );
-  const { surfaces } = buildGeneratedSurfaces(ROOT, {});
-  const generated = surfaces.find((surface) => surface.id === 'desktop.window.voice-overlay');
-  assert.ok(generated.styleSources.some((file) => file.endsWith('VoiceInputStatusNotice.tsx')));
-  assert.ok(generated.styleSources.some((file) => file.endsWith('styles/globals.css')));
-  // 此前 8/2/10——并入全局样式与状态条后基线显著上调。
-  assert.ok(generated.tokenCount > 8, `token 应高于 8(实际 ${generated.tokenCount})`);
-  assert.ok(generated.bareColors > 2, `裸色应高于 2(实际 ${generated.bareColors})`);
-  assert.ok(generated.bareRadii > 10, `裸圆角应高于 10(实际 ${generated.bareRadii})`);
 });
 
 test('裸圆角统计覆盖 React style 对象的 camelCase borderRadius', (t) => {

@@ -506,13 +506,6 @@ export function WorkLouderCodexSettings({
       : settings.layout.slots[key as WorkLouderCodexCommandSlot];
     const action =
       assignment.action ?? WORKLOUDER_CODEX_KEYCAP_ACTIONS[assignment.keycapId] ?? null;
-    if (isWorkLouderCodexMicrophoneKeycap(assignment.keycapId)) {
-      return {
-        legend: assignment.keycapId,
-        name: t('settings.shortcuts.workLouderCodex.actions.voice'),
-        description: t('settings.shortcuts.workLouderCodex.microphone.separate.description'),
-      };
-    }
     if (action) {
       return {
         legend: blankKeycapLegend(assignment.keycapId, t),
@@ -750,7 +743,6 @@ export function WorkLouderCodexSettings({
                 state={state}
                 skills={enabledSkills}
                 disabled={!state || saving || !editingSlot}
-                allowVoice
                 emptyLabel={t('settings.shortcuts.workLouderCodex.commandKeys.builtIn')}
                 onChange={setEditingAction}
               />
@@ -1150,7 +1142,6 @@ function ActionSelect({
   emptyLabel,
   allowTasks = false,
   allowKeycaps = false,
-  allowVoice = false,
   onChange,
   className,
 }: {
@@ -1161,21 +1152,13 @@ function ActionSelect({
   emptyLabel: string;
   allowTasks?: boolean;
   allowKeycaps?: boolean;
-  /** Only physical keys can hold-to-talk; stick, encoder, and task editors omit it. */
-  allowVoice?: boolean;
   onChange(action: WorkLouderCodexAction | null): void;
   className?: string;
 }) {
   const { t } = useTranslation();
   const groups: SelectOptionGroup[] = [
     {
-      options: [
-        { value: 'none', label: emptyLabel },
-        // Hold-to-talk voice on a physical key — how blank-cap boards bind it.
-        ...(allowVoice
-          ? [{ value: 'voice', label: t('settings.shortcuts.workLouderCodex.actions.voice') }]
-          : []),
-      ],
+      options: [{ value: 'none', label: emptyLabel }],
     },
   ];
   if (allowTasks && state && state.taskOptions.length > 0) {
@@ -1605,8 +1588,6 @@ function actionLabel(
   switch (action.type) {
     case 'command':
       return t ? workLouderCodexCommandName(t, action.commandId) : action.commandId;
-    case 'voice':
-      return t ? t('settings.shortcuts.workLouderCodex.actions.voice') : 'voice';
     case 'skill':
       return action.name;
     case 'keycap':
@@ -1627,8 +1608,6 @@ function actionValue(action: WorkLouderCodexAction | null): string {
   switch (action.type) {
     case 'command':
       return `command:${action.commandId}`;
-    case 'voice':
-      return 'voice';
     case 'task':
       return `task:${action.sessionId}`;
     case 'keycap':
@@ -1648,7 +1627,6 @@ function parseActionValue(
   skills: SkillhubSkill[],
 ): WorkLouderCodexAction | null {
   if (value === 'none') return null;
-  if (value === 'voice') return { type: 'voice' };
   if (value.startsWith('command:')) {
     return { type: 'command', commandId: value.slice(8) as WorkLouderCodexCommandId };
   }
