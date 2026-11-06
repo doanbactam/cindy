@@ -51,7 +51,9 @@ it('reuses one process but queries fresh counters, including concurrent portable
   const second = counter.read(true);
   await vi.advanceTimersByTimeAsync(0);
   const child = children[0];
-  expect((child.stdin as PassThrough).read()?.toString()).toBe('1 0\n2 1\n');
+  // read(length) drains every buffered write; a bare read() returns one chunk on Node 26.
+  const stdin = child.stdin as PassThrough;
+  expect(stdin.read(stdin.readableLength)?.toString()).toBe('1 0\n2 1\n');
   child.stdout.emit('data', '1 10\n2 11\n');
   expect(await first).toBe('10');
   expect(await second).toBe('11');

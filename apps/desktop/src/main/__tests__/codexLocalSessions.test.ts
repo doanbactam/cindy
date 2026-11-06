@@ -678,7 +678,10 @@ describe('paginated Codex rollout adoption (#7436)', () => {
     await f.locations.record(threadId, f.broken, f.sqliteHome);
     const copy = fs.promises.copyFile;
     const spy = vi.spyOn(fs.promises, 'copyFile').mockImplementationOnce(async (source, destination, mode) => {
-      fs.unlinkSync(f.parent);
+      // Move the original away instead of unlinking it: ext4 would hand the freed
+      // inode to the same-length replacement, and within one coarse mtime tick the
+      // stat snapshot is identical (a known limit of stat-only identity).
+      fs.renameSync(f.parent, `${f.parent}.replaced`);
       fs.writeFileSync(f.parent, f.parentContents.replace('parent history', 'other! history'));
       await copy(source, destination, mode);
     });

@@ -184,8 +184,9 @@ vi.mock('../localDb/client/current', () => ({
   getDbClient: () => ({ drizzle: fakeDb, tx: txMock, queryOne: queryOneMock }),
 }));
 
-let commitRewindAtMessage: typeof import('../maker-orchestration/rewind').commitRewindAtMessage;
-let previewRewindAtMessage: typeof import('../maker-orchestration/rewind').previewRewindAtMessage;
+// Load once at collection time: a cold transform of this module graph can exceed
+// the 10s hook timeout when it happens inside the first beforeEach.
+const { commitRewindAtMessage, previewRewindAtMessage } = await import('../maker-orchestration/rewind');
 const originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
 const tempDirs: string[] = [];
 
@@ -252,11 +253,6 @@ beforeEach(async () => {
   getSessionMetaMock.mockImplementation(async () =>
     fakeSession ? { sdkSessionId: fakeSession.sdkSessionId } : null,
   );
-  if (!commitRewindAtMessage) {
-    const mod = await import('../maker-orchestration/rewind');
-    commitRewindAtMessage = mod.commitRewindAtMessage;
-    previewRewindAtMessage = mod.previewRewindAtMessage;
-  }
 });
 
 afterEach(async () => {
